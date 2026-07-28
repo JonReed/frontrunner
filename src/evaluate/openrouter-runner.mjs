@@ -29,6 +29,14 @@ import {
 } from '../tracker/reserve-report-num.mjs';
 import { TokenAccumulator, formatBreakdown, normalizeOpenAIUsage } from '../lib/token-tracker.mjs';
 import { readJdManifest } from '../scan/jd-cache.mjs';
+import { fetchJobDescriptionViaApi } from '../scan/fetch-jds.mjs';
+import { createLivenessChecker } from '../scan/liveness-service.mjs';
+import { evaluateDeterministicGate, formatGateRejection } from './evaluation-gate.mjs';
+import {
+  buildScoringPrompt,
+  parseScoringResponse,
+  renderEvaluationReport,
+} from './scoring-contract.mjs';
 
 import { ROOT as __dirname } from '#paths';
 const tracker = new TokenAccumulator();
@@ -635,15 +643,42 @@ async function cmdEvaluate(input, ctx) {
     jdText = lines.join('\n');
     if (!jdText.trim()) { console.log('No input provided.'); return null; }
   } else if (input.startsWith('http')) {
+    const liveness = createLivenessChecker();
+    let live;
+    try {
+      live = await liveness.check(input);
+    } finally {
+      await liveness.close();
+    }
+    if (live.result === 'expired') {
+      console.log(`⏭️  Evaluation stopped before the model call: posting is expired (${live.reason}).`);
+      return 'skipped:expired';
+    }
+    if (live.result === 'uncertain') {
+      console.warn(`⚠️  Liveness uncertain (${live.reason}); keeping the role to avoid a false reject.`);
+    }
+
     const cached = cachedJdForUrl(input);
     if (cached) {
       console.log('Using cached job description...');
       jdText = cached;
     } else {
-      console.log('Fetching job page...');
+      console.log('Fetching job description...');
       try {
-        const content = await fetchJobPage(input);
-        jdText = `URL: ${input}\n\n${content}`;
+        let apiDescription = null;
+        try {
+          apiDescription = await fetchJobDescriptionViaApi(input);
+        } catch (e) {
+          console.warn(`Provider API failed (${e.message}); using browser fallback.`);
+        }
+        if (apiDescription) {
+          console.log(`Using ${apiDescription.provider} API description (no browser).`);
+          jdText = apiDescription.text;
+        } else {
+          console.log('Provider API unavailable; using browser fallback...');
+          const content = await fetchJobPage(input);
+          jdText = `URL: ${input}\n\n${content}`;
+        }
       } catch (e) {
         console.error(e.message);
         return null;
@@ -651,8 +686,20 @@ async function cmdEvaluate(input, ctx) {
     }
   }
 
+  const gate = evaluateDeterministicGate({ jdText });
+  if (!gate.allowed) {
+    console.log(`\n⏭️  ${formatGateRejection(gate)}`);
+    return `skipped:${gate.rule}`;
+  }
+
   console.log('\nEvaluating...');
-  const systemPrompt = buildSystemPrompt(modeContent, ctx);
+  const languageInstruction = outputLanguageInstruction(parseOutputLanguage(ctx.profile));
+  const systemPrompt = buildScoringPrompt({
+    cv: ctx.cv,
+    profile: ctx.profile,
+    profileMode: ctx.profileMode,
+    languageInstruction,
+  });
 
   let resultObj;
   try {
@@ -662,7 +709,13 @@ async function cmdEvaluate(input, ctx) {
     return null;
   }
   tracker.record('evaluation', resultObj.usage);
-  const result = resultObj.content;
+  let result;
+  try {
+    result = renderEvaluationReport(parseScoringResponse(resultObj.content));
+  } catch (e) {
+    console.error(`OpenRouter returned invalid scoring JSON: ${e.message}`);
+    return null;
+  }
 
   let reservedNumbers;
   try {

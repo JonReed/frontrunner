@@ -1,0 +1,13 @@
+{
+  "description": "Small checked-in pipeline snapshot for deterministic efficiency regression checks. Byte counts are captured inputs, not live network claims.",
+  "jobs": [
+    {"provider":"greenhouse","board":"alpha","title":"Director of Engineering","score":4.4,"renderedHtmlChars":74200,"cleanDescriptionChars":8100,"legacyOutputChars":8900},
+    {"provider":"greenhouse","board":"alpha","title":"Head of Platform","score":4.2,"renderedHtmlChars":68100,"cleanDescriptionChars":7600,"legacyOutputChars":8500},
+    {"provider":"greenhouse","board":"alpha","title":"Junior Software Engineer","score":1.5,"renderedHtmlChars":70500,"cleanDescriptionChars":6900,"legacyOutputChars":8200},
+    {"provider":"lever","board":"beta","title":"VP Engineering","score":4.6,"renderedHtmlChars":81500,"cleanDescriptionChars":9200,"legacyOutputChars":9400},
+    {"provider":"lever","board":"beta","title":"Head of Brand Marketing","score":1.2,"renderedHtmlChars":63400,"cleanDescriptionChars":6500,"legacyOutputChars":8000},
+    {"provider":"ashby","board":"gamma","title":"Engineering Manager, AI Platform","score":3.9,"renderedHtmlChars":77900,"cleanDescriptionChars":8800,"legacyOutputChars":9000},
+    {"provider":"ashby","board":"gamma","title":"Senior Tax Accountant","score":1.4,"renderedHtmlChars":59800,"cleanDescriptionChars":5900,"legacyOutputChars":7800},
+    {"provider":"ashby","board":"gamma","title":"AI Transformation Lead","score":4.1,"renderedHtmlChars":73200,"cleanDescriptionChars":7900,"legacyOutputChars":8700}
+  ]
+}

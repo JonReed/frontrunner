@@ -1,0 +1,33 @@
+{
+  "corpus": {
+    "roles": 8,
+    "boards": 3
+  },
+  "httpCalls": {
+    "legacy": 8,
+    "frontrunner": 3,
+    "reductionPct": 62.5
+  },
+  "tokens": {
+    "input": {
+      "legacy": 276902,
+      "frontrunner": 12710,
+      "reductionPct": 95.4
+    },
+    "output": {
+      "legacy": 17125,
+      "frontrunner": 1140,
+      "reductionPct": 93.3
+    }
+  },
+  "modelPass": {
+    "roles": 5,
+    "ratePct": 62.5
+  },
+  "falseRejects": {
+    "threshold": 3,
+    "count": 0,
+    "roles": []
+  },
+  "wallTimeMs": 1.664
+}

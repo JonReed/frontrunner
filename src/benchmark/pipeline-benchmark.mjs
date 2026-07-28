@@ -1,0 +1,142 @@
+#!/usr/bin/env node
+
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { performance } from 'node:perf_hooks';
+
+import { ROOT } from '#paths';
+import { classify } from '../scan/prefilter.mjs';
+import {
+  SCORING_CONTRACT_VERSION,
+  buildScoringPrompt,
+  parseScoringResponse,
+  renderEvaluationReport,
+} from '../evaluate/scoring-contract.mjs';
+
+const approxTokens = (chars) => Math.ceil(chars / 4);
+
+function sampleResult(job) {
+  return {
+    version: SCORING_CONTRACT_VERSION,
+    company: 'Benchmark Co',
+    role: job.title,
+    archetype: 'Benchmark archetype',
+    overallScore: job.score,
+    recommendation: job.score >= 4 ? 'Apply' : job.score >= 3 ? 'Consider' : 'Skip',
+    dimensions: {
+      cvMatch: { score: Math.max(1, Math.min(5, job.score)), evidence: ['Fixture evidence'] },
+      northStar: { score: Math.max(1, Math.min(5, job.score)), evidence: ['Fixture alignment'] },
+      comp: { score: null, evidence: ['Not advertised'] },
+      culture: { score: 3, evidence: ['Unknown'] },
+      redFlags: { score: job.score < 2 ? 2 : 4, evidence: ['Fixture signal'] },
+    },
+    requirements: [{ requirement: 'Representative requirement', status: 'matched', evidence: 'Fixture evidence' }],
+    risks: ['Representative risk'],
+    customization: ['Representative tailoring action'],
+    interview: [{ question: 'Representative question?', evidenceToUse: 'Fixture story' }],
+    legitimacy: { tier: 'High Confidence', signals: ['Fixture signal'] },
+    keywords: ['fixture'],
+  };
+}
+
+export function runPipelineBenchmark({ corpus, legacyStaticChars, compactStaticChars }) {
+  const started = performance.now();
+  const boards = new Set(corpus.jobs.map((job) => `${job.provider}:${job.board}`));
+  const decisions = corpus.jobs.map((job) => ({ job, decision: classify(job.title) }));
+  const kept = decisions.filter(({ decision }) => decision.verdict === 'keep');
+  const falseRejects = decisions.filter(({ job, decision }) => job.score >= 3 && decision.verdict === 'reject');
+
+  const legacyInputTokens = corpus.jobs.reduce(
+    (sum, job) => sum + approxTokens(legacyStaticChars + job.renderedHtmlChars),
+    0,
+  );
+  const frontrunnerInputTokens = kept.reduce(
+    (sum, { job }) => sum + approxTokens(compactStaticChars + job.cleanDescriptionChars),
+    0,
+  );
+  const legacyOutputTokens = corpus.jobs.reduce((sum, job) => sum + approxTokens(job.legacyOutputChars), 0);
+  const frontrunnerOutputTokens = kept.reduce((sum, { job }) => {
+    const report = renderEvaluationReport(parseScoringResponse(JSON.stringify(sampleResult(job))));
+    return sum + approxTokens(report.length);
+  }, 0);
+
+  const pctReduction = (before, after) => Math.round((1 - after / before) * 1000) / 10;
+  return {
+    corpus: { roles: corpus.jobs.length, boards: boards.size },
+    httpCalls: {
+      legacy: corpus.jobs.length,
+      frontrunner: boards.size,
+      reductionPct: pctReduction(corpus.jobs.length, boards.size),
+    },
+    tokens: {
+      input: {
+        legacy: legacyInputTokens,
+        frontrunner: frontrunnerInputTokens,
+        reductionPct: pctReduction(legacyInputTokens, frontrunnerInputTokens),
+      },
+      output: {
+        legacy: legacyOutputTokens,
+        frontrunner: frontrunnerOutputTokens,
+        reductionPct: pctReduction(legacyOutputTokens, frontrunnerOutputTokens),
+      },
+    },
+    modelPass: {
+      roles: kept.length,
+      ratePct: Math.round((kept.length / corpus.jobs.length) * 1000) / 10,
+    },
+    falseRejects: {
+      threshold: 3,
+      count: falseRejects.length,
+      roles: falseRejects.map(({ job }) => job.title),
+    },
+    wallTimeMs: Math.round((performance.now() - started) * 1000) / 1000,
+  };
+}
+
+function stableMetrics(result) {
+  const { wallTimeMs: _ignored, ...stable } = result;
+  return stable;
+}
+
+function main() {
+  const args = process.argv.slice(2);
+  const corpusPath = join(ROOT, 'benchmarks', 'pipeline-corpus.json');
+  const artifactPath = join(ROOT, 'benchmarks', 'pipeline-benchmark.json');
+  const corpus = JSON.parse(readFileSync(corpusPath, 'utf8'));
+  const fixtureCv = '# CV\nDirector of Engineering. Led platform teams.';
+  const fixtureProfile = 'target_roles:\n  - Engineering leadership\n';
+  const legacyStaticChars =
+    readFileSync(join(ROOT, 'modes', '_shared.md'), 'utf8').length
+    + readFileSync(join(ROOT, 'modes', 'oferta.md'), 'utf8').length
+    + fixtureCv.length
+    + fixtureProfile.length;
+  const compactStaticChars = buildScoringPrompt({
+    cv: fixtureCv,
+    profile: fixtureProfile,
+    profileMode: 'Target senior engineering leadership roles.',
+    languageInstruction: 'Write in English.',
+  }).length;
+  const result = runPipelineBenchmark({ corpus, legacyStaticChars, compactStaticChars });
+
+  if (args.includes('--check')) {
+    if (!existsSync(artifactPath)) throw new Error('benchmark artifact is missing; run npm run benchmark');
+    const recorded = JSON.parse(readFileSync(artifactPath, 'utf8'));
+    if (JSON.stringify(stableMetrics(recorded)) !== JSON.stringify(stableMetrics(result))) {
+      throw new Error('benchmark artifact is stale; run npm run benchmark');
+    }
+  } else if (args.includes('--write')) {
+    writeFileSync(artifactPath, `${JSON.stringify(result, null, 2)}\n`);
+  }
+  console.log(JSON.stringify(result, null, 2));
+}
+
+const isDirect = process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
+if (isDirect) {
+  try {
+    main();
+  } catch (error) {
+    console.error(`benchmark failed: ${error.message}`);
+    process.exitCode = 1;
+  }
+}

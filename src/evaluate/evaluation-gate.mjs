@@ -12,10 +12,12 @@ export function extractEvaluationMetadata(jdText, fallback = {}) {
   const heading = text.match(/^#\s+(.+)$/m)?.[1]?.trim();
   const labelledTitle = text.match(/^\s*(?:job\s+)?title:\s*(.+)$/im)?.[1]?.trim();
   const labelledCompany = text.match(/^\s*company:\s*(.+)$/im)?.[1]?.trim();
+  const fallbackTitle = String(fallback.title ?? '').trim();
+  const fallbackCompany = String(fallback.company ?? '').trim();
 
   return {
-    title: String(fallback.title ?? labelledTitle ?? heading ?? '').trim(),
-    company: String(fallback.company ?? labelledCompany ?? '').trim(),
+    title: fallbackTitle || labelledTitle || heading || '',
+    company: fallbackCompany || labelledCompany || '',
   };
 }
 

@@ -2,10 +2,8 @@
 /**
  * ollama-eval.mjs — Ollama-powered Job Offer Evaluator for career-ops
  *
- * Local, free, private alternative to the Claude-based pipeline.
- * Reads evaluation logic from modes/oferta.md + modes/_shared.md,
- * reads the user's resume from cv.md, and evaluates a Job Description
- * passed as a CLI argument or file.
+ * Local, free, private evaluator using Frontrunner's mandatory deterministic
+ * gate and compact, versioned scoring contract.
  *
  * Usage:
  *   node src/evaluate/ollama-eval.mjs "Paste full JD text here"
@@ -30,6 +28,12 @@ import {
   formatReportNumber, releaseReportNumbers, reserveReportNumbers,
 } from '../tracker/reserve-report-num.mjs';
 import { TokenAccumulator, formatBreakdown, normalizeOpenAIUsage } from '../lib/token-tracker.mjs';
+import { evaluateDeterministicGate, formatGateRejection } from './evaluation-gate.mjs';
+import {
+  buildScoringPrompt,
+  parseScoringResponse,
+  renderEvaluationReport,
+} from './scoring-contract.mjs';
 
 const tracker = new TokenAccumulator();
 tracker.recordZeroToken('scan');
@@ -45,10 +49,9 @@ import { ROOT } from '#paths';
 // Paths
 // ---------------------------------------------------------------------------
 const PATHS = {
-  shared:  join(ROOT, 'modes', '_shared.md'),
-  oferta:  join(ROOT, 'modes', 'oferta.md'),
   cv:      join(ROOT, 'cv.md'),
   profileYml: join(ROOT, 'config', 'profile.yml'),
+  profileMode: join(ROOT, 'modes', '_profile.md'),
   reports: join(ROOT, 'reports'),
 };
 
@@ -127,6 +130,13 @@ if (!jdText) {
   process.exit(1);
 }
 
+const gate = evaluateDeterministicGate({ jdText });
+if (!gate.allowed) {
+  console.log(`\n⏭️  ${formatGateRejection(gate)}`);
+  console.log(JSON.stringify(gate, null, 2));
+  process.exit(0);
+}
+
 // ---------------------------------------------------------------------------
 // File helpers
 // ---------------------------------------------------------------------------
@@ -195,54 +205,20 @@ try {
 // ---------------------------------------------------------------------------
 console.log('\n📂  Loading context files...');
 
-const sharedContext = readFile(PATHS.shared, 'modes/_shared.md');
-const ofertaLogic   = readFile(PATHS.oferta, 'modes/oferta.md');
 const cvContent     = readFile(PATHS.cv,     'cv.md');
 const profileYml    = readFile(PATHS.profileYml, 'config/profile.yml');
+const profileMode   = readFile(PATHS.profileMode, 'modes/_profile.md');
 const languageInstruction = outputLanguageInstruction(parseOutputLanguage(profileYml));
 
 // ---------------------------------------------------------------------------
 // Build system prompt
 // ---------------------------------------------------------------------------
-const systemPrompt = `You are career-ops, an AI-powered job search assistant.
-You evaluate job offers against the user's CV using a structured A-G scoring system.
-
-Your evaluation methodology is defined below. Follow it exactly.
-
-═══════════════════════════════════════════════════════
-SYSTEM CONTEXT (_shared.md)
-═══════════════════════════════════════════════════════
-${sharedContext}
-
-═══════════════════════════════════════════════════════
-EVALUATION MODE (oferta.md)
-═══════════════════════════════════════════════════════
-${ofertaLogic}
-
-═══════════════════════════════════════════════════════
-CANDIDATE RESUME (cv.md)
-═══════════════════════════════════════════════════════
-${cvContent}
-
-═══════════════════════════════════════════════════════
-IMPORTANT OPERATING RULES FOR THIS SESSION
-═══════════════════════════════════════════════════════
-1. You do NOT have access to WebSearch, Playwright, or file writing tools.
-   - Block D (Comp research): use training-data salary estimates; note them as estimates.
-   - Block G (Legitimacy): analyze JD text only; skip URL/page freshness checks.
-   - Post-evaluation file saving is handled by the script, not by you.
-2. ${languageInstruction}
-3. Generate Blocks A through G in full.
-4. At the very end, output this exact machine-readable block:
-
----SCORE_SUMMARY---
-COMPANY: <company name or "Unknown">
-ROLE: <role title>
-SCORE: <global score as decimal, e.g. 3.8>
-ARCHETYPE: <detected archetype>
-LEGITIMACY: <High Confidence | Proceed with Caution | Suspicious>
----END_SUMMARY---
-`;
+const systemPrompt = buildScoringPrompt({
+  cv: cvContent,
+  profile: profileYml,
+  profileMode,
+  languageInstruction,
+});
 
 // ---------------------------------------------------------------------------
 // Call Ollama
@@ -272,7 +248,7 @@ try {
       // top-level `temperature` is silently ignored, so the eval was running at
       // Ollama's default (0.8) instead of the intended 0.4. Keep it deterministic
       // (matching the openai/gemini engines) by putting it where Ollama reads it.
-      options: { temperature: 0.4, num_ctx: 32768 },
+      options: { temperature: 0.2, num_ctx: 32768 },
     }),
     signal: AbortSignal.timeout(timeoutMs),
   });
@@ -285,13 +261,14 @@ try {
   }
 
   const data = await res.json();
-  evaluationText = data.choices?.[0]?.message?.content?.trim();
+  const rawResponse = data.choices?.[0]?.message?.content?.trim();
   const usage = normalizeOpenAIUsage(data.usage);
   tracker.record('evaluation', usage);
-  if (!evaluationText) {
+  if (!rawResponse) {
     console.error('❌  Ollama returned an empty response.');
     process.exit(1);
   }
+  evaluationText = renderEvaluationReport(parseScoringResponse(rawResponse));
 } catch (err) {
   if (err.name === 'TimeoutError') {
     console.error(`❌  Request timed out after ${Math.round(timeoutMs / 1000)}s.`);

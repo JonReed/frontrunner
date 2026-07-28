@@ -78,6 +78,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </a>
               . Open source, MIT licensed.
             </p>
+            {/*
+              Support link, deliberately understated. Some people using this are
+              out of work and short of money — a donation ask must never be a
+              button, a prompt, or anything that interrupts. A quiet line at the
+              foot of the page is the whole of it.
+            */}
+            <p className="mt-1.5">
+              <a
+                href="https://buymeacoffee.com/jonmreed"
+                target="_blank"
+                rel="noreferrer"
+                className="underline decoration-[var(--color-line-strong)] underline-offset-2 transition hover:text-[var(--color-act)]"
+              >
+                Support the project
+              </a>{' '}
+              if it helped you — entirely optional, and it stays free either way.
+            </p>
           </div>
         </footer>
       </body>

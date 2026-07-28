@@ -183,6 +183,26 @@ async function fetchBoard(provider, slug, eu = false, fetchJson = getJson) {
   throw new Error(`unsupported provider: ${provider}`);
 }
 
+/**
+ * Fetch one clean description through the provider's public board API.
+ * Returns null for unsupported providers or a posting no longer on the board,
+ * allowing callers to use a browser strictly as the fallback.
+ */
+export async function fetchJobDescriptionViaApi(rawUrl, fetchJson = getJson) {
+  const parsed = parseJobUrl(rawUrl);
+  if (!parsed) return null;
+  const postings = await fetchBoard(parsed.provider, parsed.slug, !!parsed.eu, fetchJson);
+  const post = postings.get(String(parsed.jobId));
+  if (!post?.text) return null;
+  return {
+    source: 'api',
+    provider: parsed.provider,
+    title: post.title,
+    location: post.location,
+    text: `# ${post.title}\n\n**Location:** ${post.location}\n**URL:** ${rawUrl}\n\n---\n\n${post.text}\n`,
+  };
+}
+
 // ---------------------------------------------------------------- input
 
 function readUrls(file) {

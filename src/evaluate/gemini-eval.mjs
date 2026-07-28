@@ -2,10 +2,8 @@
 /**
  * gemini-eval.mjs — Gemini-powered Job Offer Evaluator for career-ops
  *
- * A free-tier alternative to the Claude-based pipeline.
- * Reads evaluation logic from modes/oferta.md + modes/_shared.md,
- * reads the user's resume from cv.md, and evaluates a Job Description
- * passed as a command-line argument.
+ * A free-tier alternative using Frontrunner's mandatory deterministic gate
+ * and compact, versioned scoring contract.
  *
  * Usage:
  *   node src/evaluate/gemini-eval.mjs "Paste full JD text here"
@@ -43,7 +41,12 @@ import { outputLanguageInstruction, parseOutputLanguage } from '../lib/profile-l
 import {
   formatReportNumber, releaseReportNumbers, reserveReportNumbers,
 } from '../tracker/reserve-report-num.mjs';
-import { buildBudgetedPrompt } from '../lib/context-budget.mjs';
+import { evaluateDeterministicGate, formatGateRejection } from './evaluation-gate.mjs';
+import {
+  buildScoringPrompt,
+  parseScoringResponse,
+  renderEvaluationReport,
+} from './scoring-contract.mjs';
 
 // ---------------------------------------------------------------------------
 // Bootstrap: load .env before anything else
@@ -62,11 +65,6 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 // ---------------------------------------------------------------------------
 import { ROOT } from '#paths';
 const PATHS = {
-  // Primary evaluation logic lives in these two mode files
-  shared:      join(ROOT, 'modes', '_shared.md'),
-  oferta:      join(ROOT, 'modes', 'oferta.md'),
-  // Canonical skill path referenced in Issue #344
-  evaluate:    join(ROOT, '.claude', 'skills', 'career-ops', 'SKILL.md'),
   cv:          join(ROOT, 'cv.md'),
   profile:     join(ROOT, 'modes', '_profile.md'),
   profileYml:  join(ROOT, 'config', 'profile.yml'),
@@ -97,7 +95,6 @@ if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
     --file <path>    Read JD from a file instead of inline text
     --model <name>   Gemini model to use (default: gemini-3.6-flash)
     --no-save        Do not save report to reports/ directory
-    --no-compress    Skip token budget compression (full context injection)
     --help           Show this help
 
   SETUP
@@ -116,7 +113,6 @@ if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
 let jdText = '';
 let modelName = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 let saveReport = true;
-let noCompress = false;
 
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--file' && args[i + 1]) {
@@ -130,8 +126,6 @@ for (let i = 0; i < args.length; i++) {
     modelName = args[++i];
   } else if (args[i] === '--no-save') {
     saveReport = false;
-  } else if (args[i] === '--no-compress') {
-    noCompress = true;
   } else if (!args[i].startsWith('--')) {
     jdText += (jdText ? '\n' : '') + args[i];
   }
@@ -231,69 +225,30 @@ function normalizedTrackerScore(value) {
 // ---------------------------------------------------------------------------
 console.log('\n📂  Loading context files...');
 
-const sharedContext  = readFile(PATHS.shared,      'modes/_shared.md');
-const ofertaLogic    = readFile(PATHS.oferta,      'modes/oferta.md');
 const cvContent      = readFile(PATHS.cv,          'cv.md');
 const profileContent = readFile(PATHS.profile,     'modes/_profile.md');
 const profileYml     = readFile(PATHS.profileYml,  'config/profile.yml');
 const languageInstruction = outputLanguageInstruction(parseOutputLanguage(profileYml));
 
 // ---------------------------------------------------------------------------
-// Build the system prompt with token budget management
+// Mandatory zero-token boundary.
 // ---------------------------------------------------------------------------
-const { contextBody, budgetReport } = buildBudgetedPrompt({
-  sharedContent: sharedContext,
-  ofertaContent: ofertaLogic,
-  cvContent,
-  profileYml,
-  profileContent,
+const gate = evaluateDeterministicGate({
   jdText,
-  // The JD is sent once via generateContent() below. The system instruction
-  // must remain static across jobs for implicit prompt caching to work.
-  includeJdInContext: false,
-  noCompress,
-  maxTokens: 1_048_576, // gemini-2.5-flash context window
 });
-
-// Log token budget info
-if (budgetReport.compressed) {
-  console.log(`📊  Token budget: ${budgetReport.beforeTokens} → ${budgetReport.afterTokens} tokens (saved ${budgetReport.beforeTokens - budgetReport.afterTokens})`);
-  console.log(`    Trimmed sections: ${budgetReport.removed.join(', ')}`);
-  if (budgetReport.overBudget) {
-    console.log(`    ⚠️  Still ${budgetReport.afterTokens - budgetReport.budget} tokens over budget after compression`);
-  }
-} else if (budgetReport.overBudget) {
-  console.log(`⚠️  Token budget: ${budgetReport.totalTokens} tokens exceeds ${budgetReport.budget} limit by ${budgetReport.totalTokens - budgetReport.budget}`);
-} else {
-  console.log(`📊  Token budget: ${budgetReport.totalTokens} tokens (within ${budgetReport.budget} limit)`);
+if (!gate.allowed) {
+  console.log(`\n⏭️  ${formatGateRejection(gate)}`);
+  console.log(JSON.stringify(gate, null, 2));
+  process.exit(0);
 }
 
-const systemPrompt = `You are career-ops, an AI-powered job search assistant.
-You evaluate job offers against the user's CV using a structured A-G scoring system.
-
-Your evaluation methodology is defined below. Follow it exactly.
-
-${contextBody}
-
-═══════════════════════════════════════════════════════
-IMPORTANT OPERATING RULES FOR THIS CLI SESSION
-═══════════════════════════════════════════════════════
-1. You do NOT have access to WebSearch, Playwright, or file writing tools.
-   - For Block D (Comp research): provide salary estimates based on your training data, clearly noted as estimates.
-   - For Block G (Legitimacy): analyze the JD text only; skip URL/page freshness checks.
-   - Post-evaluation file saving is handled by the script, not by you.
-2. ${languageInstruction}
-3. Generate Blocks A through G in full.
-4. At the very end, output a machine-readable summary block in this exact format:
-
----SCORE_SUMMARY---
-COMPANY: <company name or "Unknown">
-ROLE: <role title>
-SCORE: <global score as decimal, e.g. 3.8>
-ARCHETYPE: <detected archetype>
-LEGITIMACY: <High Confidence | Proceed with Caution | Suspicious>
----END_SUMMARY---
-`;
+const systemPrompt = buildScoringPrompt({
+  cv: cvContent,
+  profile: profileYml,
+  profileMode: profileContent,
+  languageInstruction,
+});
+console.log(`📊  Compact scoring contract: ~${Math.ceil(systemPrompt.length / 4).toLocaleString()} static tokens`);
 
 // ---------------------------------------------------------------------------
 // Call Gemini API
@@ -312,15 +267,15 @@ const model = genAI.getGenerativeModel({
   model: modelName,
   systemInstruction: systemPrompt,
   generationConfig: {
-    temperature: 0.4,      // deterministic enough for structured evaluation
-    maxOutputTokens: 8192, // full 7-block evaluation
+    temperature: 0.2,
+    maxOutputTokens: 4096,
   },
 });
 
 let evaluationText;
 try {
   const result = await model.generateContent(`JOB DESCRIPTION TO EVALUATE:\n\n${jdText}`);
-  evaluationText = result.response.text();
+  evaluationText = renderEvaluationReport(parseScoringResponse(result.response.text()));
   const usage = {
     prompt_tokens: result.response.usageMetadata?.promptTokenCount ?? 0,
     completion_tokens: result.response.usageMetadata?.candidatesTokenCount ?? 0,
@@ -336,14 +291,6 @@ try {
   } else if (sanitizedMsg.includes('quota') || sanitizedMsg.includes('rate')) {
     console.error('    You may have hit the free-tier rate limit. Wait 60s and retry.');
   }
-  process.exit(1);
-}
-
-try {
-  validateEvaluationShape(evaluationText);
-} catch (err) {
-  console.error('❌  Gemini output failed validation:', err.message);
-  console.error('    No report was saved. Retry, lower temperature, or use the Claude pipeline for this JD.');
   process.exit(1);
 }
 
