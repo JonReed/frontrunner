@@ -1,9 +1,9 @@
 /**
  * "Find roles" — roles the scanner has surfaced but nobody has assessed yet.
  *
- * The one thing this page must communicate: searching costs nothing, and only
- * scoring uses your AI subscription. That boundary is the product's main
- * advantage and it is invisible unless stated.
+ * Roles the scanner found, newest work first. Scoring one is an AI action and
+ * is marked as such where it is offered; the page does not editorialise about
+ * cost beyond that.
  */
 
 import { readInbox } from '@/lib/roles';
@@ -24,7 +24,7 @@ export default async function DiscoverPage() {
           {inbox.length.toLocaleString()} roles found
         </h1>
         <p className="mt-1 text-[15px] text-[var(--color-ink-soft)]">
-          Searching and filtering these is completely free. Only scoring a role uses your AI subscription.
+          Found by scanning the job boards you follow.
         </p>
       </div>
 

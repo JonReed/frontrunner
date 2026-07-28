@@ -30,7 +30,7 @@ const BANDS: { key: Readiness; title: string; blurb: string }[] = [
   {
     key: 'needs-decision',
     title: 'Worth a look',
-    blurb: 'Decent matches. The assessment is already written — reading it is free.',
+    blurb: 'Decent matches worth a few minutes of your judgement.',
   },
   {
     key: 'in-flight',
@@ -118,7 +118,7 @@ function Headline({ ready, nearly }: { ready: number; nearly: number }) {
           {nearly} strong {nearly === 1 ? 'match' : 'matches'} to look at
         </h1>
         <p className="mt-1 text-[15px] text-[var(--color-ink-soft)]">
-          Each one has already been assessed against your CV. Reading that costs nothing.
+          Each one has already been assessed against your CV.
         </p>
       </>
     );

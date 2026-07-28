@@ -29,10 +29,7 @@ export function AiBadge({ what = 'write this for you' }: { what?: string }) {
         role="tooltip"
         className="pointer-events-none absolute bottom-full right-0 z-20 mb-2 w-60 rounded-lg bg-[var(--color-ink)] px-3 py-2 text-xs leading-relaxed text-white opacity-0 shadow-lg transition group-hover:opacity-100 group-focus-within:opacity-100"
       >
-        Asks the AI to {what}. This uses a little of your AI subscription.
-        <span className="mt-1 block text-[var(--color-ink-faint)]">
-          Everything else here — searching, filtering, tracking — is free.
-        </span>
+        Asks the AI to {what}, using a little of your AI subscription.
       </span>
     </span>
   );

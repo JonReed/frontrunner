@@ -108,7 +108,9 @@ export async function readTracker(): Promise<Role[]> {
 
     roles.push({ ...base, ...classify(base) });
   }
-  return roles.sort((a, b) => a.priority - b.priority);
+  // Readiness first, then best match within each band — so the strongest
+  // opportunity is always the top row of whatever band you are looking at.
+  return roles.sort((a, b) => a.priority - b.priority || (b.score ?? 0) - (a.score ?? 0));
 }
 
 // ---------------------------------------------------------------- the model
@@ -128,8 +130,8 @@ type Base = Omit<Role, 'stage' | 'readiness' | 'nextAction' | 'priority'>;
  * read yet, and the honest reaction is "I don't know enough to want to do
  * that." Nobody commits budget to a job they have not looked at.
  *
- * So reading the assessment — which is already written and costs nothing —
- * always comes first. Spending happens on the role page, after a decision.
+ * So reading the assessment always comes first; spending happens on the role
+ * page, after a decision.
  */
 export function classify(r: Base): Pick<Role, 'stage' | 'readiness' | 'nextAction' | 'priority'> {
   const s = r.status.toLowerCase();

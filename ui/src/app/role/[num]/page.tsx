@@ -2,9 +2,9 @@
  * The role page — where a decision gets made, and the only place that spends
  * the user's AI allowance.
  *
- * Order matters. The assessment is already written and costs nothing, so it
- * comes first: what the job is, why they fit, what is weak, what interviewers
- * will push on. Only after that does the page offer to build a tailored CV.
+ * Order matters. The assessment comes first — what the job is, why they fit,
+ * what is weak, what interviewers will push on — and only then does the page
+ * offer to build a tailored CV.
  *
  * That sequence is the whole correction. An earlier version put "Generate
  * tailored CV" on the list page, which asked someone to spend their allowance
@@ -63,7 +63,7 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
         </div>
       </header>
 
-      {/* The assessment, free and already written. */}
+      {/* The assessment. */}
       {report ? (
         <>
           {report.primary.map((s) => (
@@ -96,9 +96,8 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
       )}
 
       {/*
-        The only paid action in the product, and it sits at the BOTTOM — after
-        the reasons to want it. Its cost is stated before it is clicked, never
-        after.
+        The AI action sits at the BOTTOM, after the reasons to want it, and is
+        badged so it is never a surprise.
       */}
       <div className="sticky bottom-4 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-card)] p-5 shadow-sm">
         {role.hasPdf ? (
