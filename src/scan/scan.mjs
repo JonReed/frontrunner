@@ -64,7 +64,7 @@ const PROFILE_PATH = process.env.CAREER_OPS_PROFILE || 'config/profile.yml';
 const SCAN_HISTORY_PATH = 'data/scan-history.tsv';
 const PIPELINE_PATH = 'data/pipeline.md';
 const APPLICATIONS_PATH = 'data/applications.md';
-const PROVIDERS_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'providers');
+import { PROVIDERS_DIR, DATA_DIR } from '#paths';
 
 // Ensure required directories exist (fresh setup)
 mkdirSync('data', { recursive: true });
@@ -1495,7 +1495,7 @@ export function appendScanRunSummary(c, filePath = SCAN_RUNS_PATH) {
 
 // ── Portal health persistence (#1744) ───────────────────────────────
 
-const PORTAL_HEALTH_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'data', 'portal-health.tsv');
+const PORTAL_HEALTH_PATH = path.join(DATA_DIR, 'portal-health.tsv');
 export const PORTAL_HEALTH_HEADER = 'timestamp\tcompany\tstatus\n';
 
 export function appendPortalHealth(healthRecords, filePath = PORTAL_HEALTH_PATH) {

@@ -34,7 +34,14 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { randomUUID } from 'node:crypto';
 import { readStyleTokens, injectThemeStyle } from './theme-style.mjs';
 
-import { ROOT as __dirname } from '#paths';
+import { ROOT } from '#paths';
+
+// Resolution base for output/ and data/. Defaults to the repo root; an
+// override exists so the module can be exercised in an isolated sandbox
+// without writing into the user's real output/ and data/pdf-index.tsv.
+// Before src/ existed this file sat in the root and resolved its own
+// dirname, which gave isolation for free — moving it removed that.
+const __dirname = process.env.CAREER_OPS_PDF_BASE || ROOT;
 const PDF_PAGE_MARGIN = '0.6in';
 
 // Ensure output directory exists (fresh setup)

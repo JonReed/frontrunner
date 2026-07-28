@@ -37,7 +37,7 @@ const DEFAULT_PORTALS_PATH = process.env.CAREER_OPS_PORTALS || 'portals.yml';
 
 // The core providers/ directory — the SAME plugins the scanner loads. Resolved
 // from this file's location so it's independent of the caller's cwd.
-const PROVIDERS_DIR = resolve(dirname(fileURLToPath(import.meta.url)), 'providers');
+import { PROVIDERS_DIR } from '#paths';
 
 // How to turn a slug into a probe URL, and where the job list lives in the
 // response, for each supported ATS. Greenhouse/Ashby wrap jobs in `{ jobs }`;

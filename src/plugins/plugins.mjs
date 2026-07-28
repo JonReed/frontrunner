@@ -30,7 +30,7 @@ import { readLock, writeLockEntry, removeLockEntry, hashPluginTree, consentSurfa
 import { installFromRepo, scaffoldNew, parseRepoArg } from './plugin-install.mjs';
 import { appendToPipeline } from '../scan/scan.mjs';
 
-const ROOT = path.dirname(fileURLToPath(import.meta.url));
+import { ROOT } from '#paths';
 const APPLICATIONS_PATH = path.join(ROOT, 'data', 'applications.md');
 const PIPELINE_PATH = path.join(ROOT, 'data', 'pipeline.md');
 

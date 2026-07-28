@@ -30,7 +30,7 @@ function render(inputPayload, { preview = false } = {}) {
     ? ['src/cv/build-cv-html.mjs', '--preview', input, TEMPLATE]
     : ['src/cv/build-cv-html.mjs', input, output, TEMPLATE];
   const stdout = execFileSync(process.execPath, args, { cwd: ROOT, encoding: 'utf8' });
-  return { html: readFileSync(preview ? join(ROOT, 'src/cv/output', 'cv-preview.html') : output, 'utf8'), stdout, output };
+  return { html: readFileSync(preview ? join(ROOT, 'output', 'cv-preview.html') : output, 'utf8'), stdout, output };
 }
 
 test('no photo emits no img and reserves no photo markup', () => {

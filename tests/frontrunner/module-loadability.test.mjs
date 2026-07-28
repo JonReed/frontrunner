@@ -23,7 +23,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -35,7 +35,9 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
  * the system browser, so running the suite opened a browser tab per run.
  * They are still covered by the --check (syntax) pass below.
  */
-const SIDE_EFFECTING = new Set(['manifesto.mjs']);
+const SIDE_EFFECTING = new Set([
+  // (manifesto.mjs was removed — it spawned a browser at the upstream site.)
+]);
 
 /** Every tracked .mjs that is a module or CLI (not a test). */
 function trackedModules() {
@@ -74,29 +76,43 @@ test('every module is syntactically valid', () => {
   assert.deepEqual(broken, [], 'modules failed --check');
 });
 
-test('every module resolves its imports when executed', () => {
+test('every module resolves its imports', () => {
+  // STATIC resolution, deliberately. The first version of this test spawned
+  // `node <module> --help` for all ~76 modules with a 30s timeout each: any
+  // module that ignored --help and started real work burned its full timeout,
+  // so the suite could take over half an hour. It also had side effects —
+  // manifesto.mjs opened a browser, reply-watch.mjs created a file named
+  // '--help'. Parsing import specifiers catches the same breakage in
+  // milliseconds with no execution at all.
   const broken = [];
   for (const m of MODULES) {
-    let output = '';
-    try {
-      output = execFileSync(process.execPath, [join(ROOT, m), '--help'], {
-        cwd: ROOT,
-        encoding: 'utf8',
-        stdio: 'pipe',
-        timeout: 30_000,
-        env: { ...process.env, CAREER_OPS_NO_NETWORK: '1' },
-      });
-    } catch (e) {
-      // Non-zero exit is fine — many CLIs exit 1 without real arguments.
-      output = `${e.stdout ?? ''}${e.stderr ?? ''}`;
-    }
-    const fatal = FATAL.find((re) => re.test(output));
-    if (fatal) {
-      const line = output.split('\n').find((l) => fatal.test(l)) ?? '';
-      broken.push(`${m}: ${line.trim().slice(0, 160)}`);
+    const dir = dirname(join(ROOT, m));
+    // Strip comments first — plugins/_lock.mjs documents `import('./anything.mjs')`
+    // in prose, which is not an import.
+    const src = readFileSync(join(ROOT, m), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '');
+    const specs = [
+      ...src.matchAll(/(?:^|[\s;])(?:import|export)[^'"\n]*?from\s*['"]([^'"]+)['"]/g),
+      ...src.matchAll(/\bimport\(\s*['"]([^'"]+)['"]\s*\)/g),
+    ].map((x) => x[1]);
+
+    for (const spec of specs) {
+      if (spec.startsWith('node:') || spec.startsWith('#')) continue;   // builtin / subpath
+      if (!spec.startsWith('.')) continue;                              // bare package
+      if (!existsSync(join(dir, spec))) broken.push(`${m} -> ${spec}`);
     }
   }
-  assert.deepEqual(broken, [], 'modules failed to load');
+  assert.deepEqual(broken, [], 'unresolved relative imports');
+});
+
+test('every declared #paths subpath resolves', () => {
+  const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
+  const imports = pkg.imports ?? {};
+  assert.ok(Object.keys(imports).length > 0, 'package.json declares no imports map');
+  for (const [alias, target] of Object.entries(imports)) {
+    assert.ok(existsSync(join(ROOT, target)), `${alias} -> ${target} does not exist`);
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -115,10 +131,16 @@ test('no module outside src/paths.mjs derives the repo root from its own locatio
   const offenders = [];
   for (const m of MODULES) {
     if (ALLOWED.has(m)) continue;
-    if (!m.includes('/')) continue;      // root-level: own dirname IS the root
+    if (!m.includes('/')) continue;             // root-level: own dirname IS the root
+    if (m.startsWith('plugins/')) continue;     // third-party packages, standalone
+    if (m.startsWith('batch/')) continue;       // standalone batch tooling
     if (m.startsWith('scaffolder/')) continue;  // separate published package
     const src = readFileSync(join(ROOT, m), 'utf8');
-    if (/const\s+(?:ROOT|CAREER_OPS|__dirname|REPO_ROOT|PROJECT_ROOT)\s*=\s*(?:join\()?dirname\(fileURLToPath\(import\.meta\.url\)\)/.test(src)) {
+    // Match ANY use, not just `const X = ...`. scan.mjs built its providers
+    // path inline — path.resolve(path.dirname(fileURLToPath(...)), 'providers')
+    // — and slipped past a declaration-only check, silently breaking provider
+    // loading for every scan run.
+    if (/dirname\(fileURLToPath\(import\.meta\.url\)\)/.test(src)) {
       offenders.push(m);
     }
   }
@@ -129,7 +151,11 @@ test('no module reaches outside the repo with ../..', () => {
   const offenders = [];
   for (const m of MODULES) {
     if (m.startsWith('scaffolder/')) continue;  // published standalone; paths differ
-    const src = readFileSync(join(ROOT, m), 'utf8');
+    // Strip comments first — plugins/_lock.mjs documents `import('./anything.mjs')`
+    // in prose, which is not an import.
+    const src = readFileSync(join(ROOT, m), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '');
     const specs = [
       ...src.matchAll(/(?:^|\s)(?:import|export)[^'"\n]*?from\s*['"]([^'"]+)['"]/g),
       ...src.matchAll(/\bimport\(\s*['"]([^'"]+)['"]\s*\)/g),

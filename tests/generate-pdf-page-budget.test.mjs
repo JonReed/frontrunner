@@ -11,7 +11,7 @@ import {
 import { join, relative } from 'path';
 import { pass, fail, ROOT, NODE } from './helpers.mjs';
 
-const outputRoot = join(ROOT, 'src/cv/output');
+const outputRoot = join(ROOT, 'output');
 mkdirSync(outputRoot, { recursive: true });
 const sandbox = mkdtempSync(join(outputRoot, 'page-budget-test-'));
 const script = join(sandbox, 'src/cv/generate-pdf.mjs');
@@ -22,6 +22,7 @@ mkdirSync(join(sandbox, 'data'), { recursive: true });
 writeFileSync(manifest, '', 'utf-8');
 const playwrightStub = join(sandbox, 'node_modules', 'playwright');
 
+mkdirSync(join(sandbox, 'src/cv'), { recursive: true });
 copyFileSync(join(ROOT, 'src/cv/generate-pdf.mjs'), script);
 // generate-pdf.mjs imports its local sibling ./theme-style.mjs (dynamic PDF
 // theming, #1837); copy it into the sandbox too or the isolated script fails
@@ -117,6 +118,10 @@ function runPdf(args) {
     cwd: sandbox,
     encoding: 'utf-8',
     timeout: 30_000,
+    // Keep output/ and data/pdf-index.tsv inside the sandbox. Without this the
+    // copied script resolves them against the REAL repo root and writes test
+    // rows into the user's own manifest.
+    env: { ...process.env, CAREER_OPS_PDF_BASE: sandbox },
   });
   return {
     ...result,

@@ -1116,16 +1116,11 @@ const allowedFiles = [
   'README.ua.md', 'README.zh-TW.md', 'README.tr.md',
   // Standard project files
   'LICENSE', 'CITATION.cff', 'CONTRIBUTING.md', 'CHANGELOG.md', 'TRADEMARK.md',
-  'package.json', '.github/FUNDING.yml', 'CLAUDE.md', 'AGENTS.md', 'go.mod', 'test-all.mjs',
+  'package.json', '.github/FUNDING.yml', 'CLAUDE.md', 'AGENTS.md', 'test-all.mjs',
   '.claude-plugin/marketplace.json', '.claude-plugin/plugin.json', '.github/plugin/plugin.json',
   // Community / governance files (added in v1.3.0, all legitimately reference the maintainer)
   'CODE_OF_CONDUCT.md', 'GOVERNANCE.md', 'SECURITY.md', 'SUPPORT.md',
-  // Manifesto: the author signs it publicly; the ledger carries signers' names by design
-  'MANIFESTO.md', 'SIGNATURES.md', '.github/PULL_REQUEST_TEMPLATE/sign-manifesto.md',
   '.github/SECURITY.md',
-  // Dashboard credit string
-  'dashboard/internal/ui/screens/pipeline.go',
-  'dashboard/internal/ui/screens/progress.go',
 ];
 
 // Build pathspec for git grep — only scan tracked files matching these

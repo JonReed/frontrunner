@@ -152,7 +152,9 @@ try {
     const probe = [
       'import dns from "node:dns";',
       'const before = dns.lookup;',
-      'await import("../../providers/_dns-cache.mjs");',
+      // NB: this string runs in a child process with cwd = ROOT, so the
+      // specifier is relative to the REPO ROOT, not to this file.
+      'await import("./providers/_dns-cache.mjs");',
       'console.log(dns.lookup === before ? "UNPATCHED" : "PATCHED");',
     ].join('');
 
