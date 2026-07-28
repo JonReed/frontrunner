@@ -81,10 +81,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {/*
               Support link, deliberately understated. Some people using this are
               out of work and short of money — a donation ask must never be a
-              button, a prompt, or anything that interrupts. A quiet line at the
-              foot of the page is the whole of it.
+              button, a prompt, or anything that interrupts.
             */}
             <p className="mt-1.5">
+              <a
+                href="https://github.com/Furls-Digital/frontrunner"
+                target="_blank"
+                rel="noreferrer"
+                className="underline decoration-[var(--color-line-strong)] underline-offset-2 transition hover:text-[var(--color-act)]"
+              >
+                Source code
+              </a>
+              <span className="px-1.5 text-[var(--color-line-strong)]">·</span>
               <a
                 href="https://buymeacoffee.com/jonmreed"
                 target="_blank"
@@ -92,8 +100,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 className="underline decoration-[var(--color-line-strong)] underline-offset-2 transition hover:text-[var(--color-act)]"
               >
                 Support the project
-              </a>{' '}
-              if it helped you — entirely optional, and it stays free either way.
+              </a>
             </p>
           </div>
         </footer>
