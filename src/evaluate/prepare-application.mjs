@@ -9,8 +9,8 @@
  * and submits themselves.
  *
  * Usage:
- *   node prepare-application.mjs --url <apply_url> --pdf output/<cv>.pdf
- *   node prepare-application.mjs --url <apply_url> --pdf output/<cv>.pdf --cover cover.txt
+ *   node src/evaluate/prepare-application.mjs --url <apply_url> --pdf output/<cv>.pdf
+ *   node src/evaluate/prepare-application.mjs --url <apply_url> --pdf output/<cv>.pdf --cover cover.txt
  *
  * Supported ATS:
  *   Greenhouse  boards.greenhouse.io / greenhouse.io
@@ -43,7 +43,7 @@ const pdfPath   = get('--pdf');
 const coverPath = get('--cover');
 
 if (!applyUrl || !pdfPath) {
-  console.error('Usage: node prepare-application.mjs --url <apply_url> --pdf <pdf_path> [--cover <cover_txt>]');
+  console.error('Usage: node src/evaluate/prepare-application.mjs --url <apply_url> --pdf <pdf_path> [--cover <cover_txt>]');
   process.exit(1);
 }
 

@@ -28,10 +28,10 @@
  * Benchmarks lookup order: --benchmarks <path> > config/benchmarks.yml (user
  * layer, survives updates) > templates/benchmarks.yml (shipped default).
  *
- * Run: node funnel-velocity.mjs             (JSON)
- *      node funnel-velocity.mjs --summary   (human-readable)
- *      node funnel-velocity.mjs --self-test
- *      node funnel-velocity.mjs --benchmarks path/to/benchmarks.yml
+ * Run: node src/analysis/funnel-velocity.mjs             (JSON)
+ *      node src/analysis/funnel-velocity.mjs --summary   (human-readable)
+ *      node src/analysis/funnel-velocity.mjs --self-test
+ *      node src/analysis/funnel-velocity.mjs --benchmarks path/to/benchmarks.yml
  */
 
 import { readFileSync, existsSync } from 'fs';

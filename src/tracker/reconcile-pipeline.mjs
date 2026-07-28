@@ -18,7 +18,7 @@
  * an entry already present in Procesadas is dropped from Pendientes without a
  * second copy. Safe to run after every batch.
  *
- * Run: node reconcile-pipeline.mjs [--dry-run] [--state <path>] [--pipeline <path>]
+ * Run: node src/tracker/reconcile-pipeline.mjs [--dry-run] [--state <path>] [--pipeline <path>]
  */
 
 import { readFileSync, writeFileSync, existsSync, readdirSync, copyFileSync, realpathSync, statSync } from 'fs';
@@ -30,7 +30,7 @@ import { ROOT as CAREER_OPS } from '#paths';
 const DRY_RUN = process.argv.includes('--dry-run');
 
 if (process.argv.includes('-h') || process.argv.includes('--help')) {
-  console.log('Usage: node reconcile-pipeline.mjs [--dry-run] [--state <path>] [--pipeline <path>]');
+  console.log('Usage: node src/tracker/reconcile-pipeline.mjs [--dry-run] [--state <path>] [--pipeline <path>]');
   console.log('  Moves batch-processed offers out of pipeline.md "Pendientes" into "Procesadas".');
   process.exit(0);
 }

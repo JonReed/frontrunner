@@ -7,10 +7,10 @@
  * original requirements for interview prep and salary negotiation evidence.
  *
  * Usage:
- *   node archive-posting.mjs <url>
- *   node archive-posting.mjs <url> --company=Anthropic --role=senior-ai-engineer
- *   node archive-posting.mjs --pipeline          Archive pending URLs in data/pipeline.md
- *   node archive-posting.mjs --dry-run <url>     Preview filename without saving
+ *   node src/scan/archive-posting.mjs <url>
+ *   node src/scan/archive-posting.mjs <url> --company=Anthropic --role=senior-ai-engineer
+ *   node src/scan/archive-posting.mjs --pipeline          Archive pending URLs in data/pipeline.md
+ *   node src/scan/archive-posting.mjs --dry-run <url>     Preview filename without saving
  *
  * Output:    jds/YYYY-MM-DD_company-slug_role-slug.pdf
  * Reference: local:jds/YYYY-MM-DD_company-slug_role-slug.pdf  (paste into pipeline.md)
@@ -39,10 +39,10 @@ if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
   Save a live job posting as PDF before it disappears.
 
   USAGE
-    node archive-posting.mjs <url>
-    node archive-posting.mjs <url> --company=Anthropic --role=senior-ai-engineer
-    node archive-posting.mjs --pipeline     Archive all pending URLs in data/pipeline.md
-    node archive-posting.mjs --dry-run <url>
+    node src/scan/archive-posting.mjs <url>
+    node src/scan/archive-posting.mjs <url> --company=Anthropic --role=senior-ai-engineer
+    node src/scan/archive-posting.mjs --pipeline     Archive all pending URLs in data/pipeline.md
+    node src/scan/archive-posting.mjs --dry-run <url>
 
   OPTIONS
     --company <name>   Override auto-detected company name
@@ -58,9 +58,9 @@ if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
     local:jds/YYYY-MM-DD_company-slug_role-slug.pdf
 
   EXAMPLES
-    node archive-posting.mjs "https://jobs.ashbyhq.com/anthropic/abc123"
-    node archive-posting.mjs "https://boards.greenhouse.io/openai/jobs/456" --company=OpenAI
-    node archive-posting.mjs --pipeline
+    node src/scan/archive-posting.mjs "https://jobs.ashbyhq.com/anthropic/abc123"
+    node src/scan/archive-posting.mjs "https://boards.greenhouse.io/openai/jobs/456" --company=OpenAI
+    node src/scan/archive-posting.mjs --pipeline
     npm run archive -- "https://jobs.lever.co/elevenlabs/abc"
 `);
   process.exit(0);

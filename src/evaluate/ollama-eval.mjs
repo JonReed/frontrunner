@@ -8,9 +8,9 @@
  * passed as a CLI argument or file.
  *
  * Usage:
- *   node ollama-eval.mjs "Paste full JD text here"
- *   node ollama-eval.mjs --file ./jds/my-job.txt
- *   node ollama-eval.mjs --model qwen2.5:72b --file ./jds/my-job.txt
+ *   node src/evaluate/ollama-eval.mjs "Paste full JD text here"
+ *   node src/evaluate/ollama-eval.mjs --file ./jds/my-job.txt
+ *   node src/evaluate/ollama-eval.mjs --model qwen2.5:72b --file ./jds/my-job.txt
  *
  * Requires:
  *   Ollama running locally — https://ollama.com
@@ -29,7 +29,7 @@ import { outputLanguageInstruction, parseOutputLanguage } from '../lib/profile-l
 import {
   formatReportNumber, releaseReportNumbers, reserveReportNumbers,
 } from '../tracker/reserve-report-num.mjs';
-import { TokenAccumulator, formatBreakdown, normalizeOpenAIUsage } from '../../utils/token-tracker.mjs';
+import { TokenAccumulator, formatBreakdown, normalizeOpenAIUsage } from '../lib/token-tracker.mjs';
 
 const tracker = new TokenAccumulator();
 tracker.recordZeroToken('scan');
@@ -66,9 +66,9 @@ if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
   Evaluate a job offer using a local Ollama model instead of Claude.
 
   USAGE
-    node ollama-eval.mjs "<JD text>"
-    node ollama-eval.mjs --file ./jds/my-job.txt
-    node ollama-eval.mjs --model qwen2.5:72b "<JD text>"
+    node src/evaluate/ollama-eval.mjs "<JD text>"
+    node src/evaluate/ollama-eval.mjs --file ./jds/my-job.txt
+    node src/evaluate/ollama-eval.mjs --model qwen2.5:72b "<JD text>"
 
   OPTIONS
     --file <path>    Read JD from a file instead of inline text
@@ -84,9 +84,9 @@ if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
     4. Run this script
 
   EXAMPLES
-    node ollama-eval.mjs "We are looking for a Senior AI Engineer..."
-    node ollama-eval.mjs --file ./jds/openai-swe.txt
-    OLLAMA_MODEL=mistral-nemo node ollama-eval.mjs --file ./jds/job.txt
+    node src/evaluate/ollama-eval.mjs "We are looking for a Senior AI Engineer..."
+    node src/evaluate/ollama-eval.mjs --file ./jds/openai-swe.txt
+    OLLAMA_MODEL=mistral-nemo node src/evaluate/ollama-eval.mjs --file ./jds/job.txt
 `);
   process.exit(0);
 }
@@ -167,7 +167,7 @@ function readFile(path, label) {
 
    If you intentionally want to use a remote endpoint (e.g. tunnelled
    Ollama on a home server), set:
-     OLLAMA_ALLOW_REMOTE=1 node ollama-eval.mjs ...
+     OLLAMA_ALLOW_REMOTE=1 node src/evaluate/ollama-eval.mjs ...
 `);
     process.exit(1);
   }

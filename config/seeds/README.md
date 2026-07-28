@@ -1,15 +1,15 @@
-# seeds/ — VC Portfolio Seed Fetchers
+# config/seeds/ — VC Portfolio Seed Fetchers
 
 A complementary discovery path for startup job-seekers: pull a **public VC portfolio company list** and probe each company's ATS for openings, feeding results into the same pipeline as tracked companies in `portals.yml`.
 
 ## What this does
 
-`scan-ats-full.mjs` normally discovers companies by walking public ATS directories (Greenhouse, Lever, Ashby, Workday). The `seeds/` layer adds a **high-signal starting point for startup roles**: rather than waiting for companies to appear in ATS directories, we seed the universe from well-known VC portfolios — giving you instant coverage of hundreds of YC/a16z-backed companies.
+`scan-ats-full.mjs` normally discovers companies by walking public ATS directories (Greenhouse, Lever, Ashby, Workday). The `config/seeds/` layer adds a **high-signal starting point for startup roles**: rather than waiting for companies to appear in ATS directories, we seed the universe from well-known VC portfolios — giving you instant coverage of hundreds of YC/a16z-backed companies.
 
 Flow:
 ```
 VC portfolio API/page
-    ↓ seeds/vc-portfolios.mjs
+    ↓ config/seeds/vc-portfolios.mjs
 SeedCompany[]
     ↓ toPortalEntry()
 PortalEntry (careers_url set to best-guess ATS URL)

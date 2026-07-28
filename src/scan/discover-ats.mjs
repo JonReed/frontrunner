@@ -18,12 +18,12 @@
  * Input: a YAML file `companies: [{name, slug?, website?}]` (via --in), and/or
  * bare company names as positional CLI args.
  *
- * Run: node discover-ats.mjs --in companies.yml            (preview — writes nothing)
- *      node discover-ats.mjs --in companies.yml --write    (opt in: append to portals.yml)
- *      node discover-ats.mjs Stripe Ramp Mollie            (bare names)
- *      node discover-ats.mjs --in companies.yml --summary  (human table)
- *      node discover-ats.mjs --in companies.yml --vendors gh,ashby
- *      node discover-ats.mjs --self-test
+ * Run: node src/scan/discover-ats.mjs --in companies.yml            (preview — writes nothing)
+ *      node src/scan/discover-ats.mjs --in companies.yml --write    (opt in: append to portals.yml)
+ *      node src/scan/discover-ats.mjs Stripe Ramp Mollie            (bare names)
+ *      node src/scan/discover-ats.mjs --in companies.yml --summary  (human table)
+ *      node src/scan/discover-ats.mjs --in companies.yml --vendors gh,ashby
+ *      node src/scan/discover-ats.mjs --self-test
  *
  * Probing hits live third-party APIs, so honor CAREER_OPS_PORTALS to point at a
  * scratch portals file during tests/experiments.
@@ -46,7 +46,7 @@ import { ROOT as CAREER_OPS } from '#paths';
 const PORTALS_PATH = process.env.CAREER_OPS_PORTALS || join(CAREER_OPS, 'portals.yml');
 
 // Safe charset for a slug that will be interpolated into an ATS URL. Consistent
-// with the SLUG_RE guard in scan-ats-full.mjs and seeds/vc-portfolios.mjs — a
+// with the SLUG_RE guard in scan-ats-full.mjs and config/seeds/vc-portfolios.mjs — a
 // tampered or malformed input can never inject unexpected characters into a URL.
 // Mixed case is intentional: Ashby boards are case-sensitive (AlephAlpha, DeepL).
 export const SLUG_RE = /^[A-Za-z0-9._-]+$/;
@@ -82,14 +82,14 @@ const VENDOR_ORDER = ['gh', 'ashby', 'lever'];
 const WORKDAY_INSTANCES = ['wd1', 'wd2', 'wd3', 'wd5', 'wd10', 'wd12', 'wd101', 'wd103'];
 
 const USAGE = `Usage:
-  node discover-ats.mjs --in companies.yml            # PREVIEW — resolve + print entries, write nothing
-  node discover-ats.mjs --in companies.yml --write    # opt in: append resolved entries to portals.yml
-  node discover-ats.mjs Stripe Ramp Mollie            # company names as positional args
-  node discover-ats.mjs --in companies.yml --summary  # human-readable table
-  node discover-ats.mjs --in companies.yml --vendors gh,ashby,lever  # restrict probes
-  node discover-ats.mjs --in companies.yml --vendors workday         # Workday only
-  node discover-ats.mjs --self-test                   # inline test suite
-  node discover-ats.mjs --help                        # print this usage block
+  node src/scan/discover-ats.mjs --in companies.yml            # PREVIEW — resolve + print entries, write nothing
+  node src/scan/discover-ats.mjs --in companies.yml --write    # opt in: append resolved entries to portals.yml
+  node src/scan/discover-ats.mjs Stripe Ramp Mollie            # company names as positional args
+  node src/scan/discover-ats.mjs --in companies.yml --summary  # human-readable table
+  node src/scan/discover-ats.mjs --in companies.yml --vendors gh,ashby,lever  # restrict probes
+  node src/scan/discover-ats.mjs --in companies.yml --vendors workday         # Workday only
+  node src/scan/discover-ats.mjs --self-test                   # inline test suite
+  node src/scan/discover-ats.mjs --help                        # print this usage block
 
 portals.yml is a user-layer file: this command NEVER writes it unless you pass
 --write. The default previews the entries it would add (see pendingEntries).
@@ -114,7 +114,7 @@ Input YAML shape:
 // ── Pure functions (exported for tests) ──────────────────────────────
 
 /**
- * Derive a URL-safe slug from a company name. Mirrors seeds/vc-portfolios.mjs.
+ * Derive a URL-safe slug from a company name. Mirrors config/seeds/vc-portfolios.mjs.
  * Lowercases — so camelCase Ashby boards (AlephAlpha, DeepL) need an explicit
  * `slug` in the input; a derived slug will miss them.
  * @param {string} name

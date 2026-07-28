@@ -1,6 +1,6 @@
 // tests/token-tracker.test.mjs — token tracking & cost estimation unit tests
 import { pass, fail } from './helpers.mjs';
-import { estimateCost, TokenAccumulator, formatBreakdown } from '../utils/token-tracker.mjs';
+import { estimateCost, TokenAccumulator, formatBreakdown } from '../src/lib/token-tracker.mjs';
 import { parseTokenVal } from '../batch/aggregate-tokens.mjs';
 
 console.log('\ntoken-tracker.mjs & aggregate-tokens.mjs unit tests');

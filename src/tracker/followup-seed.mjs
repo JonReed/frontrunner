@@ -28,8 +28,8 @@
  * Pass --force to append a fresh pin anyway.
  *
  * Usage:
- *   node followup-seed.mjs <appNum> [--date YYYY-MM-DD] [--force] [--dry-run] [--json]
- *   node followup-seed.mjs --backfill [--dry-run] [--json]
+ *   node src/tracker/followup-seed.mjs <appNum> [--date YYYY-MM-DD] [--force] [--dry-run] [--json]
+ *   node src/tracker/followup-seed.mjs --backfill [--dry-run] [--json]
  *
  * Exit codes:
  *   0 success or idempotent no-op
@@ -563,7 +563,7 @@ function parseCliArgs(argv) {
     }
   } else {
     if (positionals.length !== 1) {
-      throw new SeedError('USAGE', 'Usage: node followup-seed.mjs <appNum> [--date YYYY-MM-DD] [--force] [--dry-run] [--json]');
+      throw new SeedError('USAGE', 'Usage: node src/tracker/followup-seed.mjs <appNum> [--date YYYY-MM-DD] [--force] [--dry-run] [--json]');
     }
     const raw = positionals[0];
     const n = parseInt(raw, 10);

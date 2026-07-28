@@ -21,14 +21,14 @@
  * Zero Claude API tokens — pure HTTP + JSON.
  *
  * Usage:
- *   node scan.mjs                  # scan all enabled companies
- *   node scan.mjs --dry-run        # preview without writing files
- *   node scan.mjs --company Cohere # scan a single company
- *   node scan.mjs --verify         # Playwright-check each new URL; drop expired postings
- *   node scan.mjs --verify --headed-fallback  # retry anti-bot-blocked URLs in a headed browser (needs a display)
- *   node scan.mjs --verify --throttle          # jittered ~5-10s gap between checks (stay under rate limits)
- *   node scan.mjs --verify --throttle=8000     # custom base gap in ms (waits base..2*base)
- *   node scan.mjs --include-blacklisted        # let data/blacklist.md matches through (annotated)
+ *   node src/scan/scan.mjs                  # scan all enabled companies
+ *   node src/scan/scan.mjs --dry-run        # preview without writing files
+ *   node src/scan/scan.mjs --company Cohere # scan a single company
+ *   node src/scan/scan.mjs --verify         # Playwright-check each new URL; drop expired postings
+ *   node src/scan/scan.mjs --verify --headed-fallback  # retry anti-bot-blocked URLs in a headed browser (needs a display)
+ *   node src/scan/scan.mjs --verify --throttle          # jittered ~5-10s gap between checks (stay under rate limits)
+ *   node src/scan/scan.mjs --verify --throttle=8000     # custom base gap in ms (waits base..2*base)
+ *   node src/scan/scan.mjs --include-blacklisted        # let data/blacklist.md matches through (annotated)
  */
 
 import { readFileSync, writeFileSync, appendFileSync, existsSync, mkdirSync } from 'fs';
@@ -2265,7 +2265,7 @@ async function main() {
 
 }
 
-// Only run main() when invoked directly (`node scan.mjs`), not when imported by tests.
+// Only run main() when invoked directly (`node src/scan/scan.mjs`), not when imported by tests.
 // `|| ''` guards the case where Node is invoked without a script arg (e.g. `node -e`).
 if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
   main().catch(err => {

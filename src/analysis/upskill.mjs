@@ -16,10 +16,10 @@
  * (score < 4.0) reports naming the gap — NOT quantiles, which are noise at
  * the 5–20 report sample sizes this tool sees.
  *
- * Run: node upskill.mjs            (JSON to stdout)
- *      node upskill.mjs --summary  (human-readable table)
- *      node upskill.mjs --min-reports 3
- *      node upskill.mjs --self-test
+ * Run: node src/analysis/upskill.mjs            (JSON to stdout)
+ *      node src/analysis/upskill.mjs --summary  (human-readable table)
+ *      node src/analysis/upskill.mjs --min-reports 3
+ *      node src/analysis/upskill.mjs --self-test
  */
 
 import { readFileSync, existsSync } from 'fs';

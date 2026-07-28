@@ -27,10 +27,10 @@
  *   3. Read config from the user layer (config/profile.yml), never hardcode.
  *
  * USAGE
- *   node prefilter.mjs --summary
- *   node prefilter.mjs --input batch/batch-input.tsv --out batch/batch-input.filtered.tsv
- *   node prefilter.mjs --json
- *   node prefilter.mjs --explain "Staff Product Engineer, AI"
+ *   node src/scan/prefilter.mjs --summary
+ *   node src/scan/prefilter.mjs --input batch/batch-input.tsv --out batch/batch-input.filtered.tsv
+ *   node src/scan/prefilter.mjs --json
+ *   node src/scan/prefilter.mjs --explain "Staff Product Engineer, AI"
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
@@ -50,8 +50,8 @@ if (hasFlag('-h') || hasFlag('--help')) {
   console.log(`prefilter.mjs — deterministic rejection pass (zero LLM tokens)
 
 Usage:
-  node prefilter.mjs [--input <file>] [--out <file>] [--jds <dir>] [--summary|--json]
-  node prefilter.mjs --explain "<job title>"
+  node src/scan/prefilter.mjs [--input <file>] [--out <file>] [--jds <dir>] [--summary|--json]
+  node src/scan/prefilter.mjs --explain "<job title>"
 
   --input <file>   Default: data/pipeline.md. Also accepts a TSV (col 2 = url).
   --out <file>     Write surviving roles as a batch-input TSV.

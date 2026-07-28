@@ -23,10 +23,10 @@
  * model receives clean text instead of a rendered page.
  *
  * USAGE
- *   node fetch-jds.mjs                      # read data/pipeline.md pending URLs
- *   node fetch-jds.mjs --input batch/batch-input.tsv
- *   node fetch-jds.mjs --out jds --summary
- *   node fetch-jds.mjs --json
+ *   node src/scan/fetch-jds.mjs                      # read data/pipeline.md pending URLs
+ *   node src/scan/fetch-jds.mjs --input batch/batch-input.tsv
+ *   node src/scan/fetch-jds.mjs --out jds --summary
+ *   node src/scan/fetch-jds.mjs --json
  *
  * OUTPUT
  *   jds/{provider}-{slug}-{jobid}.md   one plain-text JD per role
@@ -55,7 +55,7 @@ if (hasFlag('-h') || hasFlag('--help')) {
   console.log(`fetch-jds.mjs — bulk JD pre-fetcher (zero LLM tokens)
 
 Usage:
-  node fetch-jds.mjs [--input <file>] [--out <dir>] [--summary|--json] [--force]
+  node src/scan/fetch-jds.mjs [--input <file>] [--out <dir>] [--summary|--json] [--force]
 
   --input <file>  Source of URLs. Default: data/pipeline.md
                   Accepts pipeline.md ("- [ ] <url> | ...") or a TSV whose

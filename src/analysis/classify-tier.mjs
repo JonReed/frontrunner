@@ -113,8 +113,8 @@ if (isDirect) {
     console.log(classifyTier(args[0]));
   } else {
     console.log('Usage:');
-    console.log('  node classify-tier.mjs "<job-title>"');
-    console.log('  node classify-tier.mjs --test');
+    console.log('  node src/analysis/classify-tier.mjs "<job-title>"');
+    console.log('  node src/analysis/classify-tier.mjs --test');
   }
 }
 

@@ -4,7 +4,7 @@
  * patch-latex-content.mjs — Apply prose patches to a user-owned LaTeX CV in place.
  *
  * Usage:
- *   node patch-latex-content.mjs <source.tex> <patches.json> <output.tex>
+ *   node src/cv/patch-latex-content.mjs <source.tex> <patches.json> <output.tex>
  *
  * patches.json:
  *   { "patches": [ { "id": "bullet-0", "text": "Tailored bullet text" } ] }
@@ -17,14 +17,14 @@ import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { pathToFileURL } from 'url';
-import { applyPatches } from '../../lib/latex-content.mjs';
+import { applyPatches } from './latex-content.mjs';
 
 async function main() {
   const args = process.argv.slice(2).filter(a => a !== '--help');
   const [sourcePath, patchesPath, outputPath] = args;
 
   if (!sourcePath || !patchesPath || !outputPath) {
-    console.error('Usage: node patch-latex-content.mjs <source.tex> <patches.json> <output.tex>');
+    console.error('Usage: node src/cv/patch-latex-content.mjs <source.tex> <patches.json> <output.tex>');
     process.exit(1);
   }
 

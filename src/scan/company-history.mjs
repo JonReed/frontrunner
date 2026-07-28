@@ -33,12 +33,12 @@
  *                     than expected: every extraction from it is guarded by
  *                     `typeof x === 'function'`.
  *
- * Run: node company-history.mjs                    (JSON to stdout)
- *      node company-history.mjs --summary           (human-readable cards)
- *      node company-history.mjs --company "Acme"    (single-card lookup)
- *      node company-history.mjs --silence-window 21 (override default window)
- *      node company-history.mjs --include-stale     (include >365d-old facts in labels)
- *      node company-history.mjs --self-test
+ * Run: node src/scan/company-history.mjs                    (JSON to stdout)
+ *      node src/scan/company-history.mjs --summary           (human-readable cards)
+ *      node src/scan/company-history.mjs --company "Acme"    (single-card lookup)
+ *      node src/scan/company-history.mjs --silence-window 21 (override default window)
+ *      node src/scan/company-history.mjs --include-stale     (include >365d-old facts in labels)
+ *      node src/scan/company-history.mjs --self-test
  */
 
 import { readFileSync, existsSync } from 'fs';
@@ -81,13 +81,13 @@ const KNOWN_FLAGS = ['--summary', '--self-test', '--company', '--silence-window'
 const VALUE_FLAGS = ['--company', '--silence-window', '--scan-history', '--followups'];
 
 const USAGE = `Usage:
-  node company-history.mjs                       # full JSON evidence cards to stdout
-  node company-history.mjs --summary              # human-readable cards
-  node company-history.mjs --company "Acme"       # single-card lookup
-  node company-history.mjs --silence-window 21    # override the default silence window (days)
-  node company-history.mjs --include-stale        # include facts older than 365d in label computation
-  node company-history.mjs --self-test            # run the in-memory test suite
-  node company-history.mjs --help                 # print this usage block and exit`;
+  node src/scan/company-history.mjs                       # full JSON evidence cards to stdout
+  node src/scan/company-history.mjs --summary              # human-readable cards
+  node src/scan/company-history.mjs --company "Acme"       # single-card lookup
+  node src/scan/company-history.mjs --silence-window 21    # override the default silence window (days)
+  node src/scan/company-history.mjs --include-stale        # include facts older than 365d in label computation
+  node src/scan/company-history.mjs --self-test            # run the in-memory test suite
+  node src/scan/company-history.mjs --help                 # print this usage block and exit`;
 
 function parseArgs(argv) {
   const args = argv.slice(2);

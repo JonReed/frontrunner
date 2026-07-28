@@ -8,7 +8,7 @@
  * review digest. Prompts the user to approve recommended tracker status updates.
  *
  * Usage:
- *   node reply-watch.mjs [path/to/candidates.json]
+ *   node src/tracker/reply-watch.mjs [path/to/candidates.json]
  */
 
 import fs from 'node:fs';

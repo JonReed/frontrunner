@@ -10,7 +10,7 @@
  * Runs under the shared tracker lock and replaces the file atomically.
  *
  * Usage:
- *   node sync-pdf-flags.mjs [--dry-run] [--json]
+ *   node src/tracker/sync-pdf-flags.mjs [--dry-run] [--json]
  */
 
 import { readFileSync, existsSync } from 'fs';

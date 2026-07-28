@@ -12,7 +12,7 @@
  * the actual _shared.md and golden case JDs.
  *
  * Usage:
- *   node lib/golden-budget-analysis.mjs
+ *   node src/lib/golden-budget-analysis.mjs
  */
 
 import { readFileSync, readdirSync, existsSync } from 'fs';

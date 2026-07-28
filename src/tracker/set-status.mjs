@@ -8,7 +8,7 @@
  * modes (apply Step 9, followup, batch) call this instead of editing the table.
  *
  * Usage:
- *   node set-status.mjs <report#|company> <state> [--note "..."] [--role "..."] [--force] [--dry-run] [--json]
+ *   node src/tracker/set-status.mjs <report#|company> <state> [--note "..."] [--role "..."] [--force] [--dry-run] [--json]
  *
  * Row resolution:
  *   - numeric argument → exact match on the # column; if the tracker has a
@@ -59,7 +59,7 @@ const EXIT_NOT_FOUND = 2;
 const EXIT_AMBIGUOUS = 3;
 const EXIT_LOCK_TIMEOUT = 4;
 
-const USAGE = `Usage: node set-status.mjs <report#|company> <state> [--note "..."] [--role "..."] [--force] [--dry-run] [--json]
+const USAGE = `Usage: node src/tracker/set-status.mjs <report#|company> <state> [--note "..."] [--role "..."] [--force] [--dry-run] [--json]
 
   <report#|company>  Row selector: tracker # (exact) or company name (normalized match)
   <state>            Canonical state from templates/states.yml (aliases accepted)

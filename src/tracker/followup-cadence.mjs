@@ -5,10 +5,10 @@
  * Parses applications.md + follow-ups.md, calculates follow-up cadence
  * for active applications, extracts contacts, and flags overdue entries.
  *
- * Run: node followup-cadence.mjs             (JSON to stdout)
- *      node followup-cadence.mjs --summary   (human-readable dashboard)
- *      node followup-cadence.mjs --overdue-only
- *      node followup-cadence.mjs --applied-days 10
+ * Run: node src/tracker/followup-cadence.mjs             (JSON to stdout)
+ *      node src/tracker/followup-cadence.mjs --summary   (human-readable dashboard)
+ *      node src/tracker/followup-cadence.mjs --overdue-only
+ *      node src/tracker/followup-cadence.mjs --applied-days 10
  */
 
 import { readFileSync, existsSync } from 'fs';

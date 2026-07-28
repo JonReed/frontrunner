@@ -9,8 +9,8 @@
  * (Greenhouse/Lever — no browser), then Playwright for everything else.
  *
  * Usage:
- *   node check-liveness.mjs <url1> [url2] ...
- *   node check-liveness.mjs --file urls.txt
+ *   node src/scan/check-liveness.mjs <url1> [url2] ...
+ *   node src/scan/check-liveness.mjs --file urls.txt
  *
  * Exit code: 0 if all active, 1 if any expired or uncertain
  */
@@ -41,8 +41,8 @@ async function main() {
   const positional = args.filter((a) => a !== '--no-fallback' && a !== throttleArg);
 
   if (positional.length === 0) {
-    console.error('Usage: node check-liveness.mjs [--no-fallback] [--throttle[=ms]] <url1> [url2] ...');
-    console.error('       node check-liveness.mjs [--no-fallback] [--throttle[=ms]] --file urls.txt');
+    console.error('Usage: node src/scan/check-liveness.mjs [--no-fallback] [--throttle[=ms]] <url1> [url2] ...');
+    console.error('       node src/scan/check-liveness.mjs [--no-fallback] [--throttle[=ms]] --file urls.txt');
     process.exit(1);
   }
 

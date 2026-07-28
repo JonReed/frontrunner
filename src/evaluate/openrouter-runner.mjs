@@ -4,13 +4,13 @@
  * No Claude Code CLI required — uses OpenRouter free models with automatic fallback.
  *
  * Usage:
- *   node openrouter-runner.mjs scan              → Scan Greenhouse API companies for new listings
- *   node openrouter-runner.mjs evaluate <url>    → Evaluate a job by URL
- *   node openrouter-runner.mjs evaluate          → Paste job text interactively
- *   node openrouter-runner.mjs pipeline          → Process all pending URLs from pipeline.md
- *   node openrouter-runner.mjs apply <report_no> → Generate draft application form answers
- *   node openrouter-runner.mjs models            → List available free models
- *   node openrouter-runner.mjs help              → Show this help
+ *   node src/evaluate/openrouter-runner.mjs scan              → Scan Greenhouse API companies for new listings
+ *   node src/evaluate/openrouter-runner.mjs evaluate <url>    → Evaluate a job by URL
+ *   node src/evaluate/openrouter-runner.mjs evaluate          → Paste job text interactively
+ *   node src/evaluate/openrouter-runner.mjs pipeline          → Process all pending URLs from pipeline.md
+ *   node src/evaluate/openrouter-runner.mjs apply <report_no> → Generate draft application form answers
+ *   node src/evaluate/openrouter-runner.mjs models            → List available free models
+ *   node src/evaluate/openrouter-runner.mjs help              → Show this help
  *
  * Setup:
  *   1. copy .env.example .env
@@ -27,7 +27,7 @@ import { outputLanguageInstruction, parseOutputLanguage } from '../lib/profile-l
 import {
   formatReportNumber, releaseReportNumbers, reserveReportNumbers,
 } from '../tracker/reserve-report-num.mjs';
-import { TokenAccumulator, formatBreakdown, normalizeOpenAIUsage } from '../../utils/token-tracker.mjs';
+import { TokenAccumulator, formatBreakdown, normalizeOpenAIUsage } from '../lib/token-tracker.mjs';
 
 import { ROOT as __dirname } from '#paths';
 const tracker = new TokenAccumulator();
@@ -595,7 +595,7 @@ async function cmdScan() {
   const added = addToPipeline(found);
   console.log(`\n✅ Scan complete. ${found.length} matches, ${added} new entries added to pipeline.md.`);
   if (added > 0) {
-    console.log('\n→  node openrouter-runner.mjs pipeline\n   to evaluate pending listings.\n');
+    console.log('\n→  node src/evaluate/openrouter-runner.mjs pipeline\n   to evaluate pending listings.\n');
   }
 }
 
@@ -786,7 +786,7 @@ async function cmdApply(ref, ctx) {
 // ---------------------------------------------------------------------------
 // Entry point
 // ---------------------------------------------------------------------------
-// Only run the CLI when invoked directly (`node openrouter-runner.mjs ...`), so the
+// Only run the CLI when invoked directly (`node src/evaluate/openrouter-runner.mjs ...`), so the
 // module can be imported (e.g. by test-all.mjs) without executing a command.
 const invokedDirectly = process.argv[1] &&
   path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
@@ -813,7 +813,7 @@ if (invokedDirectly) switch (command) {
     break;
 
   case 'apply':
-    if (!args[0]) { console.error('Usage: node openrouter-runner.mjs apply <report_num|report_path>'); break; }
+    if (!args[0]) { console.error('Usage: node src/evaluate/openrouter-runner.mjs apply <report_num|report_path>'); break; }
     await cmdApply(args[0], ctx);
     break;
 
@@ -827,12 +827,12 @@ career-ops OpenRouter Runner
 Auto-fetches free models from OpenRouter API and rotates through them with fallback.
 
 COMMANDS:
-  node openrouter-runner.mjs scan              → Scan Greenhouse APIs for new matching listings
-  node openrouter-runner.mjs evaluate <url>    → Evaluate a listing by URL
-  node openrouter-runner.mjs evaluate          → Paste a job description interactively
-  node openrouter-runner.mjs pipeline          → Batch-evaluate all pending entries in pipeline.md
-  node openrouter-runner.mjs apply <report_no> → Generate application form answers from a report
-  node openrouter-runner.mjs models            → List available free models from OpenRouter
+  node src/evaluate/openrouter-runner.mjs scan              → Scan Greenhouse APIs for new matching listings
+  node src/evaluate/openrouter-runner.mjs evaluate <url>    → Evaluate a listing by URL
+  node src/evaluate/openrouter-runner.mjs evaluate          → Paste a job description interactively
+  node src/evaluate/openrouter-runner.mjs pipeline          → Batch-evaluate all pending entries in pipeline.md
+  node src/evaluate/openrouter-runner.mjs apply <report_no> → Generate application form answers from a report
+  node src/evaluate/openrouter-runner.mjs models            → List available free models from OpenRouter
 
 SETUP:
   1. Copy .env.example to .env
@@ -842,7 +842,7 @@ SETUP:
 MODEL SELECTION:
   - Free models are fetched automatically via the OpenRouter API at runtime.
   - They are tried in sequence; if one fails the next is used automatically.
-  - Pin a model:  CAREER_OPS_MODEL=deepseek/deepseek-r1:free node openrouter-runner.mjs eval <url>
+  - Pin a model:  CAREER_OPS_MODEL=deepseek/deepseek-r1:free node src/evaluate/openrouter-runner.mjs eval <url>
 `);
 }
 

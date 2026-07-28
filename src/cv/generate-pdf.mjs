@@ -446,7 +446,7 @@ async function generatePDF() {
   }
 
   if (!inputPath || !outputPath) {
-    console.error('Usage: node generate-pdf.mjs <input.html> <output.pdf> [--format=letter|a4] [--report=NNN] [--allow-reorder] [--max-pages=N] [--strict-pages]');
+    console.error('Usage: node src/cv/generate-pdf.mjs <input.html> <output.pdf> [--format=letter|a4] [--report=NNN] [--allow-reorder] [--max-pages=N] [--strict-pages]');
     console.error('');
     console.error('This script only converts an already-built HTML file to PDF.');
     console.error('The input HTML is produced by the pdf mode: the agent fills cv-template.html');
@@ -521,7 +521,7 @@ async function generatePDF() {
 }
 
 /**
- * Inline url('../../fonts/...') references as base64 data: URLs.
+ * Inline url('.../fonts/...') references as base64 data: URLs.
  *
  * Chromium refuses to load file:// subresources from a setContent() page
  * (the document stays at about:blank), so fonts referenced by path are
@@ -530,22 +530,22 @@ async function generatePDF() {
  *
  * Missing font files keep their original reference and log a warning.
  *
- * @param {string} html - HTML that may reference url('../../fonts/<file>').
+ * @param {string} html - HTML that may reference url('.../fonts/<file>').
  * @returns {Promise<string>} HTML with local font references inlined.
  */
 export async function inlineLocalFonts(html) {
   const FONT_REF = /url\(\s*(['"]?)\.\/fonts\/([^'")\s]+)\1\s*\)/g;
   const MIME = { woff2: 'font/woff2', woff: 'font/woff', otf: 'font/otf', ttf: 'font/ttf' };
-  const fontsDir = resolve(__dirname, 'fonts');
+  const fontsDir = resolve(ROOT, 'templates', 'fonts');
   const names = [...new Set([...html.matchAll(FONT_REF)].map((m) => m[2]))];
   const dataUrls = new Map();
   for (const name of names) {
     // Containment check: ".." segments and absolute names (./fonts//etc/passwd)
-    // would otherwise resolve outside fonts/.
+    // would otherwise resolve outside templates/fonts/.
     const fontPath = resolve(fontsDir, name);
     const rel = relative(fontsDir, fontPath);
     if (rel.startsWith('..') || isAbsolute(rel)) {
-      console.warn(`⚠️  Font reference escapes fonts/, keeping original reference: ${name}`);
+      console.warn(`⚠️  Font reference escapes templates/fonts/, keeping original reference: ${name}`);
       continue;
     }
     try {
@@ -554,7 +554,7 @@ export async function inlineLocalFonts(html) {
       dataUrls.set(name, `url('data:${MIME[ext] || 'application/octet-stream'};base64,${buf.toString('base64')}')`);
     } catch (err) {
       if (err?.code !== 'ENOENT') throw err;
-      console.warn(`⚠️  Font file not found, keeping original reference: fonts/${name}`);
+      console.warn(`⚠️  Font file not found, keeping original reference: templates/fonts/${name}`);
     }
   }
   return html.replace(FONT_REF, (match, _quote, name) => dataUrls.get(name) || match);
@@ -568,7 +568,7 @@ export async function inlineLocalFonts(html) {
  * resources (images, fonts) to load — setContent() runs from about:blank
  * and Chromium blocks file:// subresource loads from non-file origins.
  *
- * Local url('../../fonts/...') references are inlined as data: URLs first so
+ * Local url('.../fonts/...') references are inlined as data: URLs first so
  * fonts also survive the ATS normalization pass (which may strip font refs).
  *
  * @param {string} html - Full HTML document to render.

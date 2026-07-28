@@ -14,10 +14,10 @@
  * is worse than showing a short ranked list, so ambiguous input always
  * returns all plausible candidates rather than picking one.
  *
- * Run: node invite-match.mjs < invite.txt          (JSON to stdout)
- *      node invite-match.mjs --file invite.txt
- *      echo "..." | node invite-match.mjs --summary
- *      node invite-match.mjs --self-test
+ * Run: node src/tracker/invite-match.mjs < invite.txt          (JSON to stdout)
+ *      node src/tracker/invite-match.mjs --file invite.txt
+ *      echo "..." | node src/tracker/invite-match.mjs --summary
+ *      node src/tracker/invite-match.mjs --self-test
  *
  * Issue #1495 — github.com/santifer/career-ops
  */

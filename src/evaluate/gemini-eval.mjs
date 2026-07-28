@@ -8,8 +8,8 @@
  * passed as a command-line argument.
  *
  * Usage:
- *   node gemini-eval.mjs "Paste full JD text here"
- *   node gemini-eval.mjs --file ./jds/my-job.txt
+ *   node src/evaluate/gemini-eval.mjs "Paste full JD text here"
+ *   node src/evaluate/gemini-eval.mjs --file ./jds/my-job.txt
  *
  * Requires:
  *   GEMINI_API_KEY in .env (or environment variable)
@@ -33,7 +33,7 @@
 import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { TokenAccumulator, formatBreakdown } from '../../utils/token-tracker.mjs';
+import { TokenAccumulator, formatBreakdown } from '../lib/token-tracker.mjs';
 
 const tracker = new TokenAccumulator();
 tracker.recordZeroToken('scan');
@@ -43,7 +43,7 @@ import { outputLanguageInstruction, parseOutputLanguage } from '../lib/profile-l
 import {
   formatReportNumber, releaseReportNumbers, reserveReportNumbers,
 } from '../tracker/reserve-report-num.mjs';
-import { buildBudgetedPrompt } from '../../lib/context-budget.mjs';
+import { buildBudgetedPrompt } from '../lib/context-budget.mjs';
 
 // ---------------------------------------------------------------------------
 // Bootstrap: load .env before anything else
@@ -89,9 +89,9 @@ if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
   Evaluate a job offer using Google Gemini instead of Claude.
 
   USAGE
-    node gemini-eval.mjs "<JD text>"
-    node gemini-eval.mjs --file ./jds/my-job.txt
-    node gemini-eval.mjs --model gemini-3.6-flash "<JD text>"
+    node src/evaluate/gemini-eval.mjs "<JD text>"
+    node src/evaluate/gemini-eval.mjs --file ./jds/my-job.txt
+    node src/evaluate/gemini-eval.mjs --model gemini-3.6-flash "<JD text>"
 
   OPTIONS
     --file <path>    Read JD from a file instead of inline text
@@ -106,8 +106,8 @@ if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
     3. Run: npm install   (installs @google/generative-ai + dotenv)
 
   EXAMPLES
-    node gemini-eval.mjs "We are looking for a Senior AI Engineer..."
-    node gemini-eval.mjs --file ./jds/openai-swe.txt
+    node src/evaluate/gemini-eval.mjs "We are looking for a Senior AI Engineer..."
+    node src/evaluate/gemini-eval.mjs --file ./jds/openai-swe.txt
 `);
   process.exit(0);
 }

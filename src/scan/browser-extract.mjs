@@ -12,7 +12,7 @@
  * fills — that boundary is exactly what keeps this separate from `apply`.
  *
  * Usage:
- *   node browser-extract.mjs <url> [--mode jd|listing] [--max N] [--max-chars N] [--timeout MS]
+ *   node src/scan/browser-extract.mjs <url> [--mode jd|listing] [--max N] [--max-chars N] [--timeout MS]
  *
  * `--max-chars` overrides the jd-mode text cap (default 12000) — raise it when a
  * long JD would otherwise be truncated at the tail, at the cost of more tokens.

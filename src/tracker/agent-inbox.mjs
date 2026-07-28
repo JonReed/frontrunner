@@ -21,9 +21,9 @@
  * protocol an agent follows is documented in modes/agent-inbox.md.
  *
  * Usage:
- *   node agent-inbox.mjs add "evaluate https://acme.com/jobs/42"
- *   node agent-inbox.mjs list [--all]                 # pending only, or every item
- *   node agent-inbox.mjs resolve 1 [--result "scored 4.3 — report 012"]
+ *   node src/tracker/agent-inbox.mjs add "evaluate https://acme.com/jobs/42"
+ *   node src/tracker/agent-inbox.mjs list [--all]                 # pending only, or every item
+ *   node src/tracker/agent-inbox.mjs resolve 1 [--result "scored 4.3 — report 012"]
  */
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
@@ -93,7 +93,7 @@ function opt(name, def = '') {
 
 function add() {
   const text = oneLine(process.argv.slice(3).join(' '));
-  if (!text) fail('add needs a request, e.g. node agent-inbox.mjs add "evaluate https://..."');
+  if (!text) fail('add needs a request, e.g. node src/tracker/agent-inbox.mjs add "evaluate https://..."');
   ensureFile();
   const body = readFileSync(PATH, 'utf8').replace(/\s+$/, '');
   writeFileSync(PATH, `${body}\n- [ ] ${stamp()} — ${text}\n`);
@@ -137,8 +137,8 @@ else if (cmd === 'resolve') resolve();
 else {
   process.stdout.write(
     'Usage:\n' +
-    '  node agent-inbox.mjs add "evaluate https://acme.com/jobs/42"\n' +
-    '  node agent-inbox.mjs list [--all]\n' +
-    '  node agent-inbox.mjs resolve <n> [--result "..."]\n',
+    '  node src/tracker/agent-inbox.mjs add "evaluate https://acme.com/jobs/42"\n' +
+    '  node src/tracker/agent-inbox.mjs list [--all]\n' +
+    '  node src/tracker/agent-inbox.mjs resolve <n> [--result "..."]\n',
   );
 }

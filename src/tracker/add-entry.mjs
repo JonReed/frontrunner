@@ -10,8 +10,8 @@
  * blocks the agent produced.
  *
  * Usage:
- *   node add-entry.mjs <payload.json> [--dry-run]
- *   node add-entry.mjs --stdin [--dry-run]        (read payload JSON from stdin)
+ *   node src/tracker/add-entry.mjs <payload.json> [--dry-run]
+ *   node src/tracker/add-entry.mjs --stdin [--dry-run]        (read payload JSON from stdin)
  *
  * Payload shape (both keys optional, at least one required):
  *   {
@@ -198,7 +198,7 @@ async function main() {
   const fileArg = args.find(a => !a.startsWith('--'));
 
   if (!useStdin && !fileArg) {
-    console.error('Usage: node add-entry.mjs <payload.json> [--dry-run]  (or --stdin)');
+    console.error('Usage: node src/tracker/add-entry.mjs <payload.json> [--dry-run]  (or --stdin)');
     process.exit(1);
   }
 

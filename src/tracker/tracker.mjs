@@ -22,13 +22,13 @@
  * Zero new dependencies — uses node:sqlite (built into Node >= 22.5).
  *
  * Usage:
- *   node tracker.mjs sync [--check]             # (re)build applications.db from applications.md
+ *   node src/tracker/tracker.mjs sync [--check]             # (re)build applications.db from applications.md
  *                                               # --check: diagnose only, no write; exit 1 if issues found
- *   node tracker.mjs query [--status Applied] [--company acme] [--role designer]
+ *   node src/tracker/tracker.mjs query [--status Applied] [--company acme] [--role designer]
  *                          [--since 2026-01-01] [--id N] [--limit 20] [--json]
- *   node tracker.mjs history --id N             # status transition log observed across syncs
- *   node tracker.mjs export [--out FILE]        # inverse: applications.db → canonical markdown (stdout by default)
- *   node tracker.mjs delete --num N [--dry-run] # remove one application row from applications.md + reindex
+ *   node src/tracker/tracker.mjs history --id N             # status transition log observed across syncs
+ *   node src/tracker/tracker.mjs export [--out FILE]        # inverse: applications.db → canonical markdown (stdout by default)
+ *   node src/tracker/tracker.mjs delete --num N [--dry-run] # remove one application row from applications.md + reindex
  *
  * query/history auto-resync when applications.md changed since the last sync,
  * so the index can never serve stale reads.
@@ -501,7 +501,7 @@ async function exportMd(args) {
 async function deleteApp(args) {
   const num = flagValue(args, '--num');
   if (!num) {
-    console.error('Usage: node tracker.mjs delete --num <N> [--dry-run]   (remove one application row by its number)');
+    console.error('Usage: node src/tracker/tracker.mjs delete --num <N> [--dry-run]   (remove one application row by its number)');
     process.exit(1);
   }
   if (!existsSync(MD_PATH)) {
@@ -554,7 +554,7 @@ async function main() {
   const [command, ...args] = process.argv.slice(2);
   const fn = COMMANDS[command];
   if (!fn) {
-    console.log('Usage: node tracker.mjs <sync|query|history|export|delete> [flags]');
+    console.log('Usage: node src/tracker/tracker.mjs <sync|query|history|export|delete> [flags]');
     console.log('See the header comment of this file for examples, or docs/SCRIPTS.md.');
     process.exit(command ? 1 : 0);
   }

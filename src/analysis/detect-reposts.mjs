@@ -13,10 +13,10 @@
  * status (`skipped_expired`, `skipped_invalid_url`, `skipped_blocked_host`)
  * describe dead postings, not reposts, and are skipped.
  *
- * Run: node detect-reposts.mjs             (JSON to stdout)
- *      node detect-reposts.mjs --summary   (human-readable table)
- *      node detect-reposts.mjs --window 60 (override 90-day window)
- *      node detect-reposts.mjs --self-test
+ * Run: node src/analysis/detect-reposts.mjs             (JSON to stdout)
+ *      node src/analysis/detect-reposts.mjs --summary   (human-readable table)
+ *      node src/analysis/detect-reposts.mjs --window 60 (override 90-day window)
+ *      node src/analysis/detect-reposts.mjs --self-test
  *
  * Issue #1205 — github.com/santifer/career-ops
  */

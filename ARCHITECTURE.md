@@ -52,7 +52,7 @@ The heart of the tool. `oferta.md` defines the A–G evaluation blocks; `_shared
 **Standalone evaluators** let you run the same scoring without an interactive CLI, against cheaper/local models: `src/evaluate/gemini-eval.mjs` (Google free tier), `src/evaluate/ollama-eval.mjs` (fully local), and `src/evaluate/openai-eval.mjs` (any OpenAI-compatible endpoint).
 
 ### Generation — PDFs, CVs, cover letters
-`src/cv/generate-pdf.mjs` (Playwright HTML→PDF), `src/cv/generate-latex.mjs` / `src/cv/build-cv-latex.mjs`, `src/cv/generate-cover-letter.mjs`. ATS-safe templates live in `templates/` and `fonts/`.
+`src/cv/generate-pdf.mjs` (Playwright HTML→PDF), `src/cv/generate-latex.mjs` / `src/cv/build-cv-latex.mjs`, `src/cv/generate-cover-letter.mjs`. ATS-safe templates live in `templates/` and `templates/fonts/`.
 
 ### Tracking — `data/` + `reports/` + tracker scripts
 Every evaluated offer is registered. `data/applications.md` is the canonical tracker table; `reports/{NNN}-{company}-{date}.md` holds full evaluations. `src/tracker/tracker.mjs`, `src/tracker/merge-tracker.mjs`, `src/tracker/dedup-tracker.mjs`, `src/tracker/normalize-statuses.mjs`, and `src/tracker/reconcile-pipeline.mjs` keep it consistent (atomic writes + a SQLite index). Report numbers are claimed atomically via `src/tracker/reserve-report-num.mjs`.

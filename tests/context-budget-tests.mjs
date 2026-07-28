@@ -1,5 +1,5 @@
 /**
- * context-budget.test.mjs — Unit tests for lib/context-budget.mjs
+ * context-budget.test.mjs — Unit tests for src/lib/context-budget.mjs
  *
  * Tests:
  *   1. estimateTokens — basic estimation, edge cases
@@ -8,10 +8,10 @@
  *      noCompress flag
  *   4. Edge cases — empty input, missing optional fields
  *
- * Run: node lib/context-budget.test.mjs
+ * Run: node tests/context-budget.test.mjs
  */
 
-import { estimateTokens, compressSharedContext, buildBudgetedPrompt, SECTION_PRIORITY } from './context-budget.mjs';
+import { estimateTokens, compressSharedContext, buildBudgetedPrompt, SECTION_PRIORITY } from '../src/lib/context-budget.mjs';
 import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -302,7 +302,7 @@ if (!existsSync(sharedPath)) {
     console.log('  These sections are classified as never-compress, but the');
     console.log('  corresponding headings were not found. A _shared.md heading');
     console.log('  may have been renamed — update SECTION_PRIORITY in');
-    console.log('  lib/context-budget.mjs to match, or restore the heading.');
+    console.log('  src/lib/context-budget.mjs to match, or restore the heading.');
     console.log(`\n  Headings found in _shared.md: ${[...fileHeadings].sort().join(', ')}`);
   }
 
@@ -325,7 +325,7 @@ if (!existsSync(sharedPath)) {
     for (const h of unclassified) {
       console.log(`      - "${h}" → falls through to DEFAULT_PRIORITY (P2, compressible)`);
     }
-    console.log('  Add each heading to SECTION_PRIORITY in lib/context-budget.mjs with');
+    console.log('  Add each heading to SECTION_PRIORITY in src/lib/context-budget.mjs with');
     console.log('  the correct priority (0 = never compress, 1 = compress when tight,');
     console.log('  2 = prefer to compress).');
   }

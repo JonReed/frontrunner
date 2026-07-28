@@ -169,7 +169,7 @@ const USER_LAYER_PREREQS = [
     path: 'cv.md',
     fix: [
       'Create cv.md in the project root with your CV in markdown',
-      'See examples/ for reference CVs',
+      'See docs/examples/ for reference CVs',
     ],
   },
   {
@@ -211,8 +211,8 @@ function checkFonts() {
   if (!existsSync(fontsDir)) {
     return {
       pass: false,
-      label: 'fonts/ directory not found',
-      fix: 'The fonts/ directory is required for PDF generation',
+      label: 'templates/fonts/ directory not found',
+      fix: 'The templates/fonts/ directory is required for PDF generation',
     };
   }
   try {
@@ -220,15 +220,15 @@ function checkFonts() {
     if (files.length === 0) {
       return {
         pass: false,
-        label: 'fonts/ directory is empty',
-        fix: 'The fonts/ directory must contain font files for PDF generation',
+        label: 'templates/fonts/ directory is empty',
+        fix: 'The templates/fonts/ directory must contain font files for PDF generation',
       };
     }
   } catch {
     return {
       pass: false,
-      label: 'fonts/ directory not readable',
-      fix: 'Check permissions on the fonts/ directory',
+      label: 'templates/fonts/ directory not readable',
+      fix: 'Check permissions on the templates/fonts/ directory',
     };
   }
   return { pass: true, label: 'Fonts directory ready' };

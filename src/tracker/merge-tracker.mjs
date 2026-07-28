@@ -456,7 +456,7 @@ if (MERGE_HOLD_MS > 0) {
 }
 
 // One-time migration: rewrite existing report links so they resolve relative
-// to the tracker file's directory (see #760). Run with: node merge-tracker.mjs --migrate
+// to the tracker file's directory (see #760). Run with: node src/tracker/merge-tracker.mjs --migrate
 if (MIGRATE) {
   const migrated = appContent
     .split('\n')
@@ -477,7 +477,7 @@ if (MIGRATE) {
 // Company. Header-aware readers auto-detect both layouts, so this is optional —
 // it exists for users who want the column added to an existing tracker.
 // Idempotent: a tracker that already has a Via column is left untouched.
-// Run with: node merge-tracker.mjs --migrate-via [--dry-run]
+// Run with: node src/tracker/merge-tracker.mjs --migrate-via [--dry-run]
 if (MIGRATE_VIA) {
   const lines = appContent.split('\n');
   const colmap = detectColumns(lines) || LEGACY_COLMAP;
@@ -600,7 +600,7 @@ for (const file of tsvFiles) {
   // make the cross-channel duplicate guard see a channel mismatch and add a
   // second ? row instead of updating the same-agency re-blast.
   if (addition.via && COLMAP.via == null) {
-    console.warn(`⚠️  ${file}: carries via=${addition.via} but the tracker has no Via column — value dropped. Add it with: node merge-tracker.mjs --migrate-via`);
+    console.warn(`⚠️  ${file}: carries via=${addition.via} but the tracker has no Via column — value dropped. Add it with: node src/tracker/merge-tracker.mjs --migrate-via`);
     addition.via = '';
   }
 

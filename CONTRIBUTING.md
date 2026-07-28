@@ -47,7 +47,7 @@ The review process you'll experience here is documented end-to-end in [Agentic m
 - Add companies to `templates/portals.example.yml`
 - Translate modes to other languages
 - Improve documentation
-- Add example CVs for different roles (in `examples/`)
+- Add example CVs for different roles (in `docs/examples/`)
 - Report bugs via [Issues](https://github.com/santifer/career-ops/issues)
 
 **Bigger contributions:**
@@ -89,7 +89,7 @@ Rule of thumb before you build: **provider modules, languages, CLI support, mode
 - **PRs that add centralized or hosted infrastructure to the core** (proxies, aggregation services, shared Workers). That's the separate opt-in service, not the open-core — bring it to the [direction discussion](https://github.com/santifer/career-ops/discussions/904) first.
 - **Integrations that send your data to a third-party service** — providers or sync features that require a third-party account or push your CV, pipeline, or notes out to an external service. career-ops is local-first and zero-keys: your job-search data stays on your machine. Reading *public* job-listing APIs locally is welcome (that's how the built-in providers work); routing your personal data through someone else's service is not.
 - **PRs that add third-party hosted entry-points or service badges to the README** — links or embeds that route users' resumes or job data through a service the project doesn't operate. The README stays to assets the project controls, and the official online experience is something we keep first-party (see [The Vision](https://github.com/santifer/career-ops/discussions/156)). Projects built on career-ops are welcome — share them in the [Discord](https://discord.gg/8pRpHETxa4) or Discussions, just not on the front page.
-- **PRs containing personal data** (real CVs, emails, phone numbers). Use `examples/` with fictional data instead.
+- **PRs containing personal data** (real CVs, emails, phone numbers). Use `docs/examples/` with fictional data instead.
 
 ## Development
 

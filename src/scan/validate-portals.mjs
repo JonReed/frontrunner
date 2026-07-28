@@ -4,9 +4,9 @@
  * validate-portals.mjs — schema/shape validator for portals.yml.
  *
  * Usage:
- *   node validate-portals.mjs
- *   node validate-portals.mjs --file templates/portals.example.yml
- *   node validate-portals.mjs --self-test
+ *   node src/scan/validate-portals.mjs
+ *   node src/scan/validate-portals.mjs --file templates/portals.example.yml
+ *   node src/scan/validate-portals.mjs --self-test
  */
 
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'fs';
@@ -284,7 +284,7 @@ async function main() {
   const fileFlag = args.indexOf('--file');
   const filePath = resolve(fileFlag === -1 ? DEFAULT_PORTALS_PATH : args[fileFlag + 1] || '');
   if (!filePath) {
-    console.error('Usage: node validate-portals.mjs [--file portals.yml] [--self-test]');
+    console.error('Usage: node src/scan/validate-portals.mjs [--file portals.yml] [--self-test]');
     process.exit(1);
   }
 

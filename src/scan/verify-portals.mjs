@@ -15,10 +15,10 @@
  * unresolved (404/wrong) slug so a quiet board isn't mistaken for a typo.
  *
  * Usage:
- *   node verify-portals.mjs                 # sweep tracked_companies in portals.yml
- *   node verify-portals.mjs --add cursor    # probe slug variants for one name
- *   node verify-portals.mjs --strict        # exit non-zero if any slug is unresolved
- *   node verify-portals.mjs --file <path>   # use a specific portals file
+ *   node src/scan/verify-portals.mjs                 # sweep tracked_companies in portals.yml
+ *   node src/scan/verify-portals.mjs --add cursor    # probe slug variants for one name
+ *   node src/scan/verify-portals.mjs --strict        # exit non-zero if any slug is unresolved
+ *   node src/scan/verify-portals.mjs --file <path>   # use a specific portals file
  *
  * Network: only the sweep / --add paths hit the network. Importing the module
  * (for tests) runs nothing — main() is guarded — and all network access goes
@@ -561,7 +561,7 @@ async function main() {
   }
 }
 
-// Only run main() when invoked directly (`node verify-portals.mjs`), not when
+// Only run main() when invoked directly (`node src/scan/verify-portals.mjs`), not when
 // imported by tests. `|| ''` guards `node -e` invocations with no script arg.
 if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
   main().catch((err) => {

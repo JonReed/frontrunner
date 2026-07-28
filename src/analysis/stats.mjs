@@ -7,8 +7,8 @@
  * coverage from portals.yml, and follow-up compliance. Reads durable data
  * files only — no LLM cost anywhere.
  *
- * Run: node stats.mjs             (JSON to stdout)
- *      node stats.mjs --summary   (human-readable table)
+ * Run: node src/analysis/stats.mjs             (JSON to stdout)
+ *      node src/analysis/stats.mjs --summary   (human-readable table)
  *
  * Sections degrade to null when their source file is missing, and
  * `metadata.sources` says which files were found — a fresh clone with zero

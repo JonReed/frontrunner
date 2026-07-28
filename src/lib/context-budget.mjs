@@ -149,7 +149,7 @@ function getPriority(sectionName) {
     .trim();
   if (!(key in SECTION_PRIORITY) && !_warnedSections.has(key)) {
     _warnedSections.add(key);
-    console.warn(`⚠️  Unrecognized _shared.md section "${sectionName}" → defaulting to P${DEFAULT_PRIORITY} (compressible). Update SECTION_PRIORITY in lib/context-budget.mjs if this section is evaluation-critical.`);
+    console.warn(`⚠️  Unrecognized _shared.md section "${sectionName}" → defaulting to P${DEFAULT_PRIORITY} (compressible). Update SECTION_PRIORITY in src/lib/context-budget.mjs if this section is evaluation-critical.`);
   }
   return SECTION_PRIORITY[key] ?? DEFAULT_PRIORITY;
 }

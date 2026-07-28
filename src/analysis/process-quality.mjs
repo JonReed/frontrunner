@@ -16,11 +16,11 @@
  * This is a company/process-level signal only — never tied to a named
  * individual recruiter. See issue #1466.
  *
- * Run: node process-quality.mjs             (JSON to stdout)
- *      node process-quality.mjs --summary   (human-readable table)
- *      node process-quality.mjs --min-threshold 2  (min total interviews per company to report)
- *      node process-quality.mjs --file path/to/active-interviews.md  (override the data path; test isolation)
- *      node process-quality.mjs --self-test
+ * Run: node src/analysis/process-quality.mjs             (JSON to stdout)
+ *      node src/analysis/process-quality.mjs --summary   (human-readable table)
+ *      node src/analysis/process-quality.mjs --min-threshold 2  (min total interviews per company to report)
+ *      node src/analysis/process-quality.mjs --file path/to/active-interviews.md  (override the data path; test isolation)
+ *      node src/analysis/process-quality.mjs --self-test
  *
  * Issue #1466 — github.com/santifer/career-ops
  */

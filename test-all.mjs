@@ -3134,7 +3134,7 @@ try {
 // parseA16zPayload(), toPortalEntry(), and the SEED_SOURCES registry.
 // Inline fixtures — no HTTP calls, CI-safe.
 
-console.log('\n9b. VC portfolio seed fetcher (seeds/vc-portfolios.mjs)');
+console.log('\n9b. VC portfolio seed fetcher (config/seeds/vc-portfolios.mjs)');
 
 try {
   const {
@@ -3144,7 +3144,7 @@ try {
     toPortalEntry,
     SEED_SOURCES,
     SLUG_RE,
-  } = await import(pathToFileURL(join(ROOT, 'seeds/vc-portfolios.mjs')).href);
+  } = await import(pathToFileURL(join(ROOT, 'config/seeds/vc-portfolios.mjs')).href);
 
   // ── 1. YC payload parsing ──────────────────────────────────────────
   const ycFixture = {
@@ -7888,7 +7888,7 @@ try {
 
   // Chromium blocks file:// subresources from setContent() pages (the page
   // stays at about:blank), so ./fonts refs must become data: URLs (#951).
-  const fontFile = readdirSync(join(ROOT, 'fonts')).find(f => f.endsWith('.woff2'));
+  const fontFile = readdirSync(join(ROOT, 'templates', 'fonts')).find(f => f.endsWith('.woff2'));
   const inlined = await inlineLocalFonts(
     `<style>@font-face { src: url('./fonts/${fontFile}') format('woff2'); }</style>`
   );
@@ -7906,19 +7906,19 @@ try {
     fail('missing font file mangled the url() reference');
   }
 
-  // Traversal outside fonts/ must never be inlined — neither via ".."
+  // Traversal outside templates/fonts/ must never be inlined — neither via ".."
   // segments nor via absolute names (resolve() returns those verbatim).
   const traversal = await inlineLocalFonts(`<style>src: url('./fonts/../cv.md');</style>`);
   if (traversal.includes(`url('./fonts/../cv.md')`)) {
-    pass('path traversal outside fonts/ is not inlined');
+    pass('path traversal outside templates/fonts/ is not inlined');
   } else {
-    fail('path traversal escaped the fonts/ directory');
+    fail('path traversal escaped the templates/fonts/ directory');
   }
   const absolute = await inlineLocalFonts(`<style>src: url('./fonts//etc/passwd');</style>`);
   if (absolute.includes(`url('./fonts//etc/passwd')`)) {
     pass('absolute-path escape (./fonts//etc/passwd) is not inlined');
   } else {
-    fail('absolute-path reference escaped the fonts/ directory');
+    fail('absolute-path reference escaped the templates/fonts/ directory');
   }
 } catch (e) {
   fail(`font inlining test crashed: ${e.message}`);
@@ -7999,11 +7999,11 @@ try {
 console.log('\n20b. LaTeX-tex in-place tailoring (extract / patch / compile-only)');
 
 try {
-  const { detectFamily, buildManifest, applyPatches } = await import(pathToFileURL(join(ROOT, 'lib/latex-content.mjs')).href);
+  const { detectFamily, buildManifest, applyPatches } = await import(pathToFileURL(join(ROOT, 'src/cv/latex-content.mjs')).href);
   const { validateLatexContent } = await import(pathToFileURL(join(ROOT, 'src/cv/generate-latex.mjs')).href);
 
-  const resumeFixture = readFileSync(join(ROOT, 'examples/latex-tex/resume-subheading.tex'), 'utf-8');
-  const tabularFixture = readFileSync(join(ROOT, 'examples/latex-tex/tabularx-itemize.tex'), 'utf-8');
+  const resumeFixture = readFileSync(join(ROOT, 'docs/examples/latex-tex/resume-subheading.tex'), 'utf-8');
+  const tabularFixture = readFileSync(join(ROOT, 'docs/examples/latex-tex/tabularx-itemize.tex'), 'utf-8');
 
   if (detectFamily(resumeFixture) === 'resumeSubheading') {
     pass('resume-subheading fixture detected as resumeSubheading family');
@@ -8052,7 +8052,7 @@ try {
   // resumeItemWithoutTitle variant: `\resumeItemWithoutTitle{}{...}` bullets,
   // `\resumeSubItem{Cat}{items}` skills, and preamble macro defs that must NOT
   // leak into slots (the defs contain \resumeItem{#1}{#2} / \textbf{#1}{: #2}).
-  const withoutTitleFixture = readFileSync(join(ROOT, 'examples/latex-tex/resume-subheading-withouttitle.tex'), 'utf-8');
+  const withoutTitleFixture = readFileSync(join(ROOT, 'docs/examples/latex-tex/resume-subheading-withouttitle.tex'), 'utf-8');
 
   if (detectFamily(withoutTitleFixture) === 'resumeSubheading') {
     pass('resumeItemWithoutTitle fixture detected as resumeSubheading family');
@@ -8120,7 +8120,7 @@ try {
 
   const extractDir = mkdtempSync(join(tmpdir(), 'latex-tex-'));
   const extractOut = join(extractDir, 'manifest.json');
-  execFileSync(NODE, ['src/cv/extract-latex-content.mjs', join(ROOT, 'examples/latex-tex/resume-subheading.tex'), '--out', extractOut], { cwd: ROOT, encoding: 'utf-8' });
+  execFileSync(NODE, ['src/cv/extract-latex-content.mjs', join(ROOT, 'docs/examples/latex-tex/resume-subheading.tex'), '--out', extractOut], { cwd: ROOT, encoding: 'utf-8' });
   const extracted = JSON.parse(readFileSync(extractOut, 'utf-8'));
   const patchPayload = {
     slots: extracted.slots,
@@ -8129,7 +8129,7 @@ try {
   const patchJson = join(extractDir, 'patches.json');
   const patchedTex = join(extractDir, 'out.tex');
   writeFileSync(patchJson, JSON.stringify(patchPayload));
-  execFileSync(NODE, ['src/cv/patch-latex-content.mjs', join(ROOT, 'examples/latex-tex/resume-subheading.tex'), patchJson, patchedTex], { cwd: ROOT, encoding: 'utf-8' });
+  execFileSync(NODE, ['src/cv/patch-latex-content.mjs', join(ROOT, 'docs/examples/latex-tex/resume-subheading.tex'), patchJson, patchedTex], { cwd: ROOT, encoding: 'utf-8' });
   const patchedContent = readFileSync(patchedTex, 'utf-8');
   if (patchedContent.includes('CLI patch path works.')) {
     pass('src\/cv\/extract-latex-content.mjs + src\/cv\/patch-latex-content.mjs CLI round-trip');

@@ -17,17 +17,17 @@
  * useful for fresh postings, and stale results would flood the pipeline.
  *
  * Usage:
- *   node scan-ats-full.mjs                      # scan all ATS directories, last 3 days
- *   node scan-ats-full.mjs --since 7            # postings from the last 7 days
- *   node scan-ats-full.mjs --ats greenhouse,workday  # subset of sources
- *   node scan-ats-full.mjs --limit 200          # max companies per ATS (default: all)
- *   node scan-ats-full.mjs --dry-run            # preview without writing files
- *   node scan-ats-full.mjs --liveness           # Playwright-verify matches before writing
- *   node scan-ats-full.mjs --include-blacklisted # audit: let data/blacklist.md matches through, annotated
- *   node scan-ats-full.mjs --verbose            # log per-board fetch failures
- *   node scan-ats-full.mjs --md-out <dir>       # also write a dated markdown digest to <dir>
- *   node scan-ats-full.mjs --resume             # continue an interrupted sweep from its checkpoint
- *   node scan-ats-full.mjs --help               # print this usage block and exit
+ *   node src/scan/scan-ats-full.mjs                      # scan all ATS directories, last 3 days
+ *   node src/scan/scan-ats-full.mjs --since 7            # postings from the last 7 days
+ *   node src/scan/scan-ats-full.mjs --ats greenhouse,workday  # subset of sources
+ *   node src/scan/scan-ats-full.mjs --limit 200          # max companies per ATS (default: all)
+ *   node src/scan/scan-ats-full.mjs --dry-run            # preview without writing files
+ *   node src/scan/scan-ats-full.mjs --liveness           # Playwright-verify matches before writing
+ *   node src/scan/scan-ats-full.mjs --include-blacklisted # audit: let data/blacklist.md matches through, annotated
+ *   node src/scan/scan-ats-full.mjs --verbose            # log per-board fetch failures
+ *   node src/scan/scan-ats-full.mjs --md-out <dir>       # also write a dated markdown digest to <dir>
+ *   node src/scan/scan-ats-full.mjs --resume             # continue an interrupted sweep from its checkpoint
+ *   node src/scan/scan-ats-full.mjs --help               # print this usage block and exit
  */
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync, renameSync, unlinkSync } from 'fs';
@@ -42,7 +42,7 @@ import lever from '../../providers/lever.mjs';
 import ashby from '../../providers/ashby.mjs';
 import workday from '../../providers/workday.mjs';
 import { buildTitleFilter, buildLocationFilter, buildContentFilter, matchedTitleKeywords, loadSeenUrls, normalizeUrlForDedup, appendToPipeline, appendToScanHistory, loadBlacklist } from './scan.mjs';
-import { SEED_SOURCES, toPortalEntry } from '../../seeds/vc-portfolios.mjs';
+import { SEED_SOURCES, toPortalEntry } from '../../config/seeds/vc-portfolios.mjs';
 import { normalizeCompany } from '../tracker/tracker-utils.mjs';
 
 // ── Config ──────────────────────────────────────────────────────────
@@ -197,17 +197,17 @@ const KNOWN_FLAGS = [
 const VALUE_FLAGS = ['--since', '--limit', '--ats', '--seeds', '--md-out'];
 
 const USAGE = `Usage:
-  node scan-ats-full.mjs                      # scan all ATS directories, last 3 days
-  node scan-ats-full.mjs --since 7            # postings from the last 7 days
-  node scan-ats-full.mjs --ats greenhouse,workday  # subset of sources
-  node scan-ats-full.mjs --limit 200          # max companies per ATS (default: all)
-  node scan-ats-full.mjs --dry-run            # preview without writing files
-  node scan-ats-full.mjs --liveness           # Playwright-verify matches before writing
-  node scan-ats-full.mjs --include-blacklisted # audit: let data/blacklist.md matches through, annotated
-  node scan-ats-full.mjs --verbose            # log per-board fetch failures
-  node scan-ats-full.mjs --md-out <dir>       # also write a dated markdown digest to <dir>
-  node scan-ats-full.mjs --resume             # continue an interrupted sweep from its checkpoint
-  node scan-ats-full.mjs --help               # print this usage block and exit`;
+  node src/scan/scan-ats-full.mjs                      # scan all ATS directories, last 3 days
+  node src/scan/scan-ats-full.mjs --since 7            # postings from the last 7 days
+  node src/scan/scan-ats-full.mjs --ats greenhouse,workday  # subset of sources
+  node src/scan/scan-ats-full.mjs --limit 200          # max companies per ATS (default: all)
+  node src/scan/scan-ats-full.mjs --dry-run            # preview without writing files
+  node src/scan/scan-ats-full.mjs --liveness           # Playwright-verify matches before writing
+  node src/scan/scan-ats-full.mjs --include-blacklisted # audit: let data/blacklist.md matches through, annotated
+  node src/scan/scan-ats-full.mjs --verbose            # log per-board fetch failures
+  node src/scan/scan-ats-full.mjs --md-out <dir>       # also write a dated markdown digest to <dir>
+  node src/scan/scan-ats-full.mjs --resume             # continue an interrupted sweep from its checkpoint
+  node src/scan/scan-ats-full.mjs --help               # print this usage block and exit`;
 
 function parseArgs(argv) {
   const args = argv.slice(2);

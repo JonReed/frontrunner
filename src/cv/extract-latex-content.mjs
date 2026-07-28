@@ -8,15 +8,15 @@
  *   - tabularx-itemize (\\item bodies inside itemize, no resume macros)
  *
  * Usage:
- *   node extract-latex-content.mjs <source.tex>
- *   node extract-latex-content.mjs <source.tex> --out manifest.json
+ *   node src/cv/extract-latex-content.mjs <source.tex>
+ *   node src/cv/extract-latex-content.mjs <source.tex> --out manifest.json
  */
 
 import { readFile, writeFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import { resolve, basename } from 'path';
 import { pathToFileURL } from 'url';
-import { buildManifest } from '../../lib/latex-content.mjs';
+import { buildManifest } from './latex-content.mjs';
 
 async function main() {
   const args = process.argv.slice(2).filter(a => a !== '--help');
@@ -29,7 +29,7 @@ async function main() {
 
   const sourcePath = args[0];
   if (!sourcePath) {
-    console.error('Usage: node extract-latex-content.mjs <source.tex> [--out manifest.json]');
+    console.error('Usage: node src/cv/extract-latex-content.mjs <source.tex> [--out manifest.json]');
     process.exit(1);
   }
 

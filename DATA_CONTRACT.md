@@ -93,7 +93,7 @@ These files contain system logic, scripts, templates, and instructions that impr
 | `batch/batch-runner.sh` | Batch orchestrator |
 | `dashboard/*` | Go TUI dashboard |
 | `templates/*` | Base templates |
-| `fonts/*` | Self-hosted fonts |
+| `templates/fonts/*` | Self-hosted fonts |
 | `.claude/skills/*` | Skill definitions (Claude Code) |
 | `.cursor/skills/*` | Skill definitions (Cursor) |
 | `.opencode/skills/*` | Skill definitions (OpenCode) |

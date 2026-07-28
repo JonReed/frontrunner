@@ -437,7 +437,7 @@ ATS rules:
 Design rules:
 
 - Space Grotesk for headings, DM Sans for body.
-- Self-hosted fonts from `fonts/`.
+- Self-hosted fonts from `templates/fonts/`.
 - White background, 0.6in margins.
 - Keep the output readable and ATS-safe.
 

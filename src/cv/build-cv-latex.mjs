@@ -5,7 +5,7 @@ import { existsSync } from 'fs';
 import { resolve, dirname, basename, join } from 'path';
 import { fileURLToPath } from 'url';
 import { tmpdir } from 'os';
-import { escapeLatex, sanitizeUrl } from '../../lib/latex-escape.mjs';
+import { escapeLatex, sanitizeUrl } from './latex-escape.mjs';
 import { resolveTemplate } from './cv-templates.mjs';
 import { stripEmptySections } from './cv-sections-core.mjs';
 
@@ -65,8 +65,8 @@ async function main() {
 
   if (args.length === 0 || args.includes('--help')) {
     console.error('Usage:');
-    console.error('  node build-cv-latex.mjs <input.json> <output.tex>');
-    console.error('  node build-cv-latex.mjs --test');
+    console.error('  node src/cv/build-cv-latex.mjs <input.json> <output.tex>');
+    console.error('  node src/cv/build-cv-latex.mjs --test');
     process.exit(1);
   }
 
@@ -78,7 +78,7 @@ async function main() {
   const [inputPath, outputPath] = args;
 
   if (!inputPath || !outputPath) {
-    console.error('Usage: node build-cv-latex.mjs <input.json> <output.tex>');
+    console.error('Usage: node src/cv/build-cv-latex.mjs <input.json> <output.tex>');
     process.exit(1);
   }
 

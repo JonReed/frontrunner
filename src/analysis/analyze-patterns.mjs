@@ -6,11 +6,11 @@
  * (archetype, seniority, remote, gaps, scores), classifies outcomes,
  * and outputs structured JSON with actionable patterns.
  *
- * Run: node analyze-patterns.mjs          (JSON to stdout)
- *      node analyze-patterns.mjs --summary (human-readable table)
- *      node analyze-patterns.mjs --min-threshold 3
- *      node analyze-patterns.mjs --min-vendor-n 8   (per-vendor sample floor)
- *      node analyze-patterns.mjs --self-test
+ * Run: node src/analysis/analyze-patterns.mjs          (JSON to stdout)
+ *      node src/analysis/analyze-patterns.mjs --summary (human-readable table)
+ *      node src/analysis/analyze-patterns.mjs --min-threshold 3
+ *      node src/analysis/analyze-patterns.mjs --min-vendor-n 8   (per-vendor sample floor)
+ *      node src/analysis/analyze-patterns.mjs --self-test
  */
 
 import { readFileSync, existsSync } from 'fs';

@@ -23,9 +23,9 @@
  * reply-watch.mjs itself and never touches data/applications.md.
  *
  * Usage:
- *   node paste-reply.mjs                  # interactive: prompts for subject, from, body
- *   node paste-reply.mjs --file email.txt # read subject/from/body from a file
- *   node paste-reply.mjs --help
+ *   node src/tracker/paste-reply.mjs                  # interactive: prompts for subject, from, body
+ *   node src/tracker/paste-reply.mjs --file email.txt # read subject/from/body from a file
+ *   node src/tracker/paste-reply.mjs --help
  *
  * --file format (header lines optional, blank line separates headers from body):
  *   Subject: <subject line>
@@ -179,9 +179,9 @@ function printHelp() {
   console.log(`paste-reply.mjs — manual/no-Gmail input into the reply-watch.mjs pipeline (#1802)
 
 Usage:
-  node paste-reply.mjs                  interactive: prompts for subject, from, body
-  node paste-reply.mjs --file <path>    read subject/from/body from a file
-  node paste-reply.mjs --help
+  node src/tracker/paste-reply.mjs                  interactive: prompts for subject, from, body
+  node src/tracker/paste-reply.mjs --file <path>    read subject/from/body from a file
+  node src/tracker/paste-reply.mjs --help
 
 --file format:
   Subject: <subject line>
@@ -244,7 +244,7 @@ async function main() {
   console.log('Next: run `node reply-watch.mjs` to classify and review this reply.');
 }
 
-// Only run when executed directly (`node paste-reply.mjs`), not when imported
+// Only run when executed directly (`node src/tracker/paste-reply.mjs`), not when imported
 // for unit testing (e.g. `import(pathToFileURL(SCRIPT).href)` in tests).
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((err) => {

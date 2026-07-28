@@ -8,10 +8,10 @@
  * formatted to ATS paste length (250–500 words).
  *
  * Usage:
- *   node match-star.mjs "Tell me about a time you led a project under pressure"
- *   node match-star.mjs "Describe a conflict you resolved" --jd jds/acme.md
- *   node match-star.mjs "Give an example of handling ambiguity" --top 2
- *   node match-star.mjs --list    # list all stories with their tags
+ *   node src/evaluate/match-star.mjs "Tell me about a time you led a project under pressure"
+ *   node src/evaluate/match-star.mjs "Describe a conflict you resolved" --jd jds/acme.md
+ *   node src/evaluate/match-star.mjs "Give an example of handling ambiguity" --top 2
+ *   node src/evaluate/match-star.mjs --list    # list all stories with their tags
  */
 
 import { readFileSync, existsSync } from 'fs';
@@ -218,8 +218,8 @@ if (LIST_MODE) {
 }
 
 if (!question) {
-  console.error('Usage: node match-star.mjs "<behavioural question>" [--jd <file>] [--top <n>]');
-  console.error('       node match-star.mjs --list');
+  console.error('Usage: node src/evaluate/match-star.mjs "<behavioural question>" [--jd <file>] [--top <n>]');
+  console.error('       node src/evaluate/match-star.mjs --list');
   process.exit(1);
 }
 

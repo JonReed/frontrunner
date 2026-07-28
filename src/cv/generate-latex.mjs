@@ -4,8 +4,8 @@
  * generate-latex.mjs — Validate and compile a generated .tex CV file to PDF
  *
  * Usage:
- *   node generate-latex.mjs <input.tex> [output.pdf]
- *   node generate-latex.mjs <input.tex> [output.pdf] --compile-only
+ *   node src/cv/generate-latex.mjs <input.tex> [output.pdf]
+ *   node src/cv/generate-latex.mjs <input.tex> [output.pdf] --compile-only
  *
  * Default: validates career-ops template structure (from templates/cv-template.tex).
  * --compile-only: skip template validation; compile any user-owned .tex (latex-tex mode).
@@ -231,7 +231,7 @@ async function main() {
   const outputPath = args[1];
 
   if (!inputPath) {
-    console.error('Usage: node generate-latex.mjs <input.tex> [output.pdf] [--compile-only]');
+    console.error('Usage: node src/cv/generate-latex.mjs <input.tex> [output.pdf] [--compile-only]');
     process.exit(1);
   }
 

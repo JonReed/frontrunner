@@ -9,5 +9,5 @@ Do not use real names, emails, or employers from your own CV here.
 | `tabularx-itemize.tex` | `tabularx-itemize` — `tabularx` header rows + `itemize` bullets |
 
 ```bash
-node extract-latex-content.mjs examples/latex-tex/resume-subheading.tex
+node extract-latex-content.mjs docs/examples/latex-tex/resume-subheading.tex
 ```

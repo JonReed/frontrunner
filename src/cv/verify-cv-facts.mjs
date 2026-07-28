@@ -4,9 +4,9 @@
  * verify-cv-facts.mjs — Guard generated CVs against invented metrics.
  *
  * Usage:
- *   node verify-cv-facts.mjs <generated-cv.html|md|tex>
- *   node verify-cv-facts.mjs <generated-cv> --source cv.md --source article-digest.md
- *   node verify-cv-facts.mjs --self-test
+ *   node src/cv/verify-cv-facts.mjs <generated-cv.html|md|tex>
+ *   node src/cv/verify-cv-facts.mjs <generated-cv> --source cv.md --source article-digest.md
+ *   node src/cv/verify-cv-facts.mjs --self-test
  */
 
 import { existsSync, readFileSync } from 'fs';
@@ -318,7 +318,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     }
 
     if (!targetArg || args.includes('--help') || args.includes('-h')) {
-      console.log(`Usage: node verify-cv-facts.mjs <generated-cv> [--source path] [--config path]
+      console.log(`Usage: node src/cv/verify-cv-facts.mjs <generated-cv> [--source path] [--config path]
 
 Checks generated CV text for metric-like claims that are absent from source files.
 Default sources: cv.md, article-digest.md

@@ -17,8 +17,8 @@
  * explicit non-goal for v1 (see issue #1730).
  *
  * Usage:
- *   node img-to-pdf.mjs <image-path> <output-path> [--force]
- *   node img-to-pdf.mjs --self-test
+ *   node src/cv/img-to-pdf.mjs <image-path> <output-path> [--force]
+ *   node src/cv/img-to-pdf.mjs --self-test
  *
  * --force is required to overwrite an existing output file; without it
  * the script errors out rather than silently clobbering a PDF.
@@ -81,7 +81,7 @@ export function parseArgs(args) {
 }
 
 function usage() {
-  console.log('Usage: node img-to-pdf.mjs <image-path> <output-path> [--force]');
+  console.log('Usage: node src/cv/img-to-pdf.mjs <image-path> <output-path> [--force]');
   console.log('');
   console.log('Converts a single screenshot/image into a single-page PDF (Playwright/Chromium),');
   console.log('for ATS upload fields that require a PDF specifically. Zero new dependencies —');
