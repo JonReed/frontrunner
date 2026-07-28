@@ -2,7 +2,7 @@
 
 career-ops was built for AI coding CLIs, but it also runs inside [Claude Cowork](https://www.anthropic.com/news/cowork) — Anthropic's desktop "work with your files" surface — with no changes to the system. If a terminal is a barrier for you, this is the friendlier door.
 
-**First-party verified (July 2026):** the full cycle — onboarding from a PDF CV, portal config, a complete A–G evaluation of a live Greenhouse posting, and canonical tracker registration via `merge-tracker.mjs` — ran end to end inside Cowork. Bonus: Cowork renders the onboarding steps as native clickable options and a progress checklist.
+**First-party verified (July 2026):** the full cycle — onboarding from a PDF CV, portal config, a complete A–G evaluation of a live Greenhouse posting, and canonical tracker registration via `src/tracker/merge-tracker.mjs` — ran end to end inside Cowork. Bonus: Cowork renders the onboarding steps as native clickable options and a progress checklist.
 
 ## How it works
 
@@ -26,9 +26,9 @@ Cowork mounts your career-ops folder and the agent reads the same instruction fi
 | Piece | In Cowork |
 |---|---|
 | Evaluations, tracker, reports, all modes | ✅ Native — the agent edits your mounted folder directly |
-| Zero-token portal scan (`scan.mjs`, API-based) | ✅ Runs in Cowork's Linux sandbox (`node` available) |
-| Merge/validation scripts (`merge-tracker.mjs`, `verify-pipeline.mjs`, …) | ✅ Sandbox |
-| **PDF generation** (`generate-pdf.mjs`) and **browser-driven checks** (Playwright) | ⚠️ Playwright's Chromium lives on your machine, not in the sandbox — run these through the local shell when asked, or generate the HTML in Cowork and print to PDF |
+| Zero-token portal scan (`src/scan/scan.mjs`, API-based) | ✅ Runs in Cowork's Linux sandbox (`node` available) |
+| Merge/validation scripts (`src/tracker/merge-tracker.mjs`, `src/tracker/verify-pipeline.mjs`, …) | ✅ Sandbox |
+| **PDF generation** (`src/cv/generate-pdf.mjs`) and **browser-driven checks** (Playwright) | ⚠️ Playwright's Chromium lives on your machine, not in the sandbox — run these through the local shell when asked, or generate the HTML in Cowork and print to PDF |
 
 That Playwright caveat is the only real difference from the CLI experience. Two more small notes from verification: run `npm install` in a terminal before starting (Cowork's local shell can't reach npm), and if a stray `reports/.reserve-*` sentinel file survives a run (Cowork's file bridge can't delete files), it's harmless — the allocator garbage-collects stale sentinels after 4 hours.
 

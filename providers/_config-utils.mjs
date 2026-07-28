@@ -1,5 +1,5 @@
 // _config-utils.mjs — shared config-parsing helpers for provider plugins.
-// Files prefixed with _ are never loaded as providers by scan.mjs (see
+// Files prefixed with _ are never loaded as providers by src/scan/scan.mjs (see
 // _registry.mjs).
 
 /**

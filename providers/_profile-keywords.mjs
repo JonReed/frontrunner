@@ -1,7 +1,7 @@
 // _profile-keywords.mjs — shared fallback for keyword-required providers.
 // Currently used by vdab.mjs; other keyword-required providers (e.g.
 // arbeitsagentur.mjs) can opt in later. Files prefixed with _ are never
-// loaded as providers by scan.mjs (see _registry.mjs), so this is a helper
+// loaded as providers by src/scan/scan.mjs (see _registry.mjs), so this is a helper
 // module.
 //
 // A user who has completed onboarding already has target roles recorded in
@@ -18,8 +18,8 @@
 import { existsSync, readFileSync } from 'fs';
 import yaml from 'js-yaml';
 
-// Matches the CAREER_OPS_PROFILE override already honored by scan.mjs,
-// cv-templates.mjs, followup-cadence.mjs, plugins/_engine.mjs, and
+// Matches the CAREER_OPS_PROFILE override already honored by src/scan/scan.mjs,
+// src/cv/cv-templates.mjs, src/tracker/followup-cadence.mjs, plugins/_engine.mjs, and
 // test-all.mjs — without this, a user with that env var set would get
 // silently different fallback behavior here than everywhere else.
 const DEFAULT_PROFILE_PATH = process.env.CAREER_OPS_PROFILE || 'config/profile.yml';

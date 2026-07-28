@@ -6,7 +6,7 @@
 
 1. **읽기** `data/pipeline.md` -> "대기" / "Pending" / "Pendientes" 섹션의 `- [ ]` item 찾기
 2. **각 대기 URL에 대해**:
-   a. `node reserve-report-num.mjs`를 실행해 다음 sequential `REPORT_NUM`을 atomic하게 예약합니다(report 작성 후 `node reserve-report-num.mjs --release <num>`으로 sentinel 해제).
+   a. `node src/tracker/reserve-report-num.mjs`를 실행해 다음 sequential `REPORT_NUM`을 atomic하게 예약합니다(report 작성 후 `node src/tracker/reserve-report-num.mjs --release <num>`으로 sentinel 해제).
    b. **공고 추출**: Playwright(`browser_navigate` + `browser_snapshot`) -> WebFetch -> WebSearch
    c. URL에 접근할 수 없으면 note와 함께 `- [!]`로 표시하고 계속합니다.
    d. **전체 auto-pipeline 실행**: Evaluation A-F -> Report .md -> PDF(score >= 3.0이면) -> Tracker
@@ -36,7 +36,7 @@
 ## URL에서 공고를 지능적으로 감지
 
 1. **Playwright (preferred):** `browser_navigate` + `browser_snapshot`. 모든 SPA에 대응합니다.
-   - **선택 — CLI 추출기 (`config/profile.yml`의 `scan.extractor: cli`):** 대신 `node browser-extract.mjs <url>`(`--mode jd`) 실행 — 간결한 `{ "url", "title", "text" }`, 더 적은 토큰(포털에 따라 다름). 오류나 부재 시 **조용히** `browser_navigate` + `browser_snapshot`로 폴백.
+   - **선택 — CLI 추출기 (`config/profile.yml`의 `scan.extractor: cli`):** 대신 `node src/scan/browser-extract.mjs <url>`(`--mode jd`) 실행 — 간결한 `{ "url", "title", "text" }`, 더 적은 토큰(포털에 따라 다름). 오류나 부재 시 **조용히** `browser_navigate` + `browser_snapshot`로 폴백.
 2. **WebFetch (fallback):** 정적 페이지 또는 Playwright를 사용할 수 없을 때 사용합니다.
 3. **WebSearch (last resort):** 공고를 index하는 secondary portal에서 검색합니다.
 
@@ -48,16 +48,16 @@
 
 ## 자동 번호 부여
 
-1. `node reserve-report-num.mjs`를 실행해 다음 sequential number를 예약합니다(stdout이 `{###}` 반환).
+1. `node src/tracker/reserve-report-num.mjs`를 실행해 다음 sequential number를 예약합니다(stdout이 `{###}` 반환).
 2. 해당 번호로 report를 작성합니다.
-3. report 작성 후 `node reserve-report-num.mjs --release {###}`를 실행해 sentinel을 해제합니다.
+3. report 작성 후 `node src/tracker/reserve-report-num.mjs --release {###}`를 실행해 sentinel을 해제합니다.
 
 ## Source sync
 
 URL을 처리하기 전에 sync를 확인합니다.
 
 ```bash
-node cv-sync-check.mjs
+node src/cv/cv-sync-check.mjs
 ```
 
 sync 문제가 있으면 계속하기 전에 후보자에게 알립니다.

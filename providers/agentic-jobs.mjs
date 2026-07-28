@@ -19,7 +19,7 @@ import { decodeEntities } from './_html-entities.mjs';
 // Detail URL the site itself builds: {SITE_ORIGIN}/jobs/{slug}.
 // `location` is already a human-readable string ("Remote (EU)", "Bangalore,
 // India") for the overwhelming majority of postings — used as-is for
-// scan.mjs's location_filter. The rare posting without one falls back to the
+// src/scan/scan.mjs's location_filter. The rare posting without one falls back to the
 // ISO `countries` array, decoded to country names.
 //
 // Rate limit: 30 requests/60s per IP (documented in the OpenAPI info block).

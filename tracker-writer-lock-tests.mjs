@@ -9,7 +9,7 @@ import {
 import { dirname, join } from 'path';
 import { tmpdir } from 'os';
 import { fileURLToPath } from 'url';
-import { acquireTrackerLock, openTrackerTransaction } from './tracker-utils.mjs';
+import { acquireTrackerLock, openTrackerTransaction } from './src/tracker/tracker-utils.mjs';
 
 import { ROOT } from '#paths';
 const NODE = process.execPath;
@@ -160,7 +160,7 @@ async function runWhileLocked({
 
 await runWhileLocked({
   name: 'normalize-statuses',
-  script: 'normalize-statuses.mjs',
+  script: 'src/tracker/normalize-statuses.mjs',
   content: trackerTable([
     '| 1 | 2026-01-01 | Acme | Engineer | 4.0/5 | Aplicado | ❌ | [1](reports/001-acme.md) | seed |',
   ]),
@@ -171,7 +171,7 @@ await runWhileLocked({
 
 await runWhileLocked({
   name: 'dedup-tracker',
-  script: 'dedup-tracker.mjs',
+  script: 'src/tracker/dedup-tracker.mjs',
   content: trackerTable([
     '| 1 | 2026-01-01 | Acme | Engineer | 4.0/5 | Evaluated | ❌ | [1](reports/001-acme.md) | first |',
     '| 2 | 2026-01-02 | Acme | Engineer | 3.0/5 | Evaluated | ❌ | [2](reports/002-acme.md) | duplicate |',
@@ -183,7 +183,7 @@ await runWhileLocked({
 
 await runWhileLocked({
   name: 'tracker-delete',
-  script: 'tracker.mjs',
+  script: 'src/tracker/tracker.mjs',
   args: ['delete', '--num', '1'],
   content: trackerTable([
     '| 1 | 2026-01-01 | Acme | Engineer | 4.0/5 | Evaluated | ❌ | [1](reports/001-acme.md) | seed |',
@@ -194,7 +194,7 @@ await runWhileLocked({
 
 await runWhileLocked({
   name: 'tracker-export',
-  script: 'tracker.mjs',
+  script: 'src/tracker/tracker.mjs',
   args: ['export', '--out', '{tracker}'],
   content: trackerTable([
     '| 1 | 2026-01-01 | Acme | Engineer | 4.0/5 | Evaluated | ❌ | [1](reports/001-acme.md) | seed |',
@@ -208,7 +208,7 @@ await runWhileLocked({
 
 await runWhileLocked({
   name: 'reply-watch',
-  script: 'reply-watch.mjs',
+  script: 'src/tracker/reply-watch.mjs',
   stdin: 'y\n',
   content: trackerTable([
     '| 1 | 2026-01-01 | Acme | Engineer | 4.0/5 | Applied | ❌ | [1](reports/001-acme.md) | contact hr@acme.com |',
@@ -219,7 +219,7 @@ await runWhileLocked({
 
 await runWhileLocked({
   name: 'reply-watch-identical',
-  script: 'reply-watch.mjs',
+  script: 'src/tracker/reply-watch.mjs',
   stdin: 'y\n',
   candidates: [
     {
@@ -247,7 +247,7 @@ await runWhileLocked({
 
 await runWhileLocked({
   name: 'reply-watch-stale-status',
-  script: 'reply-watch.mjs',
+  script: 'src/tracker/reply-watch.mjs',
   stdin: 'y\n',
   content: trackerTable([
     '| 1 | 2026-01-01 | Acme | Engineer | 4.0/5 | Applied | ❌ | [1](reports/001-acme.md) | contact hr@acme.com |',
@@ -413,7 +413,7 @@ async function testReplyWatchConflictingRecommendations() {
 
     let stdout = '';
     let stderr = '';
-    const child = spawn(NODE, [join(ROOT, 'reply-watch.mjs'), candidatesPath], {
+    const child = spawn(NODE, [join(ROOT, 'src/tracker/reply-watch.mjs'), candidatesPath], {
       cwd: ROOT,
       env: {
         ...process.env,

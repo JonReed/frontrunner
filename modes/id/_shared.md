@@ -180,7 +180,7 @@ Dalam lowongan dan negosiasi di Indonesia, beberapa istilah tidak ada di pasar E
 
 0. **Cover letter:** Jika formulir memungkinkan, SELALU sertakan. PDF dengan desain visual yang sama dengan CV. Kutipan dari lowongan dipetakan ke proof point. Maksimal 1 halaman.
 1. Baca `cv.md` dan `article-digest.md` (jika ada) sebelum mengevaluasi lowongan
-1b. **Evaluasi pertama setiap sesi:** Jalankan `node cv-sync-check.mjs` via Bash. Jika ada peringatan, beri tahu kandidat
+1b. **Evaluasi pertama setiap sesi:** Jalankan `node src/cv/cv-sync-check.mjs` via Bash. Jika ada peringatan, beri tahu kandidat
 2. Deteksi arketipe role dan sesuaikan framing
 3. Kutip baris persis dari CV saat melakukan matching
 4. Gunakan WebSearch untuk data kompensasi dan perusahaan
@@ -189,7 +189,7 @@ Dalam lowongan dan negosiasi di Indonesia, beberapa istilah tidak ada di pasar E
 7. Bersikap langsung dan konkret -- tanpa basa-basi
 8. Bahasa Indonesia teknis yang natural untuk teks yang dihasilkan. Kalimat pendek, kata kerja aktif, hindari kalimat pasif. Jangan memaksakan menerjemahkan istilah teknis (stack, pipeline, deployment, embedding)
 8b. **URL case study di Professional Summary pada PDF:** Jika PDF menyebut case study atau demo, URL-nya WAJIB muncul di paragraf pertama (Professional Summary). Recruiter sering hanya membaca summary. Semua URL dalam HTML dengan `white-space: nowrap`
-9. **Entri tracker dalam TSV** -- JANGAN PERNAH mengedit applications.md langsung untuk penambahan baru. Tulis TSV di `batch/tracker-additions/`, `merge-tracker.mjs` menangani penggabungan
+9. **Entri tracker dalam TSV** -- JANGAN PERNAH mengedit applications.md langsung untuk penambahan baru. Tulis TSV di `batch/tracker-additions/`, `src/tracker/merge-tracker.mjs` menangani penggabungan
 10. **`**URL:**` di setiap header report** -- di antara Score dan PDF
 
 ### Perkakas
@@ -202,4 +202,4 @@ Dalam lowongan dan negosiasi di Indonesia, beberapa istilah tidak ada di pasar E
 | Read | cv.md, article-digest.md, cv-template.html |
 | Write | HTML sementara untuk PDF, applications.md, report .md |
 | Edit | Memperbarui tracker |
-| Bash | `node generate-pdf.mjs` |
+| Bash | `node src/cv/generate-pdf.mjs` |

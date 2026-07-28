@@ -6,7 +6,7 @@ import { pass, fail, ROOT } from './helpers.mjs';
 
 console.log('\nscan-ats-full — resume machinery');
 
-const mod = await import(pathToFileURL(join(ROOT, 'scan-ats-full.mjs')).href);
+const mod = await import(pathToFileURL(join(ROOT, 'src/scan/scan-ats-full.mjs')).href);
 const { parallelEach, withTimeout, datasetFingerprint } = mod;
 
 // withTimeout: passes a fast promise through untouched.

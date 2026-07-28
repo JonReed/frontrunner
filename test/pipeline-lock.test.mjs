@@ -1,5 +1,5 @@
 /**
- * pipeline-lock.test.mjs — regression tests for pipeline-lock.mjs.
+ * pipeline-lock.test.mjs — regression tests for src/tracker/pipeline-lock.mjs.
  *
  * The lock exists to serialize appendToPipeline()'s read-modify-write on
  * data/pipeline.md (#2188). These tests pin the three properties that make
@@ -22,7 +22,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
-import { acquirePipelineLock, LockTimeoutError } from '../pipeline-lock.mjs';
+import { acquirePipelineLock, LockTimeoutError } from '../src/tracker/pipeline-lock.mjs';
 
 function fixtureRoot() {
   const root = mkdtempSync(join(tmpdir(), 'career-ops-pipeline-lock-'));

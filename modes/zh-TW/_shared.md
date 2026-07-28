@@ -151,14 +151,14 @@
 
 0. **求職信 (Cover Letter)：** 若投遞表單允許，一律提供一份。視覺設計與履歷保持一致，將 JD 關鍵字／需求一一對應到履歷中的量化指標，篇幅控制在 1 頁以內。
 1. 開始評估職缺前，先閱讀 `cv.md`、`_profile.md` 和 `article-digest.md`（若存在）。
-2. 在每個會談的第一次評估前執行 `node cv-sync-check.mjs`。若出現同步警告，提示求職者。
+2. 在每個會談的第一次評估前執行 `node src/cv/cv-sync-check.mjs`。若出現同步警告，提示求職者。
 3. 準確辨識職缺的角色原型，並依 `_profile.md` 中的策略調整表達重點。
 4. 比對職缺需求時，標明對應履歷的具體行號作為佐證。
 5. 使用 WebSearch 工具查詢市場薪酬水準與公司背景（如裁員／凍結招募等）。
 6. 完成評估後，即時記錄到 tracker 紀錄簿。
 7. 產生的內容與 JD 的語言保持一致（預設使用英文，中文 JD 使用中文）。
 8. 產生繁體中文技術文本（求職信、LinkedIn 話術等）時：使用自然道地的台灣科技業中文習慣。多用短句、主動語態，避免生硬的西式被動句。常見的通用產業術語（如 stack, pipeline, deployment, embedding）不需勉強中譯，保留英文即可。
-9. **向 tracker 新增紀錄時必須使用 TSV 格式** — 嚴禁直接編輯 `applications.md`，將 TSV 檔寫入 `batch/tracker-additions/` 目錄，由 `merge-tracker.mjs` 統一合併。
+9. **向 tracker 新增紀錄時必須使用 TSV 格式** — 嚴禁直接編輯 `applications.md`，將 TSV 檔寫入 `batch/tracker-additions/` 目錄，由 `src/tracker/merge-tracker.mjs` 統一合併。
 10. **每一份評估報告的開頭，必須包含 `**URL:**` 欄位。**
 
 ---

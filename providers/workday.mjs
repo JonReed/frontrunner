@@ -38,7 +38,7 @@ const RETRY_BASE_DELAY_MS = 500;
 const RETRY_MAX_DELAY_MS = 8_000;
 
 // Delay between successive pages *within one tenant's own pagination loop*
-// (not between tenants — that's scan-ats-full.mjs's concurrency, a separate
+// (not between tenants — that's src/scan/scan-ats-full.mjs's concurrency, a separate
 // knob). A burst of same-host requests with zero delay risks Workday's
 // WAF-level rate limiting on any tenant that paginates several pages deep
 // (large boards like rollsroyce, sec, roche). Only tenants that loop past
@@ -305,7 +305,7 @@ export default {
     // (a full-directory scan can hit this on dozens of tenants).
     //
     // "raise max_pages" only applies when `entry` is a real portals.yml
-    // tracked_companies entry (scan.mjs, sinceMs === null). scan-ats-full.mjs's
+    // tracked_companies entry (src/scan/scan.mjs, sinceMs === null). src/scan/scan-ats-full.mjs's
     // reverse scan (the only caller that sets ctx.sinceMs) synthesizes entries
     // from the external dataset — there's no portal entry to edit, and no
     // fixed cap can guarantee full coverage of an unbounded company
@@ -327,11 +327,11 @@ export default {
     // 'no-date-skip' hits many tenants in a full-directory scan (a company
     // with several Workday sites, like a1group or ashealthnet, triggers it
     // once per site) — a console.error per hit would repeat thousands of
-    // times, so tag the array instead; scan-ats-full.mjs aggregates it into
+    // times, so tag the array instead; src/scan/scan-ats-full.mjs aggregates it into
     // one summary line.
     if (stopReason === 'no-date-skip') jobs.workdayNoDateSkip = true;
     // 'fetch-error' means retries were exhausted mid-pagination while 19
-    // other tenants were hammering the same uplink. scan-ats-full.mjs
+    // other tenants were hammering the same uplink. src/scan/scan-ats-full.mjs
     // collects tagged tenants and retries them sequentially after the
     // parallel sweep, when the line is quiet — same array-tag pattern as
     // workdayNoDateSkip (no extra per-tenant logging here).

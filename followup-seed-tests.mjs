@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 /**
- * followup-seed-tests.mjs — regression tests for followup-seed.mjs (#1430).
+ * followup-seed-tests.mjs — regression tests for src/tracker/followup-seed.mjs (#1430).
  *
  * Marking a tracker row Applied used to leave data/follow-ups.md untouched
  * until the user ran the `followup` mode by hand — the seed step never ran on
- * its own. These tests drive followup-seed.mjs's CLI (via execFileSync, like
+ * its own. These tests drive src/tracker/followup-seed.mjs's CLI (via execFileSync, like
  * tracker-columns-tests.mjs) end-to-end against sandboxed fixtures, plus a few
  * direct unit-level imports of the exported functions.
  *
@@ -17,11 +17,11 @@ import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync } from 'fs'
 import { join, dirname } from 'path';
 import { tmpdir } from 'os';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { parseNextOverrides, resolveNextOverride, normalizeStatus, addDays, parseDate } from './followup-cadence.mjs';
+import { parseNextOverrides, resolveNextOverride, normalizeStatus, addDays, parseDate } from './src/tracker/followup-cadence.mjs';
 
 import { ROOT } from '#paths';
 const NODE = process.execPath;
-const SCRIPT = join(ROOT, 'followup-seed.mjs');
+const SCRIPT = join(ROOT, 'src/tracker/followup-seed.mjs');
 
 let passed = 0;
 let failed = 0;
@@ -58,7 +58,7 @@ function trackerRow(num, date, company, role, score, status, notes) {
   return `| ${num} | ${date} | ${company} | ${role} | ${score} | ${status} | ❌ | — | ${notes} |`;
 }
 
-// Run followup-seed.mjs against a sandbox. Returns { code, stdout, stderr }.
+// Run src/tracker/followup-seed.mjs against a sandbox. Returns { code, stdout, stderr }.
 function run(args, sandbox, extraEnv = {}) {
   const env = {
     ...process.env,

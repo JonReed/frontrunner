@@ -4,7 +4,7 @@
 // Arbeitsagentur (Bundesagentur für Arbeit) provider — hits the public Jobsuche
 // REST API (the same endpoint arbeitsagentur.de uses), so it lives in-process
 // alongside the other JSON-API providers (greenhouse/ashby shape). One or more
-// keywords are queried; scan.mjs applies title_filter + location_filter + dedup
+// keywords are queried; src/scan/scan.mjs applies title_filter + location_filter + dedup
 // afterwards, so this provider over-fetches (recall-first).
 //
 // Configure via a `job_boards` (or `tracked_companies`) entry with
@@ -220,7 +220,7 @@ export default {
         if (job && !byRef.has(job.refnr)) byRef.set(job.refnr, job);
       }
       // Pass B roles get a `Deutschlandweit (Homeoffice)` marker, which makes
-      // scan.mjs's commute-based location_filter rescue them via always_allow
+      // src/scan/scan.mjs's commute-based location_filter rescue them via always_allow
       // instead of dropping them on a far office city. A wrong marker therefore
       // smuggles an office-anchored hybrid past the distance check, so it may
       // only be applied on evidence:

@@ -11,6 +11,7 @@
  */
 
 import { parseActiveInterviews, extractFriction, aggregateProcessQuality } from './process-quality.mjs';
+import { ROOT } from '#paths';
 import { execFileSync } from 'child_process';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -275,7 +276,7 @@ if (rentsync) {
 // ============================================================================
 console.log('\n--- 10. CLI behavior ---');
 
-const scriptPath = join(dirname(fileURLToPath(import.meta.url)), './process-quality.mjs');
+const scriptPath = join(ROOT, 'src/analysis/process-quality.mjs');
 
 try {
   execFileSync('node', [scriptPath, '--self-test'], { encoding: 'utf-8', timeout: 10000 });

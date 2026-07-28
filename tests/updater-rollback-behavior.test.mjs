@@ -117,12 +117,12 @@ console.log('\n🧪 Testing updater rollback behavior (#2015)...');
   g('add', '-A');
   g('commit', '-qm', 'base');
 
-  writeFileSync(join(dir, 'browser-extract.mjs'), 'added by update');
-  g('add', 'browser-extract.mjs');
+  writeFileSync(join(dir, 'src/scan/browser-extract.mjs'), 'added by update');
+  g('add', 'src/scan/browser-extract.mjs');
 
-  removeAdditionsNotInHead('browser-extract.mjs', new Set(), ctx);
+  removeAdditionsNotInHead('src/scan/browser-extract.mjs', new Set(), ctx);
 
-  if (!existsSync(join(dir, 'browser-extract.mjs'))) {
+  if (!existsSync(join(dir, 'src/scan/browser-extract.mjs'))) {
     pass('rollback removes an added file for a file pathspec');
   } else {
     fail('rollback left an added file for a file pathspec');

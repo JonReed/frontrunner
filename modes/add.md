@@ -4,7 +4,7 @@ Fetch a finished project / paper / internship from a link (or plain text), turn
 it into ATS-style CV content **grounded only in what the source actually says**,
 preview it, and — after you confirm — append it to `cv.md` and (for projects)
 `article-digest.md`. Deterministic dedup and insertion are handled by
-`add-entry.mjs`, so re-adding the same thing is a safe no-op.
+`src/tracker/add-entry.mjs`, so re-adding the same thing is a safe no-op.
 
 > **Non-negotiables (from the project's source-of-truth rules in `_shared.md`):**
 > - **Confirm before write.** Never touch `cv.md` / `article-digest.md` until the
@@ -56,7 +56,7 @@ If no source was given, ask the user for one.
    `/tmp/add-<slug>.json`, then run:
 
    ```bash
-   node add-entry.mjs /tmp/add-<slug>.json
+   node src/tracker/add-entry.mjs /tmp/add-<slug>.json
    ```
 
    (Add `--dry-run` first if the user wants to see the file-level change without
@@ -73,10 +73,10 @@ If no source was given, ask the user for one.
 | an internship / job / role | `Work Experience` |
 | a talk / course / certification | `Education` (or ask if unclear) |
 
-`add-entry.mjs` creates the section heading if it doesn't exist yet, so a new
+`src/tracker/add-entry.mjs` creates the section heading if it doesn't exist yet, so a new
 `## Publications` is fine.
 
-## Payload schema (input to `add-entry.mjs`)
+## Payload schema (input to `src/tracker/add-entry.mjs`)
 
 Both keys optional; provide at least one. `articleDigest` is for projects only.
 

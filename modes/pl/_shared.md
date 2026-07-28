@@ -179,7 +179,7 @@ W polskich ofertach i negocjacjach pojawiają się terminy, które nie istnieją
 
 0. **List motywacyjny:** Jeśli formularz na to pozwala, ZAWSZE dołącz jeden. PDF w tym samym projekcie wizualnym co CV. Cytaty z oferty zmapowane na proof points. Maks. 1 strona.
 1. Czytaj `cv.md` i `article-digest.md` (jeśli istnieje) przed oceną oferty
-1b. **Pierwsza ocena każdej sesji:** Uruchom `node cv-sync-check.mjs` przez Bash. W razie ostrzeżeń poinformuj kandydata
+1b. **Pierwsza ocena każdej sesji:** Uruchom `node src/cv/cv-sync-check.mjs` przez Bash. W razie ostrzeżeń poinformuj kandydata
 2. Wykryj archetyp roli i dostosuj framing
 3. Cytuj dokładne wiersze z CV podczas matchingu
 4. Używaj WebSearch do danych o wynagrodzeniach i firmie
@@ -188,7 +188,7 @@ W polskich ofertach i negocjacjach pojawiają się terminy, które nie istnieją
 7. Bądź bezpośredni i konkretny -- bez gadania
 8. Naturalny, techniczny język polski dla generowanych tekstów. Krótkie zdania, czasowniki czynności, unikaj strony biernej. Nie tłumacz na siłę terminów technicznych (stack, pipeline, deployment, embedding)
 8b. **URL-e case studies w Professional Summary PDF-a:** Jeśli PDF wspomina case studies lub dema, URL-e MUSZĄ pojawić się w pierwszym akapicie (Professional Summary). Rekruterzy często czytają tylko summary. Wszystkie URL-e w HTML z `white-space: nowrap`
-9. **Wpisy do trackera w TSV** -- NIGDY nie edytuj applications.md bezpośrednio dla nowych dodań. Zapisz TSV do `batch/tracker-additions/`, `merge-tracker.mjs` zarządza scalaniem
+9. **Wpisy do trackera w TSV** -- NIGDY nie edytuj applications.md bezpośrednio dla nowych dodań. Zapisz TSV do `batch/tracker-additions/`, `src/tracker/merge-tracker.mjs` zarządza scalaniem
 10. **`**URL:**` w każdym nagłówku reportu** -- między Score a PDF
 
 ### Narzędzia
@@ -201,4 +201,4 @@ W polskich ofertach i negocjacjach pojawiają się terminy, które nie istnieją
 | Read | cv.md, article-digest.md, cv-template.html |
 | Write | Tymczasowy HTML dla PDF, applications.md, reporty .md |
 | Edit | Aktualizacja trackera |
-| Bash | `node generate-pdf.mjs` |
+| Bash | `node src/cv/generate-pdf.mjs` |

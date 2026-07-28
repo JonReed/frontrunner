@@ -48,7 +48,7 @@ function toEpochMs(value) {
 // Some Greenhouse boards put the *work model* ("Hybrid", "In-Office",
 // "Distributed") in location.name and keep the actual city in the separate
 // offices[] array — which the /jobs list endpoint does not return. For those
-// boards scan.mjs's location_filter never sees a city, so every role is
+// boards src/scan/scan.mjs's location_filter never sees a city, so every role is
 // evaluated against the string "Hybrid" and silently dropped. Same bug class
 // as #1073 (Ashby dropping secondaryLocations), different provider.
 //

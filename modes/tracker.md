@@ -14,7 +14,7 @@ With the optional Via column (intermediary channel, #1596) after Company:
 | # | Date | Company | Via | Role | Score | Status | PDF | Report | Notes |
 ```
 
-- `Via` = the agency/recruiter firm the application goes through; `—` for direct applications. Add the column to an existing tracker with `node merge-tracker.mjs --migrate-via` (all scripts auto-detect both layouts).
+- `Via` = the agency/recruiter firm the application goes through; `—` for direct applications. Add the column to an existing tracker with `node src/tracker/merge-tracker.mjs --migrate-via` (all scripts auto-detect both layouts).
 - **Unknown end employer** (recruiter hasn't named the client yet): Company = `?` (the structural marker — never the word "Confidential", which is locale-dependent and collides with real firm names), Via = the agency, and a distinguishing descriptor in Notes (e.g. `fintech, Leeds`). Display it to the user as "Confidential (via {Via})".
 - The row's identity is its `#` (report number) — Company is display data and changes at most once, at reveal.
 
@@ -37,7 +37,7 @@ If the user asks to update a state, edit the corresponding row.
 
 1. Edit the row's Company cell in place (`?` → real name). Never renumber.
 2. Update the report: append the company to the H1 title, fill the header fields, and set `company_confidential: false` (+ real `company:`) in the Machine Summary YAML. **Never rename the report file** — the number is the identity, links stay stable.
-3. Run the cross-channel check: `node verify-pipeline.mjs`. If the same company+role now exists under a different Via (agency + direct, or two agencies), warn the user loudly — **never auto-merge**; both submissions really happened and the user decides which channel owns the candidacy.
+3. Run the cross-channel check: `node src/tracker/verify-pipeline.mjs`. If the same company+role now exists under a different Via (agency + direct, or two agencies), warn the user loudly — **never auto-merge**; both submissions really happened and the user decides which channel owns the candidacy.
 
 Be honest about timing: this check catches damage after the fact. The preventive check happens in `apply` mode, before authorizing an agency submission.
 
@@ -53,4 +53,4 @@ For the full lifetime stats view (cumulative funnel, scanner totals, portal
 coverage, follow-up compliance), run `node src/analysis/stats.mjs --summary` and present its
 output. Zero tokens — never recompute these numbers manually.
 
-If any company in the tracker shows a `silent-on-you` responsiveness label, also offer `node company-history.mjs --summary` — the per-company evidence cards (hygiene nudge first, then silent-first) give the user the underlying facts before they decide how to prioritize.
+If any company in the tracker shows a `silent-on-you` responsiveness label, also offer `node src/scan/company-history.mjs --summary` — the per-company evidence cards (hygiene nudge first, then silent-first) give the user the underlying facts before they decide how to prioritize.

@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * set-status-tests.mjs — regression tests for the set-status.mjs CLI (#1428).
+ * set-status-tests.mjs — regression tests for the src/tracker/set-status.mjs CLI (#1428).
  *
- * set-status.mjs is the canonical write path for tracker status updates, so
+ * src/tracker/set-status.mjs is the canonical write path for tracker status updates, so
  * these tests pin down the full CLI contract: row resolution (by number, by
  * company, --role disambiguation), strict state validation against
  * templates/states.yml, idempotent note appends, dry-run, JSON output, exit
@@ -25,7 +25,7 @@ import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync, chmodSync 
 import { join, dirname } from 'path';
 import { tmpdir } from 'os';
 import { fileURLToPath } from 'url';
-import { acquireTrackerLock } from './tracker-utils.mjs';
+import { acquireTrackerLock } from './src/tracker/tracker-utils.mjs';
 
 import { ROOT } from '#paths';
 const NODE = process.execPath;
@@ -35,7 +35,7 @@ let failed = 0;
 function pass(m) { console.log(`PASS ${m}`); passed++; }
 function fail(m) { console.error(`FAIL ${m}`); failed++; }
 
-// Run set-status.mjs with the tracker redirected to a sandbox. Returns
+// Run src/tracker/set-status.mjs with the tracker redirected to a sandbox. Returns
 // { code, stdout, stderr }.
 function runSetStatus(args, sandbox, extraEnv = {}) {
   const env = {
@@ -45,7 +45,7 @@ function runSetStatus(args, sandbox, extraEnv = {}) {
     ...extraEnv,
   };
   try {
-    const stdout = execFileSync(NODE, [join(ROOT, 'set-status.mjs'), ...args], {
+    const stdout = execFileSync(NODE, [join(ROOT, 'src/tracker/set-status.mjs'), ...args], {
       cwd: ROOT, env, encoding: 'utf-8', timeout: 30000, stdio: ['pipe', 'pipe', 'pipe'],
     });
     return { code: 0, stdout, stderr: '' };
@@ -86,7 +86,7 @@ const TRACKER_10 = `# Applications Tracker
 | 1 | 2026-06-01 | Initech | AI Engineer | Remote | 4.5/5 | Evaluated | ✅ | [1](../reports/001-initech-2026-06-01.md) | — |
 `;
 
-// Two unrelated rows share tracker number 5 (the #1704 bug: merge-tracker.mjs
+// Two unrelated rows share tracker number 5 (the #1704 bug: src/tracker/merge-tracker.mjs
 // once trusted a stale TSV number as-is when it was numerically ahead of that
 // run's max, even though the number was already used by an unrelated row
 // merged in a separate, earlier invocation).

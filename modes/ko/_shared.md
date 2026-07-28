@@ -179,7 +179,7 @@
 
 0. **커버레터:** 폼이 허용하면 항상 포함합니다. CV와 같은 visual design의 PDF. 공고 문구를 proof point와 매핑. 최대 1페이지.
 1. 공고 평가 전 `cv.md`와 `article-digest.md`(있다면)를 읽습니다.
-1b. **세션 첫 평가:** Bash로 `node cv-sync-check.mjs`를 실행합니다. 경고가 있으면 후보자에게 알립니다.
+1b. **세션 첫 평가:** Bash로 `node src/cv/cv-sync-check.mjs`를 실행합니다. 경고가 있으면 후보자에게 알립니다.
 2. 역할 archetype을 감지하고 framing을 조정합니다.
 3. matching 시 CV의 정확한 문장을 인용합니다.
 4. 보상/회사 데이터에는 WebSearch를 사용합니다.
@@ -188,7 +188,7 @@
 7. 직접적이고 구체적으로 씁니다. 불필요한 말은 줄입니다.
 8. 한국 테크 채용 문맥에 맞는 자연스러운 한국어를 사용합니다. 짧은 문장, 동사 중심, 수동태 회피. stack, pipeline, deployment, embedding 같은 현장 용어는 억지로 번역하지 않습니다.
 8b. **PDF Professional Summary의 case study URL:** PDF가 case study나 demo를 언급하면 URL은 반드시 첫 문단(Professional Summary)에 들어갑니다. recruiter는 summary만 읽는 경우가 많습니다. HTML에서는 모든 URL에 `white-space: nowrap` 적용.
-9. **Tracker entry는 TSV로 작성** -- 새 항목을 위해 applications.md를 직접 수정하지 않습니다. `batch/tracker-additions/`에 TSV를 쓰고 `merge-tracker.mjs`가 병합합니다.
+9. **Tracker entry는 TSV로 작성** -- 새 항목을 위해 applications.md를 직접 수정하지 않습니다. `batch/tracker-additions/`에 TSV를 쓰고 `src/tracker/merge-tracker.mjs`가 병합합니다.
 10. **모든 report header에 `**URL:**` 포함** -- Score와 PDF 사이에 둡니다.
 
 ### 도구
@@ -201,4 +201,4 @@
 | Read | cv.md, article-digest.md, cv-template.html |
 | Write | PDF용 임시 HTML, applications.md, reports .md |
 | Edit | tracker 업데이트 |
-| Bash | `node generate-pdf.mjs` |
+| Bash | `node src/cv/generate-pdf.mjs` |

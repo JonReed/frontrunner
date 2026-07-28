@@ -6,7 +6,7 @@
 
 1. **Прочитать** `data/pipeline.md` → найти `- [ ]` в секции "Ожидающие" (или "Pendientes" / "Pending" — pipeline.md может содержать заголовки на любом языке)
 2. **Для каждого URL**:
-   a. Зарезервировать следующий `REPORT_NUM` атомарно, запустив `node reserve-report-num.mjs` (и освободить маркер, запустив `node reserve-report-num.mjs --release <num>` после записи отчета)
+   a. Зарезервировать следующий `REPORT_NUM` атомарно, запустив `node src/tracker/reserve-report-num.mjs` (и освободить маркер, запустив `node src/tracker/reserve-report-num.mjs --release <num>` после записи отчета)
    b. **Извлечь JD** через Playwright → WebFetch → WebSearch
    c. Если URL недоступен → пометить `- [!]` с заметкой, продолжить
    d. **Выполнить auto-pipeline**: Оценка A-F → Отчёт .md → PDF (если балл >= 3.0) → Трекер
@@ -34,7 +34,7 @@
 ## Определение JD из URL
 
 1. **Playwright (предпочтительно):** `browser_navigate` + `browser_snapshot`. Работает со всеми SPA.
-   - **Опционально — CLI-экстрактор (`scan.extractor: cli` в `config/profile.yml`):** вместо этого запустите `node browser-extract.mjs <url>` (`--mode jd`) — компактный `{ "url", "title", "text" }`, меньше токенов (зависит от портала). При ошибке или отсутствии **молча** откатывайтесь на `browser_navigate` + `browser_snapshot`.
+   - **Опционально — CLI-экстрактор (`scan.extractor: cli` в `config/profile.yml`):** вместо этого запустите `node src/scan/browser-extract.mjs <url>` (`--mode jd`) — компактный `{ "url", "title", "text" }`, меньше токенов (зависит от портала). При ошибке или отсутствии **молча** откатывайтесь на `browser_navigate` + `browser_snapshot`.
 2. **WebFetch (fallback):** Для статических страниц.
 3. **WebSearch (последний ресурс):** Поиск на вторичных порталах.
 
@@ -46,14 +46,14 @@
 
 ## Нумерация
 
-1. Запустить `node reserve-report-num.mjs` для атомарного резервирования следующего порядкового номера (stdout вернет `{###}`).
+1. Запустить `node src/tracker/reserve-report-num.mjs` для атомарного резервирования следующего порядкового номера (stdout вернет `{###}`).
 2. Записать файл отчета, используя этот номер.
-3. Освободить маркер, запустив `node reserve-report-num.mjs --release {###}` после записи отчета.
+3. Освободить маркер, запустив `node src/tracker/reserve-report-num.mjs --release {###}` после записи отчета.
 
 ## Синхронизация источников
 
 Перед обработкой URL:
 ```bash
-node cv-sync-check.mjs
+node src/cv/cv-sync-check.mjs
 ```
 Если рассинхронизация — предупредить пользователя.

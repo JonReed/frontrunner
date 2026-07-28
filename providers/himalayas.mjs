@@ -3,7 +3,7 @@
 
 // Himalayas provider - board-wide remote jobs API
 // (https://himalayas.app/jobs/api?limit=50). Returns { jobs: [...] }. The
-// full feed is fetched so scan.mjs's title_filter / location_filter can do
+// full feed is fetched so src/scan/scan.mjs's title_filter / location_filter can do
 // the local gating consistently with other zero-token board providers.
 //
 // Wire in via a `job_boards:` entry with `provider: himalayas`.

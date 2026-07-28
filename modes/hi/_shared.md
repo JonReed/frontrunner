@@ -183,7 +183,7 @@ Profile को **"Demonstrable practice वाले Technical Builder"** के
 
 0. **Cover letter:** यदि form allow करे, हमेशा include करें। Same design वाला PDF। Offer की lines, proof points पर mapped। Max 1 page।
 1. Offer evaluate करने से पहले `cv.md` और `article-digest.md` (यदि मौजूद हो) पढ़ें
-1b. **हर session का पहला evaluation:** `node cv-sync-check.mjs` via Bash run करें। Alerts पर candidate को सूचित करें
+1b. **हर session का पहला evaluation:** `node src/cv/cv-sync-check.mjs` via Bash run करें। Alerts पर candidate को सूचित करें
 2. Role का archetype detect करें और framing adapt करें
 3. Matching करते समय CV की exact lines quote करें
 4. Compensation और company data के लिए WebSearch उपयोग करें
@@ -192,7 +192,7 @@ Profile को **"Demonstrable practice वाले Technical Builder"** के
 7. Direct और concrete रहें — बकवास नहीं
 8. Natural Hindi tech language use करें। Short sentences, action verbs, passive avoid करें। Technical terms force-translate न करें (stack, pipeline, deployment, embedding)
 8b. **PDF में case study URLs:** यदि PDF में case studies या demos mention हों, URLs Professional Summary के पहले paragraph में होने चाहिए। Recruiters अक्सर सिर्फ summary पढ़ते हैं। सभी URLs HTML में `white-space: nowrap` के साथ
-9. **Tracker entries TSV में** — applications.md सीधे edit कभी नहीं करें (नई entries के लिए)। TSV `batch/tracker-additions/` में लिखें, `merge-tracker.mjs` merge करेगा
+9. **Tracker entries TSV में** — applications.md सीधे edit कभी नहीं करें (नई entries के लिए)। TSV `batch/tracker-additions/` में लिखें, `src/tracker/merge-tracker.mjs` merge करेगा
 10. **हर report header में `**URL:**`** — Score और PDF के बीच
 
 ### Tools
@@ -205,4 +205,4 @@ Profile को **"Demonstrable practice वाले Technical Builder"** के
 | Read | cv.md, article-digest.md, cv-template.html |
 | Write | PDF के लिए temporary HTML, applications.md, reports .md |
 | Edit | Tracker update करें |
-| Bash | `node generate-pdf.mjs` |
+| Bash | `node src/cv/generate-pdf.mjs` |

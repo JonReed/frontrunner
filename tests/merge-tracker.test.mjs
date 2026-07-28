@@ -31,7 +31,7 @@ function runMerge(additions) {
     for (const [name, line] of Object.entries(additions)) {
       writeFileSync(join(addsDir, name), line);
     }
-    execFileSync(NODE, [join(ROOT, 'merge-tracker.mjs')], {
+    execFileSync(NODE, [join(ROOT, 'src/tracker/merge-tracker.mjs')], {
       encoding: 'utf-8',
       timeout: 30000,
       env: { ...process.env, CAREER_OPS_TRACKER: tracker, CAREER_OPS_ADDITIONS: addsDir },

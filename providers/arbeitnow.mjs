@@ -9,7 +9,7 @@
 // Jobs are ordered newest-first, 100 per page. The API echoes a rotating
 // featured `?search=` term into links.next, so page URLs are built directly as
 // `?page=N` (never by following links.next) to keep the FULL board in view —
-// scan.mjs's title_filter then gates on the configured titles. Pages are fetched
+// src/scan/scan.mjs's title_filter then gates on the configured titles. Pages are fetched
 // until one comes back short/empty or the page cap is reached (default 3,
 // override with `max_pages` on the portal entry).
 //

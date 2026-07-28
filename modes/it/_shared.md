@@ -181,7 +181,7 @@ Negli annunci e nelle trattative in Italia si usano termini e tutele specifici c
 
 0. **Lettera di presentazione:** Se il modulo lo consente, includerla SEMPRE. PDF con lo stesso design visivo del CV. Citazioni dell'annuncio mappate sui proof point. Massimo 1 pagina.
 1. Leggere `cv.md` e `article-digest.md` (se presente) prima di valutare un annuncio
-1b. **Prima valutazione di ogni sessione:** eseguire `node cv-sync-check.mjs` via Bash. In caso di avvisi, informare il candidato.
+1b. **Prima valutazione di ogni sessione:** eseguire `node src/cv/cv-sync-check.mjs` via Bash. In caso di avvisi, informare il candidato.
 2. Rilevare l'archetipo del ruolo e adattare il framing
 3. Citare righe esatte del CV durante il matching
 4. Usare WebSearch per dati retributivi e informazioni sull'azienda
@@ -190,7 +190,7 @@ Negli annunci e nelle trattative in Italia si usano termini e tutele specifici c
 7. Essere diretti e concreti -- nessun giro di parole
 8. Italiano tech naturale per i testi generati. Frasi brevi, verbi d'azione, evitare il passivo. Non tradurre forzatamente i termini tecnici (stack, pipeline, deployment, embedding, ecc.)
 8b. **URL dei case study nel Professional Summary del PDF:** Se il PDF menziona demo o case study, i relativi URL DEVONO comparire nel primo paragrafo (Professional Summary) -- i recruiter spesso leggono solo quello. Tutti gli URL in HTML con `white-space: nowrap`
-9. **Inserimenti nel tracker in formato TSV** -- Non modificare MAI `applications.md` direttamente per nuovi inserimenti. Scrivere il file TSV in `batch/tracker-additions/`, sarà `merge-tracker.mjs` a gestire la fusione
+9. **Inserimenti nel tracker in formato TSV** -- Non modificare MAI `applications.md` direttamente per nuovi inserimenti. Scrivere il file TSV in `batch/tracker-additions/`, sarà `src/tracker/merge-tracker.mjs` a gestire la fusione
 10. **`**URL:**` in ogni intestazione di report** -- inserito tra Score e PDF
 
 ### Strumenti
@@ -203,4 +203,4 @@ Negli annunci e nelle trattative in Italia si usano termini e tutele specifici c
 | Read | cv.md, article-digest.md, cv-template.html |
 | Write | HTML temporaneo per PDF, applications.md, report .md |
 | Edit | Aggiornare il tracker |
-| Bash | `node generate-pdf.mjs` |
+| Bash | `node src/cv/generate-pdf.mjs` |

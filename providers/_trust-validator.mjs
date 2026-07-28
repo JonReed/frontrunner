@@ -5,7 +5,7 @@
  * Enriches each job with trustScore (0-100), trustFlags (string[]), and
  * trustLevel ('high' | 'medium' | 'low'). Never drops jobs — flag only.
  *
- * Underscore prefix keeps scan.mjs's provider loader from importing this
+ * Underscore prefix keeps src/scan/scan.mjs's provider loader from importing this
  * as a job-board provider.
  *
  * V1 heuristics:
@@ -135,7 +135,7 @@ export function companyMatchesHostname(company, hostname) {
 /**
  * Build a trust validator function from portals.yml config.
  *
- * Usage mirrors buildLocationFilter / buildSalaryFilter in scan.mjs.
+ * Usage mirrors buildLocationFilter / buildSalaryFilter in src/scan/scan.mjs.
  *
  * @param {object} [config]
  * @param {boolean} [config.enabled]

@@ -45,7 +45,7 @@
 ## 智能解析 URL 职位描述
 
 1. **Playwright (首选)**：`browser_navigate` + `browser_snapshot`。能够稳定处理所有单页面应用 (SPA)。
-   - **可选 — CLI 提取器（`config/profile.yml` 中的 `scan.extractor: cli`）：** 改为运行 `node browser-extract.mjs <url>`（`--mode jd`）——紧凑的 `{ "url", "title", "text" }`，更少 token（因门户而异）。出错或缺失时**静默**回退到 `browser_navigate` + `browser_snapshot`。
+   - **可选 — CLI 提取器（`config/profile.yml` 中的 `scan.extractor: cli`）：** 改为运行 `node src/scan/browser-extract.mjs <url>`（`--mode jd`）——紧凑的 `{ "url", "title", "text" }`，更少 token（因门户而异）。出错或缺失时**静默**回退到 `browser_navigate` + `browser_snapshot`。
 2. **WebFetch (备选)**：适用于静态页面，或在 Playwright 环境不可用时作为后备。
 3. **WebSearch (最终手段)**：在第三方招聘聚合平台上查找同名职位的快照。
 
@@ -60,6 +60,6 @@
 
 在启动处理之前，先执行以下脚本检查简历与配置的同步状态：
 ```bash
-node cv-sync-check.mjs
+node src/cv/cv-sync-check.mjs
 ```
 如果检测到简历或个人偏好数据存在脱节风险，在继续执行前向求职者发出警示。

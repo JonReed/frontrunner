@@ -26,7 +26,7 @@ import yaml from 'js-yaml';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..', '..');
 
-const { classify } = await import(join(ROOT, 'prefilter.mjs'));
+const { classify } = await import(join(ROOT, 'src/scan/prefilter.mjs'));
 
 /** Compile a rule set the way prefilter.mjs does, from an explicit config. */
 function rulesFrom(cfg) {

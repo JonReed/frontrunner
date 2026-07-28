@@ -96,8 +96,8 @@ Rule of thumb before you build: **provider modules, languages, CLI support, mode
 ```bash
 # Scripts
 npm run doctor                # Setup validation
-node verify-pipeline.mjs     # Health check
-node cv-sync-check.mjs        # Config check
+node src/tracker/verify-pipeline.mjs     # Health check
+node src/cv/cv-sync-check.mjs        # Config check
 
 # Dashboard
 npm run build:dashboard       # go build with platform-correct binary name

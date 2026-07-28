@@ -2,7 +2,7 @@
 
 Scans configured job portals, filters by title relevance, and adds new offers to the pipeline for subsequent evaluation.
 
-> **Note (v1.6+):** The default scanner (`scan.mjs` / `npm run scan`) is **zero-token** and uses structured sources: local parsers configured per company and public Greenhouse, Ashby, and Lever APIs. The levels with Playwright/WebSearch described below represent the **agent** workflow (executed by the AI agent), not what `scan.mjs` does. If a company does not have a local parser or a Greenhouse/Ashby/Lever API, `scan.mjs` will ignore it; in those cases, the agent must manually complete Level 1 (Playwright) or Level 3 (WebSearch).
+> **Note (v1.6+):** The default scanner (`src/scan/scan.mjs` / `npm run scan`) is **zero-token** and uses structured sources: local parsers configured per company and public Greenhouse, Ashby, and Lever APIs. The levels with Playwright/WebSearch described below represent the **agent** workflow (executed by the AI agent), not what `src/scan/scan.mjs` does. If a company does not have a local parser or a Greenhouse/Ashby/Lever API, `src/scan/scan.mjs` will ignore it; in those cases, the agent must manually complete Level 1 (Playwright) or Level 3 (WebSearch).
 >
 > **Rule (v1.8+):** If a company's local parser completes successfully in Level 0, the agent **must not** repeat that company in Playwright (Level 1) or API (Level 2). In Level 3, general queries remain active, but results from companies already covered by a parser are discarded. See [Rule: Successful Local Parser](#rule-successful-local-parser--no-expensive-scraping-repetition).
 
@@ -79,7 +79,7 @@ Object format with `results`:
 }
 ```
 
-`company` is optional; if not provided, `scan.mjs` uses the name from `tracked_companies`.
+`company` is optional; if not provided, `src/scan/scan.mjs` uses the name from `tracked_companies`.
 
 The scanner does not need to persist the full JSON after reading stdout. If a parser also generates an artifact for auditing or debugging, save it under `data/parser-output/{company}/` and keep it out of git (JSON files in `.gitignore`; `.gitkeep` files are kept in git to preserve the directory structure).
 
@@ -96,16 +96,16 @@ During the agent's scan, keep the **`local_parser_ok`** set in memory. This set 
 | Level | If the company is in `local_parser_ok` |
 |-------|----------------------------------------|
 | **1 — Playwright** | **Skip** — do not `browser_navigate` to its `careers_url` (most expensive token-consuming method) |
-| **2 — API** | **Skip** — do not WebFetch its `api:` (already covered by parser; `scan.mjs` does not use API after a successful parser either) |
+| **2 — API** | **Skip** — do not WebFetch its `api:` (already covered by parser; `src/scan/scan.mjs` does not use API after a successful parser either) |
 | **3 — WebSearch** | Run **general** queries (`site:`, role titles); **discard** any hit whose normalized company matches `local_parser_ok` |
 
 **Exceptions:**
 
-- Parser **failed** → the company is **not** added to `local_parser_ok`; Levels 1 and 2 apply normally (same criteria as the fallback in `scan.mjs` when the parser fails and an ATS API is available).
+- Parser **failed** → the company is **not** added to `local_parser_ok`; Levels 1 and 2 apply normally (same criteria as the fallback in `src/scan/scan.mjs` when the parser fails and an ATS API is available).
 - Level 3: do not deactivate cross-cutting queries (`site:jobs.ashbyhq.com`, `site:boards.greenhouse.io`, etc.) — these are used to discover **new** companies. Only filter out results for companies already in `tracked_companies` with a successful parser.
 - Do not create dedicated `search_queries` for a company with an active local parser (e.g. `site:jobs.ashbyhq.com/cohere "AI Engineer"`); use the parser or, if it fails, Playwright/API.
 
-**Recommended Level 0:** run `node scan.mjs` (or `npm run scan`) at the start of the agent's workflow. This covers local parsers + APIs in a single zero-token step and returns which companies used the `local-parser` successfully.
+**Recommended Level 0:** run `node src/scan/scan.mjs` (or `npm run scan`) at the start of the agent's workflow. This covers local parsers + APIs in a single zero-token step and returns which companies used the `local-parser` successfully.
 
 ### Level 1 — Direct Playwright (PRIMARY)
 
@@ -117,7 +117,7 @@ During the agent's scan, keep the **`local_parser_ok`** set in memory. This set 
 
 **Every company MUST have a `careers_url` in portals.yml.** If it does not, search for it once, save it, and use it in future scans.
 
-> **Opt-in — CLI extractor (`scan.extractor: cli`).** When `config/profile.yml` sets `scan.extractor: cli`, run `node browser-extract.mjs <careers_url> --mode listing` for each company instead of `browser_navigate` + `browser_snapshot`. It renders the page headlessly and returns compact JSON — `{ "url": ..., "jobs": [{ "title", "url" }] }` — so the listing enters context at a fraction of a full snapshot's tokens (~2–3× smaller here). Read the `jobs` array directly; then apply `title_filter` as usual. **Fall back silently** to `browser_navigate` + `browser_snapshot` if the command errors (it prints `{ "error", "code" }` and exits non-zero) or isn't present — never let the flag break a scan. Default (`scan.extractor` absent or `mcp`): the `browser_navigate` + `browser_snapshot` flow above.
+> **Opt-in — CLI extractor (`scan.extractor: cli`).** When `config/profile.yml` sets `scan.extractor: cli`, run `node src/scan/browser-extract.mjs <careers_url> --mode listing` for each company instead of `browser_navigate` + `browser_snapshot`. It renders the page headlessly and returns compact JSON — `{ "url": ..., "jobs": [{ "title", "url" }] }` — so the listing enters context at a fraction of a full snapshot's tokens (~2–3× smaller here). Read the `jobs` array directly; then apply `title_filter` as usual. **Fall back silently** to `browser_navigate` + `browser_snapshot` if the command errors (it prints `{ "error", "code" }` and exits non-zero) or isn't present — never let the flag break a scan. Default (`scan.extractor` absent or `mcp`): the `browser_navigate` + `browser_snapshot` flow above.
 
 ### Level 2 — ATS APIs / Feeds (COMPLEMENTARY)
 
@@ -149,7 +149,7 @@ For companies with a public API or structured feed **that are not in `local_pars
 
 The `search_queries` with `site:` filters cover portals transversally (all Ashby, all Greenhouse, etc.). Useful for discovering NEW companies that are not yet in `tracked_companies`, but results might be outdated. After filtering out hits from companies in `local_parser_ok`, the remaining results are deduplicated with Levels 0–2.
 
-> **Caution — Level-3 hits can be weeks stale.** WebSearch is fed by a search index that lags the live board, so a result can describe a posting that has already closed. Treat every Level-3 hit as unverified: before adding it to `data/pipeline.md` or evaluating it, confirm liveness against the real posting (`node check-liveness.mjs <url>` for ATS-hosted pages, or Playwright for non-ATS pages). Unlike the real-time ATS responses in Level 2, a Level-3 snippet is never proof a role is still open.
+> **Caution — Level-3 hits can be weeks stale.** WebSearch is fed by a search index that lags the live board, so a result can describe a posting that has already closed. Treat every Level-3 hit as unverified: before adding it to `data/pipeline.md` or evaluating it, confirm liveness against the real posting (`node src/scan/check-liveness.mjs <url>` for ATS-hosted pages, or Playwright for non-ATS pages). Unlike the real-time ATS responses in Level 2, a Level-3 snippet is never proof a role is still open.
 
 **Execution Priority:**
 1. Level 0: Local Parser → companies with a configured `parser:` and existing script; build `local_parser_ok`
@@ -165,9 +165,9 @@ Levels are additive — they are executed in order, and results are merged and d
 2. **Read History**: `data/scan-history.tsv` → already seen URLs
 3. **Read Dedup Sources**: `data/applications.md` + `data/pipeline.md`
 
-3.5. **Level 0 — Local Parser** (`scan.mjs`, zero-token):
+3.5. **Level 0 — Local Parser** (`src/scan/scan.mjs`, zero-token):
    Initialize `local_parser_ok = []`.
-   Prefer running `node scan.mjs` once to cover all zero-token local parsers + APIs; if executing manually, repeat the following logic.
+   Prefer running `node src/scan/scan.mjs` once to cover all zero-token local parsers + APIs; if executing manually, repeat the following logic.
    For each company in `tracked_companies` with `enabled: true`, `parser.command`, and an existing script:
    a. Execute `parser.command` with `parser.script` + `parser.args` using local process execution without shell.
    b. Expand `{careers_url}` and `{company}` placeholders in arguments.
@@ -231,7 +231,7 @@ Levels are additive — they are executed in order, and results are merged and d
    - `applications.md` → normalized company + role already evaluated
    - `pipeline.md` → exact URL already in pending or processed list
 
-7.1. **Cross-listing check (#1597)** — automatic in `scan.mjs`, warn only:
+7.1. **Cross-listing check (#1597)** — automatic in `src/scan/scan.mjs`, warn only:
    - Each new offer's JD body (when the provider's list API ships one, e.g. Lever) is fingerprinted (64-bit SimHash, stored as the 8th `scan-history.tsv` column).
    - A near-identical body seen within 90 days under a **different company** is flagged in the scan summary — the usual cause is an agency re-posting a direct listing with the employer name stripped, which URL and company+role dedup both miss.
    - Nothing is dropped automatically. If one side is an agency, apply through ONE channel only (see the Via channel workflow, #1596) — a double submission burns the candidate with both parties.
@@ -310,7 +310,7 @@ the 17th to the 20th"), pass `--posted-after`/`--posted-before` on the CLI —
 both optional, both `YYYY-MM-DD`, both inclusive:
 
 ```bash
-node scan.mjs --posted-after 2026-07-17 --posted-before 2026-07-20
+node src/scan/scan.mjs --posted-after 2026-07-17 --posted-before 2026-07-20
 ```
 
 Jobs whose provider exposes no `postedAt` always pass (same "don't penalize

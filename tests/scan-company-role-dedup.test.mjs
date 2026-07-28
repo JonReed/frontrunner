@@ -20,7 +20,7 @@ import { mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync, mkdirSync
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { execFileSync } from 'child_process';
-import { loadSeenCompanyRoles, companyRoleDedupKey } from '../scan.mjs';
+import { loadSeenCompanyRoles, companyRoleDedupKey } from '../src/scan/scan.mjs';
 
 console.log('\nscan.mjs — company+role dedupe survives between runs');
 
@@ -210,7 +210,7 @@ tracked_companies:
       script: tests/fixtures/three-city-board.mjs
 `);
 
-    const scan = () => execFileSync(NODE, [join(ROOT, 'scan.mjs')], {
+    const scan = () => execFileSync(NODE, [join(ROOT, 'src/scan/scan.mjs')], {
       cwd: dir,
       env: { ...process.env, CAREER_OPS_PORTALS: portals },
       encoding: 'utf-8',

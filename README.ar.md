@@ -152,8 +152,8 @@ cp .env.example .env
 npm install
 
 # 3. تقييم تفاصيل الوظيفة مباشرة
-node gemini-eval.mjs "We are looking for a Senior AI Engineer..."
-node gemini-eval.mjs --file ./jds/my-job.txt
+node src/evaluate/gemini-eval.mjs "We are looking for a Senior AI Engineer..."
+node src/evaluate/gemini-eval.mjs --file ./jds/my-job.txt
 npm run gemini:eval -- "نص تفاصيل الوظيفة هنا"
 ```
 
@@ -213,7 +213,7 @@ npm run gemini:eval -- "نص تفاصيل الوظيفة هنا"
 لضمان سلامة الإعلانات المنشورة وتفادي الوظائف المنتهية صلاحيتها أو الوهمية (Ghost Jobs)، يمكنك تشغيل الفاحص مع خيار التحقق الحي باستخدام Playwright:
 
 ```bash
-node scan.mjs --verify          # كشف سريع بدون استهلاك للرموز + فحص حيوية الإعلان عبر المتصفح
+node src/scan/scan.mjs --verify          # كشف سريع بدون استهلاك للرموز + فحص حيوية الإعلان عبر المتصفح
 ```
 
 ---

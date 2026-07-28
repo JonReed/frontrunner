@@ -13,7 +13,7 @@ import {
   parseDate,
   DEFAULT_CADENCE,
   parseFollowups,
-} from './followup-cadence.mjs';
+} from './src/tracker/followup-cadence.mjs';
 
 let passed = 0;
 let failed = 0;

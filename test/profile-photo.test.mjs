@@ -27,10 +27,10 @@ function render(inputPayload, { preview = false } = {}) {
   const output = join(dir, 'output.html');
   writeFileSync(input, JSON.stringify(inputPayload));
   const args = preview
-    ? ['build-cv-html.mjs', '--preview', input, TEMPLATE]
-    : ['build-cv-html.mjs', input, output, TEMPLATE];
+    ? ['src/cv/build-cv-html.mjs', '--preview', input, TEMPLATE]
+    : ['src/cv/build-cv-html.mjs', input, output, TEMPLATE];
   const stdout = execFileSync(process.execPath, args, { cwd: ROOT, encoding: 'utf8' });
-  return { html: readFileSync(preview ? join(ROOT, 'output', 'cv-preview.html') : output, 'utf8'), stdout, output };
+  return { html: readFileSync(preview ? join(ROOT, 'src/cv/output', 'cv-preview.html') : output, 'utf8'), stdout, output };
 }
 
 test('no photo emits no img and reserves no photo markup', () => {
@@ -58,7 +58,7 @@ test('single-letter Windows drive paths reach local file handling', () => {
   const input = join(dir, 'input.json');
   const output = join(dir, 'output.html');
   writeFileSync(input, JSON.stringify(payload('Z:\\does-not-exist\\candidate\\headshot.png')));
-  const result = spawnSync(process.execPath, ['build-cv-html.mjs', input, output, TEMPLATE], { cwd: ROOT, encoding: 'utf8' });
+  const result = spawnSync(process.execPath, ['src/cv/build-cv-html.mjs', input, output, TEMPLATE], { cwd: ROOT, encoding: 'utf8' });
   assert.notEqual(result.status, 0);
   assert.doesNotMatch(result.stderr, /Unsupported profile photo URL scheme/);
   assert.match(result.stderr, /not found or unreadable/);
@@ -89,7 +89,7 @@ test('missing, unsupported, and invalid-style photos fail clearly', () => {
     const input = join(dir, 'input.json');
     const output = join(dir, 'output.html');
     writeFileSync(input, JSON.stringify(value));
-    const result = spawnSync(process.execPath, ['build-cv-html.mjs', input, output, TEMPLATE], { cwd: ROOT, encoding: 'utf8' });
+    const result = spawnSync(process.execPath, ['src/cv/build-cv-html.mjs', input, output, TEMPLATE], { cwd: ROOT, encoding: 'utf8' });
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, expected);
     assert.equal(existsSync(output), false);

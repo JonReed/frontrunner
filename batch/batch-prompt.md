@@ -8,7 +8,7 @@ You receive a job URL plus a local JD text file and must produce:
 
 1. A complete A-G evaluation report (`reports/*.md`)
 2. A tailored ATS-optimized CV PDF when the score passes the configured PDF gate
-3. One tracker TSV line for `merge-tracker.mjs`
+3. One tracker TSV line for `src/tracker/merge-tracker.mjs`
 4. A final JSON summary on stdout for the batch orchestrator
 
 **Important:** This prompt is self-contained. Do not depend on any slash command, skill, or external mode file at runtime.
@@ -42,7 +42,7 @@ Examples:
 | Portfolio digest | `article-digest.md` if it exists | Always; proof points and metrics |
 | llms.txt | `llms.txt` if it exists | Always |
 | CV template | `templates/cv-template.html` | For PDF |
-| PDF renderer | `generate-pdf.mjs` | For PDF |
+| PDF renderer | `src/cv/generate-pdf.mjs` | For PDF |
 | States | `templates/states.yml` | Tracker status labels |
 
 Rules:
@@ -417,7 +417,7 @@ If score is greater than or equal to the threshold:
 12. Run:
 
 ```bash
-node generate-pdf.mjs \
+node src/cv/generate-pdf.mjs \
   output/cv-candidate-{company-slug}.html \
   output/cv-candidate-{company-slug}-{{DATE}}.pdf \
   --format={letter|a4} \
@@ -469,9 +469,9 @@ Column order is important:
 | 8 | report | markdown link | `[647](reports/647-...)` |
 | 9 | notes | string | one concise sentence |
 
-**Important:** TSV order has status BEFORE score. `applications.md` displays score before status. `merge-tracker.mjs` handles the conversion.
+**Important:** TSV order has status BEFORE score. `applications.md` displays score before status. `src/tracker/merge-tracker.mjs` handles the conversion.
 
-**Optional fields (column ≥ 10):** if the offer came through an agency/recruiter (#1596), append a labeled field `via={Agency}` (for example `via=Hays`) — never positional; the label is mandatory. One extra unlabeled field is interpreted as the legacy location column. If the end employer is unknown, use `?` as company and add the descriptor in notes (for example `fintech, Leeds`). `merge-tracker.mjs` rejects ambiguous extras (two unlabeled extras, or two `via=` fields).
+**Optional fields (column ≥ 10):** if the offer came through an agency/recruiter (#1596), append a labeled field `via={Agency}` (for example `via=Hays`) — never positional; the label is mandatory. One extra unlabeled field is interpreted as the legacy location column. If the end employer is unknown, use `?` as company and add the descriptor in notes (for example `fintech, Leeds`). `src/tracker/merge-tracker.mjs` rejects ambiguous extras (two unlabeled extras, or two `via=` fields).
 
 Valid canonical statuses are defined in `templates/states.yml`: `Evaluated`, `Applied`, `Responded`, `Interview`, `Offer`, `Rejected`, `Discarded`, `SKIP`.
 

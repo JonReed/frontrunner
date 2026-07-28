@@ -17,7 +17,7 @@ import { readFileSync, existsSync } from 'fs';
 import { join, dirname, relative, sep } from 'path';
 import { fileURLToPath } from 'url';
 import { load as yamlLoad } from 'js-yaml';
-import { resolveColumns, parseTrackerRow, normalizeVia } from '../../tracker-parse.mjs';
+import { resolveColumns, parseTrackerRow, normalizeVia } from '../tracker/tracker-parse.mjs';
 
 import { ROOT as CAREER_OPS } from '#paths';
 const APPS_FILE = existsSync(join(CAREER_OPS, 'data/applications.md'))
@@ -73,7 +73,7 @@ const MIN_VENDOR_N = (() => {
   return Number.isNaN(n) || n < 1 ? 8 : n;
 })();
 
-// --- Status normalization (mirrors verify-pipeline.mjs) ---
+// --- Status normalization (mirrors src/tracker/verify-pipeline.mjs) ---
 const ALIASES = {
   'evaluada': 'evaluated', 'condicional': 'evaluated', 'hold': 'evaluated',
   'evaluar': 'evaluated', 'verificar': 'evaluated',
@@ -155,7 +155,7 @@ function parseMachineSummary(content) {
 // Pure: group submitted applications by their Via channel (agency/recruiter
 // firm) and compute per-agency advance rates, plus the agency-vs-direct
 // aggregate. Channel identity uses the SAME normalizeVia key as the
-// merge-tracker dedup guard (tracker-parse.mjs): NFKC + Unicode letters/digits,
+// merge-tracker dedup guard (src/tracker/tracker-parse.mjs): NFKC + Unicode letters/digits,
 // so "Hays" / "HAYS " / full-width "ＨＡＹＳ" land in one bucket while distinct
 // non-Latin agencies (リクルートAgent vs パーソルAgent) stay separate. The
 // first raw spelling seen is kept for display. Rows in `submitted` whose Via
@@ -584,7 +584,7 @@ function classifyRemote(raw) {
 }
 
 // --- Detect ATS vendor from a posting URL ---
-// Host-only match, deliberately looser than liveness-api.mjs's resolveAtsApi()
+// Host-only match, deliberately looser than src/scan/liveness-api.mjs's resolveAtsApi()
 // (which needs the full posting path to build an API URL) — a tracker report's
 // URL may point at a board/careers page, not a canonical posting.
 //
@@ -650,7 +650,7 @@ function analyze() {
   const enriched = entries.map(e => {
     const reportMatch = e.report.match(/\]\(([^)]+)\)/);
     // Tracker links are relative to the tracker file's own directory (see
-    // merge-tracker.mjs link normalization); fall back to repo root for
+    // src/tracker/merge-tracker.mjs link normalization); fall back to repo root for
     // legacy root-relative links.
     let reportPath = null;
     if (reportMatch) {

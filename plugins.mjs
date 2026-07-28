@@ -9,9 +9,9 @@
  *   node plugins.mjs run notion search "staff platform engineer"
  *   node plugins.mjs run notion export [--dry-run]
  *
- * Provider plugins are NOT run here — they ride `node scan.mjs` via a
+ * Provider plugins are NOT run here — they ride `node src/scan/scan.mjs` via a
  * `provider: <id>` entry in portals.yml. Keeping ingest/search/notify/export
- * behind this explicit CLI is deliberate: a plain `node scan.mjs` never silently
+ * behind this explicit CLI is deliberate: a plain `node src/scan/scan.mjs` never silently
  * hits email/Notion/a paid API, and this file (not the plugin) OWNS every write
  * to the web-facing data files, so a plugin can't break their format.
  */
@@ -28,7 +28,7 @@ import {
 import { loadRegistry, findInRegistry, classifySource, sourceBadge, successorFor } from './plugins/_registry.mjs';
 import { readLock, writeLockEntry, removeLockEntry, hashPluginTree, consentSurface } from './plugins/_lock.mjs';
 import { installFromRepo, scaffoldNew, parseRepoArg } from './plugin-install.mjs';
-import { appendToPipeline } from './scan.mjs';
+import { appendToPipeline } from './src/scan/scan.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const APPLICATIONS_PATH = path.join(ROOT, 'data', 'applications.md');

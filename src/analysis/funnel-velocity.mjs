@@ -10,7 +10,7 @@
  *   3. velocity — median/p75 days per stage hop, folded from the append-only
  *      transition ledger data/status-log.tsv. Accrues value as the log grows.
  *
- * Transition ledger (written by set-status.mjs, never edited in place):
+ * Transition ledger (written by src/tracker/set-status.mjs, never edited in place):
  *   {tracker#}\t{YYYY-MM-DD}\t{from}\t{to}\t{source}\t{note}
  *   - from may be "-" (unknown prior state)
  *   - to "-" retracts the row's latest observation
@@ -39,9 +39,9 @@ import { join, dirname } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import yaml from 'js-yaml';
 import { computeFunnel, computeTrackerStats } from './stats.mjs';
-import { resolveColumns, parseTrackerRow } from '../../tracker-parse.mjs';
-import { resolveTrackerPath, loadCanonicalStates, resolveCanonicalState } from '../../tracker-utils.mjs';
-import { parseAppliedDate, normalizeStatus } from '../../followup-cadence.mjs';
+import { resolveColumns, parseTrackerRow } from '../tracker/tracker-parse.mjs';
+import { resolveTrackerPath, loadCanonicalStates, resolveCanonicalState } from '../tracker/tracker-utils.mjs';
+import { parseAppliedDate, normalizeStatus } from '../tracker/followup-cadence.mjs';
 
 import { ROOT as CAREER_OPS } from '#paths';
 const STATES_FILE = join(CAREER_OPS, 'templates/states.yml');
@@ -423,7 +423,7 @@ export function renderSummary(result, todayStr) {
     }
   }
   if (!hopsWithData.length && dq.observations === 0) {
-    out.push('  ledger is empty — velocity accrues as statuses change through set-status.mjs');
+    out.push('  ledger is empty — velocity accrues as statuses change through src/tracker/set-status.mjs');
   }
 
   out.push('\nData quality:');

@@ -9,7 +9,7 @@
 Per-URL loop の前に、zero-token liveness checker で pending URLs をまとめて sweep する：
 
 1. "Pending" section のすべての `- [ ]` URL を temp file に集める（1 URL per line）。
-2. `node check-liveness.mjs --file <tmpfile>` を実行する（large batches では WAF rate limits を避けるため `--throttle` を追加。pure Playwright、zero Claude tokens）。Checker は URL ごとの verdict を出し、expired/uncertain がある場合は non-zero で終了する。
+2. `node src/scan/check-liveness.mjs --file <tmpfile>` を実行する（large batches では WAF rate limits を避けるため `--throttle` を追加。pure Playwright、zero Claude tokens）。Checker は URL ごとの verdict を出し、expired/uncertain がある場合は non-zero で終了する。
 3. Checker が **expired/closed** と報告した URL は処理せず pipeline entry を resolve する：`- [x] ~~URL | Company | Role~~ -- posting expired (liveness sweep)` として "Processed" に移し、すでに tracker row がある場合は `Discarded` にする。**JD extraction、evaluation、report/PDF generation はしない。**
 4. `uncertain` results は残し、normal per-URL extraction 中に確認する（一時的な timeout で live posting を落とさないため）。
 5. 生き残った live URLs だけが下の per-URL processing loop に進む。
@@ -20,7 +20,7 @@ Per-URL loop の前に、zero-token liveness checker で pending URLs をまと�
 
 1. **Read** `data/pipeline.md` → "Pending" section の `- [ ]` items を探す。最初に上の **Liveness sweep** を実行し、expired entries を落としてから続行する。
 2. **For each surviving pending URL**:
-   a. `node reserve-report-num.mjs` を実行して次の `REPORT_NUM` を atomically claim する（report が書き込まれたら `node reserve-report-num.mjs --release <num>` で sentinel を release）
+   a. `node src/tracker/reserve-report-num.mjs` を実行して次の `REPORT_NUM` を atomically claim する（report が書き込まれたら `node src/tracker/reserve-report-num.mjs --release <num>` で sentinel を release）
    b. **Extract JD** using Playwright（browser_navigate + browser_snapshot）→ WebFetch → WebSearch
    c. URL に access できない場合 → note 付きで `- [!]` と mark し、次へ進む
    d. **Execute full auto-pipeline**: Evaluation A-F → Report .md → PDF（score >= `auto_pdf_score_threshold` の場合）→ Tracker
@@ -57,7 +57,7 @@ Pending lines are `- [ ] {url} | {company} | {title} | {location}`. Scanner は 
 ## Intelligent JD detection from URL
 
 1. **Playwright (preferred):** `browser_navigate` + `browser_snapshot`. すべての SPA で動く。
-   - **オプション — CLI 抽出 (`config/profile.yml` の `scan.extractor: cli`):** 代わりに `node browser-extract.mjs <url>`（`--mode jd`）を実行 — コンパクトな `{ "url", "title", "text" }`、トークン数が少ない（ポータル依存）。エラー時や未導入時は**静かに** `browser_navigate` + `browser_snapshot` へフォールバック。
+   - **オプション — CLI 抽出 (`config/profile.yml` の `scan.extractor: cli`):** 代わりに `node src/scan/browser-extract.mjs <url>`（`--mode jd`）を実行 — コンパクトな `{ "url", "title", "text" }`、トークン数が少ない（ポータル依存）。エラー時や未導入時は**静かに** `browser_navigate` + `browser_snapshot` へフォールバック。
 2. **WebFetch (fallback):** Static pages または Playwright が unavailable な場合。
 3. **WebSearch (last resort):** JD を index している secondary portals で検索。
 
@@ -72,16 +72,16 @@ Pending lines are `- [ ] {url} | {company} | {title} | {location}`. Scanner は 
 
 ## Automatic numbering
 
-1. `node reserve-report-num.mjs` を実行して next sequential number を claim する（stdout returns `{###}`）。
+1. `node src/tracker/reserve-report-num.mjs` を実行して next sequential number を claim する（stdout returns `{###}`）。
 2. その number を使って report file を書く。
-3. Report が書けたら `node reserve-report-num.mjs --release {###}` を実行して sentinel を release する。
+3. Report が書けたら `node src/tracker/reserve-report-num.mjs --release {###}` を実行して sentinel を release する。
 
 ## Source synchronization
 
 URL を処理する前に sync を verify：
 
 ```bash
-node cv-sync-check.mjs
+node src/cv/cv-sync-check.mjs
 ```
 
 Desynchronization があれば、続行前にユーザーに warn する。

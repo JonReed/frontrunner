@@ -33,7 +33,7 @@
  * Scope of the patch — deliberately narrow:
  *   - Only the callback-style `dns.lookup` on the `node:dns` module object.
  *   - `dns/promises` has its own independent `lookup` and is NOT affected.
- *     That matters: the SSRF egress guard in `upskill.mjs` resolves through
+ *     That matters: the SSRF egress guard in `src/analysis/upskill.mjs` resolves through
  *     `dns/promises` (`dns.resolve` + `dns.promises.lookup`), so its
  *     validation still hits the resolver every time and cannot be poisoned
  *     by this cache. Verify with:

@@ -7,7 +7,7 @@ import {
   getAppDomains,
   matchCandidates,
   classifyReply
-} from './reply-matcher.mjs';
+} from './src/tracker/reply-matcher.mjs';
 
 // getAppDomains returns an array of bare hostnames, so membership is already an
 // exact whole-string comparison. Assert it through `===` rather than

@@ -45,7 +45,7 @@
 ## 智慧解析 URL 職缺描述
 
 1. **Playwright（首選）**：`browser_navigate` + `browser_snapshot`。能穩定處理所有單頁式應用 (SPA)。
-   - **可選 — CLI 擷取器（`config/profile.yml` 中的 `scan.extractor: cli`）：** 改為執行 `node browser-extract.mjs <url>`（`--mode jd`）——精簡的 `{ "url", "title", "text" }`，更少 token（視職缺網站而定）。發生錯誤或缺少時**靜默**回退至 `browser_navigate` + `browser_snapshot`。
+   - **可選 — CLI 擷取器（`config/profile.yml` 中的 `scan.extractor: cli`）：** 改為執行 `node src/scan/browser-extract.mjs <url>`（`--mode jd`）——精簡的 `{ "url", "title", "text" }`，更少 token（視職缺網站而定）。發生錯誤或缺少時**靜默**回退至 `browser_navigate` + `browser_snapshot`。
 2. **WebFetch（次選）**：適用於靜態頁面，或在 Playwright 環境不可用時作為後備。
 3. **WebSearch（最終手段）**：在第三方求職聚合平台上找同名職缺的快照。
 
@@ -61,7 +61,7 @@
 啟動處理之前，先執行以下腳本檢查履歷與設定的同步狀態：
 
 ```bash
-node cv-sync-check.mjs
+node src/cv/cv-sync-check.mjs
 ```
 
 若偵測到履歷或個人偏好資料有脫節風險，在繼續執行前先向求職者提出警示。

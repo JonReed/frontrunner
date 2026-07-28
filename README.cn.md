@@ -169,8 +169,8 @@ cp .env.example .env
 npm install
 
 # 3. 评估职位描述
-node gemini-eval.mjs "我们在招聘资深 AI 工程师..."
-node gemini-eval.mjs --file ./jds/my-job.txt
+node src/evaluate/gemini-eval.mjs "我们在招聘资深 AI 工程师..."
+node src/evaluate/gemini-eval.mjs --file ./jds/my-job.txt
 npm run gemini:eval -- "职位描述文本"
 ```
 

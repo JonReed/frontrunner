@@ -269,9 +269,9 @@ cp .env.example .env
 npm install
 
 # 3. Evaluate a job description
-node gemini-eval.mjs "We are looking for a Senior AI Engineer..."
-node gemini-eval.mjs --file ./jds/my-job.txt
-node agent-inbox.mjs add "..."   # queue a request for the next session
+node src/evaluate/gemini-eval.mjs "We are looking for a Senior AI Engineer..."
+node src/evaluate/gemini-eval.mjs --file ./jds/my-job.txt
+node src/tracker/agent-inbox.mjs add "..."   # queue a request for the next session
 npm run gemini:eval -- "JD text here"
 ```
 
@@ -347,12 +347,12 @@ Scanner-ல் **45-க்கும் மேற்பட்ட நிறுவ�
 
 **தேடப்படும் வேலைவாய்ப்பு தளங்கள்:** 21 Provider Modules மூலம் ATS API-கள், Job Board Feeds, XML/RSS Feeds, Markdown Feeds மற்றும் Local Parsers ஆகியவை ஆதரிக்கப்படுகின்றன. முழுப் பட்டியலுக்கு **Supported Job Boards** ஆவணத்தைப் பார்க்கவும்.
 
-இயல்பாக `node scan.mjs` (`npm run scan`) ஒவ்வொரு ATS Feed வழங்கும் தகவலையும் நம்புகிறது. சில நிறுவனங்கள் வேலை முடிந்த பிறகும் பழைய Job Postings-ஐ API-யில் வைத்திருப்பதால், அவை `pipeline.md`-இல் தோன்றக்கூடும்.
+இயல்பாக `node src/scan/scan.mjs` (`npm run scan`) ஒவ்வொரு ATS Feed வழங்கும் தகவலையும் நம்புகிறது. சில நிறுவனங்கள் வேலை முடிந்த பிறகும் பழைய Job Postings-ஐ API-யில் வைத்திருப்பதால், அவை `pipeline.md`-இல் தோன்றக்கூடும்.
 
 அவற்றைத் தவிர்க்க `--verify` விருப்பத்துடன் இயக்கலாம்:
 
 ```bash
-node scan.mjs --verify          # Zero-token discovery + Playwright liveness check
+node src/scan/scan.mjs --verify          # Zero-token discovery + Playwright liveness check
 ```
 
 API Scan முடிந்த பிறகு Playwright மூலம் வேலைவாய்ப்பு இன்னும் செயலிலுள்ளதா என்று சரிபார்க்கப்படும். இந்தச் சரிபார்ப்பு புதிய வேலை வாய்ப்புகளுக்கு மட்டுமே நடைபெறும் (Duplicate Entries நீக்கப்பட்ட பிறகு), எனவே தேவையற்ற கூடுதல் செலவு ஏற்படாது.

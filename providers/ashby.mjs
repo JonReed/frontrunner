@@ -122,7 +122,7 @@ function toEpochMs(value) {
 // Ashby's posting-api puts extra hiring regions in `secondaryLocations[]`
 // (each with a region label + a postalAddress). Using only `j.location` drops
 // them, so an EU-eligible role whose PRIMARY label is e.g. "Canada" reads as
-// Canada-only and gets wrongly removed by scan.mjs's location_filter. We fold
+// Canada-only and gets wrongly removed by src/scan/scan.mjs's location_filter. We fold
 // in each secondary's region, locality, and country so the filter can match
 // (e.g. "Europe", "Berlin", "Germany"). Deduped, joined with " · ".
 /** @param {any} j */

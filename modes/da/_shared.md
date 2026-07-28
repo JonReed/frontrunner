@@ -178,7 +178,7 @@ I danske opslag og forhandlinger optræder visse termer, som ikke findes på EN/
 
 0. **Ansøgning (følgebrev):** Hvis formularen tillader det, så inkludér ALTID én. PDF i samme visuelle design som CV'et. Citater fra opslaget mappet til proof points. Maks. 1 side.
 1. Læs `cv.md` og `article-digest.md` (hvis den findes), før et opslag evalueres
-1b. **Første evaluering i hver session:** Kør `node cv-sync-check.mjs` via Bash. Ved advarsler, informér kandidaten
+1b. **Første evaluering i hver session:** Kør `node src/cv/cv-sync-check.mjs` via Bash. Ved advarsler, informér kandidaten
 2. Detektér rollens arketype og tilpas framingen
 3. Citér eksakte linjer fra CV'et ved matching
 4. Brug WebSearch til løn- og virksomhedsdata
@@ -187,7 +187,7 @@ I danske opslag og forhandlinger optræder visse termer, som ikke findes på EN/
 7. Vær direkte og konkret -- ingen smøren
 8. Naturligt tech-dansk til genererede tekster. Korte sætninger, aktive verber, undgå passiv. Oversæt ikke tekniske termer med tvang (stack, pipeline, deployment, embedding)
 8b. **Case-study-URL'er i PDF'ens Professional Summary:** Hvis PDF'en nævner case studies eller demoer, SKAL URL'erne optræde i det første afsnit (Professional Summary). Rekrutterere læser ofte kun summary. Alle URL'er i HTML med `white-space: nowrap`
-9. **Tracker-poster som TSV** -- rediger ALDRIG applications.md direkte for nye tilføjelser. Skriv TSV i `batch/tracker-additions/`, `merge-tracker.mjs` håndterer sammenfletningen
+9. **Tracker-poster som TSV** -- rediger ALDRIG applications.md direkte for nye tilføjelser. Skriv TSV i `batch/tracker-additions/`, `src/tracker/merge-tracker.mjs` håndterer sammenfletningen
 10. **`**URL:**` i hver report-header** -- mellem Score og PDF
 
 ### Værktøjer
@@ -200,4 +200,4 @@ I danske opslag og forhandlinger optræder visse termer, som ikke findes på EN/
 | Read | cv.md, article-digest.md, cv-template.html |
 | Write | Midlertidig HTML til PDF, applications.md, reports .md |
 | Edit | Opdatér trackeren |
-| Bash | `node generate-pdf.mjs` |
+| Bash | `node src/cv/generate-pdf.mjs` |

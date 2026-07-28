@@ -186,10 +186,10 @@ Skanneren leveres med **45+ virksomheder** klar til skanning og **19 forespørgs
 
 **Gennemsøgte portaler:** Ashby, Greenhouse, Lever, Wellfound, Workable, RemoteFront
 
-Som standard stoler `node scan.mjs` (`npm run scan`) på det, hvert ATS-feed returnerer. Nogle virksomheder lader forældede opslag blive stående, selv efter rekrutteringen er lukket. Brug `--verify` for at køre Playwright efter API-fasen og frasortere udløbne stillinger, før de tilføjes pipelinen:
+Som standard stoler `node src/scan/scan.mjs` (`npm run scan`) på det, hvert ATS-feed returnerer. Nogle virksomheder lader forældede opslag blive stående, selv efter rekrutteringen er lukket. Brug `--verify` for at køre Playwright efter API-fasen og frasortere udløbne stillinger, før de tilføjes pipelinen:
 
 ```bash
-node scan.mjs --verify          # token-fri søgning + liveness-verifikation via Playwright
+node src/scan/scan.mjs --verify          # token-fri søgning + liveness-verifikation via Playwright
 ```
 
 Verifikationen er sekventiel og gælder kun nye stillinger (efter deduplikering), så omkostningen er begrænset.

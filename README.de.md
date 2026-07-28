@@ -216,10 +216,10 @@ Der Scanner bringt **45+ Unternehmen** und **19 Suchabfragen** über große Jobb
 
 **Durchsuchte Jobbörsen:** 21 Provider-Module decken ATS-APIs, boardweite Feeds, XML/RSS-Feeds, Markdown-Feeds und lokale Parser ab. Siehe [Supported job boards](docs/SUPPORTED_JOB_BOARDS.md) für die vollständige Tabelle.
 
-Standardmäßig vertraut `node scan.mjs` (alias `npm run scan`) den Rückgaben der ATS-Feeds. Einige Unternehmen lassen alte Stellenanzeigen öffentlich verfügbar, obwohl Rollen bereits geschlossen sind. Mit `--verify` startet Playwright nach dem API-Lauf und entfernt abgelaufene Stellenanzeigen, bevor sie in `pipeline.md` landen:
+Standardmäßig vertraut `node src/scan/scan.mjs` (alias `npm run scan`) den Rückgaben der ATS-Feeds. Einige Unternehmen lassen alte Stellenanzeigen öffentlich verfügbar, obwohl Rollen bereits geschlossen sind. Mit `--verify` startet Playwright nach dem API-Lauf und entfernt abgelaufene Stellenanzeigen, bevor sie in `pipeline.md` landen:
 
 ```bash
-node scan.mjs --verify          # Zero-Token-Discovery + Playwright-Liveness-Check
+node src/scan/scan.mjs --verify          # Zero-Token-Discovery + Playwright-Liveness-Check
 ```
 
 ## Dashboard TUI

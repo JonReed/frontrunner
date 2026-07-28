@@ -14,7 +14,7 @@
  * `metadata.sources` says which files were found — a fresh clone with zero
  * user data emits the full contract shape with null sections.
  *
- * `runs` aggregates data/scan-runs.tsv (per-run counters written by scan.mjs,
+ * `runs` aggregates data/scan-runs.tsv (per-run counters written by src/scan/scan.mjs,
  * #1604 PR-2) — null until the first non-dry scan creates the file.
  */
 
@@ -22,8 +22,8 @@ import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import yaml from 'js-yaml';
-import { resolveColumns, parseTrackerRow } from '../../tracker-parse.mjs';
-import { normalizeStatus } from '../../followup-cadence.mjs';
+import { resolveColumns, parseTrackerRow } from '../tracker/tracker-parse.mjs';
+import { normalizeStatus } from '../tracker/followup-cadence.mjs';
 
 import { ROOT } from '#paths';
 const APPS_FILE = join(ROOT, 'data', 'applications.md');
@@ -61,7 +61,7 @@ function canonicalStatus(raw) {
 
 /**
  * Roll up applications.md: counts per canonical status, score stats, pdf and
- * report coverage, in-flight count. Header-aware via tracker-parse.mjs; CRLF
+ * report coverage, in-flight count. Header-aware via src/tracker/tracker-parse.mjs; CRLF
  * input is normalized first (Windows checkouts).
  *
  * @param {string} content - Raw applications.md text.
@@ -329,7 +329,7 @@ export function computeFollowupStats(followupsContent, trackerByNum) {
 // ── Scan-run trends ─────────────────────────────────────────────────
 
 /**
- * Aggregate data/scan-runs.tsv (written by scan.mjs, one row per non-dry run).
+ * Aggregate data/scan-runs.tsv (written by src/scan/scan.mjs, one row per non-dry run).
  *
  * Header-name parsing, NEVER positional: columns may be appended in later
  * schema versions and a positional slice would silently miscount from then on.
@@ -449,7 +449,7 @@ function printSummary(stats) {
   }
   const p = stats.portals;
   if (p) {
-    const deadPart = p.persistentlyDead > 0 ? ` | 🚨 ${p.persistentlyDead} persistently dead (run verify-portals.mjs)` : '';
+    const deadPart = p.persistentlyDead > 0 ? ` | 🚨 ${p.persistentlyDead} persistently dead (run src/scan/verify-portals.mjs)` : '';
     console.log(`Portals:    ${p.configuredCompanies} companies + ${p.configuredBoards} boards configured | ${p.producingCompanies} have produced a match (${p.producingPct}%)${deadPart} — low ≠ broken, may just be no openings`);
   } else {
     console.log('Portals:    — no data (portals.yml missing)');

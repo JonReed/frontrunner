@@ -7,30 +7,30 @@ All scripts live in the project root as `.mjs` modules and are exposed via `npm 
 | Command | Script | Purpose |
 |---------|--------|---------|
 | `npm run doctor` | `doctor.mjs` | Validate setup prerequisites |
-| `npm run verify` | `verify-pipeline.mjs` | Check pipeline data integrity |
-| `npm run normalize` | `normalize-statuses.mjs` | Fix non-canonical statuses |
-| `npm run dedup` | `dedup-tracker.mjs` | Remove duplicate tracker entries |
-| `npm run merge` | `merge-tracker.mjs` | Merge batch TSVs into applications.md |
-| `npm run pdf` | `generate-pdf.mjs` | Convert HTML to ATS-optimized PDF |
-| `npm run img-to-pdf` | `img-to-pdf.mjs` | Convert a single screenshot/image into a single-page PDF |
-| `node build-cv-latex.mjs` | `build-cv-latex.mjs` | Build .tex from structured JSON payload |
-| `npm run sync-check` | `cv-sync-check.mjs` | Validate CV/profile consistency |
+| `npm run verify` | `src/tracker/verify-pipeline.mjs` | Check pipeline data integrity |
+| `npm run normalize` | `src/tracker/normalize-statuses.mjs` | Fix non-canonical statuses |
+| `npm run dedup` | `src/tracker/dedup-tracker.mjs` | Remove duplicate tracker entries |
+| `npm run merge` | `src/tracker/merge-tracker.mjs` | Merge batch TSVs into applications.md |
+| `npm run pdf` | `src/cv/generate-pdf.mjs` | Convert HTML to ATS-optimized PDF |
+| `npm run img-to-pdf` | `src/cv/img-to-pdf.mjs` | Convert a single screenshot/image into a single-page PDF |
+| `node src/cv/build-cv-latex.mjs` | `src/cv/build-cv-latex.mjs` | Build .tex from structured JSON payload |
+| `npm run sync-check` | `src/cv/cv-sync-check.mjs` | Validate CV/profile consistency |
 | `npm run patterns` | `src/analysis/analyze-patterns.mjs` | Analyze tracker outcomes and report patterns |
 | `npm run upskill` | `src/analysis/upskill.mjs` | Aggregate skill-gap map from tracked reports (or `--url-text <url\|file>` for a single-JD targeted gap analysis) |
-| `npm run add` | `add-entry.mjs` | Dedup + insert a `/career-ops add` entry into cv.md / article-digest.md |
+| `npm run add` | `src/tracker/add-entry.mjs` | Dedup + insert a `/career-ops add` entry into cv.md / article-digest.md |
 | `npm run update:check` | `update-system.mjs check` | Check for upstream updates |
 | `npm run update` | `update-system.mjs apply` | Apply upstream update |
 | `npm run rollback` | `update-system.mjs rollback` | Rollback last update |
-| `npm run liveness` | `check-liveness.mjs` | Test if job URLs are still active |
-| `npm run extract` | `browser-extract.mjs` | Headless read-only page extractor (opt-in `scan.extractor: cli`) — compact JSON for scan/JD |
-| `npm run scan` | `scan.mjs` | Zero-token portal scanner |
-| `npm run scan:full` | `scan-ats-full.mjs` | Reverse ATS discovery scanner |
-| `npm run validate:portals` | `validate-portals.mjs` | Validate portals.yml shape before scanning |
-| `npm run tracker` | `tracker.mjs` | SQLite derived index over applications.md — sync/query/history/export |
+| `npm run liveness` | `src/scan/check-liveness.mjs` | Test if job URLs are still active |
+| `npm run extract` | `src/scan/browser-extract.mjs` | Headless read-only page extractor (opt-in `scan.extractor: cli`) — compact JSON for scan/JD |
+| `npm run scan` | `src/scan/scan.mjs` | Zero-token portal scanner |
+| `npm run scan:full` | `src/scan/scan-ats-full.mjs` | Reverse ATS discovery scanner |
+| `npm run validate:portals` | `src/scan/validate-portals.mjs` | Validate portals.yml shape before scanning |
+| `npm run tracker` | `src/tracker/tracker.mjs` | SQLite derived index over applications.md — sync/query/history/export |
 | `npm run find` | `find.mjs` | Resolve a report#/tracker#/company query to its full pipeline identity |
-| `npm run invite-match` | `invite-match.mjs` | Fuzzy-match a pasted interview-invite email against `data/applications.md` |
-| `npm run paste-reply` | `paste-reply.mjs` | Manual/no-Gmail input into the `reply-watch.mjs` classification pipeline |
-| `npm run openai:tailor` | `openai-tailor.mjs` | Tailor a CV via any OpenAI-compatible endpoint (headless companion to `openai-eval.mjs`) |
+| `npm run invite-match` | `src/tracker/invite-match.mjs` | Fuzzy-match a pasted interview-invite email against `data/applications.md` |
+| `npm run paste-reply` | `src/tracker/paste-reply.mjs` | Manual/no-Gmail input into the `src/tracker/reply-watch.mjs` classification pipeline |
+| `npm run openai:tailor` | `src/evaluate/openai-tailor.mjs` | Tailor a CV via any OpenAI-compatible endpoint (headless companion to `src/evaluate/openai-eval.mjs`) |
 
 ---
 
@@ -113,7 +113,7 @@ It reports errors for invalid YAML shape, unknown explicit providers, malformed 
 ```bash
 npm run validate:portals
 npm run validate:portals -- --file templates/portals.example.yml
-node validate-portals.mjs --self-test
+node src/scan/validate-portals.mjs --self-test
 ```
 
 **Exit codes:** `0` no errors (warnings allowed), `1` one or more errors found.
@@ -136,12 +136,12 @@ npm run pdf -- input.html output.pdf --format=a4        # A4 (default)
 
 ## img-to-pdf
 
-Converts a single screenshot or image (PNG, JPEG, GIF, WEBP, BMP, SVG) into a single-page PDF via headless Chromium — for ATS upload fields that require a PDF specifically and reject images. Embeds the image as a base64 `data:` URI in a minimal HTML page and renders it with `page.pdf()`, sized to the image's own pixel dimensions so the page is neither cropped nor padded. Zero new dependencies — reuses the `playwright` dependency `generate-pdf.mjs` already uses, and is a deliberately standalone script: it does not go through `generate-pdf.mjs`, so it is never subject to that script's cv.md section-order validation.
+Converts a single screenshot or image (PNG, JPEG, GIF, WEBP, BMP, SVG) into a single-page PDF via headless Chromium — for ATS upload fields that require a PDF specifically and reject images. Embeds the image as a base64 `data:` URI in a minimal HTML page and renders it with `page.pdf()`, sized to the image's own pixel dimensions so the page is neither cropped nor padded. Zero new dependencies — reuses the `playwright` dependency `src/cv/generate-pdf.mjs` already uses, and is a deliberately standalone script: it does not go through `src/cv/generate-pdf.mjs`, so it is never subject to that script's cv.md section-order validation.
 
 ```bash
 npm run img-to-pdf -- screenshot.png output.pdf
 npm run img-to-pdf -- screenshot.png output.pdf --force   # overwrite an existing output file
-node img-to-pdf.mjs --self-test
+node src/cv/img-to-pdf.mjs --self-test
 ```
 
 MVP scope: one image in, one PDF page out. Multi-image/multi-page conversion is not implemented.
@@ -150,13 +150,13 @@ MVP scope: one image in, one PDF page out. Multi-image/multi-page conversion is 
 
 ---
 
-## build-cv-latex.mjs
+## src/cv/build-cv-latex.mjs
 
 Builds a `.tex` file from a structured JSON payload, handling template merge and LaTeX escaping automatically. The JSON is produced by the agent during evaluation — this script replaces the manual LaTeX generation step in `modes/latex.md`.
 
 ```bash
-node build-cv-latex.mjs input.json output.tex
-node build-cv-latex.mjs --test
+node src/cv/build-cv-latex.mjs input.json output.tex
+node src/cv/build-cv-latex.mjs --test
 ```
 
 **Exit codes:** `0` file generated, `1` missing inputs, invalid JSON, unresolved placeholders, or template not found.
@@ -245,7 +245,7 @@ node src/analysis/funnel-velocity.mjs --self-test
 node src/analysis/funnel-velocity.mjs --benchmarks path/to/benchmarks.yml
 ```
 
-Ledger line format (TSV, appended by `set-status.mjs`, `#`-prefixed lines are comments):
+Ledger line format (TSV, appended by `src/tracker/set-status.mjs`, `#`-prefixed lines are comments):
 
 ```text
 {tracker#}\t{YYYY-MM-DD}\t{from}\t{to}\t{source}\t{note}
@@ -287,15 +287,15 @@ Each card covers two independent fact axes, never combined into a single verdict
 - **`responsiveness`** — has this company ever responded to you, or gone silent on an Applied row past the silence window? A rejection counts as a response (it's an answer, not silence). Labels: `responded-before`, `silent-on-you`, `mixed`, `no-history`. Rows younger than the silence window are **pending** — right-censored, never labeled silent. Facts older than 365 days are **stale** and excluded from label computation unless `--include-stale` is passed. Follow-ups sent never change the label — they only annotate a silent fact's `confidence` (`confirmed-by-followups` vs `unconfirmed`).
 - **`postingChurn`** — does this company repost the same role repeatedly (evergreen requisition / re-opened search), sourced from `src/analysis/detect-reposts.mjs` clusters over `data/scan-history.tsv`. Labels: `reposts-detected`, `none-detected`, `no-scan-data`.
 
-The script deliberately reports **facts, not verdicts** — output is always descriptive and past-tense ("silent 34d since 2026-05-01"), never "ghosted" or "risk". Every silent fact carries a dated `clearInstruction` (the exact `set-status.mjs` command to run if the company actually did respond and it just wasn't logged), and every card with a silent fact is accompanied by an innocent-explanations line: high-volume inboxes, evergreen requisitions, re-opened searches, and the candidate's own unlogged responses all produce the same raw signals as genuine silence. Before trusting the output against real data, run a dry read (`node company-history.mjs --summary`) and sanity-check a few cards where you already know the real story.
+The script deliberately reports **facts, not verdicts** — output is always descriptive and past-tense ("silent 34d since 2026-05-01"), never "ghosted" or "risk". Every silent fact carries a dated `clearInstruction` (the exact `src/tracker/set-status.mjs` command to run if the company actually did respond and it just wasn't logged), and every card with a silent fact is accompanied by an innocent-explanations line: high-volume inboxes, evergreen requisitions, re-opened searches, and the candidate's own unlogged responses all produce the same raw signals as genuine silence. Before trusting the output against real data, run a dry read (`node src/scan/company-history.mjs --summary`) and sanity-check a few cards where you already know the real story.
 
 ```bash
-node company-history.mjs                        # full JSON evidence cards to stdout
-node company-history.mjs --summary               # human-readable cards (hygiene nudge, then silent-first, window caveat printed once)
-node company-history.mjs --company "Acme"         # single-card lookup (unknown company returns the minimal no-history/no-scan-data shape)
-node company-history.mjs --silence-window 21      # override the default silence window in days
-node company-history.mjs --include-stale          # include facts older than 365d in label computation
-node company-history.mjs --self-test
+node src/scan/company-history.mjs                        # full JSON evidence cards to stdout
+node src/scan/company-history.mjs --summary               # human-readable cards (hygiene nudge, then silent-first, window caveat printed once)
+node src/scan/company-history.mjs --company "Acme"         # single-card lookup (unknown company returns the minimal no-history/no-scan-data shape)
+node src/scan/company-history.mjs --silence-window 21      # override the default silence window in days
+node src/scan/company-history.mjs --include-stale          # include facts older than 365d in label computation
+node src/scan/company-history.mjs --self-test
 ```
 
 Default silence window: `templates/benchmarks.yml` `days_first_response.range_days[1] * 2` when that file exists, else `28` days.
@@ -351,7 +351,7 @@ npm run rollback
 
 ## liveness
 
-Tests whether job posting URLs are still live. Two rungs: a zero-token ATS API check first (`liveness-api.mjs` — Greenhouse, Lever, Ashby, Workday), falling back to headless Chromium (`liveness-browser.mjs`) for non-ATS pages or when the API is inconclusive. The browser rung detects expired patterns (e.g. "job no longer available"), HTTP 404/410, ATS redirect patterns, and apply-button presence, and supports multi-language expired patterns (English, German, French).
+Tests whether job posting URLs are still live. Two rungs: a zero-token ATS API check first (`src/scan/liveness-api.mjs` — Greenhouse, Lever, Ashby, Workday), falling back to headless Chromium (`src/scan/liveness-browser.mjs`) for non-ATS pages or when the API is inconclusive. The browser rung detects expired patterns (e.g. "job no longer available"), HTTP 404/410, ATS redirect patterns, and apply-button presence, and supports multi-language expired patterns (English, German, French).
 
 Per-job ATS endpoints (Greenhouse, Lever, Workday) treat a 200 as proof the posting is live; Ashby's public API is org-level (the whole job board), so that rung parses the board and confirms the specific job id is still listed. A definitive 404/410 from any ATS API is authoritative and short-circuits the browser check entirely — zero tokens, no browser launch.
 
@@ -384,7 +384,7 @@ parser:
 
 Use `args` only for reusable parsers that intentionally accept runtime parameters such as `{careers_url}` or `{company}`.
 
-If a parser writes full extraction artifacts for debugging or audit, store them under `data/parser-output/{company}/`. `scan.mjs` reads stdout and does not require those JSON files after parsing. Keep generated JSON artifacts out of git; `.gitkeep` placeholders are the only exception for preserving directory structure.
+If a parser writes full extraction artifacts for debugging or audit, store them under `data/parser-output/{company}/`. `src/scan/scan.mjs` reads stdout and does not require those JSON files after parsing. Keep generated JSON artifacts out of git; `.gitkeep` placeholders are the only exception for preserving directory structure.
 
 When the ATS provider's list API returns a description, each new offer is fingerprinted for cross-listing detection. See [Cross-listing detection](#cross-listing-detection) under `scan:full` for details.
 
@@ -392,7 +392,7 @@ When the ATS provider's list API returns a description, each new offer is finger
 
 ```bash
 npm run scan
-node scan.mjs --include-blacklisted   # audit: let blacklisted companies through, annotated
+node src/scan/scan.mjs --include-blacklisted   # audit: let blacklisted companies through, annotated
 ```
 
 **Exit codes:** `0` scan completed, `1` configuration error or no portals.yml found.
@@ -401,9 +401,9 @@ node scan.mjs --include-blacklisted   # audit: let blacklisted companies through
 
 ## scan:full
 
-Reverse ATS discovery scanner. Where `scan.mjs` scans the companies you track in `portals.yml`, this inverts the direction: it walks public directories of companies per ATS (Greenhouse, Lever, Ashby, Workday) and surfaces fresh postings matching your `portals.yml` `title_filter` / `location_filter` — no manual company curation. Company directories come from the public [job-board-aggregator](https://github.com/Feashliaa/job-board-aggregator) dataset, cached in `data/cache/` for 24 hours.
+Reverse ATS discovery scanner. Where `src/scan/scan.mjs` scans the companies you track in `portals.yml`, this inverts the direction: it walks public directories of companies per ATS (Greenhouse, Lever, Ashby, Workday) and surfaces fresh postings matching your `portals.yml` `title_filter` / `location_filter` — no manual company curation. Company directories come from the public [job-board-aggregator](https://github.com/Feashliaa/job-board-aggregator) dataset, cached in `data/cache/` for 24 hours.
 
-Postings without a usable publish date are skipped — a reverse scan is only useful for fresh postings. New matches are appended to `data/pipeline.md` and `data/scan-history.tsv` in the same format as `scan.mjs`.
+Postings without a usable publish date are skipped — a reverse scan is only useful for fresh postings. New matches are appended to `data/pipeline.md` and `data/scan-history.tsv` in the same format as `src/scan/scan.mjs`.
 
 `data/blacklist.md` is respected here too: blacklisted companies are skipped by default and reported in the summary. Pass `--include-blacklisted` to audit them instead; matching postings flow through annotated (`note: blacklisted: {reason}` in `data/pipeline.md`).
 
@@ -419,17 +419,17 @@ How it works:
 - Postings without a usable description get an **empty fingerprint** and are never flagged. No body → no signal, no false positives.
 - The fingerprint is computed **locally** from the text already returned by the API. No extra network request is made and the JD body itself is not stored in the TSV.
 
-Same detection logic applies to `scan.mjs` (the standard portal scanner) — the sub-section above is shared between both commands.
+Same detection logic applies to `src/scan/scan.mjs` (the standard portal scanner) — the sub-section above is shared between both commands.
 
 ```bash
 npm run scan:full                              # all ATS directories, last 3 days
-node scan-ats-full.mjs --since 7               # postings from the last 7 days
-node scan-ats-full.mjs --ats greenhouse,workday # subset of sources
-node scan-ats-full.mjs --limit 200             # max companies per ATS
-node scan-ats-full.mjs --dry-run               # preview without writing
-node scan-ats-full.mjs --liveness              # Playwright-verify matches first
-node scan-ats-full.mjs --include-blacklisted   # audit blacklist matches instead of skipping
-node scan-ats-full.mjs --md-out notes/scans    # also write a dated markdown digest
+node src/scan/scan-ats-full.mjs --since 7               # postings from the last 7 days
+node src/scan/scan-ats-full.mjs --ats greenhouse,workday # subset of sources
+node src/scan/scan-ats-full.mjs --limit 200             # max companies per ATS
+node src/scan/scan-ats-full.mjs --dry-run               # preview without writing
+node src/scan/scan-ats-full.mjs --liveness              # Playwright-verify matches first
+node src/scan/scan-ats-full.mjs --include-blacklisted   # audit blacklist matches instead of skipping
+node src/scan/scan-ats-full.mjs --md-out notes/scans    # also write a dated markdown digest
 ```
 
 **Exit codes:** `0` scan completed, `1` configuration error (no portals.yml, unknown `--ats` source) or fatal scan error.
@@ -438,25 +438,25 @@ node scan-ats-full.mjs --md-out notes/scans    # also write a dated markdown dig
 
 ## tracker
 
-SQLite **derived index** for the applications tracker (RFC #918, phase 1). `data/applications.md` stays the source of truth; `data/applications.db` is built from it by `sync` and is safe to delete at any time — it regenerates on the next sync. All writes keep going to the markdown exactly as today (`merge-tracker.mjs`, hand edits); the index is read-only infrastructure.
+SQLite **derived index** for the applications tracker (RFC #918, phase 1). `data/applications.md` stays the source of truth; `data/applications.db` is built from it by `sync` and is safe to delete at any time — it regenerates on the next sync. All writes keep going to the markdown exactly as today (`src/tracker/merge-tracker.mjs`, hand edits); the index is read-only infrastructure.
 
 Why: at hundreds of rows a markdown table degrades structurally (encoding corruption, column drift, `|` inside cells shifting columns), and agents grepping it get model-dependent results. The index normalizes on sync, so a query returns the same rows for every model on every CLI — and corruption is detected at sync time instead of propagating silently.
 
 Zero new dependencies — uses `node:sqlite`, built into Node ≥ 22.5.
 
 ```bash
-node tracker.mjs sync                     # (re)build applications.db from applications.md
-node tracker.mjs sync --check             # diagnose corruption only, no write (exit 1 if issues found)
-node tracker.mjs query --status Applied --since 2026-05-01
-node tracker.mjs query --company acme --json
-node tracker.mjs history --id 42          # status transitions observed across syncs (Applied → Interview → ...)
-node tracker.mjs export                   # inverse: index → canonical markdown table on stdout
-node tracker.mjs export --out repaired.md # write to a file (existing file backed up to .bak first)
+node src/tracker/tracker.mjs sync                     # (re)build applications.db from applications.md
+node src/tracker/tracker.mjs sync --check             # diagnose corruption only, no write (exit 1 if issues found)
+node src/tracker/tracker.mjs query --status Applied --since 2026-05-01
+node src/tracker/tracker.mjs query --company acme --json
+node src/tracker/tracker.mjs history --id 42          # status transitions observed across syncs (Applied → Interview → ...)
+node src/tracker/tracker.mjs export                   # inverse: index → canonical markdown table on stdout
+node src/tracker/tracker.mjs export --out repaired.md # write to a file (existing file backed up to .bak first)
 ```
 
 `query` and `history` auto-resync when the markdown changed since the last sync, so the index can never serve stale reads.
 
-`sync` detects and reports the corruption classes markdown accumulates — mojibake placeholder cells, scores stranded in the status column, non-canonical statuses (resolved via `templates/states.yml` aliases), missing/duplicate ids, stray pipes — and normalizes them **in the index only**; the markdown is never modified. Fix at the source with `normalize-statuses.mjs` / `dedup-tracker.mjs`, then re-sync. Status changes between syncs accumulate in a `status_events` table, which gives `src/analysis/analyze-patterns.mjs` a real funnel instead of only the current snapshot.
+`sync` detects and reports the corruption classes markdown accumulates — mojibake placeholder cells, scores stranded in the status column, non-canonical statuses (resolved via `templates/states.yml` aliases), missing/duplicate ids, stray pipes — and normalizes them **in the index only**; the markdown is never modified. Fix at the source with `src/tracker/normalize-statuses.mjs` / `src/tracker/dedup-tracker.mjs`, then re-sync. Status changes between syncs accumulate in a `status_events` table, which gives `src/analysis/analyze-patterns.mjs` a real funnel instead of only the current snapshot.
 
 `export` is the inverse of `sync` (round-trip `md → db → md` is lossless for clean input — enforced by `test-all.mjs`). It writes to stdout by default and never touches `applications.md` unless you explicitly pass it as `--out`. Phase 2 of #918 (DB becomes source of truth, markdown becomes a rendered view) is a separate, explicit per-user opt-in — not part of this script yet.
 
@@ -468,7 +468,7 @@ node tracker.mjs export --out repaired.md # write to a file (existing file backe
 
 Resolves a report number, tracker number, or company/role fragment to its full pipeline identity: company, role, tracker#, report#, canonical status, PDF path (from `data/pdf-index.tsv`), and report path. "Apply to #13" is ambiguous — report numbers and tracker row numbers diverge — and answering it used to require opening three files; this does it in one read-only lookup.
 
-Zero dependencies, strictly read-only. Numeric queries match **both** the tracker # column and the report number from the Report link (`012` and `12` are the same number), so collisions between the two numbering schemes surface as multiple rows instead of a silent wrong pick. Text queries match company/role by case-insensitive substring, with the shared fuzzy matcher (`role-matcher.mjs`) as fallback for multi-word phrases.
+Zero dependencies, strictly read-only. Numeric queries match **both** the tracker # column and the report number from the Report link (`012` and `12` are the same number), so collisions between the two numbering schemes surface as multiple rows instead of a silent wrong pick. Text queries match company/role by case-insensitive substring, with the shared fuzzy matcher (`src/tracker/role-matcher.mjs`) as fallback for multi-word phrases.
 
 ```bash
 node find.mjs 13                # report# OR tracker# 13 — shows both if they differ
@@ -485,11 +485,11 @@ Multiple matches print as a table; zero matches print a clean message.
 
 ## paste-reply
 
-Manual, no-Gmail input path into `reply-watch.mjs`'s classification pipeline (#1802). `reply-watch.mjs` already classifies employer replies and matches them to tracker rows, but its only input is `data/reply-candidates.json`, and the only planned way to populate that file is a Gmail scanner (#1583, unbuilt, requires OAuth inbox-read access). `paste-reply.mjs` normalizes a pasted (or file-provided) email's subject/from/body into the exact candidate shape `reply-watch.mjs` expects and appends it — existing candidates are never overwritten. It does not classify the reply itself (that stays `reply-watch.mjs`'s job) and never runs `reply-watch.mjs` or touches `data/applications.md`.
+Manual, no-Gmail input path into `src/tracker/reply-watch.mjs`'s classification pipeline (#1802). `src/tracker/reply-watch.mjs` already classifies employer replies and matches them to tracker rows, but its only input is `data/reply-candidates.json`, and the only planned way to populate that file is a Gmail scanner (#1583, unbuilt, requires OAuth inbox-read access). `src/tracker/paste-reply.mjs` normalizes a pasted (or file-provided) email's subject/from/body into the exact candidate shape `src/tracker/reply-watch.mjs` expects and appends it — existing candidates are never overwritten. It does not classify the reply itself (that stays `src/tracker/reply-watch.mjs`'s job) and never runs `src/tracker/reply-watch.mjs` or touches `data/applications.md`.
 
 ```bash
 npm run paste-reply                    # interactive: prompts for subject, from, body
-node paste-reply.mjs --file email.txt  # read subject/from/body from a file
+node src/tracker/paste-reply.mjs --file email.txt  # read subject/from/body from a file
 ```
 
 `--file` format (header lines optional, blank line separates headers from body):
@@ -501,7 +501,7 @@ From: <sender>
 <body text...>
 ```
 
-If no `Subject:`/`From:` header lines are found, the whole file is treated as the body. After appending, run `node reply-watch.mjs` to classify the new candidate and review suggested tracker updates.
+If no `Subject:`/`From:` header lines are found, the whole file is treated as the body. After appending, run `node src/tracker/reply-watch.mjs` to classify the new candidate and review suggested tracker updates.
 
 **Exit codes:** `0` candidate appended, `1` missing `--file` argument, input file not found, or no subject/body text found.
 
@@ -555,7 +555,7 @@ Runs:       — no data (data/scan-runs.tsv missing; created by the next scan)
 
 ## data/scan-runs.tsv
 
-`scan.mjs` appends one row to this file after each non-dry scan run, recording how many companies/boards it checked, how many postings it found vs. filtered out vs. flagged as duplicates vs. added, and how many errors occurred. `--dry-run` scans never write to this file. Stats appended include:
+`src/scan/scan.mjs` appends one row to this file after each non-dry scan run, recording how many companies/boards it checked, how many postings it found vs. filtered out vs. flagged as duplicates vs. added, and how many errors occurred. `--dry-run` scans never write to this file. Stats appended include:
 
 * `timestamp` — ISO timestamp of the scan
 * `status` — always `completed` for now

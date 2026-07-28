@@ -3,7 +3,7 @@
  * detect-reposts.mjs — Repost Detector for career-ops
  *
  * Reads data/scan-history.tsv, groups rows by company, fuzzy-matches role
- * titles with roleFuzzyMatch from role-matcher.mjs, and flags any
+ * titles with roleFuzzyMatch from src/tracker/role-matcher.mjs, and flags any
  * company+role that appears 2+ times with different URLs within a 90-day
  * window. Such clusters are almost certainly the same opening being
  * re-listed by the employer — useful for tracking stale pipelines and
@@ -25,7 +25,7 @@ import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 
-import { roleFuzzyMatch } from '../../role-matcher.mjs';
+import { roleFuzzyMatch } from '../tracker/role-matcher.mjs';
 
 import { ROOT as CAREER_OPS } from '#paths';
 const SCAN_HISTORY_PATH = join(CAREER_OPS, 'data/scan-history.tsv');

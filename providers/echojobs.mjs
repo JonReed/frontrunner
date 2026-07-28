@@ -3,7 +3,7 @@
 
 // EchoJobs provider — board-wide public JSON feed of tech jobs aggregated from
 // company ATS boards (https://echojobs.io/api/jobs). Public, zero-auth, paginated
-// (`?page=N&per_page=M`). The broad feed is fetched so scan.mjs's title_filter
+// (`?page=N&per_page=M`). The broad feed is fetched so src/scan/scan.mjs's title_filter
 // gates on the configured titles; pages are pulled until one comes back short or
 // the page cap is reached (default 3, override with `max_pages`).
 //

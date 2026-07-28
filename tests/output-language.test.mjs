@@ -35,10 +35,10 @@ check(directive.includes('regardless of the language of these instructions or th
 check(directive.includes('explain them in fr when needed'), 'directive preserves and explains market terms');
 
 const engines = [
-  'ollama-eval.mjs',
-  'openai-eval.mjs',
-  'gemini-eval.mjs',
-  'openrouter-runner.mjs',
+  'src/evaluate/ollama-eval.mjs',
+  'src/evaluate/openai-eval.mjs',
+  'src/evaluate/gemini-eval.mjs',
+  'src/evaluate/openrouter-runner.mjs',
 ];
 for (const engine of engines) {
   const source = readFileSync(join(ROOT, engine), 'utf-8');
@@ -51,7 +51,7 @@ for (const engine of engines) {
   );
 }
 
-const { buildSystemPrompt } = await import('../openrouter-runner.mjs');
+const { buildSystemPrompt } = await import('../src/evaluate/openrouter-runner.mjs');
 const openrouterPrompt = buildSystemPrompt('MODE', {
   shared: 'SHARED',
   profileMode: 'PROFILE MODE',
@@ -60,5 +60,5 @@ const openrouterPrompt = buildSystemPrompt('MODE', {
 });
 check(openrouterPrompt.includes(outputLanguageInstruction('ja')), 'OpenRouter system prompt contains the resolved language instruction');
 
-const gemini = readFileSync(join(ROOT, 'gemini-eval.mjs'), 'utf-8');
+const gemini = readFileSync(join(ROOT, 'src/evaluate/gemini-eval.mjs'), 'utf-8');
 check(!gemini.includes('in English, unless the JD is in another language'), 'Gemini no longer lets JD language override profile output');

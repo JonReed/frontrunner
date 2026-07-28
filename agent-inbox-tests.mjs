@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * agent-inbox-tests.mjs — regression tests for agent-inbox.mjs.
+ * agent-inbox-tests.mjs — regression tests for src/tracker/agent-inbox.mjs.
  *
  * Locks in the queue's behaviour:
  *   1. A first `add` seeds the header + agent protocol and one pending item.
@@ -25,7 +25,7 @@ import { fileURLToPath } from 'url';
 
 import { ROOT } from '#paths';
 const NODE = process.execPath;
-const CLI = join(ROOT, 'agent-inbox.mjs');
+const CLI = join(ROOT, 'src/tracker/agent-inbox.mjs');
 
 let passed = 0;
 let failed = 0;
@@ -38,7 +38,7 @@ function tmp(prefix) {
   return mkdtempSync(join(tmpdir(), prefix));
 }
 
-// Run agent-inbox.mjs against a provisioned queue file; returns stdout.
+// Run src/tracker/agent-inbox.mjs against a provisioned queue file; returns stdout.
 function run(inbox, args, opts = {}) {
   return execFileSync(NODE, [CLI, ...args], {
     cwd: ROOT,

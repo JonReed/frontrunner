@@ -12,7 +12,7 @@ console.log('\ntheme-style.mjs (dynamic PDF theming, #1837)');
 try {
   const {
     styleTokensFrom, readStyleTokens, buildThemeStyleBlock, injectThemeStyle,
-  } = await import(pathToFileURL(join(ROOT, 'theme-style.mjs')).href);
+  } = await import(pathToFileURL(join(ROOT, 'src/cv/theme-style.mjs')).href);
 
   // styleTokensFrom: recognized keys → css vars; ignore unknown/non-string/missing
   const t = styleTokensFrom({ accent_color: '#2563eb', font_family: 'Outfit, sans-serif', font_size: '10pt', margin: '0.5in', nope: 'x', font_weight: 700 });
@@ -95,7 +95,7 @@ try {
   // rule now reads the SAME variable (with 0.6in only as the final fallback), so
   // a --page-margin override earlier in <head> is what actually wins.
   {
-    const { injectPrintPageCss } = await import(pathToFileURL(join(ROOT, 'generate-pdf.mjs')).href);
+    const { injectPrintPageCss } = await import(pathToFileURL(join(ROOT, 'src/cv/generate-pdf.mjs')).href);
     const tplSrc = readFileSync(join(ROOT, 'templates/cv-template.html'), 'utf-8');
     const withOverride = injectPrintPageCss(injectThemeStyle(tplSrc, { '--page-margin': '0.5in' }), 'a4');
     const rootDefaultIdx = withOverride.indexOf('--page-margin: 0.6in');   // template's own :root default

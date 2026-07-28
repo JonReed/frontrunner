@@ -3,7 +3,7 @@
 /**
  * tracker-columns-tests.mjs — regression tests for header-name column mapping.
  *
- * merge-tracker.mjs and verify-pipeline.mjs used to parse applications.md by
+ * src/tracker/merge-tracker.mjs and src/tracker/verify-pipeline.mjs used to parse applications.md by
  * fixed column position. Inserting a column (e.g. a Location column after Role)
  * shifted every later index by one — Location was read as Score, Score as
  * Status — so verify-pipeline flagged false errors and merge-tracker wrote
@@ -59,11 +59,11 @@ function runScript(script, args, sandbox) {
   }
 }
 
-// Sync the sandbox tracker into the tracker.mjs index and return one parsed
+// Sync the sandbox tracker into the src/tracker/tracker.mjs index and return one parsed
 // row by company name (row is null when sync/query fails or the row is absent).
 function syncAndQueryRow(sb, company) {
-  const sync = runScript('tracker.mjs', ['sync'], sb);
-  const query = runScript('tracker.mjs', ['query', '--json'], sb);
+  const sync = runScript('src/tracker/tracker.mjs', ['sync'], sb);
+  const query = runScript('src/tracker/tracker.mjs', ['query', '--json'], sb);
   let row = null;
   try { row = JSON.parse(query.stdout).find(r => r.company === company) ?? null; } catch { /* malformed output → null */ }
   return { sync, query, row };
@@ -83,7 +83,7 @@ function makeSandbox(trackerContent, additions = {}) {
   return { dir, tracker, additions: additionsDir, lock };
 }
 
-// Pin scan.mjs's extra dedupe sources inside the sandbox. The module-level
+// Pin src/scan/scan.mjs's extra dedupe sources inside the sandbox. The module-level
 // paths are relative to process.cwd(), so an in-process call would otherwise
 // read the developer's real data/scan-history.tsv and data/pipeline.md — CI
 // only escapes that because both files are gitignored.
@@ -122,7 +122,7 @@ const TSV_NO_LOCATION = '2\t2026-02-02\tGlobex\tManager\tApplied\tN/A\t✅\t—\
 // ── Test 1: 10-column tracker merges into the correct columns ──────────────
 {
   const sb = makeSandbox(HEADER_10, { '2-globex.tsv': TSV_WITH_LOCATION });
-  const res = runScript('merge-tracker.mjs', [], sb);
+  const res = runScript('src/tracker/merge-tracker.mjs', [], sb);
   if (res.code !== 0) {
     fail(`merge into 10-col tracker exits 0 (got ${res.code})\n${res.stdout}`);
   } else {
@@ -143,7 +143,7 @@ const TSV_NO_LOCATION = '2\t2026-02-02\tGlobex\tManager\tApplied\tN/A\t✅\t—\
 // ── Test 2: verify-pipeline is clean on a 10-column tracker ────────────────
 {
   const sb = makeSandbox(HEADER_10);
-  const res = runScript('verify-pipeline.mjs', [], sb);
+  const res = runScript('src/tracker/verify-pipeline.mjs', [], sb);
   if (res.code === 0 && /0 errors/.test(res.stdout)) {
     pass('verify-pipeline clean on 10-col tracker (no false column errors)');
   } else {
@@ -155,8 +155,8 @@ const TSV_NO_LOCATION = '2\t2026-02-02\tGlobex\tManager\tApplied\tN/A\t✅\t—\
 // ── Test 3: legacy 9-column layout still works (back-compat) ───────────────
 {
   const sb = makeSandbox(HEADER_9, { '2-globex.tsv': TSV_NO_LOCATION });
-  const merge = runScript('merge-tracker.mjs', [], sb);
-  const verify = runScript('verify-pipeline.mjs', [], sb);
+  const merge = runScript('src/tracker/merge-tracker.mjs', [], sb);
+  const verify = runScript('src/tracker/verify-pipeline.mjs', [], sb);
   const row = dataRows(sb.tracker).find(l => l.includes('Globex'));
   const cells = row ? row.split('|').map(s => s.trim()) : [];
   // cells: ['', num, date, company, role, score, status, pdf, report, notes, '']
@@ -173,30 +173,30 @@ const TSV_NO_LOCATION = '2\t2026-02-02\tGlobex\tManager\tApplied\tN/A\t✅\t—\
   rmSync(sb.dir, { recursive: true, force: true });
 }
 
-// ── Test 4: tracker.mjs CLI maps a 10-column tracker by header (#1596) ──────
-// tracker.mjs used a fixed 9-cell destructure, so a Location column shifted
+// ── Test 4: src/tracker/tracker.mjs CLI maps a 10-column tracker by header (#1596) ──────
+// src/tracker/tracker.mjs used a fixed 9-cell destructure, so a Location column shifted
 // Score into Status and folded the real Notes cell away.
 {
   const sb = makeSandbox(HEADER_10);
   const { sync, query, row } = syncAndQueryRow(sb, 'Acme');
   if (sync.code === 0 && query.code === 0 && row) {
-    if (row.role === 'Engineer') pass('tracker.mjs: Role read from Role column on 10-col tracker');
-    else fail(`tracker.mjs: Role on 10-col tracker — got "${row.role}"`);
-    if (row.score === '4.0/5') pass('tracker.mjs: Score not shifted on 10-col tracker');
-    else fail(`tracker.mjs: Score on 10-col tracker — got "${row.score}"`);
-    if (row.status === 'Applied') pass('tracker.mjs: Status not shifted on 10-col tracker');
-    else fail(`tracker.mjs: Status on 10-col tracker — got "${row.status}"`);
-    if (row.notes === 'seed row') pass('tracker.mjs: Notes intact on 10-col tracker');
-    else fail(`tracker.mjs: Notes on 10-col tracker — got "${row.notes}"`);
+    if (row.role === 'Engineer') pass('src/tracker/tracker.mjs: Role read from Role column on 10-col tracker');
+    else fail(`src/tracker/tracker.mjs: Role on 10-col tracker — got "${row.role}"`);
+    if (row.score === '4.0/5') pass('src/tracker/tracker.mjs: Score not shifted on 10-col tracker');
+    else fail(`src/tracker/tracker.mjs: Score on 10-col tracker — got "${row.score}"`);
+    if (row.status === 'Applied') pass('src/tracker/tracker.mjs: Status not shifted on 10-col tracker');
+    else fail(`src/tracker/tracker.mjs: Status on 10-col tracker — got "${row.status}"`);
+    if (row.notes === 'seed row') pass('src/tracker/tracker.mjs: Notes intact on 10-col tracker');
+    else fail(`src/tracker/tracker.mjs: Notes on 10-col tracker — got "${row.notes}"`);
   } else {
-    fail(`tracker.mjs sync/query on 10-col tracker (sync ${sync.code}, query ${query.code})\n${sync.stdout}${query.stdout}`);
+    fail(`src/tracker/tracker.mjs sync/query on 10-col tracker (sync ${sync.code}, query ${query.code})\n${sync.stdout}${query.stdout}`);
   }
   rmSync(sb.dir, { recursive: true, force: true });
 }
 
 // ── Test 5: removeRowByNum resolves the Report column by header ─────────────
 {
-  const { removeRowByNum } = await import('./tracker.mjs');
+  const { removeRowByNum } = await import('./src/tracker/tracker.mjs');
   const tenCol = HEADER_10.replace('| — | seed row |', '| [1](reports/001-acme-2026-01-01.md) | seed row |');
   const res = removeRowByNum(tenCol, 1);
   if (res.removed && res.report === '[1](reports/001-acme-2026-01-01.md)') {
@@ -206,25 +206,25 @@ const TSV_NO_LOCATION = '2\t2026-02-02\tGlobex\tManager\tApplied\tN/A\t✅\t—\
   }
 }
 
-// ── Test 6: scan.mjs seen-set maps company/role by header ───────────────────
+// ── Test 6: src/scan/scan.mjs seen-set maps company/role by header ───────────────────
 // loadSeenCompanyRoles used a positional regex, so a 10-col tracker produced
 // keys like "engineer::remote" and scan dedup missed real matches.
 {
-  const { loadSeenCompanyRoles } = await import('./scan.mjs');
+  const { loadSeenCompanyRoles } = await import('./src/scan/scan.mjs');
   const sb = makeSandbox(HEADER_10);
   const seen = loadSeenCompanyRoles(sb.tracker, undefined, sandboxSources(sb));
-  if (seen.has('acme::engineer')) pass('scan.mjs: seen-set keys company::role on 10-col tracker');
-  else fail(`scan.mjs: seen-set on 10-col tracker — got [${[...seen].join(', ')}]`);
+  if (seen.has('acme::engineer')) pass('src/scan/scan.mjs: seen-set keys company::role on 10-col tracker');
+  else fail(`src/scan/scan.mjs: seen-set on 10-col tracker — got [${[...seen].join(', ')}]`);
   if (![...seen].some(k => k.includes('remote') || k.includes('4.0/5'))) {
-    pass('scan.mjs: seen-set has no shifted-column garbage keys');
+    pass('src/scan/scan.mjs: seen-set has no shifted-column garbage keys');
   } else {
-    fail(`scan.mjs: shifted keys present — [${[...seen].join(', ')}]`);
+    fail(`src/scan/scan.mjs: shifted keys present — [${[...seen].join(', ')}]`);
   }
   rmSync(sb.dir, { recursive: true, force: true });
 }
 
 // ── Test 6b: normalize-statuses maps Status/Score/Notes by header (#1955) ───
-// normalize-statuses.mjs read Status at parts[6], Score at parts[5] and Notes
+// src/tracker/normalize-statuses.mjs read Status at parts[6], Score at parts[5] and Notes
 // at parts[9]. On a 10-column tracker every one of those lands a column early:
 // the Score cell was normalized as if it were a status — a `—` score (the
 // tracker's own "no evaluation" sentinel) mapped to Discarded and OVERWROTE
@@ -239,7 +239,7 @@ const TSV_NO_LOCATION = '2\t2026-02-02\tGlobex\tManager\tApplied\tN/A\t✅\t—\
 | 2 | 2026-01-03 | Globex | Manager | Berlin | 4.5/5 | DUPLICADO de #1 | ❌ | — | keep me |
 `;
   const sb = makeSandbox(TEN_COL_MESSY);
-  const res = runScript('normalize-statuses.mjs', [], sb);
+  const res = runScript('src/tracker/normalize-statuses.mjs', [], sb);
   const rows = dataRows(sb.tracker);
   const rowOf = (company) => rows.find(l => l.includes(company)) || '';
   const cellsOf = (company) => rowOf(company).split('|').map(s => s.trim());
@@ -274,7 +274,7 @@ const TSV_NO_LOCATION = '2\t2026-02-02\tGlobex\tManager\tApplied\tN/A\t✅\t—\
 `;
   const sb = makeSandbox(HEADER_UNKNOWN);
 
-  const verify = runScript('verify-pipeline.mjs', [], sb);
+  const verify = runScript('src/tracker/verify-pipeline.mjs', [], sb);
   if (verify.code === 0 && /0 errors/.test(verify.stdout)) {
     pass('contract: verify-pipeline skips an unknown extra column');
   } else {
@@ -283,24 +283,24 @@ const TSV_NO_LOCATION = '2\t2026-02-02\tGlobex\tManager\tApplied\tN/A\t✅\t—\
 
   const { sync, row } = syncAndQueryRow(sb, 'Acme');
   if (sync.code === 0 && row && row.role === 'Engineer' && row.score === '4.0/5' && row.status === 'Applied') {
-    pass('contract: tracker.mjs skips an unknown extra column');
+    pass('contract: src/tracker/tracker.mjs skips an unknown extra column');
   } else {
-    fail(`contract: tracker.mjs on unknown-column tracker — got ${JSON.stringify(row)}`);
+    fail(`contract: src/tracker/tracker.mjs on unknown-column tracker — got ${JSON.stringify(row)}`);
   }
 
-  const { loadSeenCompanyRoles } = await import('./scan.mjs');
+  const { loadSeenCompanyRoles } = await import('./src/scan/scan.mjs');
   const seen = loadSeenCompanyRoles(sb.tracker, undefined, sandboxSources(sb));
   if (seen.has('acme::engineer') && seen.size === 1) {
-    pass('contract: scan.mjs seen-set skips an unknown extra column');
+    pass('contract: src/scan/scan.mjs seen-set skips an unknown extra column');
   } else {
-    fail(`contract: scan.mjs seen-set on unknown-column tracker — [${[...seen].join(', ')}]`);
+    fail(`contract: src/scan/scan.mjs seen-set on unknown-column tracker — [${[...seen].join(', ')}]`);
   }
 
   // The seed status is already canonical, so a header-aware run is a strict
   // no-op: the file must come back byte-identical and nothing may be reported
   // as an unknown status.
   const before = readFileSync(sb.tracker, 'utf-8');
-  const norm = runScript('normalize-statuses.mjs', [], sb);
+  const norm = runScript('src/tracker/normalize-statuses.mjs', [], sb);
   const after = readFileSync(sb.tracker, 'utf-8');
   if (norm.code === 0 && after === before && !/unknown statuses/.test(norm.stdout)) {
     pass('contract: normalize-statuses skips an unknown extra column');
@@ -313,7 +313,7 @@ const TSV_NO_LOCATION = '2\t2026-02-02\tGlobex\tManager\tApplied\tN/A\t✅\t—\
 
 // ── Test 8: web read path resolves headers via the SHARED alias table ───────
 // web/src/lib/tracker-table.mjs (behind readApplications() in career-ops.ts)
-// loads tracker-aliases.json — the same file tracker-parse.mjs exports as
+// loads src/tracker/tracker-aliases.json — the same file src/tracker/tracker-parse.mjs exports as
 // HEADER_ALIASES — instead of mirroring it. Passing ROOT here exercises the
 // REAL alias file, so an alias added/renamed there is either honored by the
 // web reader too or fails this test; a second drifting table can't come back.
@@ -321,7 +321,7 @@ if (!HAS_WEB) {
   skipWeb('web reader: shared alias table tests');
 } else {
   const { parseApplications, loadHeaderAliases } = await import('./web/src/lib/tracker-table.mjs');
-  const { HEADER_ALIASES } = await import('./tracker-parse.mjs');
+  const { HEADER_ALIASES } = await import('./src/tracker/tracker-parse.mjs');
   const WEB_10COL = `# Applications Tracker
 
 | # | Date | Company | Role | Location | Score | Status | PDF | Report | Priority | Notes |
@@ -366,7 +366,7 @@ const HEADER_VIA = `# Applications Tracker
 
 // ── Test 9: parseTrackerRow surfaces the Via column ─────────────────────────
 {
-  const { resolveColumns, parseTrackerRow } = await import('./tracker-parse.mjs');
+  const { resolveColumns, parseTrackerRow } = await import('./src/tracker/tracker-parse.mjs');
   const lines = HEADER_VIA.split('\n');
   const colmap = resolveColumns(lines);
   const rows = lines.map(l => parseTrackerRow(l, colmap)).filter(Boolean);
@@ -391,7 +391,7 @@ const HEADER_VIA = `# Applications Tracker
 {
   const TSV_VIA = '3\t2026-02-02\t?\tPlatform Engineer\tApplied\t4.1/5\t✅\t—\tblind agency listing\tvia=Hays\n';
   const sb = makeSandbox(HEADER_VIA, { '3-blind.tsv': TSV_VIA });
-  const res = runScript('merge-tracker.mjs', [], sb);
+  const res = runScript('src/tracker/merge-tracker.mjs', [], sb);
   const row = dataRows(sb.tracker).find(l => l.includes('Platform Engineer'));
   const cells = row ? row.split('|').map(s => s.trim()) : [];
   // cells: ['', num, date, company, via, role, score, status, pdf, report, notes, '']
@@ -408,7 +408,7 @@ const HEADER_VIA = `# Applications Tracker
   const TWO_UNTAGGED = '4\t2026-02-02\tGlobex\tManager\tApplied\tN/A\t✅\t—\tnote\tSingapore\tHays\n';
   const TWO_TAGS = '5\t2026-02-02\tGlobex\tManager\tApplied\tN/A\t✅\t—\tnote\tvia=Hays\tvia=Randstad\n';
   const sb = makeSandbox(HEADER_VIA, { '4-a.tsv': TWO_UNTAGGED, '5-b.tsv': TWO_TAGS });
-  const res = runScript('merge-tracker.mjs', [], sb);
+  const res = runScript('src/tracker/merge-tracker.mjs', [], sb);
   const rows = dataRows(sb.tracker);
   // Rejection is loud on stderr; runScript only captures stdout on success, so
   // assert via the merge summary (2 skipped) plus the tracker staying clean.
@@ -429,7 +429,7 @@ const HEADER_VIA = `# Applications Tracker
   const OTHER_AGENCY = '6\t2026-02-02\t?\tData Engineer\tApplied\t4.5/5\t✅\t—\tsame role, other agency\tvia=Randstad\n';
   const SAME_AGENCY = '7\t2026-02-03\t?\tData Engineer\tApplied\t4.6/5\t✅\t—\tre-blast, higher score\tvia=Hays\n';
   const sb = makeSandbox(HEADER_VIA, { '6-other.tsv': OTHER_AGENCY });
-  const res1 = runScript('merge-tracker.mjs', [], sb);
+  const res1 = runScript('src/tracker/merge-tracker.mjs', [], sb);
   const rowsAfter1 = dataRows(sb.tracker).filter(l => l.includes('Data Engineer'));
   if (res1.code === 0 && rowsAfter1.length === 2 && rowsAfter1.some(l => l.includes('Randstad'))) {
     pass('merge: ? row via a different agency added as a NEW row (no cross-channel merge)');
@@ -437,7 +437,7 @@ const HEADER_VIA = `# Applications Tracker
     fail(`merge: cross-channel guard — ${rowsAfter1.length} Data Engineer rows\n${res1.stdout}`);
   }
   writeFileSync(join(sb.additions, '7-same.tsv'), SAME_AGENCY);
-  const res2 = runScript('merge-tracker.mjs', [], sb);
+  const res2 = runScript('src/tracker/merge-tracker.mjs', [], sb);
   const hays = dataRows(sb.tracker).filter(l => l.includes('Hays') && l.includes('Data Engineer'));
   if (res2.code === 0 && hays.length === 1 && hays[0].includes('4.6/5')) {
     pass('merge: same-agency re-blast updates the existing ? row (Via preserved)');
@@ -456,9 +456,9 @@ const HEADER_VIA = `# Applications Tracker
   const FIRST = '2\t2026-02-02\t?\tData Engineer\tApplied\t4.1/5\t✅\t—\tblind listing\tvia=Hays\n';
   const REBLAST = '3\t2026-02-10\t?\tData Engineer\tApplied\t4.3/5\t✅\t—\tre-blast, higher score\tvia=Hays\n';
   const sb = makeSandbox(HEADER_9, { '2-first.tsv': FIRST });
-  const res1 = runScript('merge-tracker.mjs', [], sb);
+  const res1 = runScript('src/tracker/merge-tracker.mjs', [], sb);
   writeFileSync(join(sb.additions, '3-reblast.tsv'), REBLAST);
-  const res2 = runScript('merge-tracker.mjs', [], sb);
+  const res2 = runScript('src/tracker/merge-tracker.mjs', [], sb);
   const blind = dataRows(sb.tracker).filter(l => l.includes('Data Engineer'));
   if (res1.code === 0 && res2.code === 0 && blind.length === 1 && blind[0].includes('4.3/5') && /1 updated/.test(res2.stdout)) {
     pass('merge: legacy 9-col tracker — via= re-blast UPDATES the ? row (no duplicate)');
@@ -471,7 +471,7 @@ const HEADER_VIA = `# Applications Tracker
 // ── Test 13: --migrate-via inserts the column, idempotently ─────────────────
 {
   const sb = makeSandbox(HEADER_9);
-  const first = runScript('merge-tracker.mjs', ['--migrate-via'], sb);
+  const first = runScript('src/tracker/merge-tracker.mjs', ['--migrate-via'], sb);
   const content = readFileSync(sb.tracker, 'utf-8');
   const header = content.split('\n').find(l => l.includes('Company'));
   const seed = content.split('\n').find(l => l.includes('Acme'));
@@ -482,7 +482,7 @@ const HEADER_VIA = `# Applications Tracker
   } else {
     fail(`--migrate-via: header "${header}" seed "${seed}"\n${first.stdout}`);
   }
-  const second = runScript('merge-tracker.mjs', ['--migrate-via'], sb);
+  const second = runScript('src/tracker/merge-tracker.mjs', ['--migrate-via'], sb);
   if (second.code === 0 && readFileSync(sb.tracker, 'utf-8') === content) {
     pass('--migrate-via: idempotent (second run changes nothing)');
   } else {
@@ -504,7 +504,7 @@ const HEADER_VIA = `# Applications Tracker
 | 5 | 2026-06-01 | ? | Hays | Platform Engineer | 4.4/5 | Evaluated | ✅ | — | far outside window |
 `;
   const sb = makeSandbox(BLIND_TRACKER);
-  const res = runScript('dedup-tracker.mjs', [], sb);
+  const res = runScript('src/tracker/dedup-tracker.mjs', [], sb);
   const rows = dataRows(sb.tracker);
   const dataEng = rows.filter(l => l.includes('Data Engineer'));
   const platform = rows.filter(l => l.includes('Platform Engineer'));
@@ -533,7 +533,7 @@ const HEADER_VIA = `# Applications Tracker
 | 4 | 2026-01-08 | Acme | — | Backend Engineer | 4.1/5 | Applied | ✅ | — | direct too |
 `;
   const sb = makeSandbox(VIA_ISSUES);
-  const res = runScript('verify-pipeline.mjs', [], sb);
+  const res = runScript('src/tracker/verify-pipeline.mjs', [], sb);
   if (/unknown employer \(\?\) with no Via/.test(res.stdout)) {
     pass('verify: ? row with no Via channel is an error');
   } else {
@@ -563,7 +563,8 @@ if (!HAS_WEB) {
 } else {
   const { loadHeaderAliases } = await import('./web/src/lib/tracker-table.mjs');
   const dir = mkdtempSync(join(tmpdir(), 'co-alias-'));
-  const aliasFile = join(dir, 'tracker-aliases.json');
+  mkdirSync(join(dir, 'src/tracker'), { recursive: true });
+  const aliasFile = join(dir, 'src/tracker/tracker-aliases.json');
   // Force distinct mtimes between rewrites — same-ms writes are otherwise
   // indistinguishable on coarse-timestamp filesystems.
   let tick = Date.now();
@@ -610,7 +611,7 @@ if (!HAS_WEB) {
   const EMPTY_PDF = '| 42 | 2026-01-01 | Foo | Bar Engineer | 4.0/5 | Evaluated |  | [42](reports/042-foo-2026-01-01.md) | some note |';
   const EMPTY_NOTES = '| 43 | 2026-01-02 | Baz | Platform Engineer | 4.1/5 | Evaluated | ✅ | [43](reports/043-baz-2026-01-02.md) |  | Singapore';
   const sb = makeSandbox(HEADER_10, { '42-foo.tsv': EMPTY_PDF, '43-baz.tsv': EMPTY_NOTES });
-  const res = runScript('merge-tracker.mjs', [], sb);
+  const res = runScript('src/tracker/merge-tracker.mjs', [], sb);
   const foo = dataRows(sb.tracker).find(l => l.includes('Foo'));
   const baz = dataRows(sb.tracker).find(l => l.includes('Baz'));
   const fooCells = foo ? foo.split('|').map(s => s.trim()) : [];

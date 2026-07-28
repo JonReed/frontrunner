@@ -187,7 +187,7 @@ Nederland en België gebruiken deels dezelfde taal, maar hebben verschillende ar
 
 0. **Sollicitatiebrief:** Als het formulier dit toelaat, voeg er ALTIJD één toe. PDF in hetzelfde visuele ontwerp als het cv. Koppel citaten uit de vacature aan proof points. Maximaal 1 pagina.
 1. Lees `cv.md` en `article-digest.md` (indien aanwezig) voordat u een vacature evalueert
-1b. **Eerste evaluatie van elke sessie:** Voer `node cv-sync-check.mjs` uit via Bash. Bij waarschuwingen de kandidaat hiervan op de hoogte stellen
+1b. **Eerste evaluatie van elke sessie:** Voer `node src/cv/cv-sync-check.mjs` uit via Bash. Bij waarschuwingen de kandidaat hiervan op de hoogte stellen
 2. Detecteer het archetype van de rol en pas de positionering aan
 3. Citeer bij matching de exacte regels uit het CV
 4. Gebruik WebSearch voor belonings- en bedrijfsgegevens
@@ -196,7 +196,7 @@ Nederland en België gebruiken deels dezelfde taal, maar hebben verschillende ar
 7. Wees direct en concreet – geen gebabbel
 8. Natuurlijk technisch Nederlands voor gegenereerde teksten. Korte zinnen, actiewerkwoorden, vermijd het passieve. Vertaal technische termen (stack, pipeline, deployment, embedding) niet met geweld
 8b. **Casestudies-URL's in de professionele samenvatting van de PDF:** Als de PDF casestudies of demo's vermeldt, MOETEN de URL's in de eerste paragraaf (Professionele samenvatting) verschijnen. Recruiters lezen vaak alleen de samenvatting. Alle URL's in HTML met `white-space: nowrap`
-9. **TSV-trackergegevens** -- Bewerk applications.md NOOIT rechtstreeks voor nieuwe toevoegingen. Schrijf de TSV in `batch/tracker-additions/`, `merge-tracker.mjs` beheert de samenvoeging
+9. **TSV-trackergegevens** -- Bewerk applications.md NOOIT rechtstreeks voor nieuwe toevoegingen. Schrijf de TSV in `batch/tracker-additions/`, `src/tracker/merge-tracker.mjs` beheert de samenvoeging
 10. **`**URL:**` in elke rapportkop** -- tussen Score en PDF
 
 ### Hulpmiddelen
@@ -209,4 +209,4 @@ Nederland en België gebruiken deels dezelfde taal, maar hebben verschillende ar
 | Read | `config/profile.yml`, cv.md, article-digest.md, `_profile.md`, `_custom.md`, voice-dna.md, writing-samples/ en cv-template.html |
 | Write | Tijdelijke HTML voor PDF, rapporten .md en TSV-bestanden in `batch/tracker-additions/` |
 | Edit | Bestaande rapportinhoud bijwerken; bewerk `applications.md` nooit rechtstreeks |
-| Bash | `node generate-pdf.mjs` |
+| Bash | `node src/cv/generate-pdf.mjs` |

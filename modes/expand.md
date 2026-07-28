@@ -1,6 +1,6 @@
 # Mode: expand — Auto-discover and add missing competencies
 
-Fetch public sources linked in the user's `config/profile.yml` (e.g., GitHub username, portfolio URL) to discover competencies, projects, and work history. Merge missing items into their `cv.md` / `article-digest.md` using the existing `add-entry.mjs` engine. 
+Fetch public sources linked in the user's `config/profile.yml` (e.g., GitHub username, portfolio URL) to discover competencies, projects, and work history. Merge missing items into their `cv.md` / `article-digest.md` using the existing `src/tracker/add-entry.mjs` engine. 
 
 > **Non-negotiables (from the project's source-of-truth rules in `_shared.md`):**
 > - **Confirm before write.** Present all deduped additions to the user and halt until explicit approval is given.
@@ -35,13 +35,13 @@ Fetch public sources linked in the user's `config/profile.yml` (e.g., GitHub use
    EOF_EXPAND_PAYLOAD
    )
 
-   printf '%s' "$PAYLOAD" | node add-entry.mjs --stdin --dry-run
+   printf '%s' "$PAYLOAD" | node src/tracker/add-entry.mjs --stdin --dry-run
    ```
    Filter out any items that return `"status": "duplicate"`.
 5. **Preview & Confirm Gate.** Show the user the newly discovered, non-duplicate entries. You MUST output your final proposal as a Markdown table containing exactly three columns: | skill | evidence | section |. You **must halt** and ask the user to approve, edit, or cancel. Do **not** proceed without an explicit yes.
 6. **Write via the helper.** For each approved entry, pass the exactly identical stored payload to the final write, avoiding re-derivation:
    ```bash
-   printf '%s' "$PAYLOAD" | node add-entry.mjs --stdin
+   printf '%s' "$PAYLOAD" | node src/tracker/add-entry.mjs --stdin
    ```
 
 ## Section inference
@@ -53,7 +53,7 @@ Fetch public sources linked in the user's `config/profile.yml` (e.g., GitHub use
 | an internship / job / role | `Work Experience` |
 | a talk / course / certification | `Education` (or ask if unclear) |
 
-## Payload schema (input to `add-entry.mjs`)
+## Payload schema (input to `src/tracker/add-entry.mjs`)
 
 Both keys optional; provide at least one. `articleDigest` is for projects only.
 

@@ -6,7 +6,7 @@ Elabora gli URL degli annunci accumulati in `data/pipeline.md`. Il candidato agg
 
 1. **Leggere** `data/pipeline.md` -> trovare gli elementi contrassegnati come `- [ ]` nella sezione "In attesa" / "Pending" / "Pendientes" / "En attente"
 2. **Per ogni URL in attesa**:
-   a. Riservare il prossimo `REPORT_NUM` sequenziale eseguendo `node reserve-report-num.mjs` (liberare la prenotazione con `node reserve-report-num.mjs --release <num>` una volta scritto il report)
+   a. Riservare il prossimo `REPORT_NUM` sequenziale eseguendo `node src/tracker/reserve-report-num.mjs` (liberare la prenotazione con `node src/tracker/reserve-report-num.mjs --release <num>` una volta scritto il report)
    b. **Estrarre l'annuncio** con Playwright (`browser_navigate` + `browser_snapshot`) -> WebFetch -> WebSearch
    c. Se l'URL non è accessibile -> contrassegnarlo come `- [!]` con una nota e passare al successivo
    d. **Auto-pipeline completo**: Valutazione A-F -> Report .md -> PDF (se punteggio >= 3.0) -> Tracker
@@ -36,7 +36,7 @@ Elabora gli URL degli annunci accumulati in `data/pipeline.md`. Il candidato agg
 ## Rilevamento dell'annuncio dall'URL
 
 1. **Playwright (preferito):** `browser_navigate` + `browser_snapshot`. Funziona con tutte le Single Page Application (SPA).
-   - **Opzionale — estrattore CLI (`scan.extractor: cli` in `config/profile.yml`):** esegui invece `node browser-extract.mjs <url>` (`--mode jd`) — `{ "url", "title", "text" }` compatto, meno token (dipende dal portale). **Ripiega in silenzio** su `browser_navigate` + `browser_snapshot` in caso di errore o assenza.
+   - **Opzionale — estrattore CLI (`scan.extractor: cli` in `config/profile.yml`):** esegui invece `node src/scan/browser-extract.mjs <url>` (`--mode jd`) — `{ "url", "title", "text" }` compatto, meno token (dipende dal portale). **Ripiega in silenzio** su `browser_navigate` + `browser_snapshot` in caso di errore o assenza.
 2. **WebFetch (fallback):** Per le pagine statiche o quando Playwright non è disponibile.
 3. **WebSearch (ultima risorsa):** Per cercare su portali secondari che indicizzano l'annuncio.
 
@@ -48,16 +48,16 @@ Elabora gli URL degli annunci accumulati in `data/pipeline.md`. Il candidato agg
 
 ## Numerazione automatica
 
-1. Eseguire `node reserve-report-num.mjs` per riservare in modo atomico il prossimo numero sequenziale (restituisce `{###}` su stdout).
+1. Eseguire `node src/tracker/reserve-report-num.mjs` per riservare in modo atomico il prossimo numero sequenziale (restituisce `{###}` su stdout).
 2. Scrivere il report con questo numero.
-3. Liberare la prenotazione con `node reserve-report-num.mjs --release {###}` una volta scritto il report.
+3. Liberare la prenotazione con `node src/tracker/reserve-report-num.mjs --release {###}` una volta scritto il report.
 
 ## Sincronizzazione delle fonti
 
 Prima di elaborare un URL, verificare la sincronizzazione:
 
 ```bash
-node cv-sync-check.mjs
+node src/cv/cv-sync-check.mjs
 ```
 
 In caso di desincronizzazione, avvisare il candidato prima di procedere.

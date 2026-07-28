@@ -1,5 +1,5 @@
 // HTTP transport helpers shared across providers.
-// Files prefixed with _ are never loaded as providers by scan.mjs.
+// Files prefixed with _ are never loaded as providers by src/scan/scan.mjs.
 
 import './_dns-cache.mjs'; // memoize dns.lookup process-wide (see that file)
 

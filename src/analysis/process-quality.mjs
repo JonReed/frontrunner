@@ -40,7 +40,7 @@ const FRICTION_TAG = /\[process-friction(?::\s*([^\]]+))?\]/i;
 const args = process.argv.slice(2);
 const summaryMode = args.includes('--summary');
 const selfTestMode = args.includes('--self-test');
-// --file overrides the data path — mirrors validate-portals.mjs / verify-portals.mjs's
+// --file overrides the data path — mirrors src/scan/validate-portals.mjs / src/scan/verify-portals.mjs's
 // --file convention. Primarily for test isolation: it lets tests point at a
 // controlled temp path instead of depending on whatever data/active-interviews.md
 // happens to exist (or not) in the caller's real workspace.

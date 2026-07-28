@@ -16,7 +16,7 @@ import { pathToFileURL } from 'url';
 
 console.log('\nscan.mjs — normalizeUrlForDedup() ignores tracking params, preserves identity');
 try {
-  const { normalizeUrlForDedup } = await import(pathToFileURL(join(ROOT, 'scan.mjs')).href);
+  const { normalizeUrlForDedup } = await import(pathToFileURL(join(ROOT, 'src/scan/scan.mjs')).href);
 
   // The reported bug: one StepStone posting, two scans, two `rltr` values.
   const SS = 'https://www.stepstone.de/stellenangebote--AI-Engineer-Berlin-Acme--12345-inline.html';

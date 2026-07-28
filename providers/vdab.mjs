@@ -8,7 +8,7 @@ import { intInRange } from './_config-utils.mjs';
 // vindeenjob search API directly (the same endpoint vdab.be's own frontend
 // uses), so it lives in-process alongside the other JSON-API providers
 // (greenhouse/ashby/arbeitsagentur shape). One or more `vdab.keywords` are
-// queried; scan.mjs applies title_filter + location_filter +
+// queried; src/scan/scan.mjs applies title_filter + location_filter +
 // dedup afterwards, so this provider over-fetches (recall-first) — same
 // philosophy as arbeitsagentur.mjs.
 //
@@ -36,7 +36,7 @@ import { intInRange } from './_config-utils.mjs';
 // Geocoding API client-side before searching, which this provider does not
 // replicate). So there is no `wo`/`umkreis`-style radius config here — every
 // keyword search is nationwide, and precision on location is left entirely to
-// scan.mjs's existing location_filter, consistent with the recall-first design.
+// src/scan/scan.mjs's existing location_filter, consistent with the recall-first design.
 
 const API_URL = 'https://www.vdab.be/rest/vindeenjob/v4/vacatureLight/zoek';
 const DETAIL_API = 'https://www.vdab.be/rest/vindeenjob/v4/vacatures/';
@@ -232,13 +232,13 @@ export default {
       body: JSON.stringify(body),
     });
 
-    // ctx.maxPages is set only by verify-portals.mjs's bounded health-check
+    // ctx.maxPages is set only by src/scan/verify-portals.mjs's bounded health-check
     // probe (never during a real scan). While probing: (a) cap pagination
     // per keyword so a popular keyword (e.g. "Python" with 200+ live
     // postings) doesn't burn the probe's whole request budget on one
     // keyword alone, and (b) let the first per-keyword error propagate
     // as-is instead of being flattened into a generic summary Error —
-    // verify-portals.mjs's probeProvider() specifically recognizes its own
+    // src/scan/verify-portals.mjs's probeProvider() specifically recognizes its own
     // budget-exhaustion sentinel (instanceof check) to report a bounded
     // probe as "live, partial" rather than "board is down"; recall-first
     // tolerance would swallow that sentinel's identity and misreport a live

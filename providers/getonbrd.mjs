@@ -6,7 +6,7 @@
 // zero-auth JSON:API. `expand[]=company` embeds the company so its name is
 // available at the list level. The broad category feed is fetched (not the
 // server-side ?query= search, which requires a query and narrows results) so
-// scan.mjs's title_filter can gate on the configured titles instead. Pages are
+// src/scan/scan.mjs's title_filter can gate on the configured titles instead. Pages are
 // fetched until one comes back short/empty or the page cap is reached (default
 // 3, override with `max_pages` on the portal entry).
 //

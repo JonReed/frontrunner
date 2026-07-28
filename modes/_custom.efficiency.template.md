@@ -18,7 +18,7 @@
      tokens of rendered page to obtain a ~1,800-token JD, and ~60%
      of roles rejected for reasons a regex settles instantly.
 
-     These rules + fetch-jds.mjs + prefilter.mjs address that.
+     These rules + src/scan/fetch-jds.mjs + src/scan/prefilter.mjs address that.
      ============================================================ -->
 
 ## House Rules
@@ -32,7 +32,7 @@ about it is waste.
 When the triage score is **< 2.0**:
 
 1. **Do not create a report file.** No `reports/{###}-*.md`.
-2. **Do not reserve a report number.** Skip `reserve-report-num.mjs`.
+2. **Do not reserve a report number.** Skip `src/tracker/reserve-report-num.mjs`.
 3. **Do NOT research.** No WebSearch, no comp lookups. Researching the salary of
    a role you are rejecting is pure waste. This is the biggest time saving.
 4. **Write the tracker TSV line only**, with `—` in the report column:
@@ -41,7 +41,7 @@ When the triage score is **< 2.0**:
    {id}	{date}	{company}	{role}	SKIP	{score}/5	❌	—	{one-line reason}
    ```
 
-   A row with no markdown link in the report column is valid — `verify-pipeline.mjs`
+   A row with no markdown link in the report column is valid — `src/tracker/verify-pipeline.mjs`
    skips the link check for it.
 
 5. Final response: **one line** — score and reason.
@@ -96,20 +96,20 @@ Stated explicitly because the base `oferta` mode appends one unconditionally.
 One canonical company name and slug per employer, everywhere — report title,
 filename slug, tracker Company column. Never put the role, product, or team name
 in the company slug. Inconsistent naming breaks duplicate detection in
-`merge-tracker.mjs` and produces multiple tracker rows for one company.
+`src/tracker/merge-tracker.mjs` and produces multiple tracker rows for one company.
 
 ## Custom Workflows
 
 ### Before any batch run
 
 ```bash
-node fetch-jds.mjs --summary                                  # bulk JD text, zero tokens
-node prefilter.mjs --summary --out batch/batch-input.tsv      # deterministic rejects
+node src/scan/fetch-jds.mjs --summary                                  # bulk JD text, zero tokens
+node src/scan/prefilter.mjs --summary --out batch/batch-input.tsv      # deterministic rejects
 ./batch/batch-runner.sh --parallel 3 --skip-pdf
 ```
 
-`fetch-jds.mjs` writes `jds/` + `jds/index.tsv`; the batch runner reads that index
-so workers get clean JD text instead of fetching HTML. `prefilter.mjs` writes an
+`src/scan/fetch-jds.mjs` writes `jds/` + `jds/index.tsv`; the batch runner reads that index
+so workers get clean JD text instead of fetching HTML. `src/scan/prefilter.mjs` writes an
 audit trail to `batch/prefilter-rejects.tsv` — check it occasionally for false
 rejects and tune the rules.
 
@@ -119,7 +119,7 @@ rejects and tune the rules.
 JD pre-fetch wiring and the batch silently goes back to fetching HTML pages.
 Re-apply `patches/jd-prefetch.patch.md`, then `bash -n batch/batch-runner.sh`.
 
-`fetch-jds.mjs` and `prefilter.mjs` are not in SYSTEM_PATHS and survive updates.
+`src/scan/fetch-jds.mjs` and `src/scan/prefilter.mjs` are not in SYSTEM_PATHS and survive updates.
 
 ## Output Preferences
 

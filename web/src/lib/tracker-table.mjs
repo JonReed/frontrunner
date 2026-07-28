@@ -3,7 +3,7 @@
  * for the web read path.
  *
  * The header-alias table is NOT mirrored here: it is loaded at runtime from
- * `tracker-aliases.json` in the career-ops root — the same single source
+ * `src/tracker/tracker-aliases.json` — the same single source
  * tracker-parse.mjs exports as HEADER_ALIASES — so the web reader and the Node
  * tracker tooling can never drift (PR #1598 review). A build-time import of the
  * core module is impossible: Turbopack's root is pinned to web/ (see
@@ -34,7 +34,7 @@ const aliasCache = new Map();
 
 /**
  * Load the shared header-alias table (lowercased header text → canonical field)
- * from `{rootDir}/tracker-aliases.json`. Cached per resolved file path so the
+ * from `{rootDir}/src/tracker/tracker-aliases.json`. Cached per resolved file path so the
  * request-time read path (readApplications runs on every API route / page
  * render) doesn't re-read and re-parse the JSON each call — but the cache is
  * keyed on the file's mtime+size (one statSync per call, no full read), so a
@@ -48,7 +48,7 @@ const aliasCache = new Map();
  * @returns {Record<string, string>}
  */
 export function loadHeaderAliases(rootDir) {
-  const file = path.resolve(rootDir, "tracker-aliases.json");
+  const file = path.resolve(rootDir, "src/tracker/tracker-aliases.json");
   try {
     const { mtimeMs, size } = fs.statSync(file);
     const cached = aliasCache.get(file);
@@ -102,13 +102,13 @@ export function detectColumnMap(lines, aliases) {
 /**
  * Parse the tracker markdown (source of truth) into application rows.
  * Columns are mapped by header name via the shared alias table in
- * `{rootDir}/tracker-aliases.json`; the legacy fixed order
+ * `{rootDir}/src/tracker/tracker-aliases.json`; the legacy fixed order
  * (# | Date | Company | Role | Score | Status | PDF | Report | Notes)
  * is the fallback when no recognizable header row is present.
  * Rows without a numeric # cell (header, separator, stray pipes) are skipped,
  * mirroring parseTrackerRow in tracker-parse.mjs.
  * @param {string} md - content of data/applications.md.
- * @param {string} rootDir - career-ops root holding tracker-aliases.json.
+ * @param {string} rootDir - career-ops root holding src/tracker/tracker-aliases.json.
  * @returns {{n: string, date: string, company: string, via: string, role: string, score: string, status: string, pdf: string, report: string, notes: string}[]}
  */
 export function parseApplications(md, rootDir) {

@@ -3,7 +3,7 @@
 
 // RemoteOK provider — board-wide aggregator feed (https://remoteok.com/api).
 // Returns the latest ~100 remote postings as a JSON array; index 0 is a
-// {last_updated, legal} metadata object and is skipped. scan.mjs applies the
+// {last_updated, legal} metadata object and is skipped. src/scan/scan.mjs applies the
 // configured title_filter / location_filter to the returned rows.
 //
 // Wire in via a `job_boards:` entry with `provider: remoteok`.

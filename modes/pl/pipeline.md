@@ -6,7 +6,7 @@ Przetwarza URL-e ofert nagromadzone w `data/pipeline.md`. Kandydat dodaje URL-e,
 
 1. **Przeczytaj** `data/pipeline.md` -> znajdź itemy `- [ ]` w sekcji "Oczekujące" / "Pending" / "Pendientes"
 2. **Dla każdego oczekującego URL-a**:
-   a. Zarezerwuj następny kolejny `REPORT_NUM` atomowo, uruchamiając `node reserve-report-num.mjs` (i zwolnij sentinel, uruchamiając `node reserve-report-num.mjs --release <num>`, gdy report zostanie zapisany)
+   a. Zarezerwuj następny kolejny `REPORT_NUM` atomowo, uruchamiając `node src/tracker/reserve-report-num.mjs` (i zwolnij sentinel, uruchamiając `node src/tracker/reserve-report-num.mjs --release <num>`, gdy report zostanie zapisany)
    b. **Wyciągnij ofertę** za pomocą Playwright (`browser_navigate` + `browser_snapshot`) -> WebFetch -> WebSearch
    c. Jeśli URL jest niedostępny -> oznacz jako `- [!]` z notatką i kontynuuj
    d. **Wykonaj pełny auto-pipeline**: Ocena A-F -> Report .md -> PDF (jeśli score >= 3.0) -> Tracker
@@ -36,7 +36,7 @@ Przetwarza URL-e ofert nagromadzone w `data/pipeline.md`. Kandydat dodaje URL-e,
 ## Inteligentne wykrywanie oferty z URL-a
 
 1. **Playwright (preferowane):** `browser_navigate` + `browser_snapshot`. Działa ze wszystkimi SPA.
-   - **Opcjonalnie — ekstraktor CLI (`scan.extractor: cli` w `config/profile.yml`):** zamiast tego uruchom `node browser-extract.mjs <url>` (`--mode jd`) — zwięzłe `{ "url", "title", "text" }`, mniej tokenów (zależnie od portalu). **Cichy powrót** do `browser_navigate` + `browser_snapshot` przy błędzie lub braku.
+   - **Opcjonalnie — ekstraktor CLI (`scan.extractor: cli` w `config/profile.yml`):** zamiast tego uruchom `node src/scan/browser-extract.mjs <url>` (`--mode jd`) — zwięzłe `{ "url", "title", "text" }`, mniej tokenów (zależnie od portalu). **Cichy powrót** do `browser_navigate` + `browser_snapshot` przy błędzie lub braku.
 2. **WebFetch (fallback):** Dla stron statycznych lub gdy Playwright jest niedostępny.
 3. **WebSearch (ostateczność):** Szukaj na portalach drugorzędnych, które indeksują ofertę.
 
@@ -49,16 +49,16 @@ Przetwarza URL-e ofert nagromadzone w `data/pipeline.md`. Kandydat dodaje URL-e,
 
 ## Automatyczna numeracja
 
-1. Uruchom `node reserve-report-num.mjs`, aby zarezerwować następny kolejny numer atomowo (stdout zwraca `{###}`).
+1. Uruchom `node src/tracker/reserve-report-num.mjs`, aby zarezerwować następny kolejny numer atomowo (stdout zwraca `{###}`).
 2. Zapisz report z tym numerem.
-3. Zwolnij sentinel, uruchamiając `node reserve-report-num.mjs --release {###}`, gdy report zostanie zapisany.
+3. Zwolnij sentinel, uruchamiając `node src/tracker/reserve-report-num.mjs --release {###}`, gdy report zostanie zapisany.
 
 ## Synchronizacja źródeł
 
 Przed przetworzeniem URL-a sprawdź synchronizację:
 
 ```bash
-node cv-sync-check.mjs
+node src/cv/cv-sync-check.mjs
 ```
 
 W razie desynchronizacji ostrzeż kandydata przed kontynuowaniem.

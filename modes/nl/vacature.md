@@ -103,7 +103,7 @@ Bevat ook:
 
 Sla de volledige evaluatie op in `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 
-- `{###}` = volgend volgnummer (3 cijfers, nullen opgevuld). Om het atomair toe te wijzen en racecondities te vermijden, zou je `node reserve-report-num.mjs` uitvoeren om het nummer te reserveren (stdout retourneert `{###}`), het rapport schrijven en vervolgens `node reserve-report-num.mjs --release {###}` uitvoeren om de sentinel vrij te geven.
+- `{###}` = volgend volgnummer (3 cijfers, nullen opgevuld). Om het atomair toe te wijzen en racecondities te vermijden, zou je `node src/tracker/reserve-report-num.mjs` uitvoeren om het nummer te reserveren (stdout retourneert `{###}`), het rapport schrijven en vervolgens `node src/tracker/reserve-report-num.mjs --release {###}` uitvoeren om de sentinel vrij te geven.
 - `{company-slug}` = bedrijfsnaam in kleine letters, zonder spaties (gebruik koppeltekens)
 - `{JJJJ-MM-DD}` = huidige datum
 
@@ -149,7 +149,7 @@ Sla de volledige evaluatie op in `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 
 ### 2. Opslaan in tracker
 
-**ALTIJD** registreren via een TSV-bestand in `batch/tracker-additions/`; bewerk `data/applications.md` nooit rechtstreeks. Voer vóór voltooiing, in deze volgorde, `node merge-tracker.mjs`, `node verify-pipeline.mjs`, `node normalize-statuses.mjs` en `node dedup-tracker.mjs` uit:
+**ALTIJD** registreren via een TSV-bestand in `batch/tracker-additions/`; bewerk `data/applications.md` nooit rechtstreeks. Voer vóór voltooiing, in deze volgorde, `node src/tracker/merge-tracker.mjs`, `node src/tracker/verify-pipeline.mjs`, `node src/tracker/normalize-statuses.mjs` en `node src/tracker/dedup-tracker.mjs` uit:
 - Volgend opeenvolgend nummer
 - De datum van vandaag
 - Bedrijf

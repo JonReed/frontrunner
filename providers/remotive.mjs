@@ -3,7 +3,7 @@
 
 // Remotive provider — board-wide aggregator feed
 // (https://remotive.com/api/remote-jobs). Returns { jobs: [...] }. The full
-// feed (no ?search=) is fetched so scan.mjs's title_filter can gate on the
+// feed (no ?search=) is fetched so src/scan/scan.mjs's title_filter can gate on the
 // configured AI/ML titles; the feed's own ?search= is too narrow (a substring
 // match that misses e.g. "ML Engineer").
 //

@@ -6,7 +6,7 @@
 
 1. **Прочитати** `data/pipeline.md` → знайти `- [ ]` в секції "Очікуючі" (або "Pendientes" / "Pending" — pipeline.md може містити заголовки будь-якою мовою)
 2. **Для кожного URL**:
-   a. Зарезервувати наступний `REPORT_NUM` атомарно, запустивши `node reserve-report-num.mjs` (та звільнити маркер, запустивши `node reserve-report-num.mjs --release <num>` після запису звіту)
+   a. Зарезервувати наступний `REPORT_NUM` атомарно, запустивши `node src/tracker/reserve-report-num.mjs` (та звільнити маркер, запустивши `node src/tracker/reserve-report-num.mjs --release <num>` після запису звіту)
    b. **🚦 Playwright verification gate (обов'язково):** `browser_navigate` → `browser_snapshot`. Визначити: title + description + Apply button = active; тільки footer/navbar без JD = closed/inactive. **Якщо inactive** → позначити `- [!] URL — Вакансія закрита/неактивна`, пропустити цей URL, перейти до наступного.
    c. **Витягти JD** з того ж Playwright snapshot (або WebFetch/WebSearch як fallback, якщо Playwright вже підтвердив активність)
    d. Якщо URL недоступний (login wall, 404, timeout) → позначити `- [!]` з приміткою, продовжити
@@ -37,7 +37,7 @@
 ## Визначення JD з URL
 
 1. **Playwright (переважно):** `browser_navigate` + `browser_snapshot`. Працює з усіма SPA.
-   - **Опційно — CLI-екстрактор (`scan.extractor: cli` у `config/profile.yml`):** натомість запустіть `node browser-extract.mjs <url>` (`--mode jd`) — компактний `{ "url", "title", "text" }`, менше токенів (залежно від порталу). У разі помилки чи відсутності **тихо** відкотіться до `browser_navigate` + `browser_snapshot`.
+   - **Опційно — CLI-екстрактор (`scan.extractor: cli` у `config/profile.yml`):** натомість запустіть `node src/scan/browser-extract.mjs <url>` (`--mode jd`) — компактний `{ "url", "title", "text" }`, менше токенів (залежно від порталу). У разі помилки чи відсутності **тихо** відкотіться до `browser_navigate` + `browser_snapshot`.
 2. **WebFetch (fallback):** Для статичних сторінок.
 3. **WebSearch (останній ресурс):** Пошук на вторинних порталах.
 
@@ -51,16 +51,16 @@
 
 ## Нумерація
 
-1. Запустити `node reserve-report-num.mjs` для атомарного резервування наступного порядкового номера (stdout поверне `{###}`).
+1. Запустити `node src/tracker/reserve-report-num.mjs` для атомарного резервування наступного порядкового номера (stdout поверне `{###}`).
 2. Записати файл звіту, використовуючи цей номер.
-3. Звільнити маркер, запустивши `node reserve-report-num.mjs --release {###}` після запису звіту.
+3. Звільнити маркер, запустивши `node src/tracker/reserve-report-num.mjs --release {###}` після запису звіту.
 
 ## Синхронізація джерел
 
 Перед обробкою URL:
 
 ```bash
-node cv-sync-check.mjs
+node src/cv/cv-sync-check.mjs
 ```
 
 Якщо розсинхронізація — попередити користувача.

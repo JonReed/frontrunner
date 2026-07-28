@@ -24,7 +24,7 @@ elapsed-time cadence case — see `confirmed_time_noshow` in `modes/email.md`
 Execute:
 
 ```bash
-node followup-cadence.mjs
+node src/tracker/followup-cadence.mjs
 ```
 
 Parse the JSON output. It contains:
@@ -125,7 +125,7 @@ Do NOT generate another follow-up. Instead suggest:
 
 ### Company history context (optional)
 
-Before drafting, check the company's card. Skip this lookup entirely when the tracker's company field is `?` (the unknown-employer marker — there is no meaningful card to fetch). Otherwise run `node company-history.mjs --company <company>`, passing the company name as its own single, quoted argument — never splice it into a longer shell string, since company names can legitimately contain quotes, `$`, backticks, or `;`. If `responsiveness.label` is `silent-on-you`, set expectations rather than discouraging the follow-up: many processes are genuinely just slow, so mention this plainly and suggest capping further time investment in this company if it stays silent after this attempt. The decision to send — and how many more times — stays the user's; never skip or downgrade a follow-up because of this label. Follow-up compliance is never punished.
+Before drafting, check the company's card. Skip this lookup entirely when the tracker's company field is `?` (the unknown-employer marker — there is no meaningful card to fetch). Otherwise run `node src/scan/company-history.mjs --company <company>`, passing the company name as its own single, quoted argument — never splice it into a longer shell string, since company names can legitimately contain quotes, `$`, backticks, or `;`. If `responsiveness.label` is `silent-on-you`, set expectations rather than discouraging the follow-up: many processes are genuinely just slow, so mention this plainly and suggest capping further time investment in this company if it stays silent after this attempt. The decision to send — and how many more times — stays the user's; never skip or downgrade a follow-up because of this label. Follow-up compliance is never punished.
 
 ## Step 4 — Present Drafts
 
@@ -148,7 +148,7 @@ For each draft, show:
 After the user reviews and says they've sent a follow-up, record it:
 
 1. If `data/follow-ups.md` doesn't exist, create it (this exact header — the
-   same one the web UI writes; `followup-cadence.mjs` parses these columns):
+   same one the web UI writes; `src/tracker/followup-cadence.mjs` parses these columns):
 
    ```markdown
    # Follow-ups
@@ -186,7 +186,7 @@ the computed schedule until a follow-up is logged on or after the set-date;
 the latest pin per application wins; deleting the line clears the pin.
 
 Pins may be seeded AUTOMATICALLY when an application turns Applied —
-`node followup-seed.mjs <num>` (run by the `apply` mode's Step 9) appends a
+`node src/tracker/followup-seed.mjs <num>` (run by the `apply` mode's Step 9) appends a
 pin scheduling the first follow-up at apply date + the `applied_first`
 cadence. Seeding is idempotent, and a stale pin left behind by a later
 Rejected/Discarded transition is harmless because the cadence analysis
@@ -213,4 +213,4 @@ After showing all drafts, summarize:
 | Responded | 1 day (urgent reply) | Every 3 days | No limit |
 | Interview | 1 day after (thank-you) | Every 3 days | No limit |
 
-These defaults can be overridden via `node followup-cadence.mjs --applied-days N`.
+These defaults can be overridden via `node src/tracker/followup-cadence.mjs --applied-days N`.

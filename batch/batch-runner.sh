@@ -497,7 +497,7 @@ process_offer() {
   local jd_file
   jd_file="$(mktemp "${TMPDIR:-/tmp}/batch-jd-${id}.XXXXXX")"
 
-  # Pre-populate the JD from `node fetch-jds.mjs` output when available.
+  # Pre-populate the JD from `node src/scan/fetch-jds.mjs` output when available.
   # Without this the file stays EMPTY and every worker falls through to
   # batch-prompt.md step 1's "fetch {{URL}} with WebFetch" — pulling a full
   # rendered HTML page (~18k tokens measured) into the model's context to
@@ -663,13 +663,13 @@ process_offer() {
 merge_tracker() {
   echo ""
   echo "=== Merging tracker additions ==="
-  node "$PROJECT_DIR/merge-tracker.mjs"
+  node "$PROJECT_DIR/src/tracker/merge-tracker.mjs"
   echo ""
   echo "=== Reconciling pipeline.md ==="
-  node "$PROJECT_DIR/reconcile-pipeline.mjs" || echo "⚠️  Pipeline reconcile had issues (see above)"
+  node "$PROJECT_DIR/src/tracker/reconcile-pipeline.mjs" || echo "⚠️  Pipeline reconcile had issues (see above)"
   echo ""
   echo "=== Verifying pipeline integrity ==="
-  node "$PROJECT_DIR/verify-pipeline.mjs" || echo "⚠️  Verification found issues (see above)"
+  node "$PROJECT_DIR/src/tracker/verify-pipeline.mjs" || echo "⚠️  Verification found issues (see above)"
 }
 
 # Print summary
@@ -815,11 +815,11 @@ watch_status() {
   echo "Showing final status:"
   print_status_table
 
-  # Chain verify-pipeline.mjs
-  if [[ -f "$PROJECT_DIR/verify-pipeline.mjs" ]]; then
+  # Chain src/tracker/verify-pipeline.mjs
+  if [[ -f "$PROJECT_DIR/src/tracker/verify-pipeline.mjs" ]]; then
     echo ""
     echo "=== Running pipeline verification ==="
-    node "$PROJECT_DIR/verify-pipeline.mjs" || echo "⚠️  Verification found issues"
+    node "$PROJECT_DIR/src/tracker/verify-pipeline.mjs" || echo "⚠️  Verification found issues"
   fi
 }
 

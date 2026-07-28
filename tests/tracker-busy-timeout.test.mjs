@@ -21,7 +21,7 @@ process.env.CAREER_OPS_TRACKER_DB = join(work, 'applications.db');
 
 try {
   const { DatabaseSync } = await import('node:sqlite');
-  const { openDb } = await import(new URL('../tracker.mjs', import.meta.url).href);
+  const { openDb } = await import(new URL('../src/tracker/tracker.mjs', import.meta.url).href);
 
   const db = openDb(DatabaseSync);
   const { timeout } = db.prepare('PRAGMA busy_timeout').get();

@@ -79,9 +79,9 @@ See [CODEX.md](CODEX.md) and [docs/SETUP.md](docs/SETUP.md) for the full invocat
 ### The loop
 
 ```bash
-node scan.mjs                                            # find    - zero tokens
-node fetch-jds.mjs --summary                             # ingest  - zero tokens
-node prefilter.mjs --summary --out batch/batch-input.tsv # filter  - zero tokens
+node src/scan/scan.mjs                                            # find    - zero tokens
+node src/scan/fetch-jds.mjs --summary                             # ingest  - zero tokens
+node src/scan/prefilter.mjs --summary --out batch/batch-input.tsv # filter  - zero tokens
 ./batch/batch-runner.sh --parallel 3 --skip-pdf          # score   - the only paid step
 ```
 

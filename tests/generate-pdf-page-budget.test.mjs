@@ -11,10 +11,10 @@ import {
 import { join, relative } from 'path';
 import { pass, fail, ROOT, NODE } from './helpers.mjs';
 
-const outputRoot = join(ROOT, 'output');
+const outputRoot = join(ROOT, 'src/cv/output');
 mkdirSync(outputRoot, { recursive: true });
 const sandbox = mkdtempSync(join(outputRoot, 'page-budget-test-'));
-const script = join(sandbox, 'generate-pdf.mjs');
+const script = join(sandbox, 'src/cv/generate-pdf.mjs');
 const input = join(sandbox, 'two-pages.html');
 const defaultOverflowInput = join(sandbox, 'three-pages.html');
 const manifest = join(sandbox, 'data', 'pdf-index.tsv');
@@ -22,11 +22,11 @@ mkdirSync(join(sandbox, 'data'), { recursive: true });
 writeFileSync(manifest, '', 'utf-8');
 const playwrightStub = join(sandbox, 'node_modules', 'playwright');
 
-copyFileSync(join(ROOT, 'generate-pdf.mjs'), script);
+copyFileSync(join(ROOT, 'src/cv/generate-pdf.mjs'), script);
 // generate-pdf.mjs imports its local sibling ./theme-style.mjs (dynamic PDF
 // theming, #1837); copy it into the sandbox too or the isolated script fails
 // to load with ERR_MODULE_NOT_FOUND before it can parse any --max-pages arg.
-copyFileSync(join(ROOT, 'theme-style.mjs'), join(sandbox, 'theme-style.mjs'));
+copyFileSync(join(ROOT, 'src/cv/theme-style.mjs'), join(sandbox, 'src/cv/theme-style.mjs'));
 mkdirSync(playwrightStub, { recursive: true });
 writeFileSync(join(playwrightStub, 'package.json'), JSON.stringify({
   name: 'playwright',

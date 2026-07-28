@@ -18,7 +18,8 @@
  */
 
 import { detectReposts, parseScanHistory } from './detect-reposts.mjs';
-import { roleFuzzyMatch } from '../../role-matcher.mjs';
+import { ROOT } from '#paths';
+import { roleFuzzyMatch } from '../tracker/role-matcher.mjs';
 import { readFileSync, writeFileSync, unlinkSync, existsSync, mkdtempSync, rmSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -473,7 +474,7 @@ eq('same URL seen twice + 1 different URL -> 1 cluster', mixedResult.length, 1);
 eq('deduped to 2 appearances (not 3)', mixedResult[0]?.repostCount, 2);
 
 // Same URL with trailing slash vs without — treated as different URLs
-// (this is correct: URL normalization is scan.mjs's job, not ours)
+// (this is correct: URL normalization is src/scan/scan.mjs's job, not ours)
 eq('URL with/without trailing slash treated as different', detectReposts([
   row({ url: 'https://x.com/1', date: d('2026-01-01'), dateStr: '2026-01-01' }),
   row({ url: 'https://x.com/1/', date: d('2026-02-01'), dateStr: '2026-02-01' }),
@@ -814,7 +815,7 @@ ok('500 rows across 50 companies completes without throwing', true);
 // ============================================================================
 console.log('\n--- 12. CLI behavior ---');
 
-const scriptPath = join(dirname(fileURLToPath(import.meta.url)), './detect-reposts.mjs');
+const scriptPath = join(ROOT, 'src/analysis/detect-reposts.mjs');
 
 // Test --self-test exit code
 try {

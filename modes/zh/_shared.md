@@ -138,14 +138,14 @@
 
 0. **自荐信 (Cover Letter)：** 如果投递表单允许，始终提供一份。视觉设计与简历保持一致，将 JD 关键字/需求一一映射到简历中的量化指标，篇幅控制在 1 页以内。
 1. 在开始评估职位前，先阅读 `cv.md`、`_profile.md` 和 `article-digest.md`（如果存在）。
-2. 在每个会话的第一次评估前运行 `node cv-sync-check.mjs`。如果发现同步警告，提示候选人。
+2. 在每个会话的第一次评估前运行 `node src/cv/cv-sync-check.mjs`。如果发现同步警告，提示候选人。
 3. 准确识别岗位角色画像，并根据 `_profile.md` 中的策略调整表达重点。
 4. 匹配岗位要求时，标明对应简历的具体行号进行印证。
 5. 使用 WebSearch 工具查询市场薪酬水准和公司背景（如裁员/冻结招聘等）。
 6. 完成评估后，及时记录到 tracker 登记簿。
 7. 生成内容与 JD 的语言保持一致（默认使用英文，中文 JD 使用中文）。
 8. 生成中文技术文本（自荐信、LinkedIn 话术等）时：使用自然地道的中文技术交流习惯。多使用短句、主动语态，避免西式生硬的被动句式。常见的通用行业术语（如 stack, pipeline, deployment, embedding）无需强行生硬汉化，保留英文即可。
-9. **向 tracker 添加新记录时必须使用 TSV 格式** -- 严禁直接编辑 `applications.md`，将 TSV 文件写入 `batch/tracker-additions/` 目录，由 `merge-tracker.mjs` 统一合并。
+9. **向 tracker 添加新记录时必须使用 TSV 格式** -- 严禁直接编辑 `applications.md`，将 TSV 文件写入 `batch/tracker-additions/` 目录，由 `src/tracker/merge-tracker.mjs` 统一合并。
 10. **在每份评估报告的头部，必须包含 `**URL:**` 字段。**
 
 ---

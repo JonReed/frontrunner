@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
 /**
- * paste-reply-tests.mjs — regression tests for paste-reply.mjs (#1802).
+ * paste-reply-tests.mjs — regression tests for src/tracker/paste-reply.mjs (#1802).
  *
- * Locks in the manual/no-Gmail input path into reply-watch.mjs's classification
+ * Locks in the manual/no-Gmail input path into src/tracker/reply-watch.mjs's classification
  * pipeline:
  *   1. --file mode normalizes subject/from/body into the exact candidate shape
- *      reply-watch.mjs expects, with signal left null (classification stays
- *      reply-watch.mjs's job).
+ *      src/tracker/reply-watch.mjs expects, with signal left null (classification stays
+ *      src/tracker/reply-watch.mjs's job).
  *   2. Appending is additive — existing candidates are never clobbered.
  *   3. A missing candidates file is created (with the array wrapper) on first append.
  *   4. --file input with no Subject:/From: headers falls back to whole-file-as-body.
@@ -27,7 +27,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 
 import { ROOT } from '#paths';
 const NODE = process.execPath;
-const CLI = join(ROOT, 'paste-reply.mjs');
+const CLI = join(ROOT, 'src/tracker/paste-reply.mjs');
 
 let passed = 0;
 let failed = 0;
@@ -71,7 +71,7 @@ console.log('1. --file mode normalizes into the exact candidate shape');
   check('from parsed', cand.from === 'recruiter@wingyun.com', cand.from);
   check('subject parsed', cand.subject === '恭喜简历通过，杭州赢云贸易有限公司邀您面试', cand.subject);
   check('body_snippet contains multi-line body', cand.body_snippet.includes('AI微信小程序面试') && cand.body_snippet.includes('15~30分钟'), cand.body_snippet);
-  check('signal is null (classification stays reply-watch.mjs job)', cand.signal === null, JSON.stringify(cand.signal));
+  check('signal is null (classification stays src/tracker/reply-watch.mjs job)', cand.signal === null, JSON.stringify(cand.signal));
   check('exactly 5 shape keys', Object.keys(cand).sort().join(',') === 'body_snippet,from,message_id,signal,subject', Object.keys(cand).sort().join(','));
 }
 

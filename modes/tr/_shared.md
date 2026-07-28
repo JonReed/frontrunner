@@ -222,7 +222,7 @@ Türkçe iş ilanlarında ve sözleşme müzakerelerinde, yabancı piyasalarda k
 
 0. **Ön yazı:** Form izin veriyorsa HER ZAMAN ön yazı ekle. CV ile aynı görsel tasarımda PDF olarak üret. İçerik: ilandan doğrudan alıntılar + kanıt noktalarıyla eşleştirme. Maksimum 1 sayfa.
 1. Herhangi bir ilanı değerlendirmeden önce `cv.md` ve `article-digest.md` dosyalarını oku (varsa)
-1b. **Her oturumun ilk değerlendirmesinde:** `node cv-sync-check.mjs` çalıştır. Uyarı varsa adayı bilgilendirmeden devam etme
+1b. **Her oturumun ilk değerlendirmesinde:** `node src/cv/cv-sync-check.mjs` çalıştır. Uyarı varsa adayı bilgilendirmeden devam etme
 2. Rol arketipini belirle ve çerçevelemeyi buna göre uyarla
 3. CV eşleştirmesinde dosyadan tam satır alıntıla
 4. Maaş ve şirket bilgisi için WebSearch kullan
@@ -231,7 +231,7 @@ Türkçe iş ilanlarında ve sözleşme müzakerelerinde, yabancı piyasalarda k
 7. Doğrudan ve eyleme dönük ol — gereksiz ayrıntı yazma
 8. Türkçe metin üretirken: doğal Türkçe kullan, kelimesi kelimesine çeviriden kaçın. Kısa cümleler, aktif fiiller. Stack, pipeline, deploy, backend, frontend gibi yerleşik teknik terimler zorla Türkçeleştirilmemeli
 8b. **PDF Professional Summary'de vaka çalışması URL'leri:** Adayın demo veya proje linki varsa ilk paragrafta göster — recruiter genellikle sadece summary'i okur
-9. **Takipçi eklemeleri TSV olarak** — `applications.md`'ye doğrudan yeni satır ekleme. TSV'yi `batch/tracker-additions/` klasörüne yaz, `merge-tracker.mjs` halleder
+9. **Takipçi eklemeleri TSV olarak** — `applications.md`'ye doğrudan yeni satır ekleme. TSV'yi `batch/tracker-additions/` klasörüne yaz, `src/tracker/merge-tracker.mjs` halleder
 10. Her rapor başlığına `**URL:**` alanını ekle — Puan ile PDF arasına
 
 ### Araçlar
@@ -245,7 +245,7 @@ Türkçe iş ilanlarında ve sözleşme müzakerelerinde, yabancı piyasalarda k
 | Write | PDF için geçici HTML, rapor .md dosyaları, `batch/tracker-additions/*.tsv` (yeni takipçi girişleri) |
 | Edit | `data/applications.md`'de mevcut satır güncellemeleri (durum, PDF, rapor bağlantısı) |
 | Canva MCP | İsteğe bağlı görsel CV üretimi. Temel tasarımı çoğalt, metni düzenle, PDF olarak dışa aktar. `profile.yml`'de `canva_resume_design_id` gerektirir. |
-| Bash | `node generate-pdf.mjs` |
+| Bash | `node src/cv/generate-pdf.mjs` |
 
 ---
 
@@ -263,7 +263,7 @@ Bu kurallar adaya giden tüm üretilmiş metinler için geçerlidir: PDF özetle
 - "kanıtlanmış yetenek" / "en iyi uygulamalar" → spesifik uygulamayı adlandır
 
 ### ATS için Unicode normalleştirme
-`generate-pdf.mjs` em dash, akıllı tırnak ve sıfır genişlikli karakterleri otomatik olarak ASCII karşılıklarına dönüştürür. Yine de en başından üretmekten kaçın.
+`src/cv/generate-pdf.mjs` em dash, akıllı tırnak ve sıfır genişlikli karakterleri otomatik olarak ASCII karşılıklarına dönüştürür. Yine de en başından üretmekten kaçın.
 
 ### Cümle yapısını çeşitlendir
 - Her maddeye aynı fiille başlama

@@ -178,7 +178,7 @@ En las ofertas y negociaciones en español, ciertos términos no existen en los 
 
 0. **Carta de presentación:** Si el formulario lo permite, SIEMPRE incluir una. PDF con el mismo diseño visual que el CV. Citas de la oferta mapeadas sobre los proof points. Máximo 1 página.
 1. Leer `cv.md` y `article-digest.md` (si existe) antes de evaluar una oferta
-1b. **Primera evaluación de cada sesión:** Ejecutar `node cv-sync-check.mjs` via Bash. Si hay alertas, avisar al candidato
+1b. **Primera evaluación de cada sesión:** Ejecutar `node src/cv/cv-sync-check.mjs` via Bash. Si hay alertas, avisar al candidato
 2. Detectar el arquetipo del rol y adaptar el framing
 3. Citar líneas exactas del CV en el matching
 4. Usar WebSearch para datos de remuneración y de empresa
@@ -187,7 +187,7 @@ En las ofertas y negociaciones en español, ciertos términos no existen en los 
 7. Ser directo y concreto — sin relleno
 8. Español técnico natural en los textos generados. Frases cortas, verbos de acción, evitar la voz pasiva. No forzar la traducción de términos técnicos (stack, pipeline, deployment, embedding)
 8b. **URLs de case studies en el Professional Summary del PDF:** Si el PDF menciona case studies o demos, las URLs DEBEN aparecer en el primer párrafo (Professional Summary). Los reclutadores suelen leer solo el summary. Todas las URLs en HTML con `white-space: nowrap`
-9. **Entradas del tracker en TSV** — NUNCA editar applications.md directamente para nuevas entradas. Escribir el TSV en `batch/tracker-additions/`, `merge-tracker.mjs` gestiona la fusión
+9. **Entradas del tracker en TSV** — NUNCA editar applications.md directamente para nuevas entradas. Escribir el TSV en `batch/tracker-additions/`, `src/tracker/merge-tracker.mjs` gestiona la fusión
 10. **`**URL:**` en cada cabecera de report** — entre Score y PDF
 
 ### Herramientas
@@ -200,4 +200,4 @@ En las ofertas y negociaciones en español, ciertos términos no existen en los 
 | Read | cv.md, article-digest.md, cv-template.html |
 | Write | HTML temporal para PDF, applications.md, reports .md |
 | Edit | Actualizar el tracker |
-| Bash | `node generate-pdf.mjs` |
+| Bash | `node src/cv/generate-pdf.mjs` |

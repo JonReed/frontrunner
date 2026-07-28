@@ -59,7 +59,7 @@ list — this system optimizes for quality, not quantity.
 ## Filters (apply BEFORE showing suggestions)
 
 1. **Dedup against existing coverage.** Mirror the matcher semantics in
-   `scan.mjs` (`buildTitleFilter` / `compileKeyword`): the scanner lowercases
+   `src/scan/scan.mjs` (`buildTitleFilter` / `compileKeyword`): the scanner lowercases
    both sides and keeps a job when any positive keyword is a
    case-insensitive substring of the title (2–3 letter keywords match on word
    boundaries instead). So drop any candidate title that an existing positive

@@ -6,7 +6,7 @@
 
 1. **Oku** `data/pipeline.md` → "Bekleyenler" bölümündeki `- [ ]` satırlarını bul
 2. **Her bekleyen URL için:**
-   a. Sıradaki `REPORT_NUM` değerini atomik olarak rezerve etmek üzere `node reserve-report-num.mjs` komutunu çalıştır (ve rapor yazıldıktan sonra `node reserve-report-num.mjs --release <num>` çalıştırarak sentineli serbest bırak)
+   a. Sıradaki `REPORT_NUM` değerini atomik olarak rezerve etmek üzere `node src/tracker/reserve-report-num.mjs` komutunu çalıştır (ve rapor yazıldıktan sonra `node src/tracker/reserve-report-num.mjs --release <num>` çalıştırarak sentineli serbest bırak)
    b. **İlan içeriğini çek:** Playwright (browser_navigate + browser_snapshot) → WebFetch → WebSearch. **Playwright kullanılmadıysa** (toplu/headless mod veya yedek yola düşüldüyse) rapor başlığına `**Doğrulama:** doğrulanmamış (toplu mod)` etiketini ekle.
    c. URL erişilemiyorsa → `- [!]` olarak işaretle, not ekle ve bir sonrakine geç
    d. **Tam pipeline'ı çalıştır:** A-G değerlendirmesi → Rapor (.md) → PDF (puan ≥ 3,0 ise) → Takipçi
@@ -36,7 +36,7 @@
 ## URL'den İlan İçeriği Çekme
 
 1. **Playwright (tercih edilen):** `browser_navigate` + `browser_snapshot` — tüm SPA'larla çalışır.
-   - **İsteğe bağlı — CLI çıkarıcı (`config/profile.yml` içinde `scan.extractor: cli`):** bunun yerine `node browser-extract.mjs <url>` (`--mode jd`) çalıştır — kompakt `{ "url", "title", "text" }`, daha az token (portala bağlı). Hata veya eksiklik durumunda **sessizce** `browser_navigate` + `browser_snapshot`'a geri dön.
+   - **İsteğe bağlı — CLI çıkarıcı (`config/profile.yml` içinde `scan.extractor: cli`):** bunun yerine `node src/scan/browser-extract.mjs <url>` (`--mode jd`) çalıştır — kompakt `{ "url", "title", "text" }`, daha az token (portala bağlı). Hata veya eksiklik durumunda **sessizce** `browser_navigate` + `browser_snapshot`'a geri dön.
 2. **WebFetch (yedek):** Playwright mevcut değilse (toplu/headless mod). Bu durumda rapor başlığına `**Doğrulama:** doğrulanmamış (toplu mod)` ekle — kullanıcı daha sonra manuel doğrulayabilir.
 3. **WebSearch (son çare):** İlanı indeksleyen diğer platformlarda ara. WebFetch'te olduğu gibi rapor başlığına `**Doğrulama:** doğrulanmamış (toplu mod)` ekle.
 
@@ -49,14 +49,14 @@
 
 ## Rapor Numaralandırma
 
-1. Sıradaki rapor numarasını atomik olarak rezerve etmek için `node reserve-report-num.mjs` komutunu çalıştır (standart çıktı `{###}` değerini döndürür).
+1. Sıradaki rapor numarasını atomik olarak rezerve etmek için `node src/tracker/reserve-report-num.mjs` komutunu çalıştır (standart çıktı `{###}` değerini döndürür).
 2. Bu numarayı kullanarak rapor dosyasını yaz.
-3. Rapor yazıldıktan sonra `node reserve-report-num.mjs --release {###}` komutunu çalıştırarak sentineli serbest bırak.
+3. Rapor yazıldıktan sonra `node src/tracker/reserve-report-num.mjs --release {###}` komutunu çalıştırarak sentineli serbest bırak.
 
 ## Başlamadan Önce
 
 Herhangi bir URL'yi işlemeden önce yapılandırma kontrolü çalıştır:
 ```bash
-node cv-sync-check.mjs
+node src/cv/cv-sync-check.mjs
 ```
 Uyarı varsa adayı bilgilendirmeden devam etme.

@@ -5,7 +5,7 @@ import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { listTemplates, resolveTemplate, validateTemplate } from '../cv-templates.mjs';
+import { listTemplates, resolveTemplate, validateTemplate } from '../src/cv/cv-templates.mjs';
 import { chromium } from 'playwright';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -51,7 +51,7 @@ test('Chinese Minimal renders a complete mixed-language payload', () => {
     skills: [{ category: '工程能力', items: ['TypeScript', 'FastAPI', 'Docker'] }],
   }));
 
-  execFileSync(process.execPath, ['build-cv-html.mjs', input, output, TEMPLATE], { cwd: ROOT });
+  execFileSync(process.execPath, ['src/cv/build-cv-html.mjs', input, output, TEMPLATE], { cwd: ROOT });
   const rendered = readFileSync(output, 'utf8');
   assert.match(rendered, /<html lang="zh-CN">/);
   assert.match(rendered, /测试候选人/);
@@ -78,7 +78,7 @@ test('Chinese Minimal keeps long mixed-language contacts inside the A4 page', {
     experience: [{ company: '示例科技有限公司', role: '工程师', dates: '2025 至今', bullets: ['交付生产系统。'] }],
     projects: [], education: [], certifications: [], skills: [],
   }));
-  execFileSync(process.execPath, ['build-cv-html.mjs', input, output, TEMPLATE], { cwd: ROOT });
+  execFileSync(process.execPath, ['src/cv/build-cv-html.mjs', input, output, TEMPLATE], { cwd: ROOT });
 
   const browser = await chromium.launch({ headless: true });
   try {

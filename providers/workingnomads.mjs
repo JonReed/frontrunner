@@ -3,7 +3,7 @@
 
 // Working Nomads provider — board-wide aggregator feed
 // (https://www.workingnomads.com/api/exposed_jobs/). Returns a JSON array of
-// postings; scan.mjs applies the configured title_filter / location_filter.
+// postings; src/scan/scan.mjs applies the configured title_filter / location_filter.
 //
 // Wire in via a `job_boards:` entry with `provider: workingnomads`.
 

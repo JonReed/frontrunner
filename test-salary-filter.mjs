@@ -10,7 +10,7 @@
  */
 
 import { parseCompensation } from './providers/ashby.mjs';
-import { buildSalaryFilter } from './scan.mjs';
+import { buildSalaryFilter } from './src/scan/scan.mjs';
 
 // ── Test runner ──────────────────────────────────────────────────────
 
@@ -279,7 +279,7 @@ section('parseCompensation — zero values');
 }
 
 // ══════════════════════════════════════════════════════════════════════
-// PART 2: buildSalaryFilter (scan.mjs)
+// PART 2: buildSalaryFilter (src/scan/scan.mjs)
 // ══════════════════════════════════════════════════════════════════════
 
 section('buildSalaryFilter — disabled / no-op cases');

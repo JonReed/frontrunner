@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, basename } from 'node:path';
-import { resolveCoverTemplatePath } from '../generate-cover-letter.mjs';
+import { resolveCoverTemplatePath } from '../src/cv/generate-cover-letter.mjs';
 
 function coverFixture(templateValue) {
   const dir = mkdtempSync(join(tmpdir(), 'cover-'));

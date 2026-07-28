@@ -16,26 +16,26 @@
  * the Report link ("012" and "12" are the same number), so a collision between
  * the two numbering schemes surfaces as multiple rows instead of a silent wrong
  * pick. A text query matches company/role by case-insensitive substring, with
- * the shared fuzzy matcher (role-matcher.mjs) as fallback for multi-word
+ * the shared fuzzy matcher (src/tracker/role-matcher.mjs) as fallback for multi-word
  * phrases.
  *
  * Zero dependencies and strictly read-only: parses data/applications.md via
- * the shared header-aware column mapping (tracker-parse.mjs) and the PDF
- * manifest data/pdf-index.tsv (written by generate-pdf.mjs).
+ * the shared header-aware column mapping (src/tracker/tracker-parse.mjs) and the PDF
+ * manifest data/pdf-index.tsv (written by src/cv/generate-pdf.mjs).
  */
 
 import { readFileSync, existsSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { resolveColumns, parseTrackerRow } from './tracker-parse.mjs';
-import { roleFuzzyMatch } from './role-matcher.mjs';
+import { resolveColumns, parseTrackerRow } from './src/tracker/tracker-parse.mjs';
+import { roleFuzzyMatch } from './src/tracker/role-matcher.mjs';
 
 import { ROOT } from '#paths';
 // "008" and "8" are the same report — zero-padded report-link form vs unpadded
-// tracker-# form (same normalization as the manifest writer in generate-pdf.mjs).
+// tracker-# form (same normalization as the manifest writer in src/cv/generate-pdf.mjs).
 const normNum = (s) => String(s ?? '').trim().replace(/^0+(?=\d)/, '');
 
-// Same status hygiene as tracker.mjs: strip markdown bold and stray dates so a
+// Same status hygiene as src/tracker/tracker.mjs: strip markdown bold and stray dates so a
 // messy cell still prints as its canonical label.
 const cleanStatus = (s) =>
   String(s ?? '').replace(/\*\*/g, '').replace(/\(?\d{4}-\d{2}-\d{2}\)?/g, '').trim();

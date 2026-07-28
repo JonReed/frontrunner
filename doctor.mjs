@@ -10,7 +10,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import yaml from 'js-yaml';
 import { discoverPlugins, pluginRoots, pluginStatus } from './plugins/_engine.mjs';
-import { resolveExtractorMode } from './browser-extract.mjs';
+import { resolveExtractorMode } from './src/scan/browser-extract.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const argv = process.argv.slice(2);
@@ -41,7 +41,7 @@ function checkNodeVersion() {
   if (major >= 18) {
     return {
       warn: true,
-      label: `Node.js v${versionStr} detected. Node >= 22.5.0 is highly recommended because tracker.mjs (SQLite database indexing) requires node:sqlite.`,
+      label: `Node.js v${versionStr} detected. Node >= 22.5.0 is highly recommended because src/tracker/tracker.mjs (SQLite database indexing) requires node:sqlite.`,
       fix: [
         'Upgrade Node.js to v22.5.0 or later to enable full tracker database support.',
         'The markdown tracker keeps working without it — the index is optional.',
@@ -126,19 +126,19 @@ function playwrightMcpConfigured(root) {
 }
 
 // Report which scan/JD extractor is active (config/profile.yml → scan.extractor).
-// `mcp` (default) uses the browser MCP; `cli` uses browser-extract.mjs. When cli
+// `mcp` (default) uses the browser MCP; `cli` uses src/scan/browser-extract.mjs. When cli
 // is selected but the helper is missing, the modes fall back to MCP — surface
 // that as a warning, never a failure.
 function checkScanExtractor(root) {
   const mode = resolveExtractorMode(join(root, 'config', 'profile.yml'));
   if (mode === 'cli') {
-    if (existsSync(join(root, 'browser-extract.mjs'))) {
-      return { pass: true, label: 'Scan extractor: cli (browser-extract.mjs)' };
+    if (existsSync(join(root, 'src/scan/browser-extract.mjs'))) {
+      return { pass: true, label: 'Scan extractor: cli (src/scan/browser-extract.mjs)' };
     }
     return {
       warn: true,
-      label: 'Scan extractor: cli set, but browser-extract.mjs is missing — falls back to MCP',
-      fix: ['Restore browser-extract.mjs, or set `scan.extractor: mcp` in config/profile.yml.'],
+      label: 'Scan extractor: cli set, but src/scan/browser-extract.mjs is missing — falls back to MCP',
+      fix: ['Restore src/scan/browser-extract.mjs, or set `scan.extractor: mcp` in config/profile.yml.'],
     };
   }
   return { pass: true, label: 'Scan extractor: mcp (default)' };
@@ -253,7 +253,7 @@ function checkAutoDir(name) {
 
 // --strict only: probe the ATS slug of every tracked company in portals.yml so
 // a typo'd slug (which 404s silently on scans) surfaces here. Skipped gracefully
-// when portals.yml is absent. Delegates to verify-portals.mjs so there is one
+// when portals.yml is absent. Delegates to src/scan/verify-portals.mjs so there is one
 // slug-probing implementation. Network-bound, hence opt-in.
 async function checkPortalSlugs(root) {
   const portalsPath = join(root, 'portals.yml');
@@ -261,7 +261,7 @@ async function checkPortalSlugs(root) {
     return { pass: true, label: 'ATS slugs: no portals.yml yet (skipped)' };
   }
   try {
-    const { verifyPortalsFile } = await import('./verify-portals.mjs');
+    const { verifyPortalsFile } = await import('./src/scan/verify-portals.mjs');
     const { results } = await verifyPortalsFile(portalsPath);
     const unresolved = results.filter((r) => r.status === 'missing');
     if (unresolved.length === 0) {
@@ -276,7 +276,7 @@ async function checkPortalSlugs(root) {
           if (r.suggested) line += ` → try ${r.suggested.ats}/${r.suggested.slug}`;
           return line;
         }),
-        'Probe variants with: node verify-portals.mjs --add "<company>"',
+        'Probe variants with: node src/scan/verify-portals.mjs --add "<company>"',
       ],
     };
   } catch (err) {

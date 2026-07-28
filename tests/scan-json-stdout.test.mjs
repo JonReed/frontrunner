@@ -17,7 +17,7 @@ import { pathToFileURL } from 'url';
 console.log('\nscan.mjs — --json stdout stays machine-parseable (#1906)');
 
 try {
-  const scanUrl = JSON.stringify(pathToFileURL(join(ROOT, 'scan.mjs')).href);
+  const scanUrl = JSON.stringify(pathToFileURL(join(ROOT, 'src/scan/scan.mjs')).href);
 
   // dotenv is an optional import in scan.mjs. If it is not installed the
   // banner cannot fire and both checks below would pass without proving

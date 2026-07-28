@@ -94,16 +94,16 @@ When choosing a budget-friendly model, you need strong reasoning capabilities to
 | **DeepSeek-Coder-V2** | DeepSeek API / OpenRouter | ~$0.14 / ~$0.28 | Excellent instruction-following for structured Markdown and resume tailoring. |
 | **Qwen-2.5-Coder (32B / 72B)** | OpenRouter / DeepInfra | ~$0.07 - ~$0.30 | Strong coding and structured reasoning, highly cost-effective. |
 | **GLM-4-Air / GLM-4** | Zhipu AI / OpenRouter | Very Cheap | Reliable multi-turn reasoning and JSON/Markdown generation. |
-| **Gemini 2.5 Flash** | Google AI Studio | Free Tier (15 RPM) | Available via the standalone script `node gemini-eval.mjs`. Excellent for zero-cost low-volume runs, but subject to rate limits. |
+| **Gemini 2.5 Flash** | Google AI Studio | Free Tier (15 RPM) | Available via the standalone script `node src/evaluate/gemini-eval.mjs`. Excellent for zero-cost low-volume runs, but subject to rate limits. |
 
-> **Standalone evaluator (no CLI config needed):** every OpenAI-compatible provider above (DeepSeek, Qwen, GLM, Together, Groq, OpenRouter, …) works directly through `node openai-eval.mjs` — just set a base URL, model, and key:
+> **Standalone evaluator (no CLI config needed):** every OpenAI-compatible provider above (DeepSeek, Qwen, GLM, Together, Groq, OpenRouter, …) works directly through `node src/evaluate/openai-eval.mjs` — just set a base URL, model, and key:
 > ```bash
 > OPENAI_BASE_URL=https://openrouter.ai/api/v1 \
 > OPENAI_MODEL=deepseek/deepseek-chat \
 > OPENAI_API_KEY=your_key \
-> node openai-eval.mjs --file ./jds/job.txt
+> node src/evaluate/openai-eval.mjs --file ./jds/job.txt
 > ```
-> Run `node openai-eval.mjs --help` for per-provider examples. For 100% local/private use, point `--url` at a local server (LM Studio / llama.cpp / vLLM) or use `node ollama-eval.mjs`.
+> Run `node src/evaluate/openai-eval.mjs --help` for per-provider examples. For 100% local/private use, point `--url` at a local server (LM Studio / llama.cpp / vLLM) or use `node src/evaluate/ollama-eval.mjs`.
 
 > NVIDIA NIM also works (hosted `https://integrate.api.nvidia.com/v1` or a self-hosted container's `/v1`), e.g. `--model meta/llama-3.3-70b-instruct`. The hosted free tier can queue for minutes, so raise `OPENAI_TIMEOUT_MS` above the 300s default.
 
@@ -153,12 +153,12 @@ To prevent unnecessary API costs or hitting rate limits, implement the following
 
 ## 7. Worked Example: Running the Pipeline Cheaply
 
-Here is a concrete, end-to-end walkthrough of scanning for jobs and evaluating a single posting using **DeepSeek V3 via OpenRouter** and the standalone `openai-eval.mjs` evaluator. This bypasses the need for an expensive CLI agent for the heavy evaluation block.
+Here is a concrete, end-to-end walkthrough of scanning for jobs and evaluating a single posting using **DeepSeek V3 via OpenRouter** and the standalone `src/evaluate/openai-eval.mjs` evaluator. This bypasses the need for an expensive CLI agent for the heavy evaluation block.
 
 ### Step 1: Scan for Job Offers (0 Tokens)
 The portal scanner queries ATS APIs directly using Playwright and standard HTTPS requests. It doesn't use the LLM to read job boards.
 ```bash
-node scan.mjs
+node src/scan/scan.mjs
 ```
 **Cost:** 0 tokens, $0.00.
 *(This generates a list of new job URLs and populates `data/pipeline.md`.)*
@@ -171,7 +171,7 @@ We'll run the evaluation against OpenRouter's DeepSeek V3 endpoint. The script r
 
 ```bash
 OPENAI_API_KEY="sk-or-your_openrouter_key" \
-node openai-eval.mjs \
+node src/evaluate/openai-eval.mjs \
   --url https://openrouter.ai/api/v1 \
   --model deepseek/deepseek-chat \
   --file ./jds/my-target-role.txt
@@ -188,7 +188,7 @@ Now, use the headless tailor to inject JD keywords, reorder experience, and buil
 
 ```bash
 OPENAI_API_KEY="sk-or-your_openrouter_key" \
-node openai-tailor.mjs \
+node src/evaluate/openai-tailor.mjs \
   --url https://openrouter.ai/api/v1 \
   --model deepseek/deepseek-chat \
   --jd ./jds/my-target-role.txt \
@@ -202,7 +202,7 @@ node openai-tailor.mjs \
 Once you have the tailored HTML file, the PDF generator uses Playwright to compile it into a tailored CV PDF.
 
 ```bash
-node generate-pdf.mjs output/cv-candidate-companyname.html output/cv-candidate-companyname-2026-07-07.pdf --format=letter --report=001
+node src/cv/generate-pdf.mjs output/cv-candidate-companyname.html output/cv-candidate-companyname-2026-07-07.pdf --format=letter --report=001
 ```
 
 **Cost:** 0 tokens, $0.00.
@@ -231,13 +231,13 @@ npm run or:apply       # Generate draft application answers for a report
 **Usage**
 
 ```bash
-node openrouter-runner.mjs scan              # Scan Greenhouse API companies for new listings
-node openrouter-runner.mjs evaluate <url>    # Evaluate a job by URL
-node openrouter-runner.mjs evaluate          # Paste job text interactively
-node openrouter-runner.mjs pipeline          # Process all pending URLs from pipeline.md
-node openrouter-runner.mjs apply <report_no> # Generate draft application form answers
-node openrouter-runner.mjs models            # List available free models
-node openrouter-runner.mjs help              # Show this help
+node src/evaluate/openrouter-runner.mjs scan              # Scan Greenhouse API companies for new listings
+node src/evaluate/openrouter-runner.mjs evaluate <url>    # Evaluate a job by URL
+node src/evaluate/openrouter-runner.mjs evaluate          # Paste job text interactively
+node src/evaluate/openrouter-runner.mjs pipeline          # Process all pending URLs from pipeline.md
+node src/evaluate/openrouter-runner.mjs apply <report_no> # Generate draft application form answers
+node src/evaluate/openrouter-runner.mjs models            # List available free models
+node src/evaluate/openrouter-runner.mjs help              # Show this help
 ```
 
 **Setup:**
@@ -256,7 +256,7 @@ If you want **zero network calls** and complete privacy, run evaluations against
 npm run ollama:eval
 ```
 
-This calls `ollama-eval.mjs` which hits your local Ollama server. No API key, no internet, no cost. See [Section 5](#5-local-llm-tradeoffs-ollama--llamacpp) for model size recommendations (32B+ minimum for reliable scoring).
+This calls `src/evaluate/ollama-eval.mjs` which hits your local Ollama server. No API key, no internet, no cost. See [Section 5](#5-local-llm-tradeoffs-ollama--llamacpp) for model size recommendations (32B+ minimum for reliable scoring).
 
 ### Path C: Any OpenAI-Compatible Endpoint (`openai:eval`)
 
@@ -274,6 +274,6 @@ OPENAI_MODEL=meta/llama-3.1-70b-instruct              # model name at that endpo
 OPENAI_API_KEY=your_provider_key_here                  # some free endpoints need a key
 ```
 
-Run `node openai-eval.mjs --help` for per-provider examples with exact URLs and model names.
+Run `node src/evaluate/openai-eval.mjs --help` for per-provider examples with exact URLs and model names.
 
 **Which to pick:** Start with **Path A** (one env var, full pipeline). Use B for air-gapped/local-only, C if you already run your own inference endpoint.

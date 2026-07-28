@@ -68,7 +68,7 @@ export default {
       company: entry.name,
       location: j.categories?.location || '',
       // Lever's v0 postings list ships the full description for free (same
-      // payload, no per-job request) — enables scan.mjs content_filter.
+      // payload, no per-job request) — enables src/scan/scan.mjs content_filter.
       description: typeof j.descriptionPlain === 'string' ? j.descriptionPlain : '',
       postedAt: typeof j.createdAt === 'number' ? j.createdAt : undefined,
     }));

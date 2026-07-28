@@ -26,7 +26,7 @@ import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { load as yamlLoad } from 'js-yaml';
-import { resolveColumns, parseTrackerRow } from '../../tracker-parse.mjs';
+import { resolveColumns, parseTrackerRow } from '../tracker/tracker-parse.mjs';
 
 import { ROOT as CAREER_OPS } from '#paths';
 const APPS_FILE = existsSync(join(CAREER_OPS, 'data/applications.md'))
@@ -211,7 +211,7 @@ function analyze(minReports) {
     if (!linkMatch) continue;
     reportsLinked += 1;
     // Tracker links are normalized relative to the tracker file's directory
-    // (see merge-tracker.mjs); resolve against it, with a root-relative fallback.
+    // (see src/tracker/merge-tracker.mjs); resolve against it, with a root-relative fallback.
     const candidates = [join(dirname(APPS_FILE), linkMatch[1]), join(CAREER_OPS, linkMatch[1])];
     const reportPath = candidates.find(p => existsSync(p));
     if (!reportPath) continue;
@@ -516,7 +516,7 @@ if (urlTextIdx !== -1 || directUrl) {
       // the JD and then throwing `text.matchAll is not a function` downstream
       // (#1894). compactText is the string-in/string-out helper this wants.
       try {
-        const { compactText } = await import('./browser-extract.mjs');
+        const { compactText } = await import('../scan/browser-extract.mjs');
         targetText = compactText(targetText);
       } catch (e) {}
     } else {
