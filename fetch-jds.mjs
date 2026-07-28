@@ -95,7 +95,7 @@ const decodeEntities = (s) =>
     .replace(/&amp;/g, '&'); // last, so "&amp;lt;" doesn't become "<"
 
 /** Strip HTML to readable plain text, preserving list and paragraph breaks. */
-const htmlToText = (html) =>
+export const htmlToText = (html) =>
   decodeEntities(html)
     .replace(/<\s*(script|style)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
     .replace(/<\s*br\s*\/?\s*>/gi, '\n')
