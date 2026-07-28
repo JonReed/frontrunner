@@ -1,9 +1,0 @@
-# Frontrunner funding.
-#
-# GitHub renders a "Sponsor" button from this file. Entries pointing at
-# accounts that do not exist are ignored, so unused lines can stay commented.
-
-buy_me_a_coffee: jonmreed
-
-# github: JonReed                          # requires GitHub Sponsors enrolment
-# custom: ["https://frontrunner.website"]  # once the site is up

@@ -119,3 +119,4 @@ batch/batch-input.filtered.tsv
 batch/prefilter-rejects.tsv
 config/prefilter.yml
 src/**/output/
+.tmp-script-test-*/

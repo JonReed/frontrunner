@@ -209,7 +209,26 @@ async function updateTrackerStatuses(updates) {
 }
 
 async function main() {
-  const candidatesPath = process.argv[2] || DEFAULT_CANDIDATES_PATH;
+  const arg = process.argv[2];
+
+  // argv[2] is a PATH, not a flag. Without this guard any flag is treated as
+  // a filename and ensureCandidatesFile() creates it — `--help` literally
+  // wrote a file named "--help" into the repo root.
+  if (arg && arg.startsWith('-')) {
+    const usage = `reply-watch.mjs — classify application replies
+
+Usage:
+  node src/tracker/reply-watch.mjs [candidates.json]
+
+  [candidates.json]  Path to the candidates file.
+                     Default: ${DEFAULT_CANDIDATES_PATH}
+`;
+    if (arg === '-h' || arg === '--help') { console.log(usage); process.exit(0); }
+    console.error(`Unknown option: ${arg}\n\n${usage}`);
+    process.exit(1);
+  }
+
+  const candidatesPath = arg || DEFAULT_CANDIDATES_PATH;
   ensureCandidatesFile(candidatesPath);
 
   if (!fs.existsSync(candidatesPath)) {

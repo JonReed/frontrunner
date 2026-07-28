@@ -51,8 +51,6 @@
     "star": "node src/evaluate/match-star.mjs",
     "archive": "node src/scan/archive-posting.mjs",
     "prepare:application": "node src/evaluate/prepare-application.mjs",
-    "build:dashboard": "node build-dashboard.mjs",
-    "serve:dashboard": "cd dashboard && go run . --path ..",
     "postinstall": "npx playwright install chromium --with-deps || npx playwright install chromium --with-deps"
   },
   "keywords": [

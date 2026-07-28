@@ -46,10 +46,8 @@
           - modes/ja/**
           - modes/ru/**
 
-"📊 dashboard":
   - changed-files:
       - any-glob-to-any-file:
-          - dashboard/**
 
 "📦 dependencies":
   - changed-files:
