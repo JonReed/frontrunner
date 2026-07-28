@@ -17,7 +17,7 @@ import { notFound } from 'next/navigation';
 import { readTracker, readReport } from '@/lib/roles';
 import { parseReport, renderMarkdown } from '@/lib/report';
 import { Match } from '@/components/match';
-import { AiButton } from '@/components/ai-button';
+import { BuildCv } from '@/components/build-cv';
 
 export const dynamic = 'force-dynamic';
 
@@ -102,32 +102,7 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
         badged so it is never a surprise.
       */}
       <div className="sticky bottom-4 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-card)] p-5 shadow-md shadow-black/5">
-        {role.hasPdf ? (
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="font-semibold">Your tailored CV is ready</p>
-              <p className="mt-0.5 text-sm text-[var(--color-ink-soft)]">
-                Rewritten for this role. Nothing left but to send it.
-              </p>
-            </div>
-            <button
-              type="button"
-              className="rounded-lg bg-[var(--color-act)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-act-hover)]"
-            >
-              Open the job posting
-            </button>
-          </div>
-        ) : (
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="font-semibold">Want to apply?</p>
-              <p className="mt-0.5 text-sm text-[var(--color-ink-soft)]">
-                Builds a CV tailored to this role, using the gaps above. Takes about a minute.
-              </p>
-            </div>
-            <AiButton what="rewrite your CV for this specific job">Build my CV for this job</AiButton>
-          </div>
-        )}
+        <BuildCv roleNum={role.num} hasPdf={role.hasPdf} />
       </div>
     </div>
   );
