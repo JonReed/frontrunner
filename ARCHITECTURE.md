@@ -1,6 +1,6 @@
 # Architecture
 
-A high-level map of how career-ops is put together. For the precise system/user file boundary, see [DATA_CONTRACT.md](DATA_CONTRACT.md); for contribution mechanics, see [CONTRIBUTING.md](CONTRIBUTING.md).
+A high-level map of how career-ops is put together. For the precise system/user file boundary, see [DATA_CONTRACT.md](DATA_CONTRACT.md); for contribution mechanics, see [CONTRIBUTING.md](CONTRIBUTING.md); for runtime flow diagrams (evaluation steps, batch processing), see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Principles
 
@@ -17,7 +17,7 @@ The single most important architectural rule: **system files** and **user files*
 - **System layer** — the tool itself: `modes/`, scripts (`*.mjs`), templates, the dashboard. These are versioned and updated by `update-system.mjs`. Listed in `SYSTEM_PATHS`.
 - **User layer** — your data: `cv.md`, `config/profile.yml`, `modes/_profile.md`, `data/`, `reports/`, `jds/`, etc. The updater **never** touches these. Listed in `USER_PATHS`.
 
-`DATA_CONTRACT.md` is the source of truth for this boundary, and `tests/updater-migration-tests.mjs` enforces that no system path ever overlaps a user path.
+`DATA_CONTRACT.md` is the source of truth for this boundary, and `updater-migration-tests.mjs` enforces that no system path ever overlaps a user path.
 
 ## Files are canonical — databases are derived
 
@@ -25,7 +25,7 @@ Settled doctrine ([#918](https://github.com/santifer/career-ops/issues/918)): th
 
 ## Why the flat root
 
-The repo keeps its ~50 scripts at the root deliberately ([#1386](https://github.com/santifer/career-ops/issues/1386)). Path stability is a feature here, not an accident: the updater's `SYSTEM_PATHS` allowlist, community plugins, docs, guides, and the muscle memory of thousands of users (`node src/scan/scan.mjs`) all reference these paths. A cosmetic reorganization would break forks and plugins for no functional gain. The conventions that keep the flat root navigable: one script = one job, `*.test.mjs` sits next to what it tests, and every script is registered in `SYSTEM_PATHS` (enforced in CI by the coverage guard).
+The repo keeps its ~70 scripts at the root deliberately ([#1386](https://github.com/santifer/career-ops/issues/1386)). Path stability is a feature here, not an accident: the updater's `SYSTEM_PATHS` allowlist, community plugins, docs, guides, and the muscle memory of thousands of users (`node src/scan/scan.mjs`) all reference these paths. A cosmetic reorganization would break forks and plugins for no functional gain. The conventions that keep the flat root navigable: one script = one job, `*.test.mjs` sits next to what it tests, and every script is registered in `SYSTEM_PATHS` (enforced in CI by the coverage guard).
 
 ## Component map
 
@@ -52,7 +52,7 @@ The heart of the tool. `oferta.md` defines the A–G evaluation blocks; `_shared
 **Standalone evaluators** let you run the same scoring without an interactive CLI, against cheaper/local models: `src/evaluate/gemini-eval.mjs` (Google free tier), `src/evaluate/ollama-eval.mjs` (fully local), and `src/evaluate/openai-eval.mjs` (any OpenAI-compatible endpoint).
 
 ### Generation — PDFs, CVs, cover letters
-`src/cv/generate-pdf.mjs` (Playwright HTML→PDF), `src/cv/generate-latex.mjs` / `src/cv/build-cv-latex.mjs`, `src/cv/generate-cover-letter.mjs`. ATS-safe templates live in `templates/` and `templates/fonts/`.
+`src/cv/generate-pdf.mjs` (Playwright HTML→PDF), `src/cv/generate-latex.mjs` / `src/cv/build-cv-latex.mjs`, `src/cv/generate-cover-letter.mjs`. ATS-safe templates live in `templates/` and `fonts/`.
 
 ### Tracking — `data/` + `reports/` + tracker scripts
 Every evaluated offer is registered. `data/applications.md` is the canonical tracker table; `reports/{NNN}-{company}-{date}.md` holds full evaluations. `src/tracker/tracker.mjs`, `src/tracker/merge-tracker.mjs`, `src/tracker/dedup-tracker.mjs`, `src/tracker/normalize-statuses.mjs`, and `src/tracker/reconcile-pipeline.mjs` keep it consistent (atomic writes + a SQLite index). Report numbers are claimed atomically via `src/tracker/reserve-report-num.mjs`.
@@ -82,12 +82,12 @@ scan ──► data/pipeline.md ──► evaluate (oferta + cv) ──► repor
 ## Quality gates
 
 - `test-all.mjs` — the full suite (500+ checks across scoring, scan, tracker, PDF, security, updater).
-- `tests/updater-migration-tests.mjs` — enforces the system/user boundary and safe cross-version upgrades.
+- `updater-migration-tests.mjs` — enforces the system/user boundary and safe cross-version upgrades.
 - CI: `test` + CodeQL are required; CodeRabbit reviews every PR; Renovate keeps deps current.
 
 ## Where to start reading
 
 - The boundary → `DATA_CONTRACT.md`
 - The scoring → `modes/_shared.md` + `modes/oferta.md`
-- Adding a job source → an existing module in `providers/` (mirror it)
+- Adding a job source → [`providers/README.md`](providers/README.md)
 - The updater → `update-system.mjs`
