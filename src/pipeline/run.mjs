@@ -9,18 +9,21 @@
 import {
   existsSync,
   mkdirSync,
+  realpathSync,
   readFileSync,
   renameSync,
   writeFileSync,
 } from 'node:fs';
 import { spawnSync } from 'node:child_process';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { ROOT } from '#paths';
 import { runFetchJds } from '../scan/fetch-jds.mjs';
+import { cacheProviderDescriptions, readJdManifest } from '../scan/jd-cache.mjs';
 import { createLivenessChecker } from '../scan/liveness-service.mjs';
 import { runPrefilter } from '../scan/prefilter.mjs';
+import { withPipelineLock } from '../tracker/pipeline-lock.mjs';
 
 function atomicWrite(file, contents) {
   mkdirSync(dirname(file), { recursive: true });
@@ -32,9 +35,16 @@ function atomicWrite(file, contents) {
 export function readPipelineRoles(file) {
   const roles = [];
   for (const line of readFileSync(file, 'utf8').split('\n')) {
-    const md = line.match(/^-\s*\[\s*\]\s*(\S+)\s*\|\s*([^|]*)\|\s*([^|]*)/);
+    const md = line.match(/^-\s*\[\s*\]\s*(\S+)(.*)$/);
     if (md) {
-      roles.push({ url: md[1], company: md[2].trim(), title: md[3].trim(), source: 'pipeline' });
+      const fields = md[2].split('|').map((value) => value.trim()).filter((_, index) => index > 0);
+      roles.push({
+        id: String(roles.length + 1),
+        url: md[1],
+        company: fields[0] ?? '',
+        title: fields[1] ?? '',
+        source: 'pipeline',
+      });
       continue;
     }
     const cols = line.split('\t');
@@ -42,7 +52,13 @@ export function readPipelineRoles(file) {
       const note = cols[3] ?? '';
       const divider = note.includes('—') ? '—' : note.includes(' - ') ? ' - ' : null;
       const [company = '', title = note] = divider ? note.split(divider, 2).map((s) => s.trim()) : ['', note.trim()];
-      roles.push({ url: cols[1].trim(), company, title, source: cols[2]?.trim() || 'pipeline' });
+      roles.push({
+        id: cols[0]?.trim() || String(roles.length + 1),
+        url: cols[1].trim(),
+        company,
+        title,
+        source: cols[2]?.trim() || 'pipeline',
+      });
     }
   }
   return roles;
@@ -50,8 +66,52 @@ export function readPipelineRoles(file) {
 
 function rolesTsv(roles) {
   return `id\turl\tsource\tnotes\n${roles
-    .map((role, index) => `${index + 1}\t${role.url}\t${role.source || 'pipeline'}\t${role.company} — ${role.title}`)
+    .map((role, index) => `${role.id || index + 1}\t${role.url}\t${role.source || 'pipeline'}\t${role.company} — ${role.title}`)
     .join('\n')}\n`;
+}
+
+export async function markPipelineOutcomes(file, outcomes) {
+  if (!outcomes?.size || !existsSync(file)) return 0;
+  return withPipelineLock(file, async () => {
+    const lines = readFileSync(file, 'utf8').split(/\r?\n/);
+    const moved = [];
+    const kept = [];
+    let changed = 0;
+    for (const line of lines) {
+      const match = line.match(/^-\s*\[\s*\]\s*(\S+)/);
+      const outcome = match ? outcomes.get(match[1]) : null;
+      if (!outcome) {
+        kept.push(line);
+        continue;
+      }
+      moved.push(`${line.replace(/\[\s*\]/, '[x]')} | result: ${outcome}`);
+      changed++;
+    }
+    if (!changed) return 0;
+
+    let processed = kept.findIndex((line) => /^##\s+(Processed|Procesadas)\s*$/i.test(line));
+    if (processed < 0) {
+      while (kept.length && kept.at(-1) === '') kept.pop();
+      kept.push('', '## Processed', '');
+      processed = kept.length - 2;
+    }
+    kept.splice(processed + 1, 0, '', ...moved);
+    atomicWrite(file, `${kept.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd()}\n`);
+    return changed;
+  });
+}
+
+function readLocalDescription(url) {
+  if (!url.startsWith('local:')) return null;
+  const file = resolve(ROOT, url.slice('local:'.length));
+  if (!existsSync(file)) return { error: 'local JD file not found' };
+  const rootReal = realpathSync(ROOT);
+  const fileReal = realpathSync(file);
+  if (fileReal !== rootReal && !fileReal.startsWith(`${rootReal}${sep}`)) {
+    return { error: 'local JD path escapes the repository' };
+  }
+  const text = readFileSync(fileReal, 'utf8').trim();
+  return text ? { text } : { error: 'local JD file is empty' };
 }
 
 function defaultRun(command, args, options = {}) {
@@ -68,10 +128,10 @@ function defaultRun(command, args, options = {}) {
 }
 
 async function defaultEvaluationRunner({ engine, kept, jdsDir, run = defaultRun }) {
-  if (engine === 'none' || kept.length === 0) return { attempted: 0 };
+  if (engine === 'none' || kept.length === 0) return { attempted: 0, completed: [], failed: [] };
   if (engine === 'batch') {
     run(join(ROOT, 'batch', 'batch-runner.sh'), []);
-    return { attempted: kept.length };
+    return { attempted: kept.length, completed: [], failed: [] };
   }
 
   const index = new Map();
@@ -82,17 +142,27 @@ async function defaultEvaluationRunner({ engine, kept, jdsDir, run = defaultRun 
       if (url && file) index.set(url.trim(), file.trim());
     }
   }
+  const completed = [];
+  const failed = [];
   for (const role of kept) {
-    if (engine === 'openrouter') {
-      run(process.execPath, [join(ROOT, 'src/evaluate/openrouter-runner.mjs'), 'evaluate', role.url]);
+    const file = index.get(role.url);
+    if (!file) {
+      failed.push({ url: role.url, error: `${engine}: no cached JD` });
       continue;
     }
-    const file = index.get(role.url);
-    if (!file) throw new Error(`${engine}: no cached JD for ${role.url}`);
-    const evaluator = engine === 'gemini' ? 'gemini-eval.mjs' : 'openai-eval.mjs';
-    run(process.execPath, [join(ROOT, 'src/evaluate', evaluator), '--file', file]);
+    try {
+      if (engine === 'openrouter') {
+        run(process.execPath, [join(ROOT, 'src/evaluate/openrouter-runner.mjs'), 'evaluate', '--file', file]);
+      } else {
+        const evaluator = engine === 'gemini' ? 'gemini-eval.mjs' : 'openai-eval.mjs';
+        run(process.execPath, [join(ROOT, 'src/evaluate', evaluator), '--file', file]);
+      }
+      completed.push(role.url);
+    } catch (error) {
+      failed.push({ url: role.url, error: error.message });
+    }
   }
-  return { attempted: kept.length };
+  return { attempted: kept.length, completed, failed };
 }
 
 export async function runCanonicalPipeline({
@@ -115,13 +185,42 @@ export async function runCanonicalPipeline({
 
   const roles = readPipelineRoles(input);
   const cache = await fetchJds({ input, outDir: jdsDir });
+  const manifest = readJdManifest(jdsDir);
   const live = [];
   const livenessRejected = [];
   const livenessRows = [];
+  const fallbackDescriptions = [];
 
   try {
     for (const role of roles) {
-      const result = await checker.check(role.url);
+      const local = readLocalDescription(role.url);
+      let result;
+      if (local) {
+        if (local.error) {
+          result = { result: 'expired', source: 'local', reason: local.error };
+        } else {
+          const heading = local.text.match(/^#\s+(.+)$/m)?.[1]?.trim();
+          if (!role.title && heading) role.title = heading;
+          fallbackDescriptions.push({ ...role, description: local.text });
+          result = { result: 'active', source: 'local', reason: 'local JD file is readable' };
+        }
+      } else {
+        result = await checker.check(role.url);
+        if (result.result !== 'expired' && !manifest.has(role.url) && typeof checker.extract === 'function') {
+          try {
+            const extracted = await checker.extract(role.url);
+            if (extracted?.text) {
+              if (!role.title && extracted.title) role.title = extracted.title;
+              fallbackDescriptions.push({ ...role, description: extracted.text });
+            }
+          } catch (error) {
+            result = {
+              ...result,
+              reason: `${result.reason ?? result.result}; description fallback failed: ${error.message}`,
+            };
+          }
+        }
+      }
       livenessRows.push({ ...role, ...result });
       if (result.result === 'expired') livenessRejected.push({ ...role, ...result });
       else live.push(role); // uncertainty keeps the role: false rejects cost opportunities
@@ -129,6 +228,10 @@ export async function runCanonicalPipeline({
   } finally {
     await checker.close();
   }
+
+  const fallbackCache = fallbackDescriptions.length
+    ? cacheProviderDescriptions(fallbackDescriptions, { outDir: jdsDir })
+    : { cached: 0, manifestSize: manifest.size };
 
   atomicWrite(activeInput, rolesTsv(live));
   atomicWrite(
@@ -155,16 +258,27 @@ export async function runCanonicalPipeline({
     atomicWrite(rejects, `${existing}\n${extra.join('\n')}\n`);
   }
 
+  await markPipelineOutcomes(input, new Map([
+    ...livenessRejected.map((role) => [role.url, 'posting expired']),
+    ...filtered.rejected.map((role) => [role.url, `prefilter rejected (${role.rule})`]),
+  ]));
+
   const evaluation = await evaluationRunner({
     engine,
     kept: filtered.kept,
     jdsDir,
   });
+  if (engine !== 'batch' && engine !== 'none' && evaluation.completed?.length) {
+    await markPipelineOutcomes(
+      input,
+      new Map(evaluation.completed.map((url) => [url, 'evaluated'])),
+    );
+  }
 
   return {
-    stages: ['scan', 'cache', 'liveness', 'prefilter', 'evaluation'],
+    stages: [...(scan ? ['scan'] : []), 'cache', 'liveness', 'prefilter', 'evaluation'],
     inputRoles: roles.length,
-    cache,
+    cache: { ...cache, fallbackCached: fallbackCache.cached },
     liveness: {
       active: livenessRows.filter((r) => r.result === 'active').length,
       uncertain: livenessRows.filter((r) => r.result === 'uncertain').length,
@@ -216,6 +330,13 @@ Options:
     console.log(`liveness: ${result.liveness.active} active, ${result.liveness.uncertain} uncertain, ${result.liveness.expired} expired`);
     console.log(`prefilter: ${result.prefilter.kept} kept, ${result.prefilter.rejected} rejected`);
     console.log(`model evaluations attempted: ${result.evaluation.attempted}`);
+    if (result.evaluation.failed?.length) {
+      console.error(`model evaluations failed: ${result.evaluation.failed.length}`);
+      for (const failure of result.evaluation.failed) {
+        console.error(`  - ${failure.url}: ${failure.error}`);
+      }
+      process.exitCode = 1;
+    }
   }
 }
 

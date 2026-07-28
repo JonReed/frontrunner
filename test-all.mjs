@@ -100,16 +100,44 @@ async function runDiscovered(filter = null) {
     console.log(`  ❌ no test files matched${filter ? ` --only "${filter}"` : ''} under tests/`);
     process.exit(1);
   }
+  const nodeTestFiles = [];
   for (const f of files) {
+    const source = readFileSync(f, 'utf-8');
     // Discovered suites run IN-PROCESS and share this suite's counters. A
     // process.exit() inside one would terminate test-all mid-run with a forged
     // exit code — every later section (and finish()) would silently never run.
     // Refuse to import such a suite and fail loudly instead (#1916 regression).
-    if (/\bprocess\.exit\s*\(/.test(readFileSync(f, 'utf-8'))) {
+    if (/\bprocess\.exit\s*\(/.test(source)) {
       fail(`${f.slice(ROOT.length + 1)} calls process.exit() — discovered suites must use pass/fail from tests/helpers.mjs and never exit`);
       continue;
     }
+    // node:test schedules its assertions after import(). finish() deliberately
+    // exits, so importing those files used to let a failing assertion disappear
+    // behind a green aggregate result. Run framework suites in one supervised
+    // child and translate its exit status into the shared counters.
+    if (/\bfrom\s+['"]node:test['"]/.test(source)) {
+      nodeTestFiles.push(f);
+      continue;
+    }
     await import(pathToFileURL(f).href);
+  }
+  if (nodeTestFiles.length > 0) {
+    const result = spawnSync(NODE, ['--test', ...nodeTestFiles], {
+      cwd: ROOT,
+      encoding: 'utf-8',
+      timeout: 120000,
+      maxBuffer: 16 * 1024 * 1024,
+    });
+    if (result.status === 0) {
+      pass(`${nodeTestFiles.length} node:test suites passed`);
+    } else {
+      const detail = [result.stdout, result.stderr, result.error?.message]
+        .filter(Boolean)
+        .join('\n')
+        .trim();
+      if (detail) console.log(detail);
+      fail(`${nodeTestFiles.length} node:test suites failed`);
+    }
   }
 }
 
@@ -2213,15 +2241,16 @@ if (
 
 const pipelineMode = readFile('modes/pipeline.md');
 if (
-  pipelineMode.includes('## Liveness sweep') &&
-  pipelineMode.includes('src/scan/check-liveness.mjs') &&
-  pipelineMode.includes('unconfirmed') &&
-  pipelineMode.includes('Do not') &&
-  pipelineMode.includes('liveness sweep')
+  pipelineMode.includes('npm run pipeline') &&
+  pipelineMode.includes('src/pipeline/run.mjs') &&
+  pipelineMode.includes('batch/liveness-results.tsv') &&
+  pipelineMode.includes('provider APIs') &&
+  pipelineMode.includes('Playwright') &&
+  pipelineMode.includes('Uncertain liveness results are kept')
 ) {
-  pass('pipeline mode sweeps unconfirmed entries for liveness before processing');
+  pass('pipeline mode delegates API-first liveness and uncertain-result handling to the canonical pipeline');
 } else {
-  fail('pipeline mode missing batch liveness sweep for unconfirmed entries');
+  fail('pipeline mode missing canonical API-first liveness workflow');
 }
 
 // --- salary tracking mode wiring (#1656 PR-2) ---
@@ -2768,19 +2797,30 @@ if (
   }
 }
 
-// Opt-in CLI extractor wiring (#1449 Phase 2): every read-only JD-extraction
-// path must offer `src\/scan\/browser-extract.mjs` behind `scan.extractor`, with a silent
-// MCP fallback — so the flag actually reaches the JD paths, not just scan/pipeline.
+// Read-only JD resolution: direct evaluation modes and the canonical pipeline
+// must prefer provider APIs/cache and reserve browser extraction for fallback.
+// scan.md retains the opt-in CLI extractor because it is the interactive scan
+// mode; pipeline.md delegates the whole sequence to src/pipeline/run.mjs.
 {
-  const jdPathModes = ['modes/oferta.md', 'modes/auto-pipeline.md', 'modes/pipeline.md', 'modes/scan.md'];
-  const missing = jdPathModes.filter((m) => {
-    const src = readFile(m);
-    return !(src.includes('src/scan/browser-extract.mjs') && src.includes('scan.extractor'));
-  });
-  if (missing.length === 0) {
-    pass('read-only JD paths wire the opt-in CLI extractor behind scan.extractor (#1449)');
+  const ofertaJdPath = readFile('modes/oferta.md');
+  const autoPipelineJdPath = readFile('modes/auto-pipeline.md');
+  const pipelineJdPath = readFile('modes/pipeline.md');
+  const scanJdPath = readFile('modes/scan.md');
+  if (
+    ofertaJdPath.includes('src/scan/liveness-service.mjs') &&
+    ofertaJdPath.includes('provider API first') &&
+    ofertaJdPath.includes('Only when') &&
+    autoPipelineJdPath.includes('Provider API/cache') &&
+    autoPipelineJdPath.includes('Playwright fallback') &&
+    pipelineJdPath.includes('npm run pipeline') &&
+    pipelineJdPath.includes('provider API') &&
+    pipelineJdPath.includes('Playwright') &&
+    scanJdPath.includes('src/scan/browser-extract.mjs') &&
+    scanJdPath.includes('scan.extractor')
+  ) {
+    pass('read-only JD paths prefer provider APIs/cache and keep browser extraction as fallback');
   } else {
-    fail(`JD paths missing browser-extract/scan.extractor wiring: ${missing.join(', ')}`);
+    fail('read-only JD paths missing canonical API-first/browser-fallback wiring');
   }
   // apply must stay on the MCP — the extractor is read-only and never fills forms.
   if (!readFile('modes/apply.md').includes('src\/scan\/browser-extract.mjs')) {
@@ -2789,20 +2829,24 @@ if (
     fail('apply mode references src/scan/browser-extract.mjs — the extractor must not touch the apply/form path');
   }
 
-  // Phase 2b (#1449): the language-market pipeline mirrors must wire the same
-  // opt-in extractor, so non-English users get the token saving too.
+  // Language-market pipeline mirrors must route execution through the same
+  // canonical pipeline while retaining their localized presentation guidance.
   const langPipelines = readdirSync(join(ROOT, 'modes'), { withFileTypes: true })
     .filter((e) => e.isDirectory())
     .map((e) => `modes/${e.name}/pipeline.md`)
     .filter((p) => existsSync(join(ROOT, p)));
   const langMissing = langPipelines.filter((m) => {
     const src = readFile(m);
-    return !(src.includes('src/scan/browser-extract.mjs') && src.includes('scan.extractor'));
+    return !(
+      src.includes('npm run pipeline') &&
+      src.includes('API/cache') &&
+      src.includes('Playwright')
+    );
   });
   if (langPipelines.length > 0 && langMissing.length === 0) {
-    pass(`all ${langPipelines.length} language pipeline mirrors wire the opt-in extractor (#1449 Phase 2b)`);
+    pass(`all ${langPipelines.length} language pipeline mirrors route through the canonical API-first pipeline`);
   } else {
-    fail(`language pipeline mirrors missing extractor wiring: ${langMissing.join(', ') || '(none found)'}`);
+    fail(`language pipeline mirrors missing canonical pipeline override: ${langMissing.join(', ') || '(none found)'}`);
   }
 }
 
@@ -7454,8 +7498,16 @@ try {
     execFileSync('chmod', ['+x', join(batchDir, 'batch-runner.sh')]);
   }
   mkdirSync(join(tmp, 'src/tracker'), { recursive: true });
+  mkdirSync(join(tmp, 'src/scan'), { recursive: true });
   writeFileSync(join(tmp, 'src/tracker/merge-tracker.mjs'), 'console.log("merge fixture");\n');
   writeFileSync(join(tmp, 'src/tracker/verify-pipeline.mjs'), 'console.log("verify fixture");\n');
+  writeFileSync(join(tmp, 'src/scan/prefilter.mjs'), [
+    "import { copyFileSync, writeFileSync } from 'node:fs';",
+    "const a = process.argv.slice(2);",
+    "const val = (f) => a[a.indexOf(f) + 1];",
+    "copyFileSync(val('--input'), val('--out'));",
+    "writeFileSync(val('--rejects'), 'url\\tcompany\\ttitle\\trule\\tevidence\\n');",
+  ].join('\n'));
   writeFileSync(join(batchDir, 'batch-prompt.md'), 'URL={{URL}}\nJD={{JD_FILE}}\nREPORT={{REPORT_NUM}}\n');
   writeFileSync(join(batchDir, 'batch-input.tsv'), [
     'id\turl\tsource\tnotes',
@@ -7555,8 +7607,16 @@ function makeTierFixture(profileYml) {
     execFileSync('chmod', ['+x', join(batchDir, 'batch-runner.sh')]);
   }
   mkdirSync(join(tmp, 'src/tracker'), { recursive: true });
+  mkdirSync(join(tmp, 'src/scan'), { recursive: true });
   writeFileSync(join(tmp, 'src/tracker/merge-tracker.mjs'), 'console.log("merge fixture");\n');
   writeFileSync(join(tmp, 'src/tracker/verify-pipeline.mjs'), 'console.log("verify fixture");\n');
+  writeFileSync(join(tmp, 'src/scan/prefilter.mjs'), [
+    "import { copyFileSync, writeFileSync } from 'node:fs';",
+    "const a = process.argv.slice(2);",
+    "const val = (f) => a[a.indexOf(f) + 1];",
+    "copyFileSync(val('--input'), val('--out'));",
+    "writeFileSync(val('--rejects'), 'url\\tcompany\\ttitle\\trule\\tevidence\\n');",
+  ].join('\n'));
   writeFileSync(join(batchDir, 'batch-prompt.md'), 'URL={{URL}}\nJD={{JD_FILE}}\nREPORT={{REPORT_NUM}}\n');
   writeFileSync(join(batchDir, 'batch-input.tsv'), [
     'id\turl\tsource\tnotes',
@@ -8507,9 +8567,12 @@ try {
 console.log('\n44e. ollama-eval — temperature in options');
 try {
   const src = readFileSync(join(ROOT, 'src/evaluate/ollama-eval.mjs'), 'utf-8');
-  const inOptions = /options:\s*\{[^}]*temperature:\s*0\.4[^}]*num_ctx/.test(src);
-  // must NOT set a top-level temperature in the request body (silently ignored)
-  const noTopLevel = !/\n\s*temperature:\s*0\.4,\s*\n\s*options:/.test(src);
+  // Assert PLACEMENT, not the value. This previously hardcoded 0.4 and broke
+  // the moment the temperature was tuned — the point is that Ollama reads
+  // temperature from options and silently ignores it at the top level, which
+  // is true whatever the number is.
+  const inOptions = /options:\s*\{[^}]*temperature:\s*[\d.]+[^}]*num_ctx/.test(src);
+  const noTopLevel = !/\n\s*temperature:\s*[\d.]+,\s*\n\s*options:/.test(src);
   if (inOptions && noTopLevel) {
     pass('ollama-eval sets temperature inside options (not silently ignored at the top level)');
   } else {

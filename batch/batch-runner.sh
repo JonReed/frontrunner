@@ -186,6 +186,23 @@ check_prerequisites() {
   mkdir -p "$LOGS_DIR" "$TRACKER_DIR" "$REPORTS_DIR"
 }
 
+# The batch runner is a model-backed entry point, so it must enforce the same
+# deterministic boundary as every standalone evaluator. Keep the user's source
+# TSV intact and run workers only from the filtered derivative.
+apply_mandatory_prefilter() {
+  local filtered_input="$BATCH_DIR/batch-input.filtered.tsv"
+  [[ -f "$PROJECT_DIR/src/scan/prefilter.mjs" ]] || {
+    echo "ERROR: mandatory prefilter module missing: $PROJECT_DIR/src/scan/prefilter.mjs" >&2
+    exit 1
+  }
+  node "$PROJECT_DIR/src/scan/prefilter.mjs" \
+    --input "$INPUT_FILE" \
+    --jds "$PROJECT_DIR/jds" \
+    --out "$filtered_input" \
+    --rejects "$BATCH_DIR/prefilter-rejects.tsv" >/dev/null
+  INPUT_FILE="$filtered_input"
+}
+
 # Status/watch mode only needs prior batch state, not worker prerequisites.
 check_status_prerequisites() {
   if [[ ! -f "$STATE_FILE" ]]; then
@@ -840,12 +857,16 @@ main() {
 
   check_prerequisites
 
-  resolve_worker_model
-
+  # Acquire the run lock before the prefilter mutates shared audit/output files.
+  # Previously two concurrent invocations could both rewrite the filtered input
+  # and rejection log before either one noticed the other.
   if [[ "$DRY_RUN" == "false" ]]; then
     acquire_lock
     rm -f "$PAUSE_FILE"
   fi
+
+  apply_mandatory_prefilter
+  resolve_worker_model
 
   init_state
 

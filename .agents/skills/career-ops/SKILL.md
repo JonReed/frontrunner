@@ -123,7 +123,7 @@ career-ops -- Command Center
 Available commands:
   /career-ops {JD}      → AUTO-PIPELINE: evaluate + report + PDF + tracker (paste text or URL)
   /career-ops pipeline  → Process pending URLs from inbox (data/pipeline.md)
-  /career-ops oferta    → Evaluation only A-F (no auto PDF)
+  /career-ops oferta    → Evaluation only A-G (no auto PDF)
   /career-ops ofertas   → Compare and rank multiple offers
   /career-ops contacto  → LinkedIn power move: find contacts + draft message
   /career-ops deep      → Deep research prompt about company
@@ -156,7 +156,7 @@ Available commands:
   /career-ops followup  → Follow-up cadence tracker: flag overdue, generate drafts
   /career-ops update    → Update career-ops system files with diff preview + compat check
 
-Inbox: add URLs to data/pipeline.md → /career-ops pipeline
+Inbox: add URLs to data/pipeline.md → /career-ops pipeline (`npm run pipeline`)
 Or paste a JD directly to run the full pipeline.
 ```
 
@@ -168,11 +168,18 @@ After determining the mode, load the necessary files before executing:
 
 If `modes/_custom.md` exists, read it after `modes/_profile.md` and before the selected mode file. It contains user house rules and procedural preferences. It may override workflow/style defaults, but it never adds factual claims about the candidate.
 
+### Canonical backend pipeline
+
+For `pipeline`, run `npm run pipeline`. Do not reconstruct scan, extraction,
+liveness, prefilter, and evaluation as agent-authored steps. Use
+`npm run pipeline:prepare` only when the user explicitly asks for the zero-token
+preparation stages without evaluation.
+
 ### Modes that require `_shared.md` + their mode file
 
 Read `modes/_shared.md` + `modes/_profile.md` (if exists) + `modes/_custom.md` (if exists) + `modes/{mode}.md`
 
-Applies to: `auto-pipeline`, `oferta`, `ofertas`, `pdf`, `contacto`, `apply`, `pipeline`, `scan`, `batch`
+Applies to: `auto-pipeline`, `oferta`, `ofertas`, `pdf`, `contacto`, `apply`, `scan`, `batch`
 
 ### Standalone modes with profile and custom context
 
@@ -182,7 +189,7 @@ Applies to: `tracker`, `agent-inbox`, `deep`, `interview-prep`, `interview`, `re
 
 ### Modes delegated to subagent
 
-For `scan`, `apply` (with Playwright), and `pipeline` (3+ URLs): launch as a worker/subagent with the content of `_shared.md` + `_profile.md` (if exists) + `_custom.md` (if exists) + `modes/{mode}.md` injected into the worker prompt. If your CLI exposes an `Agent(...)` primitive, the call looks like this:
+For `scan` and `apply` (with Playwright): launch as a worker/subagent with the content of `_shared.md` + `_profile.md` (if exists) + `_custom.md` (if exists) + `modes/{mode}.md` injected into the worker prompt. `pipeline` is deliberately excluded: run the canonical backend command above. If your CLI exposes an `Agent(...)` primitive, the call looks like this:
 
 ```python
 Agent(

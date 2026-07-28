@@ -103,9 +103,8 @@ in the company slug. Inconsistent naming breaks duplicate detection in
 ### Before any batch run
 
 ```bash
-node src/scan/fetch-jds.mjs --summary                                  # bulk JD text, zero tokens
-node src/scan/prefilter.mjs --summary --out batch/batch-input.tsv      # deterministic rejects
-./batch/batch-runner.sh --parallel 3 --skip-pdf
+npm run pipeline            # canonical scan → cache → liveness → prefilter → evaluation
+npm run pipeline:prepare    # zero-token preparation only
 ```
 
 `src/scan/fetch-jds.mjs` writes `jds/` + `jds/index.tsv`; the batch runner reads that index

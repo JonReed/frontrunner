@@ -12,6 +12,12 @@ It is a fork of [career-ops](https://github.com/santifer/career-ops). Frontrunne
 keeps its provider ecosystem, scoring framework, file formats, and safety rules,
 but changes how jobs are collected, filtered, and presented.
 
+> **The measured difference:** on the checked-in deterministic benchmark,
+> Frontrunner uses **93.3% fewer model input tokens**, **84.1% fewer output
+> tokens**, and **62.5% fewer description HTTP calls** than the inherited flow.
+> Its separate scored regression corpus has **zero false rejects at a score of
+> 3.0 or above**. See the [reproducible benchmark](#reproducible-benchmark).
+
 > **Current status:** the core workflow works, but Frontrunner is not yet a
 > polished consumer application. Setup still requires Node.js, Git, and an AI
 > coding assistant. A workflow-first interface is under active development in
@@ -50,24 +56,64 @@ In the run that prompted this fork:
 Frontrunner adds bulk job-description ingestion and a conservative deterministic
 prefilter before model evaluation.
 
-### Measured results
+### What Frontrunner changes
 
-Measured on the same 306-role pipeline:
+- **One backend pipeline:** `npm run pipeline` owns scan, cache, liveness,
+  prefilter, and evaluation in that order.
+- **Model only for judgement:** provider APIs and deterministic code handle
+  collection, description extraction, freshness, obvious mismatches, report
+  rendering, pipeline state, and tracker-safe output. The model receives clean
+  JD text only after every deterministic stage has passed.
+- **Compact scoring contract:** supported API evaluators ask the model for
+  versioned JSON evidence and scores; code renders the A–G report instead of
+  paying a model to reproduce boilerplate. The same renderer emits the machine
+  summary used by salary, skill-gap, and pattern analysis.
+- **API-first job access:** Greenhouse, Lever, Ashby, and Workday APIs are used
+  before a browser. Playwright is reserved for providers that cannot answer
+  through a structured endpoint, and fallback text is cached rather than
+  fetched again by the evaluator.
+- **Mandatory conservative filtering:** every model-backed entry point runs the
+  deterministic gate. Rejections retain the exact rule and matching evidence;
+  uncertain roles pass through rather than being silently discarded.
+- **Fail-closed state changes:** tracker writes are locked and atomic, report
+  numbers are reserved safely, interrupted scans checkpoint, and updater
+  failures roll back without leaving a half-installed system. Concurrent batch
+  runs cannot renumber or overwrite each other's role identities.
+- **Regression evidence:** destructive crash/interruption tests, the scored-role
+  false-reject corpus, and a generated efficiency benchmark run in CI. The
+  aggregate runner also supervises framework tests so a failing destructive
+  suite cannot be hidden behind a green summary.
+- **Upstream-compatible data:** the CV, profile, reports, tracker, provider
+  ecosystem, and scoring scale remain compatible with career-ops.
 
-| Measure | career-ops | Frontrunner | Change |
+### Reproducible benchmark
+
+<!-- pipeline-benchmark:start -->
+The checked-in 8-role, 3-board fixture currently produces:
+
+| Measure | inherited flow | Frontrunner | Change |
 |---|---:|---:|---:|
-| JD input per role | ~18,200 tokens | ~1,840 tokens | −90% |
-| HTTP requests to ingest 246 roles | 246 | 43 | −83% |
-| Roles reaching the model | 246 | 131 | −47% |
-| Words written per sub-4.0 role | ~2,200 | ~400 | −82% |
-| Words written per sub-2.0 role | ~2,200 | 0 | −100% |
-| Wall-clock time per role | ~215s | ~155s | −28% |
-| Estimated total input for a full sweep | — | — | ~−70% |
+| Description HTTP calls | 8 | 3 | −62.5% |
+| Approximate model input tokens | 277,006 | 18,533 | −93.3% |
+| Approximate model output tokens | 17,125 | 2,729 | −84.1% |
+| Roles reaching the model | 8 | 7 | 87.5% pass rate |
+| False rejects at score ≥3.0 | — | 0 | — |
+<!-- pipeline-benchmark:end -->
 
-The final row is an estimate; the others are direct measurements. Against 89
-previously scored roles, the deterministic filter rejected no role that had
-scored 3.0 or above. Every rejection is logged with the rule and matching text
-so the filter can be audited and tuned.
+These numbers come from
+[`benchmarks/pipeline-benchmark.json`](benchmarks/pipeline-benchmark.json), not
+from hand-edited README estimates. Run `npm run benchmark` to regenerate the
+artifact and `npm run benchmark:check` to fail when it is stale. The fixture is
+a deterministic regression benchmark, not a promise that every live job board
+will have the same ratios. Its token comparison measures the compact
+contract-based API evaluator path; the Claude Code batch worker still carries
+its self-contained orchestration prompt. The command also records wall time for
+the local deterministic pass.
+
+The broader 89-role scored regression corpus separately asserts that the
+deterministic filter rejects no role that scored 3.0 or above. Every rejection
+is logged with its rule and matching text so the filter can be audited and
+tuned.
 
 ## Requirements
 
@@ -75,7 +121,8 @@ so the filter can be audited and tuned.
 - Git
 - An AI coding assistant that can work inside a local repository, such as
   Codex, Claude Code, OpenCode, Qwen, Antigravity, Grok, Kimi, or Copilot
-- Chromium through Playwright for PDF generation
+- Chromium through Playwright for PDF generation and fallback access to job
+  boards without a usable structured endpoint
 
 ## Install
 
@@ -133,26 +180,33 @@ Frontrunner currently has three surfaces:
 Neither web interface should yet be presented as a finished non-technical
 installation experience.
 
-## Advanced: run the efficient batch pipeline directly
+## Run the pipeline
 
-The underlying stages remain available to technical users:
+There is one supported backend command:
 
 ```bash
-node src/scan/scan.mjs
-node src/scan/fetch-jds.mjs --summary
-node src/scan/prefilter.mjs --summary --out batch/batch-input.tsv
-./batch/batch-runner.sh --parallel 3 --skip-pdf
+npm run pipeline
 ```
 
-These stages mean:
+It always runs:
 
 ```text
-find → ingest clean job descriptions → reject definite mismatches → score
+scan → cache clean job descriptions → check liveness → prefilter → evaluate
 ```
 
-Only the final scoring stage needs a model. Prefilter rejections are written to
-`batch/prefilter-rejects.tsv`; review this file after a run to catch rules that
-are too aggressive.
+Provider APIs are used for descriptions and liveness where available.
+Playwright is a fallback, not the first request. Only the final evaluation
+stage needs a model. OpenAI-compatible, Gemini, Ollama, OpenRouter, and Claude
+batch entry points all run the deterministic gate before a provider request.
+
+Use `npm run pipeline:prepare` to run every zero-token stage without starting
+evaluation. Select a non-default evaluator with
+`node src/pipeline/run.mjs --engine openrouter`, `--engine openai`, or
+`--engine gemini`.
+
+Prefilter rejections are written to `batch/prefilter-rejects.tsv`, and
+liveness decisions to `batch/liveness-results.tsv`. Review both after a run to
+catch rules that are too aggressive or sites that could not be verified.
 
 ## Configure the prefilter
 
@@ -195,8 +249,11 @@ It is not a thin theme or a drop-in package wrapper:
 - scripts have been reorganised into domain directories under `src/`;
 - repository paths are centralised through `src/paths.mjs`;
 - the inherited terminal interface and translated READMEs were removed;
-- JD ingestion and batch evaluation have changed; and
-- Frontrunner-specific tests protect the prefilter and repository layout.
+- JD ingestion and batch evaluation have changed;
+- standalone API evaluator responses use a versioned scoring contract that
+  code renders into reports; and
+- Frontrunner-specific destructive tests protect filtering, tracker recovery,
+  updater rollback, scanner resume, and repository layout.
 
 The user-data contract remains compatible, but internal paths and maintainer
 workflows can differ.

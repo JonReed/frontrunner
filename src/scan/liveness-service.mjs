@@ -18,6 +18,7 @@ export function createLivenessChecker({
   let browser;
   let page;
   let headed;
+  let lastBrowserUrl = null;
 
   async function ensureBrowser() {
     if (page) return;
@@ -35,7 +36,35 @@ export function createLivenessChecker({
       const result = await checkUrlLivenessWithFallback(page, url, {
         getHeadedPage: headed ? () => headed.get() : undefined,
       });
+      lastBrowserUrl = url;
       return { ...result, source: 'browser' };
+    },
+    async extract(url) {
+      await ensureBrowser();
+      if (lastBrowserUrl !== url) {
+        const result = await checkUrlLivenessWithFallback(page, url, {
+          getHeadedPage: headed ? () => headed.get() : undefined,
+        });
+        lastBrowserUrl = url;
+        if (result.result === 'expired') return null;
+      }
+      const raw = await page.evaluate(() => {
+        const title = (document.querySelector('h1')?.innerText || document.title || '').trim();
+        const root = document.querySelector('main, [role="main"], article') || document.body;
+        if (!root) return { title, text: '' };
+        const clone = root.cloneNode(true);
+        clone.querySelectorAll('script, style, nav, header, footer, noscript').forEach((element) => element.remove());
+        return { title, text: clone.innerText || clone.textContent || '' };
+      });
+      const normalized = String(raw?.text ?? '').replace(/[ \t ]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+      const text = normalized.length > 24_000 ? `${normalized.slice(0, 24_000)}…` : normalized;
+      if (!text) return null;
+      return {
+        source: 'browser',
+        finalUrl: page.url(),
+        title: String(raw?.title ?? '').replace(/\s+/g, ' ').trim(),
+        text,
+      };
     },
     async close() {
       if (headed) await headed.close();
@@ -43,6 +72,7 @@ export function createLivenessChecker({
       browser = undefined;
       page = undefined;
       headed = undefined;
+      lastBrowserUrl = null;
     },
   };
 }

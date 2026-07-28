@@ -5,12 +5,23 @@
  * score-dependent verbosity, tracker fields, and the machine-readable footer.
  */
 
-export const SCORING_CONTRACT_VERSION = '1.0';
+import yaml from 'js-yaml';
+
+export const SCORING_CONTRACT_VERSION = '1.1';
 
 const LEGITIMACY = new Set(['High Confidence', 'Proceed with Caution', 'Suspicious']);
 const DIMENSIONS = ['cvMatch', 'northStar', 'comp', 'culture', 'redFlags'];
+const WORK_AUTH = new Set(['sponsors', 'not_needed', 'unstated', 'no_sponsorship']);
+const COMP_RELIABILITY = new Set(['High', 'Medium', 'Low', 'Unknown']);
 
-export function buildScoringPrompt({ cv = '', profile = '', profileMode = '', languageInstruction = '' } = {}) {
+export function buildScoringPrompt({
+  cv = '',
+  profile = '',
+  profileMode = '',
+  articleDigest = '',
+  customRules = '',
+  languageInstruction = '',
+} = {}) {
   return `You are the judgement component of Frontrunner.
 Return JSON only. Do not render Markdown and do not add keys outside the contract.
 
@@ -26,6 +37,17 @@ Score each dimension from 1 to 5:
 The overall score must be a reasoned weighted judgement from 1 to 5. Posting
 legitimacy is separate and must not change the overall score. Never invent
 candidate evidence. Unknown facts must be null or listed as unknown.
+
+Scoring policy:
+- 4.5-5.0 strong match; 4.0-4.4 good match; 3.5-3.9 marginal; below 3.5 skip.
+- Apply the candidate's target archetypes, compensation floor, culture_screen,
+  location policy, and work authorization exactly as supplied below.
+- Missing sponsorship information is neutral. Only an explicit no-sponsorship
+  statement outside the candidate's authorized locations is a hard stop.
+- Missing culture evidence defaults to 3 unless the profile explicitly caps it.
+- Compensation evidence must distinguish advertised pay from guaranteed base
+  and must not treat "up to", OTE, bonus, or equity as guaranteed salary.
+- A hard stop is an explicit blocker, not merely a partial skill gap.
 
 Required JSON shape:
 {
@@ -47,6 +69,11 @@ Required JSON shape:
   "customization": ["string"],
   "interview": [{"question": "string", "evidenceToUse": "string"}],
   "legitimacy": {"tier": "High Confidence|Proceed with Caution|Suspicious", "signals": ["string"]},
+  "hardStops": ["explicit blocker"],
+  "advertisedComp": "verbatim advertised range with currency, or null",
+  "workAuth": "sponsors|not_needed|unstated|no_sponsorship",
+  "companyType": "string or Unknown",
+  "compReliability": "High|Medium|Low|Unknown",
   "keywords": ["string"]
 }
 
@@ -59,7 +86,13 @@ ${profile}
 TARGETING RULES:
 ${profileMode}
 
-CV — the only source of candidate claims:
+CUSTOM EVALUATION RULES:
+${customRules || '[none]'}
+
+PORTFOLIO PROOF POINTS:
+${articleDigest || '[none supplied]'}
+
+CV — the primary source of candidate claims:
 ${cv}`;
 }
 
@@ -72,8 +105,14 @@ function finiteScore(value, field, { nullable = false } = {}) {
   return Math.round(n * 10) / 10;
 }
 
+function cleanText(value) {
+  return String(value ?? '').replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 function strings(value) {
-  return Array.isArray(value) ? value.filter((v) => typeof v === 'string' && v.trim()).map((v) => v.trim()) : [];
+  return Array.isArray(value)
+    ? value.filter((v) => typeof v === 'string' && v.trim()).map(cleanText).filter(Boolean)
+    : [];
 }
 
 export function parseScoringResponse(raw) {
@@ -110,28 +149,37 @@ export function parseScoringResponse(raw) {
 
   return {
     version: value.version,
-    company: value.company.trim(),
-    role: value.role.trim(),
-    archetype: value.archetype.trim(),
+    company: cleanText(value.company),
+    role: cleanText(value.role),
+    archetype: cleanText(value.archetype),
     overallScore: finiteScore(value.overallScore, 'overallScore'),
-    recommendation: value.recommendation.trim(),
+    recommendation: cleanText(value.recommendation),
     dimensions,
     requirements: Array.isArray(value.requirements) ? value.requirements
       .filter((r) => r && typeof r.requirement === 'string')
       .map((r) => ({
-        requirement: r.requirement.trim(),
+        requirement: cleanText(r.requirement),
         status: ['matched', 'partial', 'gap', 'unknown'].includes(r.status) ? r.status : 'unknown',
-        evidence: typeof r.evidence === 'string' ? r.evidence.trim() : '',
+        evidence: typeof r.evidence === 'string' ? cleanText(r.evidence) : '',
       })) : [],
     risks: strings(value.risks),
     customization: strings(value.customization),
     interview: Array.isArray(value.interview) ? value.interview
       .filter((r) => r && typeof r.question === 'string')
       .map((r) => ({
-        question: r.question.trim(),
-        evidenceToUse: typeof r.evidenceToUse === 'string' ? r.evidenceToUse.trim() : '',
+        question: cleanText(r.question),
+        evidenceToUse: typeof r.evidenceToUse === 'string' ? cleanText(r.evidenceToUse) : '',
       })) : [],
     legitimacy: { tier, signals: strings(value.legitimacy?.signals) },
+    hardStops: strings(value.hardStops),
+    advertisedComp: typeof value.advertisedComp === 'string' && value.advertisedComp.trim()
+      ? cleanText(value.advertisedComp)
+      : null,
+    workAuth: WORK_AUTH.has(value.workAuth) ? value.workAuth : 'unstated',
+    companyType: typeof value.companyType === 'string' && value.companyType.trim()
+      ? cleanText(value.companyType)
+      : 'Unknown',
+    compReliability: COMP_RELIABILITY.has(value.compReliability) ? value.compReliability : 'Unknown',
     keywords: strings(value.keywords),
   };
 }
@@ -151,6 +199,37 @@ export function renderEvaluationReport(result) {
   const customization = compact ? result.customization.slice(0, 4) : result.customization;
   const interview = compact ? result.interview.slice(0, 4) : result.interview;
   const signals = compact ? result.legitimacy.signals.slice(0, 4) : result.legitimacy.signals;
+  const softGaps = result.requirements
+    .filter((requirement) => requirement.status === 'gap' || requirement.status === 'partial')
+    .map((requirement) => requirement.requirement);
+  const machineSummary = {
+    company: result.company,
+    role: result.role,
+    score: result.overallScore,
+    legitimacy_tier: result.legitimacy.tier,
+    archetype: result.archetype,
+    final_decision: result.recommendation,
+    hard_stops: result.hardStops,
+    soft_gaps: softGaps,
+    top_strengths: result.dimensions.cvMatch.evidence.slice(0, 3),
+    risk_level: result.overallScore < 3.5 ? 'high' : result.overallScore < 4 ? 'medium' : 'low',
+    confidence: result.legitimacy.tier === 'High Confidence' ? 'high' : 'medium',
+    next_action: result.recommendation,
+    discard_reasons: result.overallScore < 3.5 ? result.risks : [],
+    advertised_comp: result.advertisedComp,
+    work_auth: result.workAuth,
+    risk_summary: {
+      posting_legitimacy: result.legitimacy.tier,
+      culture_screen: result.dimensions.culture.score === null
+        ? 'not evaluated'
+        : `${result.dimensions.culture.score}/5`,
+    },
+  };
+  const summaryYaml = yaml.dump(machineSummary, {
+    noRefs: true,
+    lineWidth: -1,
+    sortKeys: false,
+  }).trimEnd();
 
   return `## Block A — Decision
 
@@ -192,6 +271,21 @@ ${interview.length ? interview.map((i) => `- ${i.question}${i.evidenceToUse ? ` 
 
 **Legitimacy:** ${result.legitimacy.tier}
 ${bullets(signals)}
+
+## Risk Summary
+
+| Signal | Status |
+|--------|--------|
+| Posting legitimacy | ${result.legitimacy.tier} |
+| Culture screen | ${result.dimensions.culture.score}/5 |
+| Compensation reliability | ${result.compReliability} (${result.companyType}) |
+| Work authorization | ${result.workAuth} |
+
+## Machine Summary
+
+\`\`\`yaml
+${summaryYaml}
+\`\`\`
 
 ---SCORE_SUMMARY---
 COMPANY: ${result.company}

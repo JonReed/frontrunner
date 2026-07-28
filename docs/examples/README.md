@@ -9,7 +9,7 @@ Reference files that demonstrate career-ops data formats and conventions. None o
 | `cv-example.md` | How to structure `cv.md` -- sections, metrics formatting, and proof-point style for a fictional AI engineer (Alex Chen) |
 | `resume-example.md` | Resume variant of `cv-example.md` -- same content, branded as "Resume" for US/industry markets. Use this as a structural guide when writing a resume (1–2 page targeted format) vs a CV (longer academic format) |
 | `article-digest-example.md` | How to write `article-digest.md` -- compact proof points with hero metrics, architecture summaries, and key decisions per project |
-| `sample-report.md` | The A-F evaluation report format produced by the evaluation pipeline, with all six blocks (Role Summary through Interview Plan) |
+| `sample-report.md` | The A-G evaluation report format: six fit/preparation blocks plus Posting Legitimacy |
 | `ats-normalization-test.md` | Regression fixture for `generate-pdf.mjs` Unicode normalization -- lists every problematic codepoint and its ASCII-safe replacement |
 | `dual-track-engineer-instructor/` | Complete profile config for a candidate with two primary archetypes (engineer + instructor), including `cv.md`, `profile.yml`, and a README explaining when and how to use the dual-track pattern |
 

@@ -6,43 +6,45 @@ system/user data-contract layers live in [../ARCHITECTURE.md](../ARCHITECTURE.md
 ## System Overview
 
 ```
-                    ┌─────────────────────────────────┐
-                    │         AI Coding CLI Agent      │
-                    │   (reads AGENTS.md + modes/*.md) │
-                    └──────────┬──────────────────────┘
-                               │
-            ┌──────────────────┼──────────────────────┐
-            │                  │                       │
-     ┌──────▼──────┐   ┌──────▼──────┐   ┌───────────▼────────┐
-     │ Single Eval  │   │ Portal Scan │   │   Batch Process    │
-     │ (auto-pipe)  │   │  (scan.md)  │   │   (batch-runner)   │
-     └──────┬──────┘   └──────┬──────┘   └───────────┬────────┘
-            │                  │                       │
-            │           ┌──────▼──────┐          ┌────▼─────┐
-            │           │ pipeline.md │          │ N workers│
-            │           │ (URL inbox) │          │ (headless)
-            │           └─────────────┘          └────┬─────┘
-            │                                          │
-     ┌──────▼──────────────────────────────────────────▼──────┐
-     │                    Output Pipeline                      │
-     │  ┌──────────┐  ┌────────────┐  ┌───────────────────┐  │
-     │  │ Report.md│  │  PDF (HTML  │  │ Tracker TSV       │  │
-     │  │ (A-G eval)│  │  → Playwright)│ │ (merge-tracker)  │  │
-     │  └──────────┘  └────────────┘  └───────────────────┘  │
-     └────────────────────────────────────────────────────────┘
-                               │
-                    ┌──────────▼──────────┐
-                    │  data/applications.md │
-                    │  (canonical tracker)  │
-                    └──────────────────────┘
+data/pipeline.md
+       │
+       ▼
+src/pipeline/run.mjs
+       │
+       ├─ scan ─────────────── public provider/ATS APIs
+       ├─ cache ────────────── clean descriptions in jds/
+       ├─ liveness ─────────── provider API → Playwright fallback
+       ├─ prefilter ────────── deterministic keep/reject + audit TSV
+       └─ evaluation ───────── only surviving roles reach a model
+                                  │
+                   ┌──────────────┴──────────────┐
+                   ▼                             ▼
+             API engines                    Claude batch
+          JSON → code renderer          self-contained worker
+                   │                             │
+                   └──────────────┬──────────────┘
+                                  ▼
+                 ┌────────────────┼────────────────┐
+                 ▼                ▼                ▼
+             A–G report      tracker TSV       optional PDF
+                 │                │
+                 └────── atomic/locked merge ──────┘
+                                  │
+                                  ▼
+                         data/applications.md
 ```
 
 ## Evaluation Flow (Single Offer)
 
-1. **Input**: User pastes JD text or URL
-2. **Extract**: Playwright/WebFetch extracts JD from URL
-3. **Classify**: Detect archetype (1 of 6 types)
-4. **Evaluate**: 7 blocks (A-G):
+1. **Input**: a cached JD, pasted JD text, or URL
+2. **Liveness and description**: use the provider API first; launch Playwright
+   only when the structured endpoint is unsupported or inconclusive
+3. **Deterministic gate**: reject unambiguous level, role-family, compensation,
+   clearance, or sponsorship mismatches without a model call
+4. **Model judgement**: standalone API engines return versioned JSON evidence
+   and scores through `src/evaluate/scoring-contract.mjs`. Claude batch remains
+   a self-contained worker path.
+5. **Render**: API-engine JSON is rendered in code into 7 report blocks (A-G):
    - A: Role summary
    - B: CV match (gaps + mitigation)
    - C: Level strategy
@@ -50,10 +52,12 @@ system/user data-contract layers live in [../ARCHITECTURE.md](../ARCHITECTURE.md
    - E: CV personalization plan
    - F: Interview prep (STAR stories)
    - G: Posting legitimacy (scam / ghost-job signals)
-5. **Score**: Weighted average across 5 dimensions (1-5)
-6. **Report**: Save as `reports/{num}-{company}-{date}.md`
-7. **PDF**: Generate ATS-optimized CV (`src/cv/generate-pdf.mjs`)
-8. **Track**: New entries via TSV in `batch/tracker-additions/` merged by
+   The renderer also emits a Risk Summary and compatibility `Machine Summary`
+   YAML consumed by the deterministic analysis commands.
+6. **Score**: validated 1–5 dimensions and global score
+7. **Report**: save as `reports/{num}-{company}-{date}.md`
+8. **PDF**: optionally generate an ATS-optimized CV (`src/cv/generate-pdf.mjs`)
+9. **Track**: new entries via TSV in `batch/tracker-additions/` merged by
    `src/tracker/merge-tracker.mjs`; status updates to existing rows via `src/tracker/set-status.mjs`
 
 ## Batch Processing
@@ -61,19 +65,36 @@ system/user data-contract layers live in [../ARCHITECTURE.md](../ARCHITECTURE.md
 The batch system processes multiple offers in parallel:
 
 ```
-batch-input.tsv    →  batch-runner.sh  →  N × headless CLI workers
-(id, url, source)     (orchestrator)       (self-contained prompt)
+batch-input.tsv → mandatory prefilter → batch-input.filtered.tsv
+                                             │
+                                             ▼
+                                    batch-runner.sh
+                                             │
+                                      N Claude workers
                            │
                     batch-state.tsv
                     (tracks progress)
 ```
 
-Each worker is a headless AI CLI instance — the bundled `batch-runner.sh` supports multiple CLIs via the `--cli` flag (`--cli claude` or `--cli opencode`). See the Headless / Batch Mode table in `AGENTS.md`. Workers produce:
+The bundled shell runner is Claude Code-specific. Other supported evaluators
+are selected through `src/pipeline/run.mjs --engine openrouter|openai|gemini`.
+The shell runner fails closed if the mandatory prefilter module is absent.
+Workers produce:
 - Report .md
 - PDF
 - Tracker TSV line
 
 The orchestrator manages parallelism, state, retries, and resume.
+
+## Failure and Concurrency Boundaries
+
+- Tracker mutations use shared locking and atomic replacement.
+- Report numbers are reserved with atomic sentinels before parallel work.
+- The updater stages replacements and rolls back injected failures rather than
+  leaving mixed versions.
+- The reverse ATS scanner checkpoints its lowest unfinished index and resumes
+  safely after interruption.
+- Liveness uncertainty is never silently converted into an expired result.
 
 ## Data Flow
 

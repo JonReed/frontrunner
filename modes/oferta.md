@@ -1,19 +1,31 @@
 # Mode: job — Full A-G Evaluation
 
-When the candidate pastes a job (text or URL), ALWAYS deliver the 7 blocks (A-F evaluation + G legitimacy):
+When the candidate pastes a job (text or URL), ALWAYS deliver Blocks A-G:
 
 ## Liveness gate (URL inputs)
 
 When the candidate pastes a **URL** (not JD text), confirm the posting is still live before doing any evaluation. A dead link must never reach Block A — a 404/expired page wastes a full A-G evaluation, report, and PDF on phantom content.
 
-1. Get the page content: if you arrived here from `auto-pipeline` (its Step 0.5 already navigated and cleared the link), reuse that snapshot — do not navigate again. On a direct URL entry, navigate with Playwright (`browser_navigate` + `browser_snapshot`) and read the title, URL, and visible content. **Opt-in:** if `scan.extractor: cli` is set in `config/profile.yml`, run `node src/scan/browser-extract.mjs <url>` (default `--mode jd`) instead and use its compact `{ "url", "title", "text" }` (the distilled JD main text rather than the full page a11y tree — fewer tokens for the model, board-dependent), **falling back silently** to `browser_navigate` + `browser_snapshot` if it errors or is missing.
+1. Resolve the URL through the provider API first
+   (`src/scan/liveness-service.mjs`); reuse a clean cached description from
+   `jds/index.tsv` where available. Only when the structured endpoint is
+   unsupported or inconclusive may Playwright navigate and snapshot the page.
 2. Classify the posting:
    - **active posting evidence:** title/role + a real job description or an application/apply path
    - **closed posting evidence:** expired/closed/"no longer accepting applications", missing JD with only nav/footer, hard redirect to a generic careers/search page, or 404/410
 3. If the posting appears closed, **stop before Block A**: tell the candidate the link is dead, and if the entry came from `data/pipeline.md`, mark it `- [x] ~~Company | Role~~ — oferta nieaktywna`. Do not generate an evaluation, report, or CV.
 4. If the candidate pasted JD text (no URL), liveness cannot be verified — note that and proceed; there is no link to check.
 
-Do not continue to Block A until this gate is resolved. The snapshot captured here is reused by Block G's freshness signals.
+Do not continue to Block A until this gate is resolved. Reuse whichever API or
+browser evidence resolved it in Block G; do not fetch the same posting again.
+
+## Deterministic evaluation gate
+
+Before any model call, run the role through
+`src/evaluate/evaluation-gate.mjs`. A deterministic rejection stops without a
+report number or provider request and records the rule/evidence. An unclear
+role is kept. Script evaluators return the versioned JSON contract from
+`src/evaluate/scoring-contract.mjs`; code, not the model, renders Blocks A-G.
 
 ## Blacklist gate (#1742)
 

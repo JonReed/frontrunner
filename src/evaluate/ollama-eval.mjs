@@ -23,6 +23,7 @@
 import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { execFileSync } from 'child_process';
 import { outputLanguageInstruction, parseOutputLanguage } from '../lib/profile-language.mjs';
 import {
   formatReportNumber, releaseReportNumbers, reserveReportNumbers,
@@ -52,7 +53,10 @@ const PATHS = {
   cv:      join(ROOT, 'cv.md'),
   profileYml: join(ROOT, 'config', 'profile.yml'),
   profileMode: join(ROOT, 'modes', '_profile.md'),
+  articleDigest: join(ROOT, 'article-digest.md'),
+  customRules: join(ROOT, 'modes', '_custom.md'),
   reports: join(ROOT, 'reports'),
+  trackerAdditions: join(ROOT, 'batch', 'tracker-additions'),
 };
 
 // ---------------------------------------------------------------------------
@@ -208,6 +212,8 @@ console.log('\n📂  Loading context files...');
 const cvContent     = readFile(PATHS.cv,     'cv.md');
 const profileYml    = readFile(PATHS.profileYml, 'config/profile.yml');
 const profileMode   = readFile(PATHS.profileMode, 'modes/_profile.md');
+const articleDigest = existsSync(PATHS.articleDigest) ? readFileSync(PATHS.articleDigest, 'utf8').trim() : '';
+const customRules   = existsSync(PATHS.customRules) ? readFileSync(PATHS.customRules, 'utf8').trim() : '';
 const languageInstruction = outputLanguageInstruction(parseOutputLanguage(profileYml));
 
 // ---------------------------------------------------------------------------
@@ -217,6 +223,8 @@ const systemPrompt = buildScoringPrompt({
   cv: cvContent,
   profile: profileYml,
   profileMode,
+  articleDigest,
+  customRules,
   languageInstruction,
 });
 
@@ -315,6 +323,7 @@ if (summaryMatch) {
 // ---------------------------------------------------------------------------
 if (saveReport) {
   let reservedNumbers = [];
+  let reportSaved = false;
   try {
     if (!existsSync(PATHS.reports)) {
       mkdirSync(PATHS.reports, { recursive: true });
@@ -326,6 +335,7 @@ if (saveReport) {
     const companySlug = company.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     const filename    = `${num}-${companySlug}-${today}.md`;
     const reportPath  = join(PATHS.reports, filename);
+    const trackerPath = join(PATHS.trackerAdditions, `${num}-${companySlug}.tsv`);
 
     const reportContent = `# Evaluation: ${company} — ${role}
 
@@ -342,12 +352,32 @@ ${evaluationText.replace(/---SCORE_SUMMARY---[\s\S]*?---END_SUMMARY---/, '').tri
 `;
 
     writeFileSync(reportPath, reportContent, 'utf-8');
+    mkdirSync(PATHS.trackerAdditions, { recursive: true });
+    const safe = (value) => String(value ?? '').replace(/[\t\r\n]+/g, ' ').trim();
+    writeFileSync(trackerPath, [
+      String(parseInt(num, 10)),
+      today,
+      safe(company),
+      safe(role),
+      'Evaluated',
+      `${score}/5`,
+      '❌',
+      `[${num}](reports/${filename})`,
+      `Ollama evaluation (${modelName})`,
+    ].join('\t') + '\n', 'utf8');
     console.log(`\n✅  Report saved: reports/${filename}`);
-
-    console.log(`\n📊  Tracker entry (add to data/applications.md):`);
-    console.log(`    | ${num} | ${today} | ${company} | ${role} | ${score}/5 | Evaluated | ❌ | [${num}](reports/${filename}) |`);
+    reportSaved = true;
+    const mergeOutput = execFileSync(process.execPath, [join(ROOT, 'src/tracker/merge-tracker.mjs')], {
+      cwd: ROOT,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    if (mergeOutput.trim()) console.log(mergeOutput.trim());
+    console.log('📊  Tracker merged into data/applications.md.');
   } catch (err) {
     console.warn(`⚠️   Could not save report: ${err.message}`);
+    if (reportSaved) console.warn('⚠️   The report is intact; its tracker addition remains available for recovery.');
+    process.exitCode = 1;
   } finally {
     if (reservedNumbers.length > 0) {
       try {

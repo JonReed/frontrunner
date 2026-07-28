@@ -68,6 +68,8 @@ const PATHS = {
   cv:          join(ROOT, 'cv.md'),
   profile:     join(ROOT, 'modes', '_profile.md'),
   profileYml:  join(ROOT, 'config', 'profile.yml'),
+  articleDigest: join(ROOT, 'article-digest.md'),
+  customRules: join(ROOT, 'modes', '_custom.md'),
   reports:     join(ROOT, 'reports'),
   tracker:     join(ROOT, 'data', 'applications.md'),
   trackerAdditions: join(ROOT, 'batch', 'tracker-additions'),
@@ -228,6 +230,8 @@ console.log('\n📂  Loading context files...');
 const cvContent      = readFile(PATHS.cv,          'cv.md');
 const profileContent = readFile(PATHS.profile,     'modes/_profile.md');
 const profileYml     = readFile(PATHS.profileYml,  'config/profile.yml');
+const articleDigest  = existsSync(PATHS.articleDigest) ? readFileSync(PATHS.articleDigest, 'utf8').trim() : '';
+const customRules    = existsSync(PATHS.customRules) ? readFileSync(PATHS.customRules, 'utf8').trim() : '';
 const languageInstruction = outputLanguageInstruction(parseOutputLanguage(profileYml));
 
 // ---------------------------------------------------------------------------
@@ -246,6 +250,8 @@ const systemPrompt = buildScoringPrompt({
   cv: cvContent,
   profile: profileYml,
   profileMode: profileContent,
+  articleDigest,
+  customRules,
   languageInstruction,
 });
 console.log(`📊  Compact scoring contract: ~${Math.ceil(systemPrompt.length / 4).toLocaleString()} static tokens`);

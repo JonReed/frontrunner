@@ -74,6 +74,9 @@ test('destructive pipeline: expired roles never reach prefilter or evaluation; u
   assert.equal(result.liveness.expired, 1);
   assert.equal(result.liveness.uncertain, 1);
   assert.match(readFileSync(join(batchDir, 'rejects.tsv'), 'utf8'), /posting_expired/);
+  const updatedPipeline = readFileSync(input, 'utf8');
+  assert.match(updatedPipeline, /\[x\].*expired.*result: posting expired/);
+  assert.match(updatedPipeline, /\[ \].*active/);
 });
 
 test('destructive pipeline: checker teardown runs when a liveness check throws', async (t) => {
@@ -101,4 +104,51 @@ test('destructive pipeline: checker teardown runs when a liveness check throws',
     /browser crashed/,
   );
   assert.equal(closed, true);
+});
+
+test('canonical pipeline keeps bare inbox URLs and persists browser fallback text before filtering', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'frontrunner-pipeline-bare-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const input = join(dir, 'pipeline.md');
+  const jdsDir = join(dir, 'jds');
+  writeFileSync(input, '# Pipeline\n\n## Pending\n- [ ] https://custom.example/jobs/42\n');
+
+  let filteredJd = '';
+  const result = await runCanonicalPipeline({
+    input,
+    jdsDir,
+    activeInput: join(dir, 'active.tsv'),
+    batchInput: join(dir, 'batch.tsv'),
+    rejects: join(dir, 'rejects.tsv'),
+    livenessResults: join(dir, 'liveness.tsv'),
+    engine: 'none',
+    scan: false,
+    fetchJds: async () => ({ urls: 1, available: 0 }),
+    checker: {
+      check: async () => ({ result: 'active', source: 'browser', reason: 'loaded' }),
+      extract: async () => ({
+        title: 'Director of Engineering',
+        text: 'Lead the platform engineering organization.',
+      }),
+      close: async () => {},
+    },
+    prefilter: ({ input: activeInput, jdsDir: cacheDir, out, rejects }) => {
+      const active = readFileSync(activeInput, 'utf8');
+      assert.match(active, /Director of Engineering/);
+      const index = readFileSync(join(cacheDir, 'index.tsv'), 'utf8');
+      const cachedFile = index.trim().split('\n')[1].split('\t')[1];
+      filteredJd = readFileSync(cachedFile, 'utf8');
+      writeFileSync(out, active);
+      writeFileSync(rejects, 'url\tcompany\ttitle\trule\tevidence\n');
+      return {
+        kept: [{ id: '1', url: 'https://custom.example/jobs/42' }],
+        rejected: [],
+        result: { roles: 1, kept: 1, rejected: 0 },
+      };
+    },
+  });
+
+  assert.equal(result.inputRoles, 1);
+  assert.equal(result.cache.fallbackCached, 1);
+  assert.match(filteredJd, /Lead the platform engineering organization/);
 });

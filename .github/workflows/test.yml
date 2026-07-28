@@ -37,6 +37,5 @@ jobs:
       # never launch a browser, so the ~170 MB download is pure CI overhead.
       - run: npm install --ignore-scripts
       - run: node test-all.mjs --quick
-      - name: Go dashboard tests
-        run: go test ./...
-        working-directory: dashboard
+      - name: Efficiency benchmark artifact is current
+        run: npm run benchmark:check

@@ -177,16 +177,30 @@ function readRoles(file) {
   const raw = readFileSync(file, 'utf8');
   const roles = [];
   for (const line of raw.split('\n')) {
-    const md = line.match(/^-\s*\[\s*\]\s*(\S+)\s*\|\s*([^|]*)\|\s*([^|]*)/);
+    const md = line.match(/^-\s*\[\s*\]\s*(\S+)(.*)$/);
     if (md) {
-      roles.push({ url: md[1], company: md[2].trim(), title: md[3].trim() });
+      const fields = md[2].split('|').map((value) => value.trim()).filter((_, index) => index > 0);
+      roles.push({
+        id: String(roles.length + 1),
+        url: md[1],
+        company: fields[0] ?? '',
+        title: fields[1] ?? '',
+        source: 'pipeline',
+      });
       continue;
     }
     const c = line.split('\t');
     if (c.length >= 4 && /^https?:\/\//.test(c[1]?.trim() ?? '')) {
       const note = c[3] ?? '';
-      const [company, title] = note.includes('—') ? note.split('—').map((s) => s.trim()) : ['', note.trim()];
-      roles.push({ url: c[1].trim(), company, title });
+      const divider = note.includes('—') ? '—' : note.includes(' - ') ? ' - ' : null;
+      const [company = '', title = note] = divider ? note.split(divider, 2).map((s) => s.trim()) : ['', note.trim()];
+      roles.push({
+        id: c[0]?.trim() || String(roles.length + 1),
+        url: c[1].trim(),
+        company,
+        title,
+        source: c[2]?.trim() || 'scan',
+      });
     }
   }
   return roles;
@@ -251,14 +265,14 @@ export function runPrefilter({ input, jdsDir, out = '', rejects, profile = PROFI
       out,
       `id\turl\tsource\tnotes\n${kept
         .map((r, i) => {
-          const src = r.url.includes('greenhouse')
+          const src = r.source || (r.url.includes('greenhouse')
             ? 'Greenhouse'
             : r.url.includes('ashby')
               ? 'Ashby'
               : r.url.includes('myworkdayjobs')
                 ? 'Workday'
-                : 'scan';
-          return `${i + 1}\t${r.url}\t${src}\t${r.company} — ${r.title}`;
+                : 'scan');
+          return `${r.id || i + 1}\t${r.url}\t${src}\t${r.company} — ${r.title}`;
         })
         .join('\n')}\n`,
     );

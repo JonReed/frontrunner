@@ -10,7 +10,7 @@
     "doctor": "node doctor.mjs",
     "or": "node src/evaluate/openrouter-runner.mjs",
     "or:scan": "node src/evaluate/openrouter-runner.mjs scan",
-    "or:pipeline": "node src/evaluate/openrouter-runner.mjs pipeline",
+    "or:pipeline": "node src/pipeline/run.mjs --engine openrouter",
     "or:eval": "node src/evaluate/openrouter-runner.mjs evaluate",
     "or:apply": "node src/evaluate/openrouter-runner.mjs apply",
     "verify": "node src/tracker/verify-pipeline.mjs",

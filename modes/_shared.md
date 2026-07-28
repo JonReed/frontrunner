@@ -54,11 +54,14 @@ The Claude Code row uses concrete model names because that lineup is well-establ
 
 Every other reference to tier elsewhere in the modes (batch.md, pipeline.md, etc.) MUST refer to it only as "the economy/standard/premium tier" or "the tier's model" -- never repeat a hardcoded model/provider name outside this table. This keeps the routing logic model-agnostic: if any CLI's mapping changes, only that row in this table needs to change.
 
-**Output parity:** The model used for evaluation never changes the A-F report structure, headers, or sections. All three tiers produce an evaluation in the exact same format described below and in `modes/oferta.md`.
+**Output parity:** The model used for evaluation never changes the A-G report
+structure, headers, or sections. Script evaluators return the versioned
+structured contract and `src/evaluate/scoring-contract.mjs` renders the report.
 
 ## Scoring System
 
-The evaluation uses 6 blocks (A-F) with a global score of 1-5:
+The evaluation report uses Blocks A-G. Blocks A-F cover fit and preparation;
+Block G covers posting legitimacy separately. The global score is 1-5:
 
 | Dimension | What it measures |
 |-----------|-----------------|

@@ -4,6 +4,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { performance } from 'node:perf_hooks';
+import yaml from 'js-yaml';
 
 import { ROOT } from '#paths';
 import { classify } from '../scan/prefilter.mjs';
@@ -40,10 +41,33 @@ function sampleResult(job) {
   };
 }
 
-export function runPipelineBenchmark({ corpus, legacyStaticChars, compactStaticChars }) {
+function benchmarkRules(rawConfig) {
+  const config = yaml.load(rawConfig) ?? {};
+  const compile = (values) => (values ?? []).map((value) => new RegExp(value, 'i'));
+  return {
+    keep: compile(config.keep_signals),
+    ic: compile(config.ic_families),
+    wrong: compile(config.wrong_functions),
+    junior: compile(config.below_level),
+    blockers: (config.hard_blockers ?? [])
+      .filter((blocker) => blocker?.enabled)
+      .map((blocker) => ({
+        id: blocker.id,
+        all: compile(blocker.all),
+        reason: blocker.reason ?? blocker.id,
+      })),
+    comp: { enabled: config.comp?.enabled !== false, margin: Number(config.comp?.clearance_margin ?? 0.8) },
+  };
+}
+
+export function runPipelineBenchmark({ corpus, legacyStaticChars, compactStaticChars, rules }) {
   const started = performance.now();
   const boards = new Set(corpus.jobs.map((job) => `${job.provider}:${job.board}`));
-  const decisions = corpus.jobs.map((job) => ({ job, decision: classify(job.title) }));
+  const profile = { minComp: 0, currency: 'GBP' };
+  const decisions = corpus.jobs.map((job) => ({
+    job,
+    decision: classify(job.title, '', profile, rules),
+  }));
   const kept = decisions.filter(({ decision }) => decision.verdict === 'keep');
   const falseRejects = decisions.filter(({ job, decision }) => job.score >= 3 && decision.verdict === 'reject');
 
@@ -99,6 +123,36 @@ function stableMetrics(result) {
   return stable;
 }
 
+function benchmarkMarkdown(result) {
+  const number = (value) => Number(value).toLocaleString('en-US');
+  return `<!-- pipeline-benchmark:start -->
+The checked-in ${result.corpus.roles}-role, ${result.corpus.boards}-board fixture currently produces:
+
+| Measure | inherited flow | Frontrunner | Change |
+|---|---:|---:|---:|
+| Description HTTP calls | ${number(result.httpCalls.legacy)} | ${number(result.httpCalls.frontrunner)} | −${result.httpCalls.reductionPct}% |
+| Approximate model input tokens | ${number(result.tokens.input.legacy)} | ${number(result.tokens.input.frontrunner)} | −${result.tokens.input.reductionPct}% |
+| Approximate model output tokens | ${number(result.tokens.output.legacy)} | ${number(result.tokens.output.frontrunner)} | −${result.tokens.output.reductionPct}% |
+| Roles reaching the model | ${result.corpus.roles} | ${result.modelPass.roles} | ${result.modelPass.ratePct}% pass rate |
+| False rejects at score ≥${result.falseRejects.threshold}.0 | — | ${result.falseRejects.count} | — |
+<!-- pipeline-benchmark:end -->`;
+}
+
+function updateReadmeBenchmark(result, { check = false } = {}) {
+  const readmePath = join(ROOT, 'README.md');
+  const readme = readFileSync(readmePath, 'utf8');
+  const expected = benchmarkMarkdown(result);
+  const pattern = /<!-- pipeline-benchmark:start -->[\s\S]*?<!-- pipeline-benchmark:end -->/;
+  if (!pattern.test(readme)) throw new Error('README benchmark markers are missing');
+  if (check) {
+    if (readme.match(pattern)?.[0] !== expected) {
+      throw new Error('README benchmark table is stale; run npm run benchmark');
+    }
+    return;
+  }
+  writeFileSync(readmePath, readme.replace(pattern, expected));
+}
+
 function main() {
   const args = process.argv.slice(2);
   const corpusPath = join(ROOT, 'benchmarks', 'pipeline-corpus.json');
@@ -117,7 +171,8 @@ function main() {
     profileMode: 'Target senior engineering leadership roles.',
     languageInstruction: 'Write in English.',
   }).length;
-  const result = runPipelineBenchmark({ corpus, legacyStaticChars, compactStaticChars });
+  const rules = benchmarkRules(readFileSync(join(ROOT, 'config', 'prefilter.example.yml'), 'utf8'));
+  const result = runPipelineBenchmark({ corpus, legacyStaticChars, compactStaticChars, rules });
 
   if (args.includes('--check')) {
     if (!existsSync(artifactPath)) throw new Error('benchmark artifact is missing; run npm run benchmark');
@@ -125,8 +180,10 @@ function main() {
     if (JSON.stringify(stableMetrics(recorded)) !== JSON.stringify(stableMetrics(result))) {
       throw new Error('benchmark artifact is stale; run npm run benchmark');
     }
+    updateReadmeBenchmark(recorded, { check: true });
   } else if (args.includes('--write')) {
     writeFileSync(artifactPath, `${JSON.stringify(result, null, 2)}\n`);
+    updateReadmeBenchmark(result);
   }
   console.log(JSON.stringify(result, null, 2));
 }

@@ -7,7 +7,7 @@
  *   node src/evaluate/openrouter-runner.mjs scan              → Scan Greenhouse API companies for new listings
  *   node src/evaluate/openrouter-runner.mjs evaluate <url>    → Evaluate a job by URL
  *   node src/evaluate/openrouter-runner.mjs evaluate          → Paste job text interactively
- *   node src/evaluate/openrouter-runner.mjs pipeline          → Process all pending URLs from pipeline.md
+ *   node src/evaluate/openrouter-runner.mjs pipeline          → Canonical pipeline with OpenRouter evaluation
  *   node src/evaluate/openrouter-runner.mjs apply <report_no> → Generate draft application form answers
  *   node src/evaluate/openrouter-runner.mjs models            → List available free models
  *   node src/evaluate/openrouter-runner.mjs help              → Show this help
@@ -21,6 +21,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 import readline from 'node:readline';
 import yaml from 'js-yaml';
 import { outputLanguageInstruction, parseOutputLanguage } from '../lib/profile-language.mjs';
@@ -61,7 +62,6 @@ if (fs.existsSync(envPath)) {
 const OPENROUTER_API_URL    = 'https://openrouter.ai/api/v1/chat/completions';
 const OPENROUTER_MODELS_URL = 'https://openrouter.ai/api/v1/models';
 const MAX_TOKENS            = 8192;
-const RATE_LIMIT_DELAY_MS   = 2500;  // pause between requests on free tier
 const MODEL_TIMEOUT_MS      = 15_000; // abort a single model call after 15 s
 
 // Provider priority order — models are sorted by provider prefix, not hardcoded names.
@@ -373,6 +373,8 @@ function loadContext() {
     profile:     readFile('config/profile.yml')  ?? '',
     shared:      readFile('modes/_shared.md')    ?? '',
     profileMode: readFile('modes/_profile.md')   ?? '',
+    articleDigest: readFile('article-digest.md') ?? '',
+    customRules: readFile('modes/_custom.md')    ?? '',
   };
 }
 
@@ -490,36 +492,6 @@ export function parsePortals(rawOverride) {
   return { companies, titleMatches };
 }
 
-// ---------------------------------------------------------------------------
-// pipeline.md management
-// ---------------------------------------------------------------------------
-function readPipeline() {
-  const content = readFile('data/pipeline.md') ?? '';
-  const pending = [];
-  for (const line of content.split('\n')) {
-    const m = line.match(/^- \[ \] (.+)/);
-    if (m) {
-      const parts = m[1].split(' | ');
-      pending.push({
-        url:     parts[0]?.trim() ?? '',
-        company: parts[1]?.trim() ?? 'Unknown',
-        role:    parts[2]?.trim() ?? 'Unknown',
-      });
-    }
-  }
-  return pending;
-}
-
-function markPipelineDone(url) {
-  let content = readFile('data/pipeline.md') ?? '';
-  const escaped = url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  content = content.replace(
-    new RegExp(`^(- \\[ \\] ${escaped}.*)$`, 'm'),
-    (ln) => ln.replace('- [ ]', '- [x]')
-  );
-  writeFile('data/pipeline.md', content);
-}
-
 function addToPipeline(entries) {
   const history = readFile('data/scan-history.tsv') ?? 'url\tfirst_seen\tportal\ttitle\tcompany\tstatus\tlocation\n';
   const seenUrls = new Set(history.split('\n').slice(1).map(l => l.split('\t')[0]).filter(Boolean));
@@ -557,21 +529,6 @@ function addToPipeline(entries) {
   return newEntries.length;
 }
 
-function extractCompanySlug(text, url) {
-  // Try to extract from text (e.g. "Senior Engineer at Acme" or "Company: Acme")
-  const m = text.match(/(?:at|@|company[:\s]+)\s*([A-Z][A-Za-z0-9]{2,25})/);
-  if (m) return m[1].toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  // Fall back to URL hostname (e.g. job-boards.greenhouse.io/acme → acme)
-  if (url) {
-    try {
-      const parts = new URL(url).pathname.split('/').filter(Boolean);
-      const slug = parts[0] ?? 'company';
-      return slug.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    } catch { /* not a valid URL */ }
-  }
-  return 'company';
-}
-
 // ---------------------------------------------------------------------------
 // Commands
 // ---------------------------------------------------------------------------
@@ -581,42 +538,10 @@ async function cmdScan() {
   tracker.recordZeroToken('scan');
   tracker.recordZeroToken('evaluation');
   tracker.recordZeroToken('pdf payload');
-  console.log('Scanning Greenhouse portals...\n');
-
-  let portals;
-  try { portals = parsePortals(); }
-  catch (e) { console.error(e.message); return; }
-
-  const { companies, titleMatches } = portals;
-  console.log(`Greenhouse API companies: ${companies.length}\n`);
-
-  const found = [];
-  for (const c of companies) {
-    process.stdout.write(`  ${c.name.padEnd(25)} → `);
-    try {
-      assertSafeRemoteUrl(c.api);
-      const r = await fetch(c.api);
-      if (!r.ok) { console.log(`HTTP ${r.status}`); continue; }
-      const data = await r.json();
-      const jobs = data.jobs ?? [];
-      const matched = jobs.filter(j => titleMatches(j.title));
-      console.log(`${jobs.length} listings, ${matched.length} matched`);
-      for (const j of matched) {
-        // Skip postings without a public URL — falling back to the API
-        // endpoint would write an unusable link into the pipeline.
-        if (!j.absolute_url) continue;
-        found.push({ url: j.absolute_url, company: c.name, role: j.title, location: j.location?.name ?? '' });
-      }
-    } catch (e) {
-      console.log(`ERROR: ${e.message}`);
-    }
-  }
-
-  const added = addToPipeline(found);
-  console.log(`\n✅ Scan complete. ${found.length} matches, ${added} new entries added to pipeline.md.`);
-  if (added > 0) {
-    console.log('\n→  node src/evaluate/openrouter-runner.mjs pipeline\n   to evaluate pending listings.\n');
-  }
+  execFileSync(process.execPath, [path.join(__dirname, 'src/scan/scan.mjs')], {
+    cwd: __dirname,
+    stdio: 'inherit',
+  });
 }
 
 // -- EVALUATE --
@@ -698,6 +623,8 @@ async function cmdEvaluate(input, ctx) {
     cv: ctx.cv,
     profile: ctx.profile,
     profileMode: ctx.profileMode,
+    articleDigest: ctx.articleDigest,
+    customRules: ctx.customRules,
     languageInstruction,
   });
 
@@ -710,8 +637,10 @@ async function cmdEvaluate(input, ctx) {
   }
   tracker.record('evaluation', resultObj.usage);
   let result;
+  let scoring;
   try {
-    result = renderEvaluationReport(parseScoringResponse(resultObj.content));
+    scoring = parseScoringResponse(resultObj.content);
+    result = renderEvaluationReport(scoring);
   } catch (e) {
     console.error(`OpenRouter returned invalid scoring JSON: ${e.message}`);
     return null;
@@ -732,25 +661,33 @@ async function cmdEvaluate(input, ctx) {
     // Save report
     const today   = new Date().toISOString().split('T')[0];
     const num     = reservedNumbers[0];
-    const slug    = extractCompanySlug(jdText, typeof input === 'string' ? input : null);
+    const slug    = String(scoring.company).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'company';
     const numStr  = formatReportNumber(num);
     const relPath = `reports/${numStr}-${slug}-${today}.md`;
+    const sourceUrl = jdText.match(/^\s*(?:\*\*)?URL:(?:\*\*)?\s*(https?:\/\/\S+)/mi)?.[1]
+      ?? (typeof input === 'string' && /^https?:\/\//.test(input) ? input : '(pasted/cached)');
 
     // Extract Legitimacy from LLM output or fall back to placeholder
     const legitMatch = result.match(/\*\*Legitimacy:\*\*\s*([^\n]+)/);
     const legitLine  = legitMatch ? `**Legitimacy:** ${legitMatch[1].trim()}` : '**Legitimacy:** unconfirmed';
-    writeFile(relPath, `**URL:** ${input || '(pasted)'}\n${legitLine}\n\n${result}`);
+    writeFile(relPath, `# Evaluation: ${scoring.company} — ${scoring.role}\n\n**URL:** ${sourceUrl}\n**Score:** ${scoring.overallScore.toFixed(1)}/5\n${legitLine}\n\n${result}`);
 
-    const scoreMatch  = result.match(/(?:score|puntuaci[oó]n)[^\d]*(\d+\.?\d*)/i);
-    const scoreValue  = scoreMatch ? parseFloat(scoreMatch[1]) : NaN;
-    const scoreStr    = isFinite(scoreValue) ? `${scoreValue.toFixed(1)}/5` : '';
-    const companyName = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const scoreStr    = `${scoring.overallScore.toFixed(1)}/5`;
+    const companyName = scoring.company;
     const reportLink  = `[${numStr}](reports/${numStr}-${slug}-${today}.md)`;
-    const tsvLine     = `${num}\t${today}\t${companyName}\t(see report)\tEvaluated\t${scoreStr}\t❌\t${reportLink}\t\n`;
+    const tsvSafe = (value) => String(value ?? '').replace(/[\t\r\n]+/g, ' ').trim();
+    const tsvLine     = `${num}\t${today}\t${tsvSafe(companyName)}\t${tsvSafe(scoring.role)}\tEvaluated\t${scoreStr}\t❌\t${reportLink}\t\n`;
     const tsvFile     = `batch/tracker-additions/or-${numStr}-${slug}.tsv`;
     writeFile(tsvFile, `num\tdate\tcompany\trole\tstatus\tscore\tpdf\treport\tnotes\n${tsvLine}`);
+    const mergeOutput = execFileSync(process.execPath, [path.join(__dirname, 'src/tracker/merge-tracker.mjs')], {
+      cwd: __dirname,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    if (mergeOutput.trim()) console.log(mergeOutput.trim());
 
     console.log(`\n✅ Report saved: ${relPath}`);
+    console.log('📊 Tracker merged into data/applications.md.');
     console.log('\n─── EVALUATION ──────────────────────────────────────\n');
     console.log(result);
     console.log('\n─────────────────────────────────────────────────────\n');
@@ -766,30 +703,11 @@ async function cmdEvaluate(input, ctx) {
 }
 
 // -- PIPELINE --
-async function cmdPipeline(ctx) {
-  const pending = readPipeline();
-  if (pending.length === 0) {
-    console.log('No pending listings in pipeline.md.');
-    return;
-  }
-
-  console.log(`Processing ${pending.length} pending listing(s) from pipeline.md...\n`);
-
-  for (let i = 0; i < pending.length; i++) {
-    const item = pending[i];
-    console.log(`\n[${i + 1}/${pending.length}] ${item.company} — ${item.role}`);
-    try {
-      const report = await cmdEvaluate(item.url, ctx);
-      if (report) markPipelineDone(item.url);
-    } catch (e) {
-      console.error(`  Error: ${e.message}`);
-    }
-    if (i < pending.length - 1) {
-      await new Promise(r => setTimeout(r, RATE_LIMIT_DELAY_MS));
-    }
-  }
-
-  console.log('\n✅ Pipeline processing complete.\n');
+async function cmdPipeline() {
+  const { runCanonicalPipeline } = await import('../pipeline/run.mjs');
+  const result = await runCanonicalPipeline({ engine: 'openrouter' });
+  console.log('\n✅ Canonical OpenRouter pipeline complete.');
+  console.log(`   ${result.inputRoles} roles → ${result.prefilter.kept} model-eligible.`);
 }
 
 // -- APPLY --
@@ -865,7 +783,7 @@ const [,, command, ...args] = invokedDirectly ? process.argv : [];
 const ctx = invokedDirectly ? loadContext() : null;
 
 // Load free models list before running any AI command (skip when a model is pinned)
-if (invokedDirectly && ['evaluate', 'eval', 'pipeline', 'apply', 'models'].includes(command) && !process.env.CAREER_OPS_MODEL) {
+if (invokedDirectly && ['evaluate', 'eval', 'apply', 'models'].includes(command) && !process.env.CAREER_OPS_MODEL) {
   await loadFreeModels();
 }
 
@@ -875,12 +793,26 @@ if (invokedDirectly) switch (command) {
     break;
 
   case 'evaluate':
-  case 'eval':
-    await cmdEvaluate(args.join(' ').trim() || null, ctx);
+  case 'eval': {
+    let input = args.join(' ').trim() || null;
+    if (args[0] === '--file') {
+      if (!args[1]) {
+        console.error('Usage: node src/evaluate/openrouter-runner.mjs evaluate --file <path>');
+        break;
+      }
+      try {
+        input = fs.readFileSync(path.resolve(args[1]), 'utf8').trim();
+      } catch (error) {
+        console.error(`Could not read JD file: ${error.message}`);
+        break;
+      }
+    }
+    await cmdEvaluate(input, ctx);
     break;
+  }
 
   case 'pipeline':
-    await cmdPipeline(ctx);
+    await cmdPipeline();
     break;
 
   case 'apply':
@@ -900,8 +832,9 @@ Auto-fetches free models from OpenRouter API and rotates through them with fallb
 COMMANDS:
   node src/evaluate/openrouter-runner.mjs scan              → Scan Greenhouse APIs for new matching listings
   node src/evaluate/openrouter-runner.mjs evaluate <url>    → Evaluate a listing by URL
+  node src/evaluate/openrouter-runner.mjs evaluate --file <path> → Evaluate a cached JD
   node src/evaluate/openrouter-runner.mjs evaluate          → Paste a job description interactively
-  node src/evaluate/openrouter-runner.mjs pipeline          → Batch-evaluate all pending entries in pipeline.md
+  node src/evaluate/openrouter-runner.mjs pipeline          → Run the canonical pipeline with OpenRouter
   node src/evaluate/openrouter-runner.mjs apply <report_no> → Generate application form answers from a report
   node src/evaluate/openrouter-runner.mjs models            → List available free models from OpenRouter
 

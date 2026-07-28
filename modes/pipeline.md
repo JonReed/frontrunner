@@ -2,46 +2,37 @@
 
 Process job URLs stored in `data/pipeline.md`. The user adds URLs at any time and then executes `/career-ops pipeline` to process them all.
 
-## Liveness sweep
+## Canonical workflow
 
-**Run this before processing any URLs.** Entries added by the scanner in headless/batch mode carry `**Verification:** unconfirmed (batch mode)` because Playwright was unavailable at scan time — they were never checked for liveness. Without a sweep, dead postings reach evaluation one tab at a time, burning time and tokens on phantom roles (a single inbox of 8 stale URLs produces 8 wasted evaluations).
+Run:
 
-Sweep all pending URLs in one batch with the zero-token liveness checker before the per-URL loop:
+```bash
+npm run pipeline
+```
 
-1. Collect every `- [ ]` URL from the "Pending" section into a temp file (one URL per line).
-2. Run `node src/scan/check-liveness.mjs --file <tmpfile>` (add `--throttle` for large batches to stay under WAF rate limits; it's pure Playwright, zero Claude tokens). The checker prints a per-URL verdict and exits non-zero if any are expired/uncertain.
-3. For every URL the checker reports as **expired/closed**, resolve the pipeline entry instead of processing it: move it to "Processed" as `- [x] ~~URL | Company | Role~~ — posting expired (liveness sweep)` and, if it already has a tracker row, mark it `Discarded`. **Do not** extract the JD, evaluate, or generate a report/PDF for it.
-4. Leave `uncertain` results in place to be confirmed during normal per-URL extraction (a transient timeout shouldn't drop a possibly-live posting).
-5. Only the surviving live URLs continue to the per-URL processing loop below.
+Do not manually reconstruct the stages or launch one evaluation agent per URL.
+`src/pipeline/run.mjs` owns the order and audit boundary:
 
-This complements — does not replace — the per-URL liveness gate in `auto-pipeline` (Step 0.5) and the `apply` preflight: the sweep drops the dead postings up front, in bulk, so the user never opens a tab or spends a token on them.
+1. Scan public providers.
+2. Bulk-cache clean descriptions through provider APIs.
+3. Check liveness through the provider API, launching Playwright only when the
+   API cannot decide.
+4. Run the deterministic prefilter for every role, regardless of spend tier.
+5. Send only surviving roles to the selected evaluator.
 
-## Pre-screen gate (standard / premium tiers only)
+Use `npm run pipeline:prepare` only when the user explicitly wants the
+zero-token stages without evaluation. Provider alternatives are
+`node src/pipeline/run.mjs --engine openrouter|openai|gemini`.
 
-Read `spend_tier` from `config/profile.yml` (see `modes/_shared.md` -- Spend Tier section; defaults to `standard` if absent).
+Expired roles and deterministic rejects never receive report numbers and never
+reach a model. Uncertain liveness results are kept rather than silently
+discarded. The audit files are:
 
-- **`standard` or `premium` tier:** Before running the full A-F evaluation on a pending URL that survived the liveness sweep, run a cheap pre-screen pass using the tier's economy-equivalent model (see the mapping table in `modes/_shared.md`) against the candidate's North Star archetypes (`modes/_profile.md`). If the JD is an obvious mismatch, skip the full evaluation: mark it `- [x] #-- | {url} | skipped (pre-screen mismatch: {reason})` in "Processed" and continue to the next URL.
-- **`economy` tier:** No gate. The tier is already the cheapest available. Every surviving pending URL goes straight to the full evaluation.
-- This gate only applies to pipeline/batch processing. It never applies to a single interactive evaluation.
+- `batch/liveness-results.tsv`
+- `batch/prefilter-rejects.tsv`
+- `batch/batch-input.tsv` (survivors)
 
-**Discard log (auditable):** Every posting the gate filters out MUST be logged with a one-line reason so pre-filtering is never a silent black box. Append one line to `data/discard.log` (create the file if absent) in the format `{ISO8601 timestamp}\t{url}\t{reason}` (three tab-separated fields — interactive pipeline mode has no batch job ID, so the `id` field is omitted here; batch mode's `batch/batch-runner.sh` uses a separate `batch/logs/discard.log` with a four-field format that includes the job ID), in addition to the `skipped` entry already written to "Processed" above. This log is the visible, auditable record of what the gate discarded and why -- review it periodically to tune the North Star archetypes if the gate is too aggressive or too lax.
-
-## Workflow
-
-1. **Read** `data/pipeline.md` → search for `- [ ]` items in the "Pending" section. Run the **Liveness sweep** (above) first and drop any expired entries before continuing.
-2. **For each surviving pending URL**:
-   a. **Extract JD** using Playwright (browser_navigate + browser_snapshot) → WebFetch → WebSearch
-   b. If the URL is not accessible → mark as `- [!]` with a note and continue
-   c. **Pre-screen gate**: apply the gate above (using the extracted JD). If the JD is an obvious mismatch, log the discard to `data/discard.log` (per the **Discard log** rule above — three fields, no job ID in interactive mode), mark it `- [x] #-- | {url} | skipped (pre-screen mismatch: {reason})` in "Processed", and continue to the next URL. No `REPORT_NUM` is claimed for discarded postings.
-   d. Claim the next sequential `REPORT_NUM` atomically by running `node src/tracker/reserve-report-num.mjs` (and release the sentinel using `node src/tracker/reserve-report-num.mjs --release <num>` after the report is written)
-   e. **Execute full auto-pipeline**: Evaluation A-F → Report .md → PDF (if score >= `auto_pdf_score_threshold`) → Tracker. Read `modes/_custom.md` → Pipeline Rules, if it exists, and apply its override here. Default (if absent or silent): standard pipeline execution.
-   f. **Move from "Pending" to "Processed"**: `- [x] #NNN | URL | Company | Role | Score/5 | PDF ✅/❌`
-
-   **About the PDF gate (configurable):** Read `config/profile.yml` → `auto_pdf_score_threshold`. If the key does not exist, default to `3.0` (this mode's original gate). If the evaluation score is less than the threshold, skip PDF generation: write the report normally, show in the header `**PDF:** not generated — run /career-ops pdf {company-slug} to create on demand`, and mark PDF ❌ in the tracker. If the score is ≥ threshold, generate the PDF as usual.
-
-   **Tuning it:** Generating a tailored PDF costs ~30–60s per entry (Playwright launch + HTML render) and produces files that often go unused — most roles score in the 2.x/3.x range and never reach the application stage. Raise `auto_pdf_score_threshold` (e.g. `4.0`) to write only the report for marginal offers and produce the PDF on demand via `/career-ops pdf {slug}`; set `0` to generate one for every offer. Both modes (Path A `/career-ops pipeline` and Path B `batch/batch-runner.sh`) read the same key, so behavior is identical regardless of which path processes an offer.
-3. **If there are 3+ pending URLs**, launch agents in parallel (Agent tool with `run_in_background`) to maximize speed — at most one agent per pending URL. Each is a **single-pass worker**: it evaluates its one URL and must **not** spawn further subagents or invoke other skills; its company/comp research stays inline and bounded (see `modes/_shared.md` → Subagent delegation). This keeps a pipeline run from fanning out into a recursive agent swarm.
-4. **At the end**, show summary table:
+At the end, summarize the command result:
 
 ```
 | # | Company | Role | Score | PDF | Recommended action |
@@ -102,12 +93,11 @@ are defined:
 When more than one is present the order is `posted:` → `trust:` → `note:`. Treat
 them as hints when triaging; none changes how you process the URL.
 
-## Intelligent JD detection from URL
+## JD and liveness resolution
 
-1. **Playwright (preferred):** `browser_navigate` + `browser_snapshot`. Works with all SPAs.
-   - **Opt-in — CLI extractor (`scan.extractor: cli` in `config/profile.yml`):** run `node src/scan/browser-extract.mjs <url>` (default `--mode jd`) instead; it returns compact `{ "url", "title", "text" }` — the JD main text at ~4–5× fewer tokens than a full snapshot. Use its `text` as the JD. **Fall back silently** to `browser_navigate` + `browser_snapshot` if it errors or is missing.
-2. **WebFetch (fallback):** For static pages or when Playwright is unavailable.
-3. **WebSearch (last resort):** Search in secondary portals that index the JD.
+The canonical code path is provider API → cached clean text → Playwright
+fallback. WebFetch/WebSearch may help locate or extract a posting, but neither
+can prove that it is live. Do not override a conclusive provider API result.
 
 **Special cases:**
 - **LinkedIn**: May require login → mark `[!]` and ask the user to paste the text

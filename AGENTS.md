@@ -46,7 +46,7 @@ silently breaks any use of `ROOT` in that file.
 
 | Suffix | Behaviour |
 |---|---|
-| `*.test.mjs` | Auto-discovered, runs **in-process**, shares `test-all`'s counters. Must never call `process.exit()` — it would forge an exit code and skip every later section. |
+| `*.test.mjs` | Auto-discovered. Helper-based suites run **in-process** and share `test-all`'s counters; `node:test` suites run in one supervised child so assertion failures propagate. Must never call `process.exit()`. |
 | `*-tests.mjs` | Standalone suite with its own runner and exit code. Invoked explicitly. |
 
 **3. Prefer new files over editing inherited ones.** This fork tracks upstream
@@ -241,7 +241,7 @@ AI-powered, CLI-agnostic job search automation: pipeline tracking, offer evaluat
 | `src/analysis/salary-gap.mjs` | Desired/advertised/actual comp gap analyzer — folds report `advertised_comp` + `data/salary-observations.tsv` (JSON or `--summary`) |
 | `src/analysis/assessment-log.mjs` | Skills-assessment logger — `add` appends platform/subject/threshold/score + staleness note to `data/assessments.tsv` (JSON or `--summary`) |
 | `src/analysis/jd-skill-gap.mjs` | Zero-LLM JD skill classifier vs `cv.md`: existing / supportedByResume / gap; never auto-adds claims to `cv.md` (JSON or `--summary`) |
-| `reports/` | Evaluation reports `{###}-{company-slug}-{YYYY-MM-DD}.md` — Blocks A-G; API evaluators append a score-contract summary, while Claude batch also carries its extended Machine Summary |
+| `reports/` | Evaluation reports `{###}-{company-slug}-{YYYY-MM-DD}.md` — Blocks A-G + Risk Summary + `## Machine Summary` YAML for downstream analysis |
 
 ### Plugins (optional)
 

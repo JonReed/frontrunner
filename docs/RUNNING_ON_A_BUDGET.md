@@ -310,7 +310,7 @@ npm run or:apply       # Generate draft application answers for a report
 node src/evaluate/openrouter-runner.mjs scan              # Scan Greenhouse API companies for new listings
 node src/evaluate/openrouter-runner.mjs evaluate <url>    # Evaluate a job by URL
 node src/evaluate/openrouter-runner.mjs evaluate          # Paste job text interactively
-node src/evaluate/openrouter-runner.mjs pipeline          # Process all pending URLs from pipeline.md
+node src/pipeline/run.mjs --engine openrouter             # Canonical pipeline
 node src/evaluate/openrouter-runner.mjs apply <report_no> # Generate draft application form answers
 node src/evaluate/openrouter-runner.mjs models            # List available free models
 node src/evaluate/openrouter-runner.mjs help              # Show this help

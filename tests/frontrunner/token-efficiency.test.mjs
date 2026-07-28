@@ -23,7 +23,10 @@ test('API prompt budgeting counts a JD without duplicating it into the cacheable
 test('OpenAI and Gemini evaluators keep the per-role JD out of their system prompt', () => {
   for (const file of ['src/evaluate/openai-eval.mjs', 'src/evaluate/gemini-eval.mjs']) {
     const source = readFileSync(join(ROOT, file), 'utf8');
-    assert.match(source, /includeJdInContext:\s*false/, file);
+    const promptBuild = source.match(/const systemPrompt = buildScoringPrompt\(\{([\s\S]*?)\n\}\);/)?.[1] ?? '';
+    assert.ok(promptBuild, `${file}: scoring prompt construction not found`);
+    assert.doesNotMatch(promptBuild, /\bjdText\b/, `${file}: JD leaked into cacheable system prompt`);
+    assert.match(source, /JOB DESCRIPTION TO EVALUATE:\\n\\n\$\{jdText\}/, `${file}: JD is not a separate user turn`);
   }
 });
 

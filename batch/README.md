@@ -1,10 +1,19 @@
 # Batch Processing
 
-Process multiple job offers in parallel via headless workers. Each worker runs the full evaluation pipeline (A-F report + PDF + tracker line) autonomously. See the **Headless / Batch Mode** table in `AGENTS.md` for the correct command per CLI.
+Process multiple job offers in parallel via Claude Code headless workers. Each
+worker produces an A-G report, optional PDF, and tracker line. For ordinary
+use, prefer the canonical `npm run pipeline`; it prepares this input safely.
 
 ## Quick Start
 
-1. **Add offers** to `batch-input.tsv` (tab-separated: `id`, `url`, `source`, `notes`):
+1. **Prepare offers** through the canonical zero-token stages:
+
+   ```bash
+   npm run pipeline:prepare
+   ```
+
+   This writes `batch-input.tsv`. You may also create it manually
+   (tab-separated: `id`, `url`, `source`, `notes`):
 
    ```tsv
    id	url	source	notes
@@ -54,9 +63,14 @@ batch/
 
 ## How It Works
 
-1. **batch-runner.sh** reads `batch-input.tsv` and `batch-state.tsv` to determine which offers need processing.
-2. For each pending offer, it assigns a report number and launches a headless worker with `batch-prompt.md` as the system prompt (placeholders like `{{URL}}`, `{{REPORT_NUM}}` are resolved).
-3. Each worker evaluates the offer, writes a report to `reports/`, generates a PDF to `output/`, and writes a tracker TSV to `tracker-additions/`.
+1. **batch-runner.sh** runs the deterministic prefilter again and fails closed
+   if that boundary is unavailable. Workers read
+   `batch-input.filtered.tsv`, never the unchecked source directly.
+2. It reads `batch-state.tsv`, assigns collision-safe reserved report numbers,
+   and launches Claude workers with `batch-prompt.md`.
+3. Each worker evaluates the offer, writes an A-G report to `reports/`,
+   optionally generates a PDF, and writes a tracker TSV to
+   `tracker-additions/`.
 4. After all workers finish, batch-runner calls `src/tracker/merge-tracker.mjs` to merge TSVs into `data/applications.md`, `src/tracker/reconcile-pipeline.mjs` to move processed offers out of the `data/pipeline.md` inbox, and `src/tracker/verify-pipeline.mjs` to check integrity.
 
 ## Tracker Merge
@@ -90,6 +104,6 @@ A PID-based lock file (`batch-runner.pid`) prevents concurrent batch runs. If a 
 
 ## Prerequisites
 
-- Your CLI in PATH (see **Headless / Batch Mode** table in `AGENTS.md`)
+- Claude Code CLI (`claude`) in PATH
 - Node.js >= 22.5, Playwright chromium installed (`npm run doctor` to verify)
 - `batch-input.tsv` with at least one offer

@@ -8,10 +8,14 @@ If the input is a **URL** (not pasted JD text), follow this strategy to extract 
 
 **Priority order:**
 
-1. **Playwright (preferred):** Most job portals (Lever, Ashby, Greenhouse, Workday) are SPAs. Use `browser_navigate` + `browser_snapshot` to render and read the JD.
-   - **Opt-in — CLI extractor (`scan.extractor: cli` in `config/profile.yml`):** run `node src/scan/browser-extract.mjs <url>` (default `--mode jd`) instead; it returns compact `{ "url", "title", "text" }` — just the distilled JD main text rather than the full page a11y tree, so the model processes fewer tokens (board-dependent — modest on clean boards, larger on chrome-heavy SPAs). Use its `text` as the JD. **Fall back silently** to `browser_navigate` + `browser_snapshot` if it errors or is missing. Read-only (navigate + read, no clicks/fills), so it never applies to the apply-form step below.
-2. **WebFetch (fallback):** For static pages (ZipRecruiter, WeLoveProduct, company career pages).
-3. **WebSearch (last resort):** Search for the role title + company in secondary portals that index the JD in static HTML.
+1. **Provider API/cache:** Use the same Greenhouse, Lever, Ashby, or Workday
+   structured endpoint as `src/scan/liveness-service.mjs` and
+   `src/scan/fetch-jds.mjs`. Reuse `jds/index.tsv` when the URL is cached.
+2. **Playwright fallback:** only when the API/cache cannot resolve the URL.
+   Use the compact CLI extractor when configured, otherwise navigate and take a
+   snapshot.
+3. **WebFetch/WebSearch:** extraction or rediscovery only. They never prove
+   liveness.
 
 **If no method works:** Ask the candidate to paste the JD manually or share a screenshot.
 
@@ -19,7 +23,9 @@ If the input is a **URL** (not pasted JD text), follow this strategy to extract 
 
 ## Step 0.5 — Liveness gate
 
-Before running any evaluation, confirm the posting is still live. The Step 0 Playwright snapshot already holds the evidence — judge it now, before spending tokens on the A-G evaluation, the report, or a PDF. A 404/expired page silently served as a static fallback ("position filled", empty shell) otherwise scores a full evaluation against phantom content.
+Before running any evaluation, confirm the posting is still live. A conclusive
+provider API result wins; use the Playwright fallback only when it is
+inconclusive. Do this before spending tokens on the A-G evaluation.
 
 1. From the Step 0 snapshot/fetched content, classify the posting:
    - **active posting evidence:** title/role + a real job description or an application/apply path
@@ -37,7 +43,10 @@ On a hit, **stop before Step 1** and surface the candidate's own recorded decisi
 
 ## Step 1 — A-G Evaluation
 
-Execute the same as the `oferta` mode (read `modes/oferta.md` for all A-F blocks + Block G Posting Legitimacy). Read `modes/_custom.md` → Evaluation Rules, if it exists, and apply its override here. Default (if absent or silent): standard A-G evaluation.
+Execute the same as the `oferta` mode. Model-backed script evaluators must pass
+`src/evaluate/evaluation-gate.mjs` first and use the versioned JSON contract in
+`src/evaluate/scoring-contract.mjs`; code renders Blocks A-G. Read
+`modes/_custom.md` → Evaluation Rules when present.
 
 **Agency-mediated postings (#1596):** if the JD smells like a recruiter/agency listing ("our client", agency domain, no employer named), ask the user which agency it came through BEFORE writing the tracker row. Record the end employer as `?` (never "Confidential"), the agency in the Via field / `via=` TSV tag, and a distinguishing descriptor in Notes — see `modes/oferta.md` and `modes/tracker.md` for the full convention and reveal workflow.
 

@@ -101,7 +101,7 @@ Offer की requirements पर mapped 6-10 STAR+R stories (STAR + **Reflection
 
 ## Post-evaluation (मूल्यांकन के बाद)
 
-**हमेशा** Blocks A-F के बाद execute करें:
+**हमेशा** Blocks A-G के बाद execute करें:
 
 ### 1. Report .md Save करें
 

@@ -1,8 +1,8 @@
 # Scripts Reference
 
-All scripts live in the project root as `.mjs` modules. Most are exposed via
-`npm run <name>`; agent-invoked utilities (bottom section) run via
-`node <script>` directly.
+Most implementation scripts live under `src/` by domain; the repository root
+contains only a few compatibility entry points. Common commands are exposed via
+`npm run <name>`; lower-level utilities run via `node <script>` directly.
 
 ## Quick Reference
 
@@ -26,6 +26,10 @@ All scripts live in the project root as `.mjs` modules. Most are exposed via
 | `npm run liveness` | `src/scan/check-liveness.mjs` | Test if job URLs are still active |
 | `npm run extract` | `src/scan/browser-extract.mjs` | Headless read-only page extractor (opt-in `scan.extractor: cli`) — compact JSON for scan/JD |
 | `npm run scan` | `src/scan/scan.mjs` | Zero-token portal scanner |
+| `npm run pipeline` | `src/pipeline/run.mjs` | Canonical scan → cache → liveness → prefilter → evaluation flow |
+| `npm run pipeline:prepare` | `src/pipeline/run.mjs` | Run all zero-token pipeline stages without evaluation |
+| `npm run benchmark` | `src/benchmark/pipeline-benchmark.mjs` | Regenerate the efficiency artifact and README benchmark table |
+| `npm run benchmark:check` | `src/benchmark/pipeline-benchmark.mjs` | Fail if the benchmark artifact or README table is stale |
 | `npm run scan:full` | `src/scan/scan-ats-full.mjs` | Reverse ATS discovery scanner |
 | `npm run validate:portals` | `src/scan/validate-portals.mjs` | Validate portals.yml shape before scanning |
 | `npm run tracker` | `src/tracker/tracker.mjs` | SQLite derived index over applications.md — sync/query/history/export |
@@ -33,7 +37,7 @@ All scripts live in the project root as `.mjs` modules. Most are exposed via
 | `npm run invite-match` | `src/tracker/invite-match.mjs` | Fuzzy-match a pasted interview-invite email against `data/applications.md` |
 | `npm run paste-reply` | `src/tracker/paste-reply.mjs` | Manual/no-Gmail input into the `src/tracker/reply-watch.mjs` classification pipeline |
 | `npm run openai:tailor` | `src/evaluate/openai-tailor.mjs` | Tailor a CV via any OpenAI-compatible endpoint (headless companion to `src/evaluate/openai-eval.mjs`) |
-| `npm run or` | `src/evaluate/openrouter-runner.mjs` | Run scan/evaluate/pipeline/apply on OpenRouter free models — no Claude CLI required |
+| `npm run or` | `src/evaluate/openrouter-runner.mjs` | OpenRouter evaluate/apply helper — no Claude CLI required |
 | `npm run reconcile` | `src/tracker/reconcile-pipeline.mjs` | Remove batch-evaluated offers from pipeline.md "Pendientes" |
 | `npm run cover-letter` | `src/cv/generate-cover-letter.mjs` | Render a cover-letter JSON payload to PDF |
 | `npm run verify:portals` | `src/scan/verify-portals.mjs` | Probe ATS endpoints to confirm portals.yml slugs resolve (network) |
@@ -539,7 +543,7 @@ Claude Code CLI required.
 ```bash
 npm run or:scan                 # scan configured companies for new listings
 npm run or:eval -- <url>        # evaluate a job by URL (no URL: paste interactively)
-npm run or:pipeline             # process pending URLs
+npm run or:pipeline             # canonical pipeline with OpenRouter evaluation
 npm run or:apply                # application assistance
 ```
 

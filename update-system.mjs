@@ -16,7 +16,7 @@
  */
 
 import { execFile, execFileSync, execSync } from 'child_process';
-import { readFileSync, writeFileSync, existsSync, unlinkSync, rmSync, statSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, unlinkSync, rmSync, statSync, mkdirSync, renameSync } from 'fs';
 import { join, dirname, posix as pathPosix } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { randomUUID } from 'crypto';
@@ -765,25 +765,47 @@ export function acquireUpdateLock(lockFile, options = {}) {
     } catch (err) {
       if (err?.code !== 'EEXIST') throw err;
 
-      let owner = null;
-      try { owner = JSON.parse(readFileSync(lockFile, 'utf8')); } catch {}
-      let recoverable = Boolean(owner?.pid) && !processIsAlive(owner.pid);
-      if (!owner?.pid) {
-        try { recoverable = Date.now() - statSync(lockFile).mtimeMs > staleMs; } catch { recoverable = true; }
-      }
-      if (recoverable) {
+      const recoveryGuard = `${lockFile}.recover`;
+      let ownsRecovery = false;
+      try {
         try {
-          unlinkSync(lockFile);
-          continue;
-        } catch (unlinkErr) {
-          if (unlinkErr?.code === 'ENOENT') continue;
-          throw unlinkErr;
+          mkdirSync(recoveryGuard);
+          ownsRecovery = true;
+        } catch (guardErr) {
+          if (guardErr?.code !== 'EEXIST') throw guardErr;
+          let oldGuard = false;
+          try { oldGuard = Date.now() - statSync(recoveryGuard).mtimeMs > staleMs; } catch { oldGuard = true; }
+          if (oldGuard) {
+            rmSync(recoveryGuard, { recursive: true, force: true });
+            continue;
+          }
+          const locked = new Error(`Update lock recovery already in progress (${recoveryGuard}).`);
+          locked.code = 'UPDATE_LOCKED';
+          throw locked;
         }
-      }
 
-      const locked = new Error(`Update already in progress (${lockFile} is owned by PID ${owner?.pid ?? 'unknown'}).`);
-      locked.code = 'UPDATE_LOCKED';
-      throw locked;
+        let owner = null;
+        try { owner = JSON.parse(readFileSync(lockFile, 'utf8')); } catch {}
+        let recoverable = Boolean(owner?.pid) && !processIsAlive(owner.pid);
+        if (!owner?.pid) {
+          try { recoverable = Date.now() - statSync(lockFile).mtimeMs > staleMs; } catch { recoverable = true; }
+        }
+        if (recoverable) {
+          try {
+            unlinkSync(lockFile);
+            continue;
+          } catch (unlinkErr) {
+            if (unlinkErr?.code === 'ENOENT') continue;
+            throw unlinkErr;
+          }
+        }
+
+        const locked = new Error(`Update already in progress (${lockFile} is owned by PID ${owner?.pid ?? 'unknown'}).`);
+        locked.code = 'UPDATE_LOCKED';
+        throw locked;
+      } finally {
+        if (ownsRecovery) rmSync(recoveryGuard, { recursive: true, force: true });
+      }
     }
   }
   throw new Error(`Could not recover updater lock at ${lockFile}`);
@@ -827,12 +849,18 @@ export function adoptUpdateLock(lockFile, expectedToken, options = {}) {
     throw err;
   }
   const token = options.token ?? randomUUID();
-  writeFileSync(lockFile, JSON.stringify({
-    pid: options.pid ?? process.pid,
-    token,
-    started_at: owner.started_at ?? new Date().toISOString(),
-    adopted_at: new Date().toISOString(),
-  }, null, 2));
+  const replacement = `${lockFile}.adopt-${process.pid}-${token}`;
+  try {
+    writeFileSync(replacement, JSON.stringify({
+      pid: options.pid ?? process.pid,
+      token,
+      started_at: owner.started_at ?? new Date().toISOString(),
+      adopted_at: new Date().toISOString(),
+    }, null, 2));
+    renameSync(replacement, lockFile);
+  } finally {
+    rmSync(replacement, { force: true });
+  }
   return updateLockHandle(lockFile, token);
 }
 

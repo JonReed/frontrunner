@@ -10,24 +10,24 @@
   },
   "tokens": {
     "input": {
-      "legacy": 276902,
-      "frontrunner": 12710,
-      "reductionPct": 95.4
+      "legacy": 277006,
+      "frontrunner": 18533,
+      "reductionPct": 93.3
     },
     "output": {
       "legacy": 17125,
-      "frontrunner": 1140,
-      "reductionPct": 93.3
+      "frontrunner": 2729,
+      "reductionPct": 84.1
     }
   },
   "modelPass": {
-    "roles": 5,
-    "ratePct": 62.5
+    "roles": 7,
+    "ratePct": 87.5
   },
   "falseRejects": {
     "threshold": 3,
     "count": 0,
     "roles": []
   },
-  "wallTimeMs": 1.664
+  "wallTimeMs": 2.025
 }
