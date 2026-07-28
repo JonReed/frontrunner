@@ -79,6 +79,9 @@
     "url": "https://github.com/JonReed/frontrunner"
   },
   "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "dotenv": "^17.0.0",
