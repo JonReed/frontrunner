@@ -63,6 +63,20 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
             <span className="text-sm font-medium text-[var(--color-ready)]">Tailored CV ready</span>
           )}
         </div>
+        {/* Read the original before trusting anything below it. */}
+        {role.url && (
+          <a
+            href={role.url}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-card)] px-3 py-1.5 text-sm font-medium text-[var(--color-ink-soft)] transition hover:border-[var(--color-act)] hover:text-[var(--color-act)]"
+          >
+            Read the original job advert
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M4.5 2h5.5v5.5M10 2L4 8M8 10H2V4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </a>
+        )}
       </header>
 
       {/* The assessment. */}

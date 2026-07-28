@@ -71,10 +71,23 @@ function RoleRow({ role }: { role: Role }) {
 
       {/*
         Only free actions appear here. Spending the user's AI allowance is a
-        decision they make on the role page, once they have read the assessment
-        and actually want the thing.
+        decision made on the role page, after reading the assessment.
+
+        The posting link sits alongside deliberately: people do not fully trust
+        an AI's opinion of a job, and should not have to. The real advert is
+        always one click away, from every screen that shows a verdict.
       */}
-      <div className="flex shrink-0 items-center gap-2.5">
+      <div className="flex shrink-0 items-center gap-3">
+        {role.url && (
+          <a
+            href={role.url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm text-[var(--color-ink-faint)] underline decoration-[var(--color-line-strong)] underline-offset-2 transition hover:text-[var(--color-act)]"
+          >
+            View posting
+          </a>
+        )}
         <ActionButton role={role} />
       </div>
     </li>

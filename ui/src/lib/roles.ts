@@ -14,7 +14,7 @@
  * readiness so the first row is always the most useful thing to do.
  */
 
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile, readdir, open } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -57,6 +57,15 @@ export interface Role {
   status: string;
   hasPdf: boolean;
   reportPath: string | null;
+  /**
+   * The real job posting. Pulled from the report header rather than the
+   * tracker, which does not carry it.
+   *
+   * This matters more than it looks: people do not fully trust an AI
+   * assessment, and they should not have to. Every screen that shows an
+   * opinion about a job also links to the job itself.
+   */
+  url: string | null;
   notes: string;
   stage: Stage;
   readiness: Readiness;
@@ -95,6 +104,7 @@ export async function readTracker(): Promise<Role[]> {
     const reportMatch = report.match(/\]\(([^)]+)\)/);
 
     const base = {
+      url: null as string | null,
       num: Number(numRaw),
       date,
       company,
@@ -108,6 +118,15 @@ export async function readTracker(): Promise<Role[]> {
 
     roles.push({ ...base, ...classify(base) });
   }
+
+  // Enrich with posting URLs. Only the first 2KB of each report is read, so
+  // this stays cheap across a few hundred roles.
+  await Promise.all(
+    roles.map(async (r) => {
+      if (r.reportPath) r.url = await readUrlFromReport(r.reportPath);
+    }),
+  );
+
   // Readiness first, then best match within each band — so the strongest
   // opportunity is always the top row of whatever band you are looking at.
   return roles.sort((a, b) => a.priority - b.priority || (b.score ?? 0) - (a.score ?? 0));
@@ -249,6 +268,23 @@ export async function summarise() {
     parked: by('parked'),
     total: roles.length,
   };
+}
+
+/** Read just the `**URL:**` line from a report header. */
+async function readUrlFromReport(reportPath: string): Promise<string | null> {
+  for (const candidate of [join(ROOT, 'data', reportPath), join(ROOT, reportPath)]) {
+    if (!existsSync(candidate)) continue;
+    try {
+      const fh = await open(candidate, 'r');
+      const { buffer } = await fh.read(Buffer.alloc(2048), 0, 2048, 0);
+      await fh.close();
+      const m = buffer.toString('utf8').match(/^\*\*URL:\*\*\s*(\S+)/m);
+      return m ? m[1] : null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
 }
 
 /** Full report markdown for a role, when one exists. */
