@@ -2,7 +2,6 @@
 // BODY read, not just the header phase. A server that sends headers and then
 // stalls the body used to hang fetchJson forever, which could silently freeze
 // a full-directory sweep partway through with no error output.
-import { createServer } from 'node:http';
 import { join } from 'path';
 import { pathToFileURL } from 'url';
 import { pass, fail, ROOT } from '../helpers.mjs';
@@ -29,25 +28,39 @@ function hardTimeout(promise, ms, label) {
 // runner, tight enough that a multi-second stalled-body regression still fails.
 const MAX_ABORT_MS = 1_500;
 
-const sockets = new Set();
-const server = createServer((req, res) => {
-  if (req.url === '/stall') {
-    res.writeHead(200, { 'content-type': 'application/json' });
-    res.write('{"jobs": [');   // headers + partial body, then silence forever
-    return;
-  }
-  res.writeHead(200, { 'content-type': 'application/json' });
-  res.end('{"ok":true}');
+const stalledFetch = async (_url, { signal }) => {
+  const stall = () =>
+    new Promise((_, reject) => {
+      signal.addEventListener(
+        'abort',
+        () => reject(signal.reason ?? new DOMException('Aborted', 'AbortError')),
+        { once: true },
+      );
+    });
+  return {
+    ok: true,
+    status: 200,
+    statusText: 'OK',
+    headers: new Headers(),
+    json: stall,
+    text: stall,
+  };
+};
+
+const completedFetch = async () => ({
+  ok: true,
+  status: 200,
+  statusText: 'OK',
+  headers: new Headers(),
+  async json() { return { ok: true }; },
+  async text() { return '{"ok":true}'; },
 });
-server.on('connection', (s) => { sockets.add(s); s.on('close', () => sockets.delete(s)); });
-await new Promise((r) => server.listen(0, '127.0.0.1', r));
-const base = `http://127.0.0.1:${server.address().port}`;
 
 // 1. Stalled body must abort within the timeout window, not hang.
 {
   const t0 = Date.now();
   try {
-    await hardTimeout(fetchJson(`${base}/stall`, { timeoutMs: 300 }), 8_000, 'fetchJson /stall');
+    await hardTimeout(fetchJson('https://example.test/stall', { timeoutMs: 300, fetchImpl: stalledFetch }), 8_000, 'fetchJson /stall');
     fail('fetchJson resolved on a stalled body');
   } catch {
     const elapsed = Date.now() - t0;
@@ -60,7 +73,7 @@ const base = `http://127.0.0.1:${server.address().port}`;
 {
   const t0 = Date.now();
   try {
-    await hardTimeout(fetchText(`${base}/stall`, { timeoutMs: 300 }), 8_000, 'fetchText /stall');
+    await hardTimeout(fetchText('https://example.test/stall', { timeoutMs: 300, fetchImpl: stalledFetch }), 8_000, 'fetchText /stall');
     fail('fetchText resolved on a stalled body');
   } catch {
     const elapsed = Date.now() - t0;
@@ -71,10 +84,7 @@ const base = `http://127.0.0.1:${server.address().port}`;
 
 // 3. Happy path still works after the refactor.
 {
-  const ok = await fetchJson(`${base}/ok`, { timeoutMs: 2_000 });
+  const ok = await fetchJson('https://example.test/ok', { timeoutMs: 2_000, fetchImpl: completedFetch });
   if (ok && ok.ok === true) pass('fetchJson still parses a completed body');
   else fail(`fetchJson happy path broken: ${JSON.stringify(ok)}`);
 }
-
-for (const s of sockets) s.destroy();
-server.close();

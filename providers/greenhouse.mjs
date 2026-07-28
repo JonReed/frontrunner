@@ -37,6 +37,12 @@ function resolveApiUrl(entry) {
   return null;
 }
 
+function withContent(apiUrl) {
+  const url = new URL(apiUrl);
+  url.searchParams.set('content', 'true');
+  return url.toString();
+}
+
 // NaN-safe Date.parse — `|| undefined` would also coerce a valid epoch 0.
 function toEpochMs(value) {
   if (!value) return undefined;
@@ -133,7 +139,10 @@ export default {
     assertGreenhouseUrl(apiUrl);
     // redirect:'error' prevents SSRF via server-side redirects; combined with
     // assertGreenhouseUrl above it guarantees the final hostname stays in the allowlist.
-    const json = /** @type {any} */ (await ctx.fetchJson(apiUrl, { redirect: 'error' }));
+    // The list endpoint can include every JD body in the same board request.
+    // Keeping this in the scan response lets Frontrunner cache the description
+    // and hand clean text to the evaluator without a later page fetch.
+    const json = /** @type {any} */ (await ctx.fetchJson(withContent(apiUrl), { redirect: 'error' }));
     const jobs = Array.isArray(json?.jobs) ? json.jobs : [];
     const usable = jobs.filter(/** @param {any} j */ j => j.absolute_url);
 
@@ -172,6 +181,7 @@ export default {
         url: j.absolute_url,
         company: entry.name,
         location,
+        description: typeof j.content === 'string' ? j.content : '',
         postedAt: toEpochMs(j.first_published),
       };
     });

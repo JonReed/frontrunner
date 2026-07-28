@@ -255,6 +255,19 @@ ok('order: _shared.md before oferta.md', sharedIdx < ofertaIdx);
 ok('order: oferta.md before cv.md', ofertaIdx < cvIdx);
 ok('order: cv.md before JD', cvIdx < jdIdx);
 
+const splitMessageResult = buildBudgetedPrompt({
+  sharedContent: 'Shared rules.',
+  ofertaContent: 'Evaluation rules.',
+  cvContent: 'Candidate CV.',
+  jdText: 'UNIQUE JOB DESCRIPTION',
+  includeJdInContext: false,
+});
+ok(
+  'split-message mode budgets the JD without duplicating it in the system context',
+  !splitMessageResult.contextBody.includes('UNIQUE JOB DESCRIPTION') &&
+    splitMessageResult.budgetReport.totalTokens > 0,
+);
+
 // ============================================================================
 // 11. P0 heading integrity — guard against silent P0→P2 degradation
 // ============================================================================

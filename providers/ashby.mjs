@@ -176,6 +176,10 @@ export default {
           url: j.jobUrl || '',
           company: entry.name,
           location: formatLocation(j),
+          // Included in the existing board payload: no per-job request.
+          description: typeof j.descriptionPlain === 'string'
+            ? j.descriptionPlain
+            : (typeof j.descriptionHtml === 'string' ? j.descriptionHtml : ''),
           salary: parseCompensation(j),
           postedAt: toEpochMs(j.publishedAt),
         }));

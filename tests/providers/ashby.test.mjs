@@ -137,6 +137,7 @@ try {
       {
         title: 'Head of Applied AI',
         jobUrl: 'https://jobs.ashbyhq.com/acme/1234',
+        descriptionPlain: 'Lead applied AI delivery.',
         location: 'Canada',
         secondaryLocations: [
           { location: 'Europe', address: { postalAddress: { addressLocality: 'Berlin', addressCountry: 'Germany' } } },
@@ -179,9 +180,10 @@ try {
   if (fetched[0]?.title === 'Head of Applied AI'
       && fetched[0]?.url === 'https://jobs.ashbyhq.com/acme/1234'
       && fetched[0]?.company === 'Acme'
+      && fetched[0]?.description === 'Lead applied AI delivery.'
       && fetched[0]?.postedAt === Date.parse('2026-07-02T00:00:00.000Z')
       && fetched[0]?.salary && fetched[0].salary.min === 150000 && fetched[0].salary.max === 180000 && fetched[0].salary.currency === 'USD')
-    pass('ashby.fetch() maps title/jobUrl/entry.name/publishedAt/compensation');
+    pass('ashby.fetch() maps title/jobUrl/entry.name/description/publishedAt/compensation');
   else fail(`ashby.fetch() row 0 = ${JSON.stringify(fetched[0])}`);
 
   if (fetched[0]?.location === 'Canada · Europe · Berlin · Germany')

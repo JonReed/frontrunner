@@ -741,27 +741,10 @@ try {
     fail(`SSRF guard let unsupported protocol through: ${protoCase?.code ?? 'allowed'}`);
   }
 
-  // SSRF redirect routing tests
-  const dnsModule = await import('dns/promises');
-  const { mock } = await import('node:test');
-
-  // Stub resolve4, resolve6, and lookup to test the DNS path
-  mock.method(dnsModule.default, 'resolve4', (hostname) => {
-    if (hostname === 'ssrf-blocked-host.local') {
-      return Promise.resolve(['127.0.0.1']);
-    }
-    return Promise.resolve([]);
-  });
-  mock.method(dnsModule.default, 'resolve6', (hostname) => {
-    return Promise.resolve([]);
-  });
-  mock.method(dnsModule.default, 'lookup', (hostname, options) => {
-    if (hostname === 'ssrf-blocked-host.local') {
-      const addr = { address: '127.0.0.1', family: 4 };
-      return Promise.resolve(options?.all ? [addr] : addr);
-    }
-    return Promise.reject(new Error('DNS lookup failure'));
-  });
+  // SSRF redirect routing tests. DNS is injected so this security regression
+  // test is deterministic in offline CI and actually exercises both outcomes.
+  const resolveHostname = async (hostname) =>
+    hostname === 'ssrf-blocked-host.local' ? ['127.0.0.1'] : ['93.184.216.34'];
 
   let routeCallback = null;
   const mockPageInstance = {
@@ -791,15 +774,16 @@ try {
     async evaluate() { return 'body text'; }
   };
 
-  const redirectResult = await checkUrlLiveness(mockPageInstance, 'https://example.com/public-landing');
+  const redirectResult = await checkUrlLiveness(
+    mockPageInstance,
+    'https://example.com/public-landing',
+    { resolveHostname },
+  );
   if (redirectResult.result === 'uncertain' && redirectResult.code === 'blocked_host') {
     pass('SSRF redirect guard blocks redirects/subresources to private IPs via routing');
   } else {
     fail(`SSRF redirect guard failed to block: ${JSON.stringify(redirectResult)}`);
   }
-
-  // Restore DNS mocks
-  mock.reset();
 
   let legitimateRouteCallback = null;
   const mockPageLegitimate = {
@@ -835,7 +819,11 @@ try {
     }
   };
 
-  const legitimateResult = await checkUrlLiveness(mockPageLegitimate, 'https://example.com');
+  const legitimateResult = await checkUrlLiveness(
+    mockPageLegitimate,
+    'https://example.com',
+    { resolveHostname },
+  );
   if (legitimateResult.result === 'active') {
     pass('SSRF redirect guard allows legitimate subresource requests');
   } else {

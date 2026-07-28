@@ -156,11 +156,11 @@ async function resolveDnsCached(hostname) {
   }
 }
 
-async function validateUrlSecurity(urlString) {
+async function validateUrlSecurity(urlString, resolveHostname = resolveDnsCached) {
   const url = new URL(urlString.endsWith('.') ? urlString.slice(0, -1) : urlString);
   const hostname = url.hostname;
   const host = normalizeHost(hostname);
-  const addresses = await resolveDnsCached(host);
+  const addresses = await resolveHostname(host);
   for (const ip of addresses) {
     const norm = normalizeHost(ip);
     const mapped = extractMappedIPv4(norm);
@@ -173,7 +173,11 @@ async function validateUrlSecurity(urlString) {
   }
 }
 
-export async function checkUrlLiveness(page, url, { extraSettleMs = 0 } = {}) {
+export async function checkUrlLiveness(
+  page,
+  url,
+  { extraSettleMs = 0, resolveHostname = resolveDnsCached } = {},
+) {
   const guardError = rejectPrivateOrInvalid(url);
   if (guardError) {
     return { result: 'uncertain', code: guardError.code, reason: guardError.reason };
@@ -192,7 +196,7 @@ export async function checkUrlLiveness(page, url, { extraSettleMs = 0 } = {}) {
         return route.abort('blockedbyclient');
       }
       try {
-        await validateUrlSecurity(requestUrl);
+        await validateUrlSecurity(requestUrl, resolveHostname);
         return route.continue();
       } catch (err) {
         console.warn(`Blocked request to restricted destination (DNS): ${requestUrl} - ${err.message}`);

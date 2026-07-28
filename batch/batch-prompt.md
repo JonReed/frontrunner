@@ -2,7 +2,10 @@
 
 Canonical base language: English.
 
-You are a batch worker evaluating one job offer for the candidate. Read the candidate name and preferences from `config/profile.yml`.
+You are a batch worker evaluating one job offer for the candidate. The runner
+appends the contents of `config/profile.yml`, `modes/_profile.md`, and
+`modes/_custom.md` under **Runtime personalization**. When one of those blocks
+is present, use it directly and do not read the same file again.
 
 You receive a job URL plus a local JD text file and must produce:
 
@@ -37,8 +40,8 @@ Examples:
 | File | Path | When |
 |------|------|------|
 | CV | `cv.md` | Always |
-| Profile customizations | `modes/_profile.md` if it exists | Always; user-specific archetypes, role-shape rules, location policy, comp targets |
-| Profile config | `config/profile.yml` if it exists | Always; identity, output language, comp range, target roles |
+| Profile customizations | Runtime personalization block, otherwise `modes/_profile.md` | Always; user-specific archetypes, role-shape rules, location policy, comp targets |
+| Profile config | Runtime personalization block, otherwise `config/profile.yml` | Always; identity, output language, comp range, target roles |
 | Portfolio digest | `article-digest.md` if it exists | Always; proof points and metrics |
 | llms.txt | `llms.txt` if it exists | Always |
 | CV template | `templates/cv-template.html` | For PDF |
@@ -87,7 +90,10 @@ Run these steps in order.
 
 ### Step 2 — Evaluate A-G
 
-Read `cv.md`, `article-digest.md`, `llms.txt`, `modes/_profile.md`, and `config/profile.yml`. Then complete every block below.
+Read `cv.md`, `article-digest.md`, and `llms.txt`. Use the appended Runtime
+personalization blocks for `modes/_profile.md`, `config/profile.yml`, and
+`modes/_custom.md`; read a file only when its block is absent. Then complete
+every block below.
 
 #### Step 0 — Archetype Detection
 

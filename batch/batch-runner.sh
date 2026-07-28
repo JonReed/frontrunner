@@ -557,6 +557,7 @@ process_offer() {
       {
         printf '\n\n---\n\n'
         printf '## Runtime personalization: %s\n\n' "${context_file#"$PROJECT_DIR/"}"
+        printf '> Authoritative file contents injected by the runner. Do not read this path again.\n\n'
         sed 's/^/    /' "$context_file"
         printf '\n'
       } >> "$resolved_prompt"

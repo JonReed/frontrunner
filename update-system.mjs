@@ -143,6 +143,7 @@ const SYSTEM_PATHS = [
   'src/cv/generate-cover-letter.mjs',
   'src/tracker/merge-tracker.mjs',
   'src/scan/fetch-jds.mjs',
+  'src/scan/jd-cache.mjs',
   'src/scan/prefilter.mjs',
   'patches/jd-prefetch.patch.md',
   'src/tracker/sync-pdf-flags.mjs',

@@ -228,6 +228,9 @@ const { contextBody, budgetReport } = buildBudgetedPrompt({
   cvContent,
   profileYml,
   jdText,
+  // The JD is the per-request user message below. Keeping it out of the system
+  // prefix avoids billing it twice and preserves prompt-cache reuse across jobs.
+  includeJdInContext: false,
   noCompress,
   maxTokens: 128_000, // gpt-4o-mini context window
 });

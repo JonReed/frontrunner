@@ -236,6 +236,9 @@ export function compressSharedContext(sharedContent, targetReduction) {
  * @param {string} [opts.profileYml]    - Raw profile.yml content (optional).
  * @param {string} [opts.profileContent] - Raw _profile.md content (optional).
  * @param {string} opts.jdText          - The job description text to evaluate.
+ * @param {boolean} [opts.includeJdInContext] - Include the JD in the returned
+ *   contextBody. API evaluators should set this false when they send the JD as
+ *   the user message; it still counts toward the budget either way.
  * @param {number} [opts.maxTokens]     - Model context window (default 128000).
  * @param {number} [opts.safetyMargin]  - Reserved for output tokens (default 8192).
  * @param {boolean} [opts.noCompress]   - If true, skip compression entirely.
@@ -252,6 +255,7 @@ export function buildBudgetedPrompt(opts) {
     profileYml = '',
     profileContent = '',
     jdText = '',
+    includeJdInContext = true,
     maxTokens = DEFAULT_MAX_TOKENS,
     safetyMargin = DEFAULT_SAFETY_MARGIN,
     noCompress = false,
@@ -274,7 +278,12 @@ export function buildBudgetedPrompt(opts) {
   }
 
   // JD is always last and non-compressible
-  sectionDefs.push({ name: 'JD', content: jdText, compressible: false });
+  sectionDefs.push({
+    name: 'JD',
+    content: jdText,
+    compressible: false,
+    includeInContext: includeJdInContext,
+  });
 
   // Calculate per-section tokens
   const sections = sectionDefs.map(s => ({
@@ -298,10 +307,11 @@ export function buildBudgetedPrompt(opts) {
   // If under budget or compression disabled, assemble as-is
   if (estimatedTotal <= budget || noCompress) {
     report.overBudget = estimatedTotal > budget;
-    const contextBody = assembleContext(sections.map(s => ({
-      name: s.name,
-      content: s.content,
-    })));
+    const contextBody = assembleContext(
+      sections
+        .filter(s => s.includeInContext !== false)
+        .map(s => ({ name: s.name, content: s.content })),
+    );
     return { contextBody, budgetReport: report };
   }
 
@@ -325,10 +335,11 @@ export function buildBudgetedPrompt(opts) {
   report.afterTokens = compressedSections.reduce((sum, s) => sum + s.tokens, 0);
   report.overBudget = report.afterTokens > budget;
 
-  const contextBody = assembleContext(compressedSections.map(s => ({
-    name: s.name,
-    content: s.content,
-  })));
+  const contextBody = assembleContext(
+    compressedSections
+      .filter(s => s.includeInContext !== false)
+      .map(s => ({ name: s.name, content: s.content })),
+  );
 
   return { contextBody, budgetReport: report };
 }

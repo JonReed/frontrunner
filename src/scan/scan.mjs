@@ -41,6 +41,7 @@ import { buildTrustValidator } from '../../providers/_trust-validator.mjs';
 import { loadProviders, resolveProvider } from '../../providers/_registry.mjs';
 import { mergeProviderPlugins } from '../../plugins/_engine.mjs';
 import { classifyFetchError } from './verify-portals.mjs';
+import { cacheProviderDescriptions } from './jd-cache.mjs';
 import { fingerprintText, findCrossListings } from '../lib/fingerprint-core.mjs';
 import { resolveColumns, parseTrackerRow } from '../tracker/tracker-parse.mjs';
 import { normalizeCompany } from '../tracker/tracker-utils.mjs';
@@ -2048,6 +2049,16 @@ async function main() {
   // 6. Write results
   if (!dryRun && verifiedOffers.length > 0) {
     await appendToPipeline(verifiedOffers);
+    try {
+      const jdCache = cacheProviderDescriptions(verifiedOffers);
+      if (jdCache.cached > 0) {
+        console.log(`Cached JD text from provider APIs: ${jdCache.cached}`);
+      }
+    } catch (error) {
+      // A cache failure must not lose otherwise valid scan results. The later
+      // fetch-jds stage remains available as a recovery path.
+      console.warn(`JD cache write skipped: ${error.message}`);
+    }
     appendToScanHistory(verifiedOffers, date);
   }
   if (!dryRun && cooldownOffers.length > 0) {

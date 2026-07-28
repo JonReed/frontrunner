@@ -248,6 +248,9 @@ const { contextBody, budgetReport } = buildBudgetedPrompt({
   profileYml,
   profileContent,
   jdText,
+  // The JD is sent once via generateContent() below. The system instruction
+  // must remain static across jobs for implicit prompt caching to work.
+  includeJdInContext: false,
   noCompress,
   maxTokens: 1_048_576, // gemini-2.5-flash context window
 });

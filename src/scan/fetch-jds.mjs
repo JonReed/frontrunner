@@ -231,12 +231,22 @@ function atomicWrite(file, contents) {
 export async function runFetchJds({ input, outDir, force = false, fetchJson = getJson }) {
   const urls = readUrls(input);
   mkdirSync(outDir, { recursive: true });
+  const manifest = readManifest(outDir);
 
   /** @type {Map<string, {provider:string,slug:string,eu:boolean,items:{url:string,jobId:string}[]}>} */
   const boards = new Map();
   const skipped = [];
+  const cached = [];
 
   for (const url of urls) {
+    const cachedFile = manifest.get(url);
+    if (!force && cachedFile && existsSync(cachedFile)) {
+      const text = readFileSync(cachedFile, 'utf8');
+      if (text.trim()) {
+        cached.push({ url, file: cachedFile, chars: text.length });
+        continue;
+      }
+    }
     const p = parseJobUrl(url);
     if (!p) {
       skipped.push(url);
@@ -252,7 +262,6 @@ export async function runFetchJds({ input, outDir, force = false, fetchJson = ge
   const written = [];
   const missed = [];
   const errors = [];
-  const manifest = readManifest(outDir);
 
   for (const [, b] of boards) {
     let postings;
@@ -288,13 +297,15 @@ export async function runFetchJds({ input, outDir, force = false, fetchJson = ge
     atomicWrite(join(outDir, 'index.tsv'), `url\tfile\n${rows.join('\n')}\n`);
   }
 
-  const totalChars = written.reduce((a, w) => a + w.chars, 0);
+  const totalChars = [...cached, ...written].reduce((a, w) => a + w.chars, 0);
   const result = {
     input,
     urls: urls.length,
     boards: boards.size,
     requests: boards.size, // one per board — the whole point
     written: written.length,
+    cached: cached.length,
+    available: written.length + cached.length,
     missed: missed.length,
     skipped: skipped.length,
     errors,
@@ -332,7 +343,7 @@ Usage:
     console.log(`  input:        ${input}`);
     console.log(`  urls:         ${result.urls}`);
     console.log(`  boards:       ${result.boards}  (${result.requests} HTTP requests total)`);
-    console.log(`  JDs written:  ${result.written}  -> ${outDir}/`);
+    console.log(`  JDs available:${String(result.available).padStart(3)}  (${result.written} fetched, ${result.cached} cached) -> ${outDir}/`);
     console.log(`  not on board: ${result.missed}   (posting closed or id mismatch)`);
     console.log(`  skipped:      ${result.skipped}   (Workday/other — no bulk endpoint)`);
     if (result.errors.length) {

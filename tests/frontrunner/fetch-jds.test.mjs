@@ -141,6 +141,21 @@ test('bulk ingestion writes JDs, deduplicates board calls, and preserves cache t
   const firstJdPath = firstIndex.split('\n').find((line) => line.startsWith(`${alpha1}\t`)).split('\t')[1];
   assert.match(readFileSync(firstJdPath, 'utf8'), /# Director One[\s\S]*Own one/);
 
+  let unexpectedCalls = 0;
+  const cachedRun = await runFetchJds({
+    input,
+    outDir,
+    fetchJson: async () => {
+      unexpectedCalls += 1;
+      throw new Error('cache should have prevented this request');
+    },
+  });
+  assert.equal(cachedRun.requests, 0);
+  assert.equal(cachedRun.cached, 2);
+  assert.equal(cachedRun.available, 2);
+  assert.equal(unexpectedCalls, 0, 'a fully cached board was fetched again');
+  assert.equal(readFileSync(join(outDir, 'index.tsv'), 'utf8'), firstIndex);
+
   writeFileSync(
     input,
     [
@@ -154,6 +169,7 @@ test('bulk ingestion writes JDs, deduplicates board calls, and preserves cache t
   const second = await runFetchJds({
     input,
     outDir,
+    force: true,
     fetchJson: async (url) => {
       if (url.includes('/alpha/')) throw new Error('temporary outage');
       return {

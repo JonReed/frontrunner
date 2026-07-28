@@ -28,6 +28,7 @@ import {
   formatReportNumber, releaseReportNumbers, reserveReportNumbers,
 } from '../tracker/reserve-report-num.mjs';
 import { TokenAccumulator, formatBreakdown, normalizeOpenAIUsage } from '../lib/token-tracker.mjs';
+import { readJdManifest } from '../scan/jd-cache.mjs';
 
 import { ROOT as __dirname } from '#paths';
 const tracker = new TokenAccumulator();
@@ -170,6 +171,17 @@ function writeFile(relPath, content) {
 
 function fileExists(relPath) {
   return fs.existsSync(path.join(__dirname, relPath));
+}
+
+export function cachedJdForUrl(url, { outDir = path.join(__dirname, 'jds') } = {}) {
+  const file = readJdManifest(outDir).get(url);
+  if (!file) return null;
+  try {
+    const content = fs.readFileSync(file, 'utf8').trim();
+    return content || null;
+  } catch {
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -623,13 +635,19 @@ async function cmdEvaluate(input, ctx) {
     jdText = lines.join('\n');
     if (!jdText.trim()) { console.log('No input provided.'); return null; }
   } else if (input.startsWith('http')) {
-    console.log('Fetching job page...');
-    try {
-      const content = await fetchJobPage(input);
-      jdText = `URL: ${input}\n\n${content}`;
-    } catch (e) {
-      console.error(e.message);
-      return null;
+    const cached = cachedJdForUrl(input);
+    if (cached) {
+      console.log('Using cached job description...');
+      jdText = cached;
+    } else {
+      console.log('Fetching job page...');
+      try {
+        const content = await fetchJobPage(input);
+        jdText = `URL: ${input}\n\n${content}`;
+      } catch (e) {
+        console.error(e.message);
+        return null;
+      }
     }
   }
 

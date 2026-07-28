@@ -119,7 +119,9 @@ rejects and tune the rules.
 JD pre-fetch wiring and the batch silently goes back to fetching HTML pages.
 Re-apply `patches/jd-prefetch.patch.md`, then `bash -n batch/batch-runner.sh`.
 
-`src/scan/fetch-jds.mjs` and `src/scan/prefilter.mjs` are not in SYSTEM_PATHS and survive updates.
+`src/scan/fetch-jds.mjs` and `src/scan/prefilter.mjs` are registered system files.
+After an upstream merge, run the normal Frontrunner path-repair and full-test procedure;
+do not assume updater behaviour will preserve local edits to either file.
 
 ## Output Preferences
 

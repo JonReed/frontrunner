@@ -16,11 +16,22 @@ const DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; career-ops/1.3)';
 export const BROWSER_LIKE_USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
-async function fetchWithTimeout(url, { timeoutMs = DEFAULT_TIMEOUT_MS, headers = {}, method = 'GET', body = null, redirect = 'follow' } = {}, consume) {
+async function fetchWithTimeout(
+  url,
+  {
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    headers = {},
+    method = 'GET',
+    body = null,
+    redirect = 'follow',
+    fetchImpl = fetch,
+  } = {},
+  consume,
+) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(url, {
+    const res = await fetchImpl(url, {
       method,
       headers: { 'user-agent': DEFAULT_USER_AGENT, ...headers },
       body,

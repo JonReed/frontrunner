@@ -91,6 +91,7 @@ try {
         title: 'Senior Backend Engineer',
         absolute_url: 'https://job-boards.greenhouse.io/acme/jobs/101',
         location: { name: 'Berlin, Germany' },
+        content: '<p>Build reliable systems.</p>',
         first_published: '2026-07-01T09:30:00-04:00',
       },
       {
@@ -110,8 +111,8 @@ try {
     { fetchJson: async (url, opts) => { capturedUrl = url; capturedOpts = opts; return sample; } },
   );
 
-  if (capturedUrl === 'https://boards-api.greenhouse.io/v1/boards/acme/jobs' && capturedOpts?.redirect === 'error') {
-    pass('greenhouse.fetch() hits the derived boards-api URL with redirect:"error" (SSRF guard)');
+  if (capturedUrl === 'https://boards-api.greenhouse.io/v1/boards/acme/jobs?content=true' && capturedOpts?.redirect === 'error') {
+    pass('greenhouse.fetch() requests board-wide JD content with redirect:"error" (SSRF guard)');
   } else {
     fail(`greenhouse.fetch() url=${JSON.stringify(capturedUrl)} opts=${JSON.stringify(capturedOpts)}`);
   }
@@ -124,8 +125,9 @@ try {
       && fetched[0]?.url === 'https://job-boards.greenhouse.io/acme/jobs/101'
       && fetched[0]?.company === 'Acme'
       && fetched[0]?.location === 'Berlin, Germany'
+      && fetched[0]?.description === '<p>Build reliable systems.</p>'
       && fetched[0]?.postedAt === Date.parse('2026-07-01T09:30:00-04:00'))
-    pass('greenhouse.fetch() maps title/absolute_url/entry.name/location.name/first_published');
+    pass('greenhouse.fetch() maps title/url/company/location/description/first_published');
   else fail(`greenhouse.fetch() row 0 = ${JSON.stringify(fetched[0])}`);
 
   if (fetched[1]?.title === '' && fetched[1]?.location === '' && fetched[1]?.postedAt === undefined)

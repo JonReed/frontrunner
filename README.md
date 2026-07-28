@@ -83,7 +83,7 @@ There is not yet a one-click Frontrunner installer. The current installation
 path is:
 
 ```bash
-git clone https://github.com/JonReed/frontrunner.git
+git clone https://github.com/Furls-Digital/frontrunner.git
 cd frontrunner
 npm install
 npx playwright install chromium
@@ -224,14 +224,25 @@ Market-specific evaluation modes remain available under directories such as
 compensation vocabulary; they are separate from the language used to write
 reports, CVs, and letters.
 
+## Who builds this
+
+Frontrunner is built and sponsored by **[Furls Digital](https://furls.co.uk)** —
+AI strategy, program delivery and product engineering. We built this because we
+needed it, and we keep building it in the open.
+
 ## Credit
 
-Frontrunner is built on
+Frontrunner is a **fork**, and says so prominently because that is the honest
+description: we did not write this from scratch, we made specific and
+measurable improvements to someone else's good idea.
+
+It is built on
 [career-ops](https://github.com/santifer/career-ops) by
 [Santiago Fernández de Valderrama](https://santifer.io). The upstream scanners,
 providers, evaluation framework, tracker, document pipeline, and much of the
 test suite remain foundational to this fork.
 
-MIT licensed. Upstream copyright is retained in [LICENSE](LICENSE).
+MIT licensed. Upstream copyright is retained in [LICENSE](LICENSE), alongside
+Furls Digital's copyright covering the changes made here.
 `career-ops` is the upstream project's trademark; Frontrunner is independently
 named in accordance with [TRADEMARK.md](TRADEMARK.md).
