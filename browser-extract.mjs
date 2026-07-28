@@ -37,8 +37,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import yaml from 'js-yaml';
 import { LIVENESS_CONTEXT_OPTIONS, rejectPrivateOrInvalid } from './liveness-browser.mjs';
 
-const CAREER_OPS = dirname(fileURLToPath(import.meta.url));
-
+import { ROOT as CAREER_OPS } from '#paths';
 const DEFAULT_TIMEOUT_MS = 15_000;
 const HYDRATION_WAIT_MS = 2_000;
 const JD_TEXT_CAP = 12_000;     // plenty for a JD; a fraction of a full snapshot

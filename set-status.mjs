@@ -50,7 +50,7 @@ import {
   writeFileAtomic, loadCanonicalStates, resolveCanonicalState, normalizeCompany, cell,
 } from './tracker-utils.mjs';
 
-const CAREER_OPS = dirname(fileURLToPath(import.meta.url));
+import { ROOT as CAREER_OPS } from '#paths';
 const STATES_FILE = join(CAREER_OPS, 'templates/states.yml');
 
 const EXIT_OK = 0;

@@ -13,7 +13,7 @@ import { existsSync, readFileSync } from 'fs';
 import { isAbsolute, join, dirname, basename } from 'path';
 import { fileURLToPath } from 'url';
 
-const ROOT = dirname(fileURLToPath(import.meta.url));
+import { ROOT } from '#paths';
 const DEFAULT_SOURCES = ['cv.md', 'article-digest.md'];
 const DEFAULT_CONFIG = join(ROOT, 'config', 'cv-facts.json');
 

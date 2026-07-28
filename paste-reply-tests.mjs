@@ -25,7 +25,7 @@ import { join, dirname } from 'path';
 import { tmpdir } from 'os';
 import { fileURLToPath, pathToFileURL } from 'url';
 
-const ROOT = dirname(fileURLToPath(import.meta.url));
+import { ROOT } from '#paths';
 const NODE = process.execPath;
 const CLI = join(ROOT, 'paste-reply.mjs');
 

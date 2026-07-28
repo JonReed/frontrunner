@@ -26,8 +26,7 @@ try {
   config();
 } catch { /* dotenv optional */ }
 
-const ROOT = dirname(fileURLToPath(import.meta.url));
-
+import { ROOT } from '#paths';
 // ---------------------------------------------------------------------------
 // Paths
 // ---------------------------------------------------------------------------

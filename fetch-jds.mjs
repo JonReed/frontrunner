@@ -41,8 +41,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = dirname(fileURLToPath(import.meta.url));
-
+import { ROOT } from '#paths';
 // ---------------------------------------------------------------- args
 
 const argv = process.argv.slice(2);

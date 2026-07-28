@@ -30,7 +30,7 @@ import { readFileSync, existsSync, appendFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 
-const CAREER_OPS = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+import { ROOT as CAREER_OPS } from '#paths';
 const LOG_PATH = join(CAREER_OPS, 'data/assessments.tsv');
 
 const HEADER_COMMENT = [

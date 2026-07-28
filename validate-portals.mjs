@@ -15,7 +15,7 @@ import { tmpdir } from 'os';
 import { fileURLToPath, pathToFileURL } from 'url';
 import yaml from 'js-yaml';
 
-const ROOT = dirname(fileURLToPath(import.meta.url));
+import { ROOT } from '#paths';
 const PROVIDERS_DIR = join(ROOT, 'providers');
 const DEFAULT_PORTALS_PATH = process.env.CAREER_OPS_PORTALS || 'portals.yml';
 

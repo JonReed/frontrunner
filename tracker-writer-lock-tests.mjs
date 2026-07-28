@@ -11,7 +11,7 @@ import { tmpdir } from 'os';
 import { fileURLToPath } from 'url';
 import { acquireTrackerLock, openTrackerTransaction } from './tracker-utils.mjs';
 
-const ROOT = dirname(fileURLToPath(import.meta.url));
+import { ROOT } from '#paths';
 const NODE = process.execPath;
 const CONCURRENT_ROW = '| 99 | 2026-01-03 | ConcurrentCo | Keeper | 4.3/5 | Applied | ❌ | [99](reports/099-concurrent.md) | preserve me |';
 let passed = 0;

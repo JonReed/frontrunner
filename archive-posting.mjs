@@ -22,7 +22,7 @@ import { existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
-const ROOT = dirname(fileURLToPath(import.meta.url));
+import { ROOT } from '#paths';
 const JDS_DIR = join(ROOT, 'jds');
 const PIPELINE_PATH = join(ROOT, 'data', 'pipeline.md');
 

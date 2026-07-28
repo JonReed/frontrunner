@@ -23,7 +23,7 @@ import { join, dirname } from 'path';
 import { tmpdir } from 'os';
 import { fileURLToPath } from 'url';
 
-const ROOT = dirname(fileURLToPath(import.meta.url));
+import { ROOT } from '#paths';
 const NODE = process.execPath;
 const CLI = join(ROOT, 'agent-inbox.mjs');
 

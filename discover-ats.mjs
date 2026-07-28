@@ -42,7 +42,7 @@ import ashby from './providers/ashby.mjs';
 import lever from './providers/lever.mjs';
 import workday from './providers/workday.mjs';
 
-const CAREER_OPS = dirname(fileURLToPath(import.meta.url));
+import { ROOT as CAREER_OPS } from '#paths';
 const PORTALS_PATH = process.env.CAREER_OPS_PORTALS || join(CAREER_OPS, 'portals.yml');
 
 // Safe charset for a slug that will be interpolated into an ATS URL. Consistent

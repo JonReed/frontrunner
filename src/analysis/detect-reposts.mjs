@@ -27,7 +27,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 
 import { roleFuzzyMatch } from '../../role-matcher.mjs';
 
-const CAREER_OPS = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+import { ROOT as CAREER_OPS } from '#paths';
 const SCAN_HISTORY_PATH = join(CAREER_OPS, 'data/scan-history.tsv');
 const DEFAULT_WINDOW_DAYS = 90;
 

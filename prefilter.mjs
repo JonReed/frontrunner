@@ -38,8 +38,7 @@ import yaml from 'js-yaml';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = dirname(fileURLToPath(import.meta.url));
-
+import { ROOT } from '#paths';
 const argv = process.argv.slice(2);
 const hasFlag = (f) => argv.includes(f);
 const argVal = (f, d) => {

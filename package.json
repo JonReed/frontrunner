@@ -1,7 +1,10 @@
 {
   "name": "career-ops",
   "version": "1.23.0",
-  "description": "AI-powered job search pipeline — works with any AI coding CLI (Claude Code, Codex, OpenCode, Antigravity, Grok, Qwen, Kimi, Copilot)",
+  "description": "AI-powered job search pipeline \u2014 works with any AI coding CLI (Claude Code, Codex, OpenCode, Antigravity, Grok, Qwen, Kimi, Copilot)",
+  "imports": {
+    "#paths": "./src/paths.mjs"
+  },
   "private": true,
   "scripts": {
     "doctor": "node doctor.mjs",
@@ -70,7 +73,7 @@
     "grok",
     "ai-agent-skill"
   ],
-  "author": "Santiago Fernández de Valderrama <hi@santifer.io> (https://santifer.io)",
+  "author": "Santiago Fern\u00e1ndez de Valderrama <hi@santifer.io> (https://santifer.io)",
   "homepage": "https://santifer.io",
   "repository": {
     "type": "git",

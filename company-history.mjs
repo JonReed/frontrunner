@@ -57,8 +57,7 @@ import {
   normalizeStatus,
 } from './followup-cadence.mjs';
 
-const CAREER_OPS = dirname(fileURLToPath(import.meta.url));
-
+import { ROOT as CAREER_OPS } from '#paths';
 const DEFAULT_STALE_AFTER_DAYS = 365;
 const DEFAULT_SILENCE_WINDOW_DAYS = 28;
 

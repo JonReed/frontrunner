@@ -43,7 +43,7 @@ import { resolveColumns, parseTrackerRow } from '../../tracker-parse.mjs';
 import { resolveTrackerPath, loadCanonicalStates, resolveCanonicalState } from '../../tracker-utils.mjs';
 import { parseAppliedDate, normalizeStatus } from '../../followup-cadence.mjs';
 
-const CAREER_OPS = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+import { ROOT as CAREER_OPS } from '#paths';
 const STATES_FILE = join(CAREER_OPS, 'templates/states.yml');
 
 const args = process.argv.slice(2);

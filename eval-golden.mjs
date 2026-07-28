@@ -29,7 +29,7 @@ import { tmpdir } from 'os';
 import { fileURLToPath } from 'url';
 import { spawnSync } from 'child_process';
 
-const ROOT = dirname(fileURLToPath(import.meta.url));
+import { ROOT } from '#paths';
 const GOLDEN_DIR = join(ROOT, 'evals', 'golden');
 
 // ---------------------------------------------------------------------------

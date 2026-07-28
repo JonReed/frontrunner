@@ -19,7 +19,7 @@ import { tmpdir } from 'os';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { parseNextOverrides, resolveNextOverride, normalizeStatus, addDays, parseDate } from './followup-cadence.mjs';
 
-const ROOT = dirname(fileURLToPath(import.meta.url));
+import { ROOT } from '#paths';
 const NODE = process.execPath;
 const SCRIPT = join(ROOT, 'followup-seed.mjs');
 

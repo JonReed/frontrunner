@@ -63,8 +63,7 @@ import {
   addDays,
 } from './followup-cadence.mjs';
 
-const CAREER_OPS = dirname(fileURLToPath(import.meta.url));
-
+import { ROOT as CAREER_OPS } from '#paths';
 /** Canonical header written when data/follow-ups.md doesn't exist yet. */
 export const FOLLOWUPS_HEADER = [
   '# Follow-ups',

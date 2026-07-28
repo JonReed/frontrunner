@@ -22,8 +22,7 @@ import { readFileSync, existsSync, statSync } from 'fs';
 import { basename, resolve, dirname, relative, isAbsolute } from 'path';
 import { fileURLToPath } from 'url';
 
-const ROOT = dirname(fileURLToPath(import.meta.url));
-
+import { ROOT } from '#paths';
 const ALLOWED_HOSTS = new Set([
   'boards.greenhouse.io',
   'greenhouse.io',

@@ -42,8 +42,7 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 
-const CAREER_OPS = dirname(fileURLToPath(import.meta.url));
-
+import { ROOT as CAREER_OPS } from '#paths';
 const CV_FILE = process.env.CAREER_OPS_CV || join(CAREER_OPS, 'cv.md');
 const ARTICLE_DIGEST_FILE = process.env.CAREER_OPS_ARTICLE_DIGEST || join(CAREER_OPS, 'article-digest.md');
 

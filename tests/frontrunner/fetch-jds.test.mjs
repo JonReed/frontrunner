@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+import { ROOT } from '#paths';
 const { parseJobUrl } = await import(join(ROOT, 'fetch-jds.mjs'));
 
 // ---------------------------------------------------------------------------

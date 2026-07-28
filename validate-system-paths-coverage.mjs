@@ -20,6 +20,10 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { extractArrayFromSource } from './update-system.mjs';
 
+// DELIBERATELY NOT '#paths'. This guard must resolve its own location: its
+// job is to detect being run from a throwaway copy where `git ls-files`
+// returns nothing. A shared ROOT would always point at the real repo and the
+// no-op detection below could never fire.
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const sourcePath = join(ROOT, 'update-system.mjs');
 
