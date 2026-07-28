@@ -1,7 +1,7 @@
 {
-  "name": "career-ops",
+  "name": "frontrunner",
   "version": "1.23.0",
-  "description": "AI-powered job search pipeline \u2014 works with any AI coding CLI (Claude Code, Codex, OpenCode, Antigravity, Grok, Qwen, Kimi, Copilot)",
+  "description": "AI job search that filters deterministically first and spends the model only where judgement is needed. Fork of career-ops.",
   "imports": {
     "#paths": "./src/paths.mjs"
   },
@@ -53,8 +53,7 @@
     "prepare:application": "node src/evaluate/prepare-application.mjs",
     "build:dashboard": "node build-dashboard.mjs",
     "serve:dashboard": "cd dashboard && go run . --path ..",
-    "postinstall": "npx playwright install chromium --with-deps || npx playwright install chromium --with-deps",
-    "manifesto": "node manifesto.mjs"
+    "postinstall": "npx playwright install chromium --with-deps || npx playwright install chromium --with-deps"
   },
   "keywords": [
     "ai",
@@ -73,11 +72,11 @@
     "grok",
     "ai-agent-skill"
   ],
-  "author": "Santiago Fern\u00e1ndez de Valderrama <hi@santifer.io> (https://santifer.io)",
-  "homepage": "https://santifer.io",
+  "author": "Jon Reed",
+  "homepage": "https://github.com/JonReed/frontrunner",
   "repository": {
     "type": "git",
-    "url": "https://github.com/santifer/career-ops"
+    "url": "https://github.com/JonReed/frontrunner"
   },
   "license": "MIT",
   "dependencies": {

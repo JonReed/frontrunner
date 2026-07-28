@@ -6,8 +6,11 @@ import { existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-export const ROOT = join(__dirname, '..');   // repo root (tests/ lives one level down)
+// NOTE: import THEN export. A bare `export { ROOT } from '#paths'` re-exports
+// without creating a local binding, so `cwd: ROOT` below becomes a
+// ReferenceError and every run() silently returns null.
+import { ROOT } from '#paths';
+export { ROOT };
 export const QUICK = process.argv.includes('--quick');
 export const NODE = process.execPath;
 

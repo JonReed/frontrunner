@@ -258,9 +258,6 @@ const SYSTEM_PATHS = [
   'writing-samples/README.md',
   'VERSION',
   'DATA_CONTRACT.md',
-  'MANIFESTO.md',
-  'manifesto.mjs',
-  'SIGNATURES.md',
   'CONTRIBUTING.md',
   'MAINTAINERS.md',
   'ARCHITECTURE.md',
@@ -1197,7 +1194,6 @@ async function apply() {
     console.log('\n-- The CareerOps Manifesto ------------------------------');
     console.log('A new way of job searching is taking shape. You are');
     console.log('already practicing it. Read it, sign it if you want to help:');
-    console.log('    npm run manifesto  ·  https://career-ops.org/manifesto?utm_source=updater');
 
   } finally {
     // Remove lock

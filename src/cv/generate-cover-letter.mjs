@@ -14,6 +14,7 @@
  */
 
 import { readFileSync, existsSync, mkdirSync } from "fs";
+import { ROOT } from '#paths';
 import { dirname, resolve, basename, join } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 import { parseArgs } from "util";
@@ -110,8 +111,7 @@ function buildFootnotesBlock(footnotes) {
 // no templates dir, bad config) falls back to the base template, preserving the
 // original hardcoded behavior.
 export function resolveCoverTemplatePath(payload = {}, opts = {}) {
-  const scriptDir = dirname(fileURLToPath(import.meta.url));
-  const base = resolve(scriptDir, "templates", "cover-letter-template.html");
+  const base = resolve(ROOT, "templates", "cover-letter-template.html");
   try {
     return resolveTemplate("cover", payload.template, { format: "html", fallback: true, ...opts });
   } catch {

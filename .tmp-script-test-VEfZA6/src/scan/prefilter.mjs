@@ -1,0 +1,323 @@
+#!/usr/bin/env node
+// @ts-check
+/**
+ * prefilter.mjs — deterministic rejection pass (zero LLM tokens).
+ *
+ * WHY THIS EXISTS
+ * ---------------
+ * Across a 123-role batch run, the reasons recorded in the reports'
+ * `discard_reasons` were:
+ *
+ *     seniority_mismatch     35     <- decidable from the title
+ *     salary_too_low         21     <- decidable when a figure is published
+ *     tech_stack_mismatch    18     <- mostly decidable from the title
+ *     role_family_mismatch    6     <- decidable from the title
+ *     geo_restriction         4     <- scan.mjs already does this
+ *     genuine judgement      ~8
+ *
+ * ~60% of an expensive LLM pass was spent concluding things a regex settles
+ * instantly. This script makes those calls up front, so a worker is only ever
+ * spawned for a role that needs judgement.
+ *
+ * DESIGN RULES
+ *   1. Never silently drop. Every rejection records the exact rule and the
+ *      matched text, so the output is auditable and tunable.
+ *   2. Bias toward keeping. An unclear role passes through to the LLM. A false
+ *      reject costs an opportunity; a false keep costs a few cents.
+ *   3. Read config from the user layer (config/profile.yml), never hardcode.
+ *
+ * USAGE
+ *   node prefilter.mjs --summary
+ *   node prefilter.mjs --input batch/batch-input.tsv --out batch/batch-input.filtered.tsv
+ *   node prefilter.mjs --json
+ *   node prefilter.mjs --explain "Staff Product Engineer, AI"
+ */
+
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import yaml from 'js-yaml';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { ROOT } from '#paths';
+const argv = process.argv.slice(2);
+const hasFlag = (f) => argv.includes(f);
+const argVal = (f, d) => {
+  const i = argv.indexOf(f);
+  return i !== -1 && argv[i + 1] ? argv[i + 1] : d;
+};
+
+if (hasFlag('-h') || hasFlag('--help')) {
+  console.log(`prefilter.mjs — deterministic rejection pass (zero LLM tokens)
+
+Usage:
+  node prefilter.mjs [--input <file>] [--out <file>] [--jds <dir>] [--summary|--json]
+  node prefilter.mjs --explain "<job title>"
+
+  --input <file>   Default: data/pipeline.md. Also accepts a TSV (col 2 = url).
+  --out <file>     Write surviving roles as a batch-input TSV.
+  --jds <dir>      JD text dir from fetch-jds.mjs. Default: jds
+  --rejects <file> Write rejected roles + reasons as TSV. Default: batch/prefilter-rejects.tsv
+  --explain <t>    Show how one title classifies, then exit.
+`);
+  process.exit(0);
+}
+
+// ---------------------------------------------------------------- config
+
+/** Minimal YAML scalar reader — avoids a dependency for three lookups. */
+function readProfile() {
+  const f = join(ROOT, 'config/profile.yml');
+  const out = { minComp: 0, currency: 'GBP', clearances: [] };
+  if (!existsSync(f)) return out;
+  const raw = readFileSync(f, 'utf8');
+  const min = raw.match(/^\s*minimum:\s*["']?([^"'\n]+)/m);
+  if (min) {
+    const n = min[1].replace(/[^0-9.]/g, '');
+    if (n) out.minComp = /k\b/i.test(min[1]) ? Number(n) * 1000 : Number(n);
+  }
+  const cur = raw.match(/^\s*currency:\s*["']?([A-Z]{3})/m);
+  if (cur) out.currency = cur[1];
+  return out;
+}
+
+const PROFILE = readProfile();
+
+// ---------------------------------------------------------------- rules
+
+/**
+ * Rules are DATA, not code — see config/prefilter.example.yml.
+ * Load order: config/prefilter.yml (user layer, gitignored) then the tracked
+ * example as a fallback, so a fresh checkout works with sensible defaults.
+ */
+function loadRules() {
+  const user = join(ROOT, 'config/prefilter.yml');
+  const example = join(ROOT, 'config/prefilter.example.yml');
+  const file = existsSync(user) ? user : example;
+  if (!existsSync(file)) {
+    console.error('prefilter: no rules file (config/prefilter.yml or .example.yml)');
+    process.exit(1);
+  }
+  const cfg = yaml.load(readFileSync(file, 'utf8')) ?? {};
+  const compile = (list) => (list ?? []).map((p) => new RegExp(p, 'i'));
+  return {
+    file,
+    keep: compile(cfg.keep_signals),
+    ic: compile(cfg.ic_families),
+    wrong: compile(cfg.wrong_functions),
+    junior: compile(cfg.below_level),
+    blockers: (cfg.hard_blockers ?? [])
+      .filter((b) => b?.enabled)
+      .map((b) => ({ id: b.id, all: compile(b.all), reason: b.reason ?? b.id })),
+    comp: { enabled: cfg.comp?.enabled !== false, margin: Number(cfg.comp?.clearance_margin ?? 0.8) },
+  };
+}
+
+const RULES = loadRules();
+
+// ---------------------------------------------------------------- classify
+
+/**
+ * Classify a role from its title (and optionally JD text).
+ * @returns {{verdict:'reject'|'keep', rule:string, evidence:string}}
+ */
+export function classify(title, jdText = '', profile = PROFILE, rules = RULES) {
+  const t = String(title || '');
+
+  const hitOf = (list) => list.find((re) => re.test(t));
+
+  // 1. Wrong function — unambiguous, check first so "Head of Marketing" dies here.
+  const wrong = hitOf(rules.wrong);
+  if (wrong) return { verdict: 'reject', rule: 'wrong_function', evidence: t.match(wrong)?.[0] ?? '' };
+
+  // 2. Junior — but a "Director" token rescues (e.g. "Associate Director").
+  const junior = hitOf(rules.junior);
+  if (junior && !hitOf(rules.keep)) {
+    return { verdict: 'reject', rule: 'below_level', evidence: t.match(junior)?.[0] ?? '' };
+  }
+
+  // 3. IC role family — leadership tokens rescue ("Engineering Manager").
+  const ic = hitOf(rules.ic);
+  const lead = hitOf(rules.keep);
+  if (ic && !lead) {
+    return { verdict: 'reject', rule: 'ic_role_family', evidence: t.match(ic)?.[0] ?? '' };
+  }
+
+  // 4. Hard blockers in the JD body.
+  if (jdText) {
+    for (const b of rules.blockers) {
+      if (b.all.every((re) => re.test(jdText))) {
+        const m = jdText.match(/[^.\n]{0,90}clearance[^.\n]{0,60}/i) ?? jdText.match(/[^.\n]{0,90}sponsor[^.\n]{0,60}/i);
+        return { verdict: 'reject', rule: b.id, evidence: (m?.[0] ?? b.reason).trim().slice(0, 140) };
+      }
+    }
+
+    // 5. Published comp below the floor. Only fires on an explicit currency range.
+    if (rules.comp.enabled && profile.minComp > 0) {
+      const sym = profile.currency === 'GBP' ? '£' : profile.currency === 'USD' ? '$' : '€';
+      const re = new RegExp(`\\${sym}\\s?(\\d{2,3})(?:,(\\d{3}))?\\s?(k\\b)?`, 'gi');
+      const vals = [];
+      for (const m of jdText.matchAll(re)) {
+        let v = Number(m[1] + (m[2] ?? ''));
+        if (m[3]) v *= 1000;
+        else if (v < 1000) v *= 1000;
+        if (v >= 10_000 && v <= 2_000_000) vals.push(v);
+      }
+      if (vals.length) {
+        const top = Math.max(...vals);
+        // A published figure is usually BASE; the floor is TOTAL comp. Bonus,
+        // equity and sign-on routinely close a 20-30% gap, so only reject when
+        // the published number is far enough below the floor that no plausible
+        // package closes it. (Rule 2: bias toward keeping.)
+        const CLEARANCE_MARGIN = rules.comp.margin;
+        const cutoff = profile.minComp * CLEARANCE_MARGIN;
+        if (top < cutoff) {
+          return {
+            verdict: 'reject',
+            rule: 'comp_below_floor',
+            evidence: `max published ${sym}${top.toLocaleString()} < ${Math.round(
+              CLEARANCE_MARGIN * 100,
+            )}% of floor ${sym}${profile.minComp.toLocaleString()} (=${sym}${cutoff.toLocaleString()})`,
+          };
+        }
+      }
+    }
+  }
+
+  // 6. No rule fired — this needs judgement. Send it to the model.
+  return { verdict: 'keep', rule: lead ? 'leadership_signal' : 'unclear', evidence: lead ? t.match(lead)?.[0] ?? '' : '' };
+}
+
+// ---------------------------------------------------------------- explain mode
+
+if (hasFlag('--explain')) {
+  const t = argVal('--explain', '');
+  const r = classify(t);
+  console.log(`title:    ${t}`);
+  console.log(`verdict:  ${r.verdict.toUpperCase()}`);
+  console.log(`rule:     ${r.rule}`);
+  console.log(`evidence: ${r.evidence || '(none)'}`);
+  process.exit(0);
+}
+
+// ---------------------------------------------------------------- io
+
+const INPUT = argVal('--input', join(ROOT, 'data/pipeline.md'));
+const JDS = join(ROOT, argVal('--jds', 'jds'));
+const OUT = argVal('--out', '');
+const REJECTS = argVal('--rejects', join(ROOT, 'batch/prefilter-rejects.tsv'));
+const SUMMARY = hasFlag('--summary');
+
+function readRoles(file) {
+  const raw = readFileSync(file, 'utf8');
+  const roles = [];
+  for (const line of raw.split('\n')) {
+    const md = line.match(/^-\s*\[\s*\]\s*(\S+)\s*\|\s*([^|]*)\|\s*([^|]*)/);
+    if (md) {
+      roles.push({ url: md[1], company: md[2].trim(), title: md[3].trim() });
+      continue;
+    }
+    const c = line.split('\t');
+    if (c.length >= 4 && /^https?:\/\//.test(c[1]?.trim() ?? '')) {
+      const note = c[3] ?? '';
+      const [company, title] = note.includes('—') ? note.split('—').map((s) => s.trim()) : ['', note.trim()];
+      roles.push({ url: c[1].trim(), company, title });
+    }
+  }
+  return roles;
+}
+
+function loadJdIndex(dir) {
+  const idx = new Map();
+  const f = join(dir, 'index.tsv');
+  if (!existsSync(f)) return idx;
+  for (const line of readFileSync(f, 'utf8').split('\n').slice(1)) {
+    const [url, file] = line.split('\t');
+    if (url && file) idx.set(url.trim(), file.trim());
+  }
+  return idx;
+}
+
+function main() {
+  if (!existsSync(INPUT)) {
+    console.error(`prefilter: input not found: ${INPUT}`);
+    process.exit(1);
+  }
+  const roles = readRoles(INPUT);
+  const jdIndex = loadJdIndex(JDS);
+
+  const kept = [];
+  const rejected = [];
+
+  for (const r of roles) {
+    let jd = '';
+    const f = jdIndex.get(r.url);
+    if (f && existsSync(f)) {
+      try {
+        jd = readFileSync(f, 'utf8');
+      } catch {
+        /* unreadable JD is not a reason to reject */
+      }
+    }
+    const res = classify(r.title, jd);
+    if (res.verdict === 'reject') rejected.push({ ...r, ...res });
+    else kept.push({ ...r, ...res });
+  }
+
+  // Always write the audit trail — rule 1: never silently drop.
+  writeFileSync(
+    REJECTS,
+    `url\tcompany\ttitle\trule\tevidence\n${rejected
+      .map((r) => [r.url, r.company, r.title, r.rule, r.evidence].join('\t'))
+      .join('\n')}\n`,
+  );
+
+  if (OUT) {
+    writeFileSync(
+      OUT,
+      `id\turl\tsource\tnotes\n${kept
+        .map((r, i) => {
+          const src = r.url.includes('greenhouse')
+            ? 'Greenhouse'
+            : r.url.includes('ashby')
+              ? 'Ashby'
+              : r.url.includes('myworkdayjobs')
+                ? 'Workday'
+                : 'scan';
+          return `${i + 1}\t${r.url}\t${src}\t${r.company} — ${r.title}`;
+        })
+        .join('\n')}\n`,
+    );
+  }
+
+  const byRule = {};
+  for (const r of rejected) byRule[r.rule] = (byRule[r.rule] ?? 0) + 1;
+
+  const result = {
+    input: INPUT,
+    roles: roles.length,
+    kept: kept.length,
+    rejected: rejected.length,
+    rejectedPct: roles.length ? Math.round((rejected.length / roles.length) * 100) : 0,
+    byRule,
+    jdsAvailable: jdIndex.size,
+    rejectsLog: REJECTS,
+    out: OUT || null,
+  };
+
+  if (SUMMARY) {
+    console.log('\n=== prefilter ===');
+    console.log(`  roles in:   ${roles.length}`);
+    console.log(`  kept:       ${kept.length}  (sent to the LLM)`);
+    console.log(`  rejected:   ${rejected.length}  (${result.rejectedPct}% — zero tokens)`);
+    console.log('\n  by rule:');
+    for (const [k, v] of Object.entries(byRule).sort((a, b) => b[1] - a[1])) {
+      console.log(`    ${String(v).padStart(4)}  ${k}`);
+    }
+    console.log(`\n  audit trail: ${REJECTS}`);
+    if (OUT) console.log(`  batch input: ${OUT}`);
+  } else {
+    console.log(JSON.stringify(result, null, 2));
+  }
+}
+
+main();

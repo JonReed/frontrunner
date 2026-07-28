@@ -3,8 +3,8 @@
   "version": "1.23.0",
   "description": "AI job search command center — evaluate offers, tailor CVs, scan portals, track applications",
   "author": {
-    "name": "santifer",
-    "url": "https://santifer.io"
+    "name": "JonReed",
+    "url": "https://github.com/JonReed/frontrunner"
   },
   "skills": [
     "./.agents/skills/career-ops"
