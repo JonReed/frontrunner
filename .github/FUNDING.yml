@@ -1,12 +1,9 @@
 # Frontrunner funding.
 #
-# Uncomment and fill in whichever you set up. GitHub renders a "Sponsor"
-# button from this file; entries pointing at accounts that do not exist are
-# simply ignored, so it is safe to leave everything commented until you are
-# enrolled somewhere.
-#
-# github: [YourGitHubUsername]      # requires GitHub Sponsors enrolment first
-# ko_fi: yourname
-# buy_me_a_coffee: yourname
-# open_collective: frontrunner
-# custom: ["https://frontrunner.website/donate"]
+# GitHub renders a "Sponsor" button from this file. Entries pointing at
+# accounts that do not exist are ignored, so unused lines can stay commented.
+
+buy_me_a_coffee: jonmreed
+
+# github: JonReed                          # requires GitHub Sponsors enrolment
+# custom: ["https://frontrunner.website"]  # once the site is up
