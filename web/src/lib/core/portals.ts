@@ -14,7 +14,7 @@ import { DEFAULT_FILTERS, cleanChips, type ExploreFilters } from "@/lib/explore"
  * We also read the real portals.yml + config/profile.yml (tolerantly) only to
  * SEED sensible defaults for the first search.
  *
- * Filter semantics mirror scan.mjs::buildTitleFilter / buildLocationFilter:
+ * Filter semantics mirror src/scan/scan.mjs::buildTitleFilter / buildLocationFilter:
  *   title positive → substring match (empty = everything matches)
  *   title negative → substring reject
  *   location always_allow > block > allow (case-insensitive substring)

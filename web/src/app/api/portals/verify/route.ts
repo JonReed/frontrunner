@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
-// Orchestrates the core's verify-portals.mjs (#1016) — the SAME ATS-slug
+// Orchestrates the core's src/scan/verify-portals.mjs (#1016) — the SAME ATS-slug
 // validator the CLI uses. Catches the silent 404s that quietly drop a company
 // from every future scan (= lost offers). We parse its console output; we do NOT
 // reimplement the validation.

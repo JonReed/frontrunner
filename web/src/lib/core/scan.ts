@@ -9,7 +9,7 @@ export { ATS_SOURCES } from "@/lib/explore";
 
 /**
  * ACL for the discovery engine — orchestrates the REAL core scanner
- * `scan-ats-full.mjs` (reverse ATS discovery, a contract entry-point). We run it
+ * `src/scan/scan-ats-full.mjs` (reverse ATS discovery, a contract entry-point). We run it
  * with `--dry-run` so it writes NOTHING (the user reviews + chooses), point it at
  * an EPHEMERAL filter file (never the user's portals.yml), and surface its results.
  *

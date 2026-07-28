@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // The DEMAND loop: surface follow-ups due, via the core's own
-// followup-cadence.mjs --json (the SAME calculator the CLI uses) — we never
+// src/tracker/followup-cadence.mjs --json (the SAME calculator the CLI uses) — we never
 // reimplement the cadence logic, we read its verdict (mirrors /api/doctor).
 export async function GET() {
   const script = rootScript("followup-cadence");

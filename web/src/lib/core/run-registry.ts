@@ -2,7 +2,7 @@
 // the core runs merge-tracker / updates applications.md). The web is a single local
 // Node process, so a module-level set is enough.
 //
-// Why this exists: `tracker.mjs delete` (#1200) does NOT yet share a file lock with
+// Why this exists: `src/tracker/tracker.mjs delete` (#1200) does NOT yet share a file lock with
 // merge-tracker (a documented follow-up — merge-tracker isn't import-safe), so a row
 // delete must not run while a worker is mid-merge or one of the two writes is lost.
 // The delete route serializes against this registry — coarse (the whole run), but

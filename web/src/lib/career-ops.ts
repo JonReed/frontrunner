@@ -26,7 +26,7 @@ export function rootScript(nameNoExt: string): string {
   return path.join(careerOpsRoot(), `${nameNoExt}.mjs`);
 }
 
-// Feature-detect the core's `tracker.mjs delete --num` row-delete (#1200) by probing
+// Feature-detect the core's `src/tracker/tracker.mjs delete --num` row-delete (#1200) by probing
 // the local script source — older checkouts lack it, so the delete UI hides itself.
 export function trackerCanDelete(): boolean {
   try {
@@ -116,7 +116,7 @@ export type Application = {
  * Parse data/applications.md — the tracker table (source of truth).
  * The header-aware parsing lives in tracker-table.mjs, which resolves headers
  * through the SAME alias table the Node tooling uses (tracker-aliases.json,
- * exported by tracker-parse.mjs as HEADER_ALIASES) — one shared source, no
+ * exported by src/tracker/tracker-parse.mjs as HEADER_ALIASES) — one shared source, no
  * web-side mirror to drift (#954, PR #1598 review).
  */
 export function readApplications(): Application[] {

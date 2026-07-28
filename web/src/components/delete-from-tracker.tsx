@@ -6,7 +6,7 @@ import { Trash2, Loader2 } from "lucide-react";
 
 // disc#9: remove a bogus tracker row (e.g. a job marked Evaluated after the CLI
 // errored mid-run). Hard delete via the core write-gate (/api/tracker/delete →
-// tracker.mjs delete), behind a confirm. The soft option (status → Discarded) lives
+// src/tracker/tracker.mjs delete), behind a confirm. The soft option (status → Discarded) lives
 // in StatusSelect and stays for real-but-passed applications.
 export function DeleteFromTracker({ n }: { n: string }) {
   const router = useRouter();

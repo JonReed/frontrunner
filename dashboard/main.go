@@ -204,13 +204,13 @@ func openCmd(target string) tea.Cmd {
 	}
 }
 
-// runGeneratePDF shells out to node generate-pdf.mjs in the career-ops root,
+// runGeneratePDF shells out to node src/cv/generate-pdf.mjs in the career-ops root,
 // opens the resulting PDF on success, and reports the outcome back to the
 // pipeline screen as a PipelinePDFGeneratedMsg. Runs in a tea.Cmd goroutine,
 // so the UI stays responsive while Chromium renders.
 func runGeneratePDF(msg screens.PipelineGeneratePDFMsg) tea.Cmd {
 	return func() tea.Msg {
-		args := []string{"generate-pdf.mjs", msg.HTMLPath, msg.PDFPath}
+		args := []string{"src/cv/generate-pdf.mjs", msg.HTMLPath, msg.PDFPath}
 		if msg.Format != "" {
 			args = append(args, "--format="+msg.Format)
 		}
@@ -232,7 +232,7 @@ func runGeneratePDF(msg screens.PipelineGeneratePDFMsg) tea.Cmd {
 }
 
 // summarizeCmdError condenses a failed command into one help-bar-sized line:
-// the last non-empty output line when there is one (generate-pdf.mjs prints
+// the last non-empty output line when there is one (src/cv/generate-pdf.mjs prints
 // its error there), otherwise the exec error itself.
 func summarizeCmdError(err error, out []byte) string {
 	lines := strings.Split(strings.TrimSpace(string(out)), "\n")

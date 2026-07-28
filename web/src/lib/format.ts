@@ -1,9 +1,9 @@
 // Pure, node-free helpers shared by server and client components (no fs/path
 // imports here — career-ops.ts holds the filesystem reads). Aligned with the
-// core: normalize-statuses.mjs (aliases) + the Go TUI dashboard (score/status
+// core: src/tracker/normalize-statuses.mjs (aliases) + the Go TUI dashboard (score/status
 // colours = the current state-of-the-art).
 
-// Spanish + legacy aliases → canonical English tokens (normalize-statuses.mjs).
+// Spanish + legacy aliases → canonical English tokens (src/tracker/normalize-statuses.mjs).
 const STATUS_ALIAS: Record<string, string> = {
   evaluada: "EVALUATED",
   evaluado: "EVALUATED",

@@ -6,7 +6,7 @@
 #   ./cops verify
 #   ./cops pdf cv.html output/cv.pdf
 #   ./cops scan
-#   ./cops node generate-pdf.mjs cv.html output/cv.pdf
+#   ./cops node src/cv/generate-pdf.mjs cv.html output/cv.pdf
 #   ./cops shell                     # interactive bash
 #   ./cops up | down | rebuild | logs
 #

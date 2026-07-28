@@ -56,7 +56,7 @@ export async function GET(req: Request) {
     seen.add(o.url);
     offers.push(o);
   }
-  // Fallback for LEGACY scan.mjs histories with no parseable first_seen (every row
+  // Fallback for LEGACY src/scan/scan.mjs histories with no parseable first_seen (every row
   // would be dropped → a false "all caught up"). Show the most-recent-by-append-order
   // un-evaluated rows instead, so the supply loop still surfaces something.
   if (offers.length === 0 && !anyDated) {

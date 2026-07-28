@@ -13,9 +13,9 @@ export const ATS_LABEL: Record<AtsSource, string> = {
   workday: "Workday",
 };
 
-/** The full UI filter state. The keyword/location lists mirror scan.mjs's
+/** The full UI filter state. The keyword/location lists mirror src/scan/scan.mjs's
  *  buildTitleFilter / buildLocationFilter semantics; sinceDays/ats/limitPerAts map
- *  to scan-ats-full.mjs's --since / --ats / --limit. */
+ *  to src/scan/scan-ats-full.mjs's --since / --ats / --limit. */
 export type ExploreFilters = {
   positive: string[];
   negative: string[];
@@ -50,7 +50,7 @@ export type DiscoveredOffer = {
   /** which positive keyword matched the title (transparency, e.g. "ai" in "Nail") */
   matchedKeyword?: string;
   /** optional free-text ranking signal preserved to pipeline.md by the canonical
-   *  writer (scan.mjs formatPipelineOffer). Generic and source-agnostic — an
+   *  writer (src/scan/scan.mjs formatPipelineOffer). Generic and source-agnostic — an
    *  importer can attach a note; the deterministic scan omits it. */
   note?: string;
   // ── AI-search (modes/discover.md) additions — all optional, so the
