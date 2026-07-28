@@ -63,7 +63,9 @@ const EXCLUDES = [
 // web/ is the experimental web UI — its own release-please component, never
 // shipped by update-system.mjs, never in the npm package. Excluding it here is
 // part of that isolation contract, not a coverage gap.
-const EXCLUDE_PREFIXES = ['web/'];
+// ui/ is Frontrunner's workflow UI (v2) and sits under the same contract: its
+// own app with its own package.json and build, not something the updater ships.
+const EXCLUDE_PREFIXES = ['web/', 'ui/'];
 
 function covered(file) {
   // If explicitly excluded, it is covered
@@ -102,6 +104,8 @@ if (process.argv.includes('--self-test')) {
   assert(covered('providers-sibling/justjoin.mjs') === false, 'providers-sibling/justjoin.mjs must NOT be covered');
   assert(covered('web/package.json') === true, 'web/ tree must be covered (isolation-contract prefix exclude)');
   assert(covered('web-dashboard/index.html') === false, 'web-dashboard/ must NOT ride the web/ prefix exclude');
+  assert(covered('ui/package.json') === true, 'ui/ tree must be covered (isolation-contract prefix exclude)');
+  assert(covered('ui-kit/index.ts') === false, 'ui-kit/ must NOT ride the ui/ prefix exclude');
   assert(covered('.npmignore') === true, '.npmignore must be covered (excluded)');
 
   // Test unrelated file
