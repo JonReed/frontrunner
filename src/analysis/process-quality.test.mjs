@@ -1,5 +1,5 @@
 /**
- * process-quality.test.mjs — Systematic test suite for process-quality.mjs
+ * process-quality.test.mjs — Systematic test suite for src/analysis/process-quality.mjs
  *
  * Tests every exported function across:
  * - Markdown table parsing (well-formed, malformed, empty, header-only)
@@ -275,7 +275,7 @@ if (rentsync) {
 // ============================================================================
 console.log('\n--- 10. CLI behavior ---');
 
-const scriptPath = join(dirname(fileURLToPath(import.meta.url)), 'process-quality.mjs');
+const scriptPath = join(dirname(fileURLToPath(import.meta.url)), './process-quality.mjs');
 
 try {
   execFileSync('node', [scriptPath, '--self-test'], { encoding: 'utf-8', timeout: 10000 });

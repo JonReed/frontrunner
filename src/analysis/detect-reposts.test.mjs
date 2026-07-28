@@ -1,5 +1,5 @@
 /**
- * detect-reposts.test.mjs — Systematic test suite for detect-reposts.mjs
+ * detect-reposts.test.mjs — Systematic test suite for src/analysis/detect-reposts.mjs
  *
  * Tests every exported and internal function across:
  * - Input validation (malformed, missing, boundary values)
@@ -18,7 +18,7 @@
  */
 
 import { detectReposts, parseScanHistory } from './detect-reposts.mjs';
-import { roleFuzzyMatch } from './role-matcher.mjs';
+import { roleFuzzyMatch } from '../../role-matcher.mjs';
 import { readFileSync, writeFileSync, unlinkSync, existsSync, mkdtempSync, rmSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -814,7 +814,7 @@ ok('500 rows across 50 companies completes without throwing', true);
 // ============================================================================
 console.log('\n--- 12. CLI behavior ---');
 
-const scriptPath = join(dirname(fileURLToPath(import.meta.url)), 'detect-reposts.mjs');
+const scriptPath = join(dirname(fileURLToPath(import.meta.url)), './detect-reposts.mjs');
 
 // Test --self-test exit code
 try {

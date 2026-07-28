@@ -14,7 +14,7 @@
 6. **画像**，位于 `config/profile.yml` + `modes/_profile.md` — 读取叙事、原型与目标
 7. **故事库**，位于 `interview-prep/story-bank.md` — 已有的 STAR+R 故事
 8. **题库**，位于 `interview-prep/question-bank.md` — 已有短板（如文件存在）
-9. **此前已表态的薪酬** — 若已知 tracker#，运行 `node salary-gap.mjs --stated-for <tracker#>`（零 token）。任何先前的 `stated` 观察值，都是候选人在更早一轮、对某位具体面试官已经承诺过的数字——把它写入 Step 4 的速查页，让候选人保持口径一致，避免无意中重新谈价。
+9. **此前已表态的薪酬** — 若已知 tracker#，运行 `node src/analysis/salary-gap.mjs --stated-for <tracker#>`（零 token）。任何先前的 `stated` 观察值，都是候选人在更早一轮、对某位具体面试官已经承诺过的数字——把它写入 Step 4 的速查页，让候选人保持口径一致，避免无意中重新谈价。
 
 ---
 

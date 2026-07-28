@@ -519,7 +519,7 @@ Save full evaluation in `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 (list of 15-20 keywords from the JD for ATS optimization)
 ```
 
-**Machine Summary (required):** every report carries a `## Machine Summary` YAML fence directly after the header — same schema, exact field names, and rules as the "Machine Summary" block in `batch/batch-prompt.md` (do not duplicate the schema here; that file is the source of truth). It includes `advertised_comp`: the JD's own salary figure **verbatim** (e.g. `"80-90k EUR"`), or `null` when the JD states nothing — never estimated, never replaced with researched market data. This key seeds the advertised salary observation read by `node salary-gap.mjs`. It also includes `risk_summary`: the Risk Summary block mirrored as a map (schema and enum values in `batch/batch-prompt.md`).
+**Machine Summary (required):** every report carries a `## Machine Summary` YAML fence directly after the header — same schema, exact field names, and rules as the "Machine Summary" block in `batch/batch-prompt.md` (do not duplicate the schema here; that file is the source of truth). It includes `advertised_comp`: the JD's own salary figure **verbatim** (e.g. `"80-90k EUR"`), or `null` when the JD states nothing — never estimated, never replaced with researched market data. This key seeds the advertised salary observation read by `node src/analysis/salary-gap.mjs`. It also includes `risk_summary`: the Risk Summary block mirrored as a map (schema and enum values in `batch/batch-prompt.md`).
 
 ### 2. Record in tracker
 
@@ -554,4 +554,4 @@ If — and only if — the user **explicitly stated a role-specific desired numb
 {tracker#}\t{YYYY-MM-DD}\tdesired\t{amount}\t{currency}\tuser\t{short context note}
 ```
 
-Never infer a desired number from the JD, the score, or past conversations. The profile default (`config/profile.yml` → `compensation.target_range`) needs no line — `salary-gap.mjs` reads it as the fallback. The advertised figure also needs no line: the report's `advertised_comp` **is** the advertised observation.
+Never infer a desired number from the JD, the score, or past conversations. The profile default (`config/profile.yml` → `compensation.target_range`) needs no line — `src/analysis/salary-gap.mjs` reads it as the fallback. The advertised figure also needs no line: the report's `advertised_comp` **is** the advertised observation.

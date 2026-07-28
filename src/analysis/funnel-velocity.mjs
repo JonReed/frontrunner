@@ -39,11 +39,11 @@ import { join, dirname } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import yaml from 'js-yaml';
 import { computeFunnel, computeTrackerStats } from './stats.mjs';
-import { resolveColumns, parseTrackerRow } from './tracker-parse.mjs';
-import { resolveTrackerPath, loadCanonicalStates, resolveCanonicalState } from './tracker-utils.mjs';
-import { parseAppliedDate, normalizeStatus } from './followup-cadence.mjs';
+import { resolveColumns, parseTrackerRow } from '../../tracker-parse.mjs';
+import { resolveTrackerPath, loadCanonicalStates, resolveCanonicalState } from '../../tracker-utils.mjs';
+import { parseAppliedDate, normalizeStatus } from '../../followup-cadence.mjs';
 
-const CAREER_OPS = dirname(fileURLToPath(import.meta.url));
+const CAREER_OPS = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const STATES_FILE = join(CAREER_OPS, 'templates/states.yml');
 
 const args = process.argv.slice(2);

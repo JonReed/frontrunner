@@ -11,7 +11,7 @@ When the user asks to prep for an interview at a specific company+role, or when 
 5. **Profile** at `config/profile.yml` + `modes/_profile.md` — read for candidate context
 6. **Recruiter-side risk map** from the evaluation/PDF/application flow if present — use `modes/heuristics/recruiter-side.md` for the risk categories the interview process must resolve
 7. **Coffee chat notes** for this company, if the user has any (optional — see "Coffee Chat Cross-Reference" below)
-8. **Prior stated compensation** — if the tracker# is known, run `node salary-gap.mjs --stated-for <tracker#>` (zero tokens). Any prior `stated` observation is a number already committed to a specific interviewer in an earlier round — surface it in the Process Overview (Step 2) or Recruiter/HR pack (Step 4) as a "already discussed" reminder so the candidate stays consistent.
+8. **Prior stated compensation** — if the tracker# is known, run `node src/analysis/salary-gap.mjs --stated-for <tracker#>` (zero tokens). Any prior `stated` observation is a number already committed to a specific interviewer in an earlier round — surface it in the Process Overview (Step 2) or Recruiter/HR pack (Step 4) as a "already discussed" reminder so the candidate stays consistent.
 
 ## Coffee Chat Cross-Reference (optional, North America-specific)
 

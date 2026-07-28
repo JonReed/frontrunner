@@ -68,7 +68,7 @@ AI-powered, CLI-agnostic job search automation: pipeline tracking, offer evaluat
 | `data/applications.md` | Application tracker |
 | `data/pipeline.md` | Inbox of pending URLs |
 | `data/scan-history.tsv` | Scanner dedup history |
-| `data/scan-runs.tsv` | Per-run scan counters (appended by `scan.mjs`, read by `stats.mjs`) |
+| `data/scan-runs.tsv` | Per-run scan counters (appended by `scan.mjs`, read by `src/analysis/stats.mjs`) |
 | `data/follow-ups.md` | Follow-up history tracker |
 | `data/blacklist.md` | Do-not-apply companies (user layer, opt-in, never auto-populated; respected by `scan.mjs` and the `auto-pipeline`/`oferta`/`apply` gates) |
 | `data/salary-observations.tsv` | Append-only salary observation log (user layer) |
@@ -87,16 +87,16 @@ AI-powered, CLI-agnostic job search automation: pipeline tracking, offer evaluat
 | `set-status.mjs` | Canonical tracker-row update: `node set-status.mjs <report#\|company> <State> [--note] [--force]` — strict states.yml validation, report-link mismatch guard, shared lock, atomic write |
 | `invite-match.mjs` | Fuzzy-match a pasted interview invite (company, date, req ID) against the tracker, ranking candidates when a company has multiple entries (JSON or `--summary`) |
 | `paste-reply.mjs` | Manual/no-Gmail input into reply-watch classification — normalizes a pasted/file email (subject/from/body) and appends to `data/reply-candidates.json`; never overwrites entries, never classifies, never touches the tracker |
-| `analyze-patterns.mjs` | Pattern analysis incl. per-ATS-vendor advance rate (JSON) |
-| `upskill.mjs` | Weighted skill-gap map from tracked reports; known skills from `cv.md`/`config/profile.yml` excluded (JSON) |
-| `stats.mjs` | Lifetime pipeline stats: tracker roll-up, canonical `ever*` funnel, scan totals, portal coverage, follow-up compliance, scan-run trends (JSON or `--summary`) |
+| `src/analysis/analyze-patterns.mjs` | Pattern analysis incl. per-ATS-vendor advance rate (JSON) |
+| `src/analysis/upskill.mjs` | Weighted skill-gap map from tracked reports; known skills from `cv.md`/`config/profile.yml` excluded (JSON) |
+| `src/analysis/stats.mjs` | Lifetime pipeline stats: tracker roll-up, canonical `ever*` funnel, scan totals, portal coverage, follow-up compliance, scan-run trends (JSON or `--summary`) |
 | `followup-cadence.mjs` | Follow-up cadence calculator (JSON) |
 | `followup-seed.mjs` | Seeds `data/follow-ups.md` with a pinned first follow-up date when a row turns Applied (JSON) |
-| `detect-reposts.mjs` | Flags roles re-listed 2+ times in 90 days from `scan-history.tsv` (JSON or `--summary`) |
-| `process-quality.mjs` | Per-company recruiting-friction rate from `[process-friction]` tags in `data/active-interviews.md` Notes (JSON or `--summary`) |
-| `salary-gap.mjs` | Desired/advertised/actual comp gap analyzer — folds report `advertised_comp` + `data/salary-observations.tsv` (JSON or `--summary`) |
-| `assessment-log.mjs` | Skills-assessment logger — `add` appends platform/subject/threshold/score + staleness note to `data/assessments.tsv` (JSON or `--summary`) |
-| `jd-skill-gap.mjs` | Zero-LLM JD skill classifier vs `cv.md`: existing / supportedByResume / gap; never auto-adds claims to `cv.md` (JSON or `--summary`) |
+| `src/analysis/detect-reposts.mjs` | Flags roles re-listed 2+ times in 90 days from `scan-history.tsv` (JSON or `--summary`) |
+| `src/analysis/process-quality.mjs` | Per-company recruiting-friction rate from `[process-friction]` tags in `data/active-interviews.md` Notes (JSON or `--summary`) |
+| `src/analysis/salary-gap.mjs` | Desired/advertised/actual comp gap analyzer — folds report `advertised_comp` + `data/salary-observations.tsv` (JSON or `--summary`) |
+| `src/analysis/assessment-log.mjs` | Skills-assessment logger — `add` appends platform/subject/threshold/score + staleness note to `data/assessments.tsv` (JSON or `--summary`) |
+| `src/analysis/jd-skill-gap.mjs` | Zero-LLM JD skill classifier vs `cv.md`: existing / supportedByResume / gap; never auto-adds claims to `cv.md` (JSON or `--summary`) |
 | `reports/` | Evaluation reports `{###}-{company-slug}-{YYYY-MM-DD}.md` — Blocks A-F + G (Posting Legitimacy) + Risk Summary + `## Machine Summary` YAML; header includes `**Legitimacy:** {tier}` |
 
 ### Plugins (optional)

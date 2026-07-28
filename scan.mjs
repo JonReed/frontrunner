@@ -1029,7 +1029,7 @@ function isRoleLocationSuffix(tag) {
  * not split a key.
  *
  * This helper does not infer posting churn or detect repost clusters. Those
- * post-tracking facts remain the responsibility of detect-reposts.mjs and the
+ * post-tracking facts remain the responsibility of src/analysis/detect-reposts.mjs and the
  * company-history `postingChurn` axis.
  *
  * @param {unknown} role - Raw role title from a tracker row or provider job.
@@ -1753,7 +1753,7 @@ async function main() {
     ? config.skip_tiers.filter(t => typeof t === 'string').map(t => t.toLowerCase())
     : [];
   if (skipTiers.length > 0) {
-    const mod = await import('./classify-tier.mjs');
+    const mod = await import('./src/analysis/classify-tier.mjs');
     classifyTier = mod.classifyTier || mod.default;
   }
 

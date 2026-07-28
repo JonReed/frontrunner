@@ -26,9 +26,9 @@ import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { load as yamlLoad } from 'js-yaml';
-import { resolveColumns, parseTrackerRow } from './tracker-parse.mjs';
+import { resolveColumns, parseTrackerRow } from '../../tracker-parse.mjs';
 
-const CAREER_OPS = dirname(fileURLToPath(import.meta.url));
+const CAREER_OPS = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const APPS_FILE = existsSync(join(CAREER_OPS, 'data/applications.md'))
   ? join(CAREER_OPS, 'data/applications.md')
   : join(CAREER_OPS, 'applications.md');
@@ -48,7 +48,7 @@ const LOW_FIT_SCORE = 4.0;
 // Skill vocabulary + canonical extractor moved to skill-extract.mjs (#1896) so
 // upskill, jd-skill-gap, and analyze-patterns share ONE source of truth. Re-
 // exported here so existing importers of extractSkills keep working unchanged.
-import { extractSkills } from './skill-extract.mjs';
+import { extractSkills } from '../../skill-extract.mjs';
 export { extractSkills };
 
 // --- Machine Summary + Gap table parsing ---

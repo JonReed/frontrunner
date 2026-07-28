@@ -11,7 +11,7 @@
  *     on an Applied row past the silence window? A rejection counts as a
  *     response — it is an answer, not silence.
  *   - postingChurn: does this company repost the same role repeatedly
- *     (evergreen requisition / re-opened search), per detect-reposts.mjs?
+ *     (evergreen requisition / re-opened search), per src/analysis/detect-reposts.mjs?
  *
  * This script deliberately reports FACTS, not verdicts. It never uses the
  * words "ghost"/"ghosted" or "risk" — high-volume inboxes, evergreen
@@ -46,7 +46,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import yaml from 'js-yaml';
 
-import { parseScanHistory, detectReposts } from './detect-reposts.mjs';
+import { parseScanHistory, detectReposts } from './src/analysis/detect-reposts.mjs';
 import { normalizeCompany, resolveTrackerPath } from './tracker-utils.mjs';
 import { resolveColumns, parseTrackerRow } from './tracker-parse.mjs';
 import {
@@ -226,7 +226,7 @@ export function loadRepostClusters(rootDir = CAREER_OPS, overridePath) {
   return { clusters: detectReposts(rows), loaded: true };
 }
 
-// Dynamic-only dependency: funnel-velocity.mjs ships on main, but the
+// Dynamic-only dependency: src/analysis/funnel-velocity.mjs ships on main, but the
 // applied-date/median helpers probed below are not part of its export surface.
 // Loaded exclusively through a try/catch'd dynamic import so a missing (or
 // differently-shaped) module never crashes this script. Every extraction
@@ -235,7 +235,7 @@ export function loadRepostClusters(rootDir = CAREER_OPS, overridePath) {
 export async function loadStatusLogSource() {
   let mod = null;
   try {
-    mod = await import('./funnel-velocity.mjs');
+    mod = await import('./src/analysis/funnel-velocity.mjs');
   } catch {
     return { loaded: false, appliedDateByNum: new Map(), medianResponseDays: null };
   }
@@ -244,7 +244,7 @@ export async function loadStatusLogSource() {
   }
 
   // `loaded` reports whether this source can actually PRODUCE data, not merely
-  // whether the import resolved. The merged funnel-velocity.mjs exports neither
+  // whether the import resolved. The merged src/analysis/funnel-velocity.mjs exports neither
   // optional helper, so when no usable helper is present the source is inert and
   // must report absent — otherwise callers treat empty enrichment as loaded.
   const hasAppliedHelper = typeof mod.getAppliedDateObservations === 'function';
@@ -723,7 +723,7 @@ async function runSelfTest() {
 
   // --- funnel-velocity loader is honestly inert against the merged module ---
   {
-    // The merged funnel-velocity.mjs imports fine but exports neither optional
+    // The merged src/analysis/funnel-velocity.mjs imports fine but exports neither optional
     // helper (getAppliedDateObservations / computeMedianResponseDays), so the
     // loader must report the statusLog source ABSENT — no applied-date
     // observations, null median — rather than claiming loaded just because the

@@ -5,7 +5,7 @@
 1. Read `cv.md` as the source of truth
 2. Ask the user for the JD if it is not in context (text or URL)
 3. Extract 15-20 keywords from the JD
-4. Run the zero-LLM skill-gap check before drafting anything: write the JD to a scratch file (e.g. `jds/{slug}.md`) if it isn't already one, then `node jd-skill-gap.mjs jds/{slug}.md --summary`. This classifies the JD's explicit requirements against `cv.md` into three buckets — never surface `result.gap` items as if the candidate has them:
+4. Run the zero-LLM skill-gap check before drafting anything: write the JD to a scratch file (e.g. `jds/{slug}.md`) if it isn't already one, then `node src/analysis/jd-skill-gap.mjs jds/{slug}.md --summary`. This classifies the JD's explicit requirements against `cv.md` into three buckets — never surface `result.gap` items as if the candidate has them:
    - `existing` — already a named skill in cv.md's Skills section, safe to lead with
    - `supportedByResume` — not a named skill yet, but cv.md's prose already demonstrates it; legitimate candidates for the Skills section in the user's own words (Step 12's competency grid draws from here first)
    - `gap` — cv.md has no trace of it at all. **Tell the user explicitly which skills are gaps before generating the CV.** Never paper over a gap by inventing a claim, and never silently drop it from the conversation — the user decides whether to proceed, address it in the cover letter/interview, or skip the role

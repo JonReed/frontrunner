@@ -32,7 +32,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import yaml from 'js-yaml';
 
-const CAREER_OPS = dirname(fileURLToPath(import.meta.url));
+const CAREER_OPS = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const OBS_PATH = join(CAREER_OPS, 'data/salary-observations.tsv');
 const REPORTS_DIR = join(CAREER_OPS, 'reports');
 

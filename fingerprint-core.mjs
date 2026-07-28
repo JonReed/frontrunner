@@ -28,7 +28,7 @@ export const FINGERPRINT_MIN_TEXT = 200;
  * 0.92 ≈ at most 5 of 64 SimHash bits differ — near-verbatim bodies. */
 export const CROSSLIST_THRESHOLD = 0.92;
 
-/** Only compare against history this recent (mirrors detect-reposts.mjs). */
+/** Only compare against history this recent (mirrors src/analysis/detect-reposts.mjs). */
 export const CROSSLIST_WINDOW_DAYS = 90;
 
 /**
@@ -110,7 +110,7 @@ function companyKey(name) {
 /**
  * Find possible cross-listings: new offers whose fingerprint is near-identical
  * to a recent history row from a DIFFERENT company. Same-company matches are
- * re-posts (detect-reposts.mjs territory), not cross-listings — skipped here.
+ * re-posts (src/analysis/detect-reposts.mjs territory), not cross-listings — skipped here.
  *
  * Pure function: pass the offers and pre-parsed history rows in.
  *

@@ -28,7 +28,7 @@
 
 import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
-import { canonicalize, extractSkills } from './skill-extract.mjs';
+import { canonicalize, extractSkills } from '../../skill-extract.mjs';
 
 // ── Config ──────────────────────────────────────────────────────────
 

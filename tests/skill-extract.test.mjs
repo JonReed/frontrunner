@@ -1,5 +1,5 @@
 // tests/skill-extract.test.mjs — the shared skill vocabulary + canonical
-// extractor (#1896). These fixtures moved here verbatim from upskill.mjs's
+// extractor (#1896). These fixtures moved here verbatim from src/analysis/upskill.mjs's
 // self-test when the tokenizer was relocated (PR 1, pure relocation) — behavior
 // must stay byte-identical, so the same assertions now guard the shared module.
 import { pass, fail, ROOT } from './helpers.mjs';

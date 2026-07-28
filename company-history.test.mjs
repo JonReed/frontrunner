@@ -71,7 +71,7 @@ function followup(num, appNum, date, company, role = 'Engineer', channel = 'Emai
   return { num, appNum, date, company, role, channel, contact, notes };
 }
 
-// Repost-cluster fixture — mirrors detect-reposts.mjs's detectReposts() output shape.
+// Repost-cluster fixture — mirrors src/analysis/detect-reposts.mjs's detectReposts() output shape.
 function cluster(company, role, repostCount, firstSeen, lastSeen, daysSpan, appearances) {
   return { company, role, repostCount, firstSeen, lastSeen, daysSpan, appearances };
 }

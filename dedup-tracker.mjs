@@ -313,7 +313,7 @@ for (const entry of entries) {
 }
 
 // Two blind rows only count as the same listing when their evaluation dates
-// sit within the re-post window (mirrors detect-reposts.mjs's 90 days).
+// sit within the re-post window (mirrors src/analysis/detect-reposts.mjs's 90 days).
 // Unparseable dates never cluster — deleting a real application is worse than
 // keeping a duplicate.
 const BLIND_WINDOW_DAYS = 90;

@@ -5,7 +5,7 @@ import { pathToFileURL } from 'url';
 
 console.log('\nstats.mjs — lifetime pipeline stats aggregator (#1604)');
 try {
-  const stats = await import(pathToFileURL(join(ROOT, 'stats.mjs')).href);
+  const stats = await import(pathToFileURL(join(ROOT, 'src/analysis/stats.mjs')).href);
 
   // Tracker roll-up — CRLF input on purpose (Windows checkouts).
   const trackerMd = [
@@ -132,20 +132,20 @@ try {
 
   // CLI smoke — must emit the full contract with null sections in a checkout
   // with no user data (exactly the CI environment).
-  const cliOut = run(NODE, [join(ROOT, 'stats.mjs')]);
+  const cliOut = run(NODE, [join(ROOT, 'src/analysis/stats.mjs')]);
   const parsed = JSON.parse(cliOut);
   if (parsed && parsed.metadata && 'tracker' in parsed && 'scan' in parsed && 'portals' in parsed
       && 'followups' in parsed && 'funnel' in parsed && 'runs' in parsed) {
-    pass('stats.mjs CLI emits the full JSON contract (sections null when sources missing)');
+    pass('src/analysis/stats.mjs CLI emits the full JSON contract (sections null when sources missing)');
   } else {
-    fail(`stats.mjs CLI missing sections: ${parsed ? Object.keys(parsed).join(',') : cliOut}`);
+    fail(`src/analysis/stats.mjs CLI missing sections: ${parsed ? Object.keys(parsed).join(',') : cliOut}`);
   }
-  const summaryOut = run(NODE, [join(ROOT, 'stats.mjs'), '--summary']);
+  const summaryOut = run(NODE, [join(ROOT, 'src/analysis/stats.mjs'), '--summary']);
   if (summaryOut && summaryOut.includes('Pipeline Stats')) {
-    pass('stats.mjs --summary renders the human table');
+    pass('src/analysis/stats.mjs --summary renders the human table');
   } else {
-    fail('stats.mjs --summary missing header');
+    fail('src/analysis/stats.mjs --summary missing header');
   }
 } catch (e) {
-  fail(`stats.mjs tests crashed: ${e.message}`);
+  fail(`src/analysis/stats.mjs tests crashed: ${e.message}`);
 }

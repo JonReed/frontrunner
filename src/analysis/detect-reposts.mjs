@@ -25,9 +25,9 @@ import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 
-import { roleFuzzyMatch } from './role-matcher.mjs';
+import { roleFuzzyMatch } from '../../role-matcher.mjs';
 
-const CAREER_OPS = dirname(fileURLToPath(import.meta.url));
+const CAREER_OPS = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SCAN_HISTORY_PATH = join(CAREER_OPS, 'data/scan-history.tsv');
 const DEFAULT_WINDOW_DAYS = 90;
 

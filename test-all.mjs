@@ -158,18 +158,18 @@ const scripts = [
   { name: 'dedup-tracker.mjs --dry-run', expectExit: 0 },
   { name: 'merge-tracker.mjs --dry-run', expectExit: 0 },
   { name: 'reconcile-pipeline.mjs --dry-run', expectExit: 0 },
-  { name: 'analyze-patterns.mjs --self-test', expectExit: 0 },
-  { name: 'upskill.mjs --self-test', expectExit: 0 },
-  { name: 'detect-reposts.mjs --self-test', expectExit: 0 },
+  { name: 'src/analysis/analyze-patterns.mjs --self-test', expectExit: 0 },
+  { name: 'src/analysis/upskill.mjs --self-test', expectExit: 0 },
+  { name: 'src/analysis/detect-reposts.mjs --self-test', expectExit: 0 },
   { name: 'discover-ats.mjs --self-test', expectExit: 0 },
-  { name: 'process-quality.mjs --self-test', expectExit: 0 },
+  { name: 'src/analysis/process-quality.mjs --self-test', expectExit: 0 },
   { name: 'company-history.mjs --self-test', expectExit: 0 },
-  { name: 'salary-gap.mjs --self-test', expectExit: 0 },
-  { name: 'funnel-velocity.mjs --self-test', expectExit: 0 },
+  { name: 'src/analysis/salary-gap.mjs --self-test', expectExit: 0 },
+  { name: 'src/analysis/funnel-velocity.mjs --self-test', expectExit: 0 },
   { name: 'img-to-pdf.mjs --self-test', expectExit: 0 },
-  { name: 'assessment-log.mjs --self-test', expectExit: 0 },
+  { name: 'src/analysis/assessment-log.mjs --self-test', expectExit: 0 },
   { name: 'build-cv-html.mjs --test', expectExit: 0 },
-  { name: 'jd-skill-gap.mjs --self-test', expectExit: 0 },
+  { name: 'src/analysis/jd-skill-gap.mjs --self-test', expectExit: 0 },
   { name: 'verify-cv-facts.mjs --self-test', expectExit: 0 },
   { name: 'updater-migration-tests.mjs', expectExit: 0 },
   { name: 'tracker-columns-tests.mjs', expectExit: 0 },
@@ -183,10 +183,10 @@ const scripts = [
   // both quick and full mode like their siblings above.
   { name: 'test-trust-validator.mjs', expectExit: 0 },
   { name: 'test-salary-filter.mjs', expectExit: 0 },
-  { name: 'detect-reposts.test.mjs', expectExit: 0 },
+  { name: 'src/analysis/detect-reposts.test.mjs', expectExit: 0 },
   { name: 'discover-ats.test.mjs', expectExit: 0 },
   { name: 'followup-cadence.test.mjs', expectExit: 0 },
-  { name: 'process-quality.test.mjs', expectExit: 0 },
+  { name: 'src/analysis/process-quality.test.mjs', expectExit: 0 },
   { name: 'company-history.test.mjs', expectExit: 0 },
   { name: 'reply-matcher.test.mjs', expectExit: 0 },
   { name: 'validate-portals.mjs --file templates/portals.example.yml', expectExit: 0 },
@@ -1620,7 +1620,7 @@ if (/\{\{REPORT_NUM\}\}\\t\{\{DATE\}\}/.test(batchTrackerStep) && !/Compute `\{n
 }
 
 const batchMachineSummary = batchPrompt.match(/#### Machine Summary[\s\S]*?### Step 3 \u2014 Save the Report/)?.[0] ?? '';
-const patternsMachineFields = readFile('analyze-patterns.mjs').match(/const MACHINE_SUMMARY_FIELDS = new Set\(\[([\s\S]*?)\]\);/)?.[1] ?? '';
+const patternsMachineFields = readFile('src/analysis/analyze-patterns.mjs').match(/const MACHINE_SUMMARY_FIELDS = new Set\(\[([\s\S]*?)\]\);/)?.[1] ?? '';
 if (
   /^via:/m.test(batchMachineSummary) &&
   /^company_confidential:/m.test(batchMachineSummary) &&
@@ -2313,7 +2313,7 @@ if (
 if (
   trackerModeDoc.includes('salary-observations.tsv') &&
   trackerModeDoc.includes('recruiter-verbal') &&
-  trackerModeDoc.includes('salary-gap.mjs')
+  trackerModeDoc.includes('src/analysis/salary-gap.mjs')
 ) {
   pass('tracker appends confirmed actual observations with source tiers and surfaces salary-gap');
 } else {
@@ -2326,7 +2326,7 @@ if (/## Step 3[\s\S]*?salary-observations\.tsv[\s\S]*?## Step 4/.test(offerPrepM
   fail('offer-prep Step 3 missing the salary-observations.tsv append');
 }
 
-if (patternsModeDoc.includes('salary-gap.mjs')) {
+if (patternsModeDoc.includes('src/analysis/salary-gap.mjs')) {
   pass('patterns mode offers salary-gap as an additional lens');
 } else {
   fail('patterns mode missing salary-gap lens mention');
@@ -9992,7 +9992,7 @@ try {
 
   // computeRunStats: header-name parsing, torn rows skipped, failed runs
   // excluded from averages.
-  const stats = await import(pathToFileURL(join(ROOT, 'stats.mjs')).href);
+  const stats = await import(pathToFileURL(join(ROOT, 'src/analysis/stats.mjs')).href);
   const runsTsv = [
     'timestamp\tstatus\tcompanies\tboards\tfound\tfiltered_title\tfiltered_tier\tfiltered_location\tfiltered_salary\tfiltered_content\tfiltered_cooldown\tdupes\tnew_added\terrors',
     '2026-07-01T08:00:00Z\tcompleted\t45\t3\t100\t30\t5\t20\t2\t6\t1\t30\t6\t0',
@@ -10046,7 +10046,7 @@ try {
 }
 
 // ── STATED-COMP TRACKING (#1852) ────────────────────────────────
-// salary-gap.mjs's own --self-test (invoked above via the CLI-check table)
+// src/analysis/salary-gap.mjs's own --self-test (invoked above via the CLI-check table)
 // covers stated-observation parsing, backward compatibility, and the
 // getStatedObservations() lookup. This section pins the mode-doc wiring:
 // interview/plan reads it back before generating prep, interview-prep does
@@ -10059,8 +10059,8 @@ try {
   const prepModeDoc = readFile('modes/interview-prep.md');
   const debriefMode = readFile('modes/interview/debrief.md');
 
-  if (planMode.includes('--stated-for') && planMode.includes('salary-gap.mjs')) {
-    pass('interview/plan reads prior stated-comp observations via salary-gap.mjs --stated-for');
+  if (planMode.includes('--stated-for') && planMode.includes('src/analysis/salary-gap.mjs')) {
+    pass('interview/plan reads prior stated-comp observations via src/analysis/salary-gap.mjs --stated-for');
   } else {
     fail('interview/plan missing --stated-for lookup for prior stated-comp observations');
   }
@@ -10071,8 +10071,8 @@ try {
     fail('interview/plan quick-reference missing the "already discussed" comp callout');
   }
 
-  if (prepModeDoc.includes('--stated-for') && prepModeDoc.includes('salary-gap.mjs')) {
-    pass('interview-prep reads prior stated-comp observations via salary-gap.mjs --stated-for');
+  if (prepModeDoc.includes('--stated-for') && prepModeDoc.includes('src/analysis/salary-gap.mjs')) {
+    pass('interview-prep reads prior stated-comp observations via src/analysis/salary-gap.mjs --stated-for');
   } else {
     fail('interview-prep missing --stated-for lookup for prior stated-comp observations');
   }

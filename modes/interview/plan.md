@@ -14,7 +14,7 @@ Given a job description and interview date/time, build a structured, time-blocke
 6. **Profile** at `config/profile.yml` + `modes/_profile.md` — read for narrative, archetypes, and targets
 7. **Story bank** at `interview-prep/story-bank.md` — existing STAR+R stories
 8. **Question bank** at `interview-prep/question-bank.md` — existing gaps (if file exists)
-9. **Prior stated compensation** — if the tracker# is known, run `node salary-gap.mjs --stated-for <tracker#>` (zero tokens). Any prior `stated` observation is a number the candidate already committed to, in an earlier round, to a specific interviewer — feed it into Step 4's quick-reference so the candidate stays consistent instead of accidentally renegotiating.
+9. **Prior stated compensation** — if the tracker# is known, run `node src/analysis/salary-gap.mjs --stated-for <tracker#>` (zero tokens). Any prior `stated` observation is a number the candidate already committed to, in an earlier round, to a specific interviewer — feed it into Step 4's quick-reference so the candidate stays consistent instead of accidentally renegotiating.
 
 ---
 
