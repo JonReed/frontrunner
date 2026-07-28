@@ -10,7 +10,7 @@ import { pass, fail, ROOT } from './helpers.mjs';
 import {
   outputLanguageInstruction,
   parseOutputLanguage,
-} from '../profile-language.mjs';
+} from '../src/lib/profile-language.mjs';
 
 console.log('\noutput-language — headless engines honor language.output (#1897)');
 

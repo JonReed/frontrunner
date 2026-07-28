@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * paste-reply-tests.mjs — regression tests for src/tracker/paste-reply.mjs (#1802).
+ * tests/paste-reply-tests.mjs — regression tests for src/tracker/paste-reply.mjs (#1802).
  *
  * Locks in the manual/no-Gmail input path into src/tracker/reply-watch.mjs's classification
  * pipeline:

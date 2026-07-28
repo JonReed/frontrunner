@@ -17,7 +17,7 @@ The single most important architectural rule: **system files** and **user files*
 - **System layer** — the tool itself: `modes/`, scripts (`*.mjs`), templates, the dashboard. These are versioned and updated by `update-system.mjs`. Listed in `SYSTEM_PATHS`.
 - **User layer** — your data: `cv.md`, `config/profile.yml`, `modes/_profile.md`, `data/`, `reports/`, `jds/`, etc. The updater **never** touches these. Listed in `USER_PATHS`.
 
-`DATA_CONTRACT.md` is the source of truth for this boundary, and `updater-migration-tests.mjs` enforces that no system path ever overlaps a user path.
+`DATA_CONTRACT.md` is the source of truth for this boundary, and `tests/updater-migration-tests.mjs` enforces that no system path ever overlaps a user path.
 
 ## Files are canonical — databases are derived
 
@@ -82,7 +82,7 @@ scan ──► data/pipeline.md ──► evaluate (oferta + cv) ──► repor
 ## Quality gates
 
 - `test-all.mjs` — the full suite (500+ checks across scoring, scan, tracker, PDF, security, updater).
-- `updater-migration-tests.mjs` — enforces the system/user boundary and safe cross-version upgrades.
+- `tests/updater-migration-tests.mjs` — enforces the system/user boundary and safe cross-version upgrades.
 - CI: `test` + CodeQL are required; CodeRabbit reviews every PR; Renovate keeps deps current.
 
 ## Where to start reading

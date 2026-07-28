@@ -1,10 +1,10 @@
 /**
- * followup-cadence.test.mjs — tests for computeNextFollowupDate cadence selection.
+ * tests/followup-cadence-tests.mjs — tests for computeNextFollowupDate cadence selection.
  *
  * Focuses on the `responded` branch, where the first follow-up after a recruiter
  * reply must be scheduled with `responded_initial`, not `responded_subsequent`.
  *
- * Run: node followup-cadence.test.mjs
+ * Run: node tests/followup-cadence-tests.mjs
  */
 
 import {
@@ -13,7 +13,7 @@ import {
   parseDate,
   DEFAULT_CADENCE,
   parseFollowups,
-} from './src/tracker/followup-cadence.mjs';
+} from '../src/tracker/followup-cadence.mjs';
 
 let passed = 0;
 let failed = 0;

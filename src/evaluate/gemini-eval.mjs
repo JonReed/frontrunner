@@ -39,7 +39,7 @@ const tracker = new TokenAccumulator();
 tracker.recordZeroToken('scan');
 tracker.recordZeroToken('pdf payload');
 import { execFileSync } from 'child_process';
-import { outputLanguageInstruction, parseOutputLanguage } from '../../profile-language.mjs';
+import { outputLanguageInstruction, parseOutputLanguage } from '../lib/profile-language.mjs';
 import {
   formatReportNumber, releaseReportNumbers, reserveReportNumbers,
 } from '../tracker/reserve-report-num.mjs';

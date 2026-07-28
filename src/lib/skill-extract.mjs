@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * skill-extract.mjs — the shared skill vocabulary + canonical extractor (#1896)
+ * src/lib/skill-extract.mjs — the shared skill vocabulary + canonical extractor (#1896)
  *
  * Single source of truth for how career-ops recognizes and canonicalizes hard
  * skills. Lifted verbatim from src/analysis/upskill.mjs (the most-tested copy) so upskill,

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * updater-migration-tests.mjs — source-level safety checks for update-system.
+ * tests/updater-migration-tests.mjs — source-level safety checks for update-system.
  *
  * Protects cross-version migrations where an older installed updater must fetch
  * newly introduced system paths without touching user data.
@@ -85,8 +85,8 @@ const requiredSystemPaths = [
   '.antigravitycli/skills/',
   '.grok/skills/',
   '.cursor/skills/',
-  'tracker-columns-tests.mjs',
-  'updater-migration-tests.mjs',
+  'tests/tracker-columns-tests.mjs',
+  'tests/updater-migration-tests.mjs',
   'README.ar.md',
   'README.de.md',
   'README.hi.md',
@@ -111,8 +111,8 @@ const requiredBootstrapPaths = [
   'src/tracker/role-matcher.mjs',
   'src/tracker/tracker-utils.mjs',
   'src/tracker/tracker-parse.mjs',
-  'updater-migration-tests.mjs',
-  'tracker-columns-tests.mjs',
+  'tests/updater-migration-tests.mjs',
+  'tests/tracker-columns-tests.mjs',
 ];
 
 for (const path of requiredSystemPaths) {

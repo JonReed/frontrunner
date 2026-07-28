@@ -85,9 +85,9 @@ These files contain system logic, scripts, templates, and instructions that impr
 | `AGENTS.md` | Canonical agent instructions (imported by CLI-specific wrappers) |
 | `*.mjs` | Utility scripts |
 | `plugins/` | Bundled plugins + the plugin engine (opt-in external integrations) |
-| `plugins.mjs` | Plugin CLI (list/run/available/add/new/enable/skill/trust/remove) |
+| `src/plugins/plugins.mjs` | Plugin CLI (list/run/available/add/new/enable/skill/trust/remove) |
 | `plugins-registry/` | Curated community plugins, one `<id>.json` per plugin (the trust root) |
-| `plugin-install.mjs` / `plugin-audit.mjs` / `validate-plugin-registry.mjs` | Plugin install/audit/registry-validation utilities |
+| `src/plugins/plugin-install.mjs` / `src/plugins/plugin-audit.mjs` / `src/plugins/validate-plugin-registry.mjs` | Plugin install/audit/registry-validation utilities |
 | `config/plugins.example.yml` | Plugin activation template (seed for `config/plugins.yml`) |
 | `batch/batch-prompt.md` | Batch worker prompt |
 | `batch/batch-runner.sh` | Batch orchestrator |

@@ -23,7 +23,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import readline from 'node:readline';
 import yaml from 'js-yaml';
-import { outputLanguageInstruction, parseOutputLanguage } from '../../profile-language.mjs';
+import { outputLanguageInstruction, parseOutputLanguage } from '../lib/profile-language.mjs';
 import {
   formatReportNumber, releaseReportNumbers, reserveReportNumbers,
 } from '../tracker/reserve-report-num.mjs';

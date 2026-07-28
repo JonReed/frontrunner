@@ -41,7 +41,7 @@ import { buildTrustValidator } from '../../providers/_trust-validator.mjs';
 import { loadProviders, resolveProvider } from '../../providers/_registry.mjs';
 import { mergeProviderPlugins } from '../../plugins/_engine.mjs';
 import { classifyFetchError } from './verify-portals.mjs';
-import { fingerprintText, findCrossListings } from '../../fingerprint-core.mjs';
+import { fingerprintText, findCrossListings } from '../lib/fingerprint-core.mjs';
 import { resolveColumns, parseTrackerRow } from '../tracker/tracker-parse.mjs';
 import { normalizeCompany } from '../tracker/tracker-utils.mjs';
 import { withPipelineLock } from '../tracker/pipeline-lock.mjs';
@@ -1359,7 +1359,7 @@ Paste job URLs below as \`- [ ] {url}\` then run \`/career-ops pipeline\`.
 const PENDING_MARKERS = ['## Pending', '## Pendientes'];
 const PROCESSED_MARKERS = ['## Processed', '## Procesadas'];
 
-// Locked (src/tracker/pipeline-lock.mjs) so scan.mjs, scan-ats-full.mjs, and plugins.mjs
+// Locked (src/tracker/pipeline-lock.mjs) so scan.mjs, scan-ats-full.mjs, and src/plugins/plugins.mjs
 // (pipeline mode) — the three current callers — can never interleave their
 // read-modify-write and silently drop each other's offers.
 export async function appendToPipeline(offers) {

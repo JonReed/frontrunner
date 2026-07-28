@@ -9,7 +9,7 @@ import {
 import { dirname, join } from 'path';
 import { tmpdir } from 'os';
 import { fileURLToPath } from 'url';
-import { acquireTrackerLock, openTrackerTransaction } from './src/tracker/tracker-utils.mjs';
+import { acquireTrackerLock, openTrackerTransaction } from '../src/tracker/tracker-utils.mjs';
 
 import { ROOT } from '#paths';
 const NODE = process.execPath;

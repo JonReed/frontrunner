@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // @ts-check
-// validate-plugin-registry.mjs — deterministic shape gate for the plugin
+// src/plugins/validate-plugin-registry.mjs — deterministic shape gate for the plugin
 // registry (plugins-registry/<id>.json, one file per plugin; legacy single-file
 // plugins-registry.json still validates via the loader's fallback).
 // Run locally + by the registry-validate CI. Shape/uniqueness only (no network);
@@ -9,8 +9,8 @@
 
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { loadRegistry, loadRegistryFiles, validateRegistryEntry } from './plugins/_registry.mjs';
-import { HOOK_KINDS, RESERVED_ENV } from './plugins/_engine.mjs';
+import { loadRegistry, loadRegistryFiles, validateRegistryEntry } from '../../plugins/_registry.mjs';
+import { HOOK_KINDS, RESERVED_ENV } from '../../plugins/_engine.mjs';
 
 const ID_RE = /^[a-z0-9][a-z0-9-]*$/;
 
@@ -51,7 +51,7 @@ if (import.meta.url === (await import('node:url')).pathToFileURL(process.argv[1]
   // plugin code is executed). Used by the registry-validate CI in a sandbox.
   if (deep && problems.length === 0) {
     const { auditRegistryEntry } = await import('./plugin-install.mjs');
-    const { loadRegistry } = await import('./plugins/_registry.mjs');
+    const { loadRegistry } = await import('../../plugins/_registry.mjs');
     for (const e of loadRegistry(root).plugins) {
       for (const p of auditRegistryEntry(e.repo, e.sha, e.id)) problems.push(`${e.name}: ${p}`);
     }

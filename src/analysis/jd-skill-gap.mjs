@@ -28,7 +28,7 @@
 
 import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
-import { canonicalize, extractSkills } from '../../skill-extract.mjs';
+import { canonicalize, extractSkills } from '../lib/skill-extract.mjs';
 
 // ── Config ──────────────────────────────────────────────────────────
 
@@ -229,7 +229,7 @@ function classifySkillGaps(jdSkills, cvText) {
   const { namedSkillsText, proseText } = splitSkillsSection(cvText);
 
   // Canonical skill sets present in each CV region. Folding BOTH the JD token
-  // and the CV text through skill-extract.mjs's canonicalize() is what closes
+  // and the CV text through src/lib/skill-extract.mjs's canonicalize() is what closes
   // the alias gap this file was reported for (#1896): a CV that writes "k8s"
   // and a JD that says "Kubernetes" resolve to the same canonical name instead
   // of being reported as a false gap. This is the shared tokenizer upskill.mjs

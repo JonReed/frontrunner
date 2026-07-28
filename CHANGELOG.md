@@ -18,7 +18,7 @@
 * **providers:** add Flowxtra board-wide job provider ([c9671e0](https://github.com/santifer/career-ops/commit/c9671e08f92ebc7d01aba0b41d084dd5322afd18))
 * **providers:** add VDAB zero-auth provider ([#2084](https://github.com/santifer/career-ops/issues/2084)) ([6164384](https://github.com/santifer/career-ops/commit/6164384768fa47b7e164e2c36f53e86b2fd620cc))
 * **scan:** src/scan/discover-ats.mjs — resolve a company list to scannable ATS boards ([#1865](https://github.com/santifer/career-ops/issues/1865)) ([50874d1](https://github.com/santifer/career-ops/commit/50874d109ebc7adb35e7e67100687e4d96f42cce)), closes [#1864](https://github.com/santifer/career-ops/issues/1864)
-* **skills:** extract the shared skill tokenizer into skill-extract.mjs ([#2003](https://github.com/santifer/career-ops/issues/2003)) ([c110825](https://github.com/santifer/career-ops/commit/c110825a539d29c8dde25ad0d036babcaffefb18))
+* **skills:** extract the shared skill tokenizer into src/lib/skill-extract.mjs ([#2003](https://github.com/santifer/career-ops/issues/2003)) ([c110825](https://github.com/santifer/career-ops/commit/c110825a539d29c8dde25ad0d036babcaffefb18))
 * **upskill:** learning plan on the aggregate gap heatmap ([#2217](https://github.com/santifer/career-ops/issues/2217)) ([f20d3e2](https://github.com/santifer/career-ops/commit/f20d3e27080217eb9a48dccdc79843d27da319fb)), closes [#1740](https://github.com/santifer/career-ops/issues/1740)
 
 

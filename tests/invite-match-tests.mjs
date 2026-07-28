@@ -1,12 +1,12 @@
 /**
- * invite-match.test.mjs — regression tests for src/tracker/invite-match.mjs's ambiguous-
+ * tests/invite-match-tests.mjs — regression tests for src/tracker/invite-match.mjs's ambiguous-
  * match ranking, which is the part most likely to silently regress: a wrong
  * top candidate is worse than no candidate at all.
  *
- * Run: node invite-match.test.mjs
+ * Run: node tests/invite-match-tests.mjs
  */
 
-import { matchInvite, normalizeCompanyName } from './src/tracker/invite-match.mjs';
+import { matchInvite, normalizeCompanyName } from '../src/tracker/invite-match.mjs';
 
 let passed = 0;
 let failed = 0;

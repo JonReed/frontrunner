@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // @ts-check
-// plugin-install.mjs — clone/scaffold/validate community plugins. Lives at repo
+// src/plugins/plugin-install.mjs — clone/scaffold/validate community plugins. Lives at repo
 // ROOT (not under plugins/) because it uses node:child_process to run git, which
-// test-all's plugin deny-list forbids inside plugins/. Imported by plugins.mjs.
+// test-all's plugin deny-list forbids inside plugins/. Imported by src/plugins/plugins.mjs.
 //
 // Security (the clone-time-RCE class): git is spawned via execFileSync with an
 // ARRAY argv (never a shell string), the URL is strict-allowlisted to
@@ -14,8 +14,8 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, mkdirSync, rmSync, cpSync, readdirSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { validateManifest } from './plugins/_engine.mjs';
-import { hashPluginTree } from './plugins/_lock.mjs';
+import { validateManifest } from '../../plugins/_engine.mjs';
+import { hashPluginTree } from '../../plugins/_lock.mjs';
 import { auditPlugin } from './plugin-audit.mjs';
 
 const GITHUB_URL_RE = /^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+?(?:\.git)?$/;
@@ -79,7 +79,7 @@ export function validateInstall(dir, expectId) {
 export function installFromRepo(root, { url, sha }) {
   const { url: safeUrl, id } = parseRepoArg(url);
   const dest = path.join(root, 'plugins.local', id);
-  if (existsSync(dest)) throw new Error(`plugins.local/${id} already exists — \`node plugins.mjs remove ${id}\` first`);
+  if (existsSync(dest)) throw new Error(`plugins.local/${id} already exists — \`node src/plugins/plugins.mjs remove ${id}\` first`);
   let cloned = safeClone(safeUrl, sha);
   let result;
   try { result = validateInstall(cloned, id); }

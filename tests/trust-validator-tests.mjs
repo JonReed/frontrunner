@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // @ts-check
 /**
- * test-trust-validator.mjs — Comprehensive test suite for trust validation.
- * Run: node test-trust-validator.mjs
+ * tests/trust-validator-tests.mjs — Comprehensive test suite for trust validation.
+ * Run: node tests/trust-validator-tests.mjs
  *
  * Tests cover:
  *   - buildTrustValidator: disabled/enabled, config merging
@@ -19,7 +19,7 @@ import {
   matchesDomainList,
   companyMatchesHostname,
   classifyTrustLevel,
-} from './providers/_trust-validator.mjs';
+} from '../providers/_trust-validator.mjs';
 
 // ── Test runner ──────────────────────────────────────────────────────
 

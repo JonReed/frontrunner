@@ -24,7 +24,7 @@
     "cv:verify-facts": "node src/cv/verify-cv-facts.mjs",
     "sync-check": "node src/cv/cv-sync-check.mjs",
     "update:check": "node update-system.mjs check",
-    "update:test": "node updater-migration-tests.mjs",
+    "update:test": "node tests/updater-migration-tests.mjs",
     "update": "node update-system.mjs apply",
     "rollback": "node update-system.mjs rollback",
     "liveness": "node src/scan/check-liveness.mjs",

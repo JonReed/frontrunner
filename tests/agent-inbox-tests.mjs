@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * agent-inbox-tests.mjs — regression tests for src/tracker/agent-inbox.mjs.
+ * tests/agent-inbox-tests.mjs — regression tests for src/tracker/agent-inbox.mjs.
  *
  * Locks in the queue's behaviour:
  *   1. A first `add` seeds the header + agent protocol and one pending item.

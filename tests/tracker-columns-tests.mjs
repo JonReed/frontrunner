@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * tracker-columns-tests.mjs — regression tests for header-name column mapping.
+ * tests/tracker-columns-tests.mjs — regression tests for header-name column mapping.
  *
  * src/tracker/merge-tracker.mjs and src/tracker/verify-pipeline.mjs used to parse applications.md by
  * fixed column position. Inserting a column (e.g. a Location column after Role)
@@ -196,7 +196,7 @@ const TSV_NO_LOCATION = '2\t2026-02-02\tGlobex\tManager\tApplied\tN/A\t✅\t—\
 
 // ── Test 5: removeRowByNum resolves the Report column by header ─────────────
 {
-  const { removeRowByNum } = await import('./src/tracker/tracker.mjs');
+  const { removeRowByNum } = await import('../src/tracker/tracker.mjs');
   const tenCol = HEADER_10.replace('| — | seed row |', '| [1](reports/001-acme-2026-01-01.md) | seed row |');
   const res = removeRowByNum(tenCol, 1);
   if (res.removed && res.report === '[1](reports/001-acme-2026-01-01.md)') {
@@ -210,7 +210,7 @@ const TSV_NO_LOCATION = '2\t2026-02-02\tGlobex\tManager\tApplied\tN/A\t✅\t—\
 // loadSeenCompanyRoles used a positional regex, so a 10-col tracker produced
 // keys like "engineer::remote" and scan dedup missed real matches.
 {
-  const { loadSeenCompanyRoles } = await import('./src/scan/scan.mjs');
+  const { loadSeenCompanyRoles } = await import('../src/scan/scan.mjs');
   const sb = makeSandbox(HEADER_10);
   const seen = loadSeenCompanyRoles(sb.tracker, undefined, sandboxSources(sb));
   if (seen.has('acme::engineer')) pass('src/scan/scan.mjs: seen-set keys company::role on 10-col tracker');
@@ -288,7 +288,7 @@ const TSV_NO_LOCATION = '2\t2026-02-02\tGlobex\tManager\tApplied\tN/A\t✅\t—\
     fail(`contract: src/tracker/tracker.mjs on unknown-column tracker — got ${JSON.stringify(row)}`);
   }
 
-  const { loadSeenCompanyRoles } = await import('./src/scan/scan.mjs');
+  const { loadSeenCompanyRoles } = await import('../src/scan/scan.mjs');
   const seen = loadSeenCompanyRoles(sb.tracker, undefined, sandboxSources(sb));
   if (seen.has('acme::engineer') && seen.size === 1) {
     pass('contract: src/scan/scan.mjs seen-set skips an unknown extra column');
@@ -320,8 +320,8 @@ const TSV_NO_LOCATION = '2\t2026-02-02\tGlobex\tManager\tApplied\tN/A\t✅\t—\
 if (!HAS_WEB) {
   skipWeb('web reader: shared alias table tests');
 } else {
-  const { parseApplications, loadHeaderAliases } = await import('./web/src/lib/tracker-table.mjs');
-  const { HEADER_ALIASES } = await import('./src/tracker/tracker-parse.mjs');
+  const { parseApplications, loadHeaderAliases } = await import('../web/src/lib/tracker-table.mjs');
+  const { HEADER_ALIASES } = await import('../src/tracker/tracker-parse.mjs');
   const WEB_10COL = `# Applications Tracker
 
 | # | Date | Company | Role | Location | Score | Status | PDF | Report | Priority | Notes |
@@ -366,7 +366,7 @@ const HEADER_VIA = `# Applications Tracker
 
 // ── Test 9: parseTrackerRow surfaces the Via column ─────────────────────────
 {
-  const { resolveColumns, parseTrackerRow } = await import('./src/tracker/tracker-parse.mjs');
+  const { resolveColumns, parseTrackerRow } = await import('../src/tracker/tracker-parse.mjs');
   const lines = HEADER_VIA.split('\n');
   const colmap = resolveColumns(lines);
   const rows = lines.map(l => parseTrackerRow(l, colmap)).filter(Boolean);
@@ -561,7 +561,7 @@ const HEADER_VIA = `# Applications Tracker
 if (!HAS_WEB) {
   skipWeb('web reader: alias cache refresh tests');
 } else {
-  const { loadHeaderAliases } = await import('./web/src/lib/tracker-table.mjs');
+  const { loadHeaderAliases } = await import('../web/src/lib/tracker-table.mjs');
   const dir = mkdtempSync(join(tmpdir(), 'co-alias-'));
   mkdirSync(join(dir, 'src/tracker'), { recursive: true });
   const aliasFile = join(dir, 'src/tracker/tracker-aliases.json');

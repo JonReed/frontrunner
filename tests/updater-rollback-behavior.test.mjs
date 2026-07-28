@@ -1,7 +1,7 @@
 /**
  * updater-rollback-behavior.test.mjs — BEHAVIORAL rollback tests (#2015 follow-up).
  *
- * The rest of updater-migration-tests.mjs verifies the updater by source-pattern
+ * The rest of tests/updater-migration-tests.mjs verifies the updater by source-pattern
  * assertions (the file's convention, because apply()/revertPaths are ROOT-bound
  * with heavy side effects). This file drives the real `removeAdditionsNotInHead`
  * export against a throwaway git repo via the git-runner seam, so it verifies the

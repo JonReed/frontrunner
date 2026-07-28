@@ -171,24 +171,24 @@ const scripts = [
   { name: 'src/cv/build-cv-html.mjs --test', expectExit: 0 },
   { name: 'src/analysis/jd-skill-gap.mjs --self-test', expectExit: 0 },
   { name: 'src/cv/verify-cv-facts.mjs --self-test', expectExit: 0 },
-  { name: 'updater-migration-tests.mjs', expectExit: 0 },
-  { name: 'tracker-columns-tests.mjs', expectExit: 0 },
-  { name: 'agent-inbox-tests.mjs', expectExit: 0 },
-  { name: 'followup-seed-tests.mjs', expectExit: 0 },
-  { name: 'paste-reply-tests.mjs', expectExit: 0 },
-  { name: 'set-status-tests.mjs', expectExit: 0 },
-  { name: 'tracker-writer-lock-tests.mjs', expectExit: 0 },
+  { name: 'tests/updater-migration-tests.mjs', expectExit: 0 },
+  { name: 'tests/tracker-columns-tests.mjs', expectExit: 0 },
+  { name: 'tests/agent-inbox-tests.mjs', expectExit: 0 },
+  { name: 'tests/followup-seed-tests.mjs', expectExit: 0 },
+  { name: 'tests/paste-reply-tests.mjs', expectExit: 0 },
+  { name: 'tests/set-status-tests.mjs', expectExit: 0 },
+  { name: 'tests/tracker-writer-lock-tests.mjs', expectExit: 0 },
   // Root-level standalone suites shipped in SYSTEM_PATHS but previously never
   // executed by CI (issue #1624). All are fast (<0.5s each), so they run in
   // both quick and full mode like their siblings above.
-  { name: 'test-trust-validator.mjs', expectExit: 0 },
-  { name: 'test-salary-filter.mjs', expectExit: 0 },
+  { name: 'tests/trust-validator-tests.mjs', expectExit: 0 },
+  { name: 'tests/salary-filter-tests.mjs', expectExit: 0 },
   { name: 'src/analysis/detect-reposts.test.mjs', expectExit: 0 },
   { name: 'src/scan/discover-ats.test.mjs', expectExit: 0 },
-  { name: 'followup-cadence.test.mjs', expectExit: 0 },
+  { name: 'tests/followup-cadence-tests.mjs', expectExit: 0 },
   { name: 'src/analysis/process-quality.test.mjs', expectExit: 0 },
   { name: 'src/scan/company-history.test.mjs', expectExit: 0 },
-  { name: 'reply-matcher.test.mjs', expectExit: 0 },
+  { name: 'tests/reply-matcher.test.mjs', expectExit: 0 },
   { name: 'src/scan/validate-portals.mjs --file templates/portals.example.yml', expectExit: 0 },
   { name: 'validate-system-paths-coverage.mjs --self-test', expectExit: 0 },
   // The bare coverage run is NOT here on purpose: this section executes each
@@ -8963,9 +8963,9 @@ try {
 
   // Registry + audit + install naming + skill (v2 distribution layer).
   const reg = await import(pathToFileURL(join(ROOT, 'plugins/_registry.mjs')).href);
-  const vreg = await import(pathToFileURL(join(ROOT, 'validate-plugin-registry.mjs')).href);
-  const audit = await import(pathToFileURL(join(ROOT, 'plugin-audit.mjs')).href);
-  const install = await import(pathToFileURL(join(ROOT, 'plugin-install.mjs')).href);
+  const vreg = await import(pathToFileURL(join(ROOT, 'src/plugins/validate-plugin-registry.mjs')).href);
+  const audit = await import(pathToFileURL(join(ROOT, 'src/plugins/plugin-audit.mjs')).href);
+  const install = await import(pathToFileURL(join(ROOT, 'src/plugins/plugin-install.mjs')).href);
   const regOpts = { idRe: /^[a-z0-9][a-z0-9-]*$/, hookKinds: eng.HOOK_KINDS, reservedEnv: eng.RESERVED_ENV };
 
   if (vreg.validateRegistry(ROOT).length === 0) pass('registry: shipped plugins-registry.json validates clean');
@@ -9124,7 +9124,7 @@ try {
 
   // Updater registration (SYSTEM vs USER split).
   const upd = readFileSync(join(ROOT, 'update-system.mjs'), 'utf8');
-  if (["'plugins/'", "'plugins.mjs'", "'config/plugins.example.yml'"].every(s => upd.includes(s))) pass('plugins/, plugins.mjs, config/plugins.example.yml registered as SYSTEM paths');
+  if (["'plugins/'", "'src/plugins/plugins.mjs'", "'config/plugins.example.yml'"].every(s => upd.includes(s))) pass('plugins/, src/plugins/plugins.mjs, config/plugins.example.yml registered as SYSTEM paths');
   else fail('plugin SYSTEM paths not fully registered in update-system.mjs');
   if (["'config/plugins.yml'", "'plugins.local/'"].every(s => upd.includes(s))) pass('config/plugins.yml + plugins.local/ registered as USER paths (never auto-updated)');
   else fail('plugin USER paths not registered in update-system.mjs');
@@ -9580,7 +9580,7 @@ try {
 console.log('\n56. Fingerprint core — JD cross-listing detection (#1597)');
 try {
   const { fingerprintText, similarity, findCrossListings, normalizeJdText, FINGERPRINT_MIN_TEXT } =
-    await import(pathToFileURL(join(ROOT, 'fingerprint-core.mjs')).href);
+    await import(pathToFileURL(join(ROOT, 'src/lib/fingerprint-core.mjs')).href);
 
   // A realistic-length JD body (well past FINGERPRINT_MIN_TEXT).
   const baseJd = Array.from({ length: 40 }, (_, i) =>
@@ -9873,9 +9873,9 @@ try {
 
 console.log('\n59. CV template resolver (src/cv/cv-templates.mjs)');
 {
-  const unit = run(NODE, ['--test', 'test/cv-templates.test.mjs']);
+  const unit = run(NODE, ['--test', 'tests/cv-templates.test.mjs']);
   if (unit !== null) pass('src/cv/cv-templates.mjs unit tests pass');
-  else fail('src/cv/cv-templates.mjs unit tests failed (run: node --test test/cv-templates.test.mjs)');
+  else fail('src/cv/cv-templates.mjs unit tests failed (run: node --test tests/cv-templates.test.mjs)');
 
   const listed = run(NODE, ['src/cv/cv-templates.mjs', 'list', 'cv']);
   if (listed && listed.includes('"name"')) pass('CLI: list cv returns JSON');
@@ -9891,16 +9891,16 @@ console.log('\n59. CV template resolver (src/cv/cv-templates.mjs)');
 
 console.log('\n59b. Pipeline lock (src/tracker/pipeline-lock.mjs)');
 {
-  const unit = run(NODE, ['--test', 'test/pipeline-lock.test.mjs']);
+  const unit = run(NODE, ['--test', 'tests/pipeline-lock.test.mjs']);
   if (unit !== null) pass('pipeline-lock unit tests pass');
-  else fail('pipeline-lock unit tests failed (run: node --test test/pipeline-lock.test.mjs)');
+  else fail('pipeline-lock unit tests failed (run: node --test tests/pipeline-lock.test.mjs)');
 }
 
 console.log('\n60. Cover-letter template resolver (src/cv/generate-cover-letter.mjs)');
 {
-  const unit = run(NODE, ['--test', 'test/cover-resolver.test.mjs']);
+  const unit = run(NODE, ['--test', 'tests/cover-resolver.test.mjs']);
   if (unit !== null) pass('cover-resolver unit tests pass');
-  else fail('cover-resolver unit tests failed (run: node --test test/cover-resolver.test.mjs)');
+  else fail('cover-resolver unit tests failed (run: node --test tests/cover-resolver.test.mjs)');
 }
 
 // ── 61. INTERVIEW-PREP URL ENTRY (#1816) ────────────────────────

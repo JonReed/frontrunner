@@ -9,7 +9,7 @@ import { pathToFileURL } from 'url';
 console.log('\nskill-extract.mjs (shared skill tokenizer, #1896)');
 
 try {
-  const { extractSkills, canonicalize } = await import(pathToFileURL(join(ROOT, 'skill-extract.mjs')).href);
+  const { extractSkills, canonicalize } = await import(pathToFileURL(join(ROOT, 'src/lib/skill-extract.mjs')).href);
 
   // canonicalization: aliases + display casing, unknown tokens pass through
   const s1 = extractSkills('Needs k8s, golang and Postgres experience; NodeJS a plus');

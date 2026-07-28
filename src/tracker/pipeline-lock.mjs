@@ -2,7 +2,7 @@
 //
 // appendToPipeline() (src/scan/scan.mjs) is a plain read-modify-write: readFileSync,
 // mutate the string, writeFileSync. It's exported and called from three
-// places — src/scan/scan.mjs itself, src/scan/scan-ats-full.mjs, and plugins.mjs (pipeline
+// places — src/scan/scan.mjs itself, src/scan/scan-ats-full.mjs, and src/plugins/plugins.mjs (pipeline
 // mode) — so any two of them running concurrently (a scheduled scan
 // overlapping a manual `/career-ops pipeline` run, or two plugin jobs) can
 // silently drop one side's offers: whichever write lands second overwrites
@@ -109,7 +109,7 @@ export async function acquirePipelineLock(pipelinePath, options = {}) {
   const token = randomUUID();
   const deadline = Date.now() + timeoutMs;
 
-  // A fresh install may not have data/ yet — plugins.mjs's cmdRun calls
+  // A fresh install may not have data/ yet — src/plugins/plugins.mjs's cmdRun calls
   // appendToPipeline with no directory pre-creation, so create it here rather
   // than letting mkdirSync(lockDir) throw a raw ENOENT.
   mkdirSync(dirname(lockDir), { recursive: true });

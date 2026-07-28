@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 
 /**
- * followup-seed-tests.mjs — regression tests for src/tracker/followup-seed.mjs (#1430).
+ * tests/followup-seed-tests.mjs — regression tests for src/tracker/followup-seed.mjs (#1430).
  *
  * Marking a tracker row Applied used to leave data/follow-ups.md untouched
  * until the user ran the `followup` mode by hand — the seed step never ran on
  * its own. These tests drive src/tracker/followup-seed.mjs's CLI (via execFileSync, like
- * tracker-columns-tests.mjs) end-to-end against sandboxed fixtures, plus a few
+ * tests/tracker-columns-tests.mjs) end-to-end against sandboxed fixtures, plus a few
  * direct unit-level imports of the exported functions.
  *
- * Run: node followup-seed-tests.mjs
+ * Run: node tests/followup-seed-tests.mjs
  */
 
 import { execFileSync } from 'child_process';
@@ -17,7 +17,7 @@ import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync } from 'fs'
 import { join, dirname } from 'path';
 import { tmpdir } from 'os';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { parseNextOverrides, resolveNextOverride, normalizeStatus, addDays, parseDate } from './src/tracker/followup-cadence.mjs';
+import { parseNextOverrides, resolveNextOverride, normalizeStatus, addDays, parseDate } from '../src/tracker/followup-cadence.mjs';
 
 import { ROOT } from '#paths';
 const NODE = process.execPath;

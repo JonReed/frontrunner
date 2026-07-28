@@ -45,10 +45,10 @@ export const SCHEMA_VERSION = 1;
 // gaps matter most. Matches the apply threshold in Ethical Use (CLAUDE.md).
 const LOW_FIT_SCORE = 4.0;
 
-// Skill vocabulary + canonical extractor moved to skill-extract.mjs (#1896) so
+// Skill vocabulary + canonical extractor moved to src/lib/skill-extract.mjs (#1896) so
 // upskill, jd-skill-gap, and analyze-patterns share ONE source of truth. Re-
 // exported here so existing importers of extractSkills keep working unchanged.
-import { extractSkills } from '../../skill-extract.mjs';
+import { extractSkills } from '../lib/skill-extract.mjs';
 export { extractSkills };
 
 // --- Machine Summary + Gap table parsing ---

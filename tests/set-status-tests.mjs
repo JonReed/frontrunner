@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * set-status-tests.mjs — regression tests for the src/tracker/set-status.mjs CLI (#1428).
+ * tests/set-status-tests.mjs — regression tests for the src/tracker/set-status.mjs CLI (#1428).
  *
  * src/tracker/set-status.mjs is the canonical write path for tracker status updates, so
  * these tests pin down the full CLI contract: row resolution (by number, by
@@ -11,7 +11,7 @@
  *
  * Tests provision a throwaway tracker via the CAREER_OPS_TRACKER /
  * CAREER_OPS_TRACKER_LOCK env overrides (same sandbox pattern as
- * tracker-columns-tests.mjs).
+ * tests/tracker-columns-tests.mjs).
  *
  * Exit-code contract under test:
  *   0 — success (including no-op re-runs)
@@ -25,7 +25,7 @@ import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync, chmodSync 
 import { join, dirname } from 'path';
 import { tmpdir } from 'os';
 import { fileURLToPath } from 'url';
-import { acquireTrackerLock } from './src/tracker/tracker-utils.mjs';
+import { acquireTrackerLock } from '../src/tracker/tracker-utils.mjs';
 
 import { ROOT } from '#paths';
 const NODE = process.execPath;

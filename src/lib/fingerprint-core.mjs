@@ -1,5 +1,5 @@
 /**
- * fingerprint-core.mjs — zero-dependency JD-content fingerprinting (#1597).
+ * src/lib/fingerprint-core.mjs — zero-dependency JD-content fingerprinting (#1597).
  *
  * The same job can enter the pipeline twice before any tracker row exists:
  * once as a direct company listing and once as an agency re-post with the

@@ -20,7 +20,7 @@
  *   node scan-ats-full.mjs --seeds yc,a16z --since 7 --dry-run
  *
  * Direct usage:
- *   import { fetchYCCompanies, fetchA16zCompanies } from './seeds/vc-portfolios.mjs';
+ *   import { fetchYCCompanies, fetchA16zCompanies } from './vc-portfolios.mjs';
  *   const companies = await fetchYCCompanies();
  */
 

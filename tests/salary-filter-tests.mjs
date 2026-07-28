@@ -2,15 +2,15 @@
 // @ts-check
 /**
  * Comprehensive test suite for salary filter and Ashby compensation parsing.
- * Run: node test-salary-filter.mjs
+ * Run: node tests/salary-filter-tests.mjs
  *
  * Tests cover:
  *   - buildSalaryFilter: range overlap, currency matching, edge cases, validation
  *   - parseCompensation (Ashby): interval normalization, malformed data, ordering
  */
 
-import { parseCompensation } from './providers/ashby.mjs';
-import { buildSalaryFilter } from './src/scan/scan.mjs';
+import { parseCompensation } from '../providers/ashby.mjs';
+import { buildSalaryFilter } from '../src/scan/scan.mjs';
 
 // ── Test runner ──────────────────────────────────────────────────────
 

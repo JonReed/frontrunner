@@ -223,7 +223,7 @@ TECH_CANONICAL.set('vue.js', 'Vue.js').set('vuejs', 'Vue.js');
 // symbol edge, so "C++", "C#" and ".NET" — three of the most common stacks —
 // were silently never extracted, vanishing from the tech-gap rollup and the
 // "filter out roles requiring X" recommendation. Same symbol-edge fix that
-// skill-extract.mjs and upskill.mjs already carry. Ordered longest-first
+// src/lib/skill-extract.mjs and upskill.mjs already carry. Ordered longest-first
 // (React Native before React) so the specific alternative wins at a position.
 const TECH_MENTION_RE = /(?<!\w)(JavaScript|TypeScript|Python|Ruby|Java|Go|Rust|Node\.?js|React Native|React|Angular|Vue\.?js|Django|Flask|Rails|PHP|Laravel|Symfony|Kotlin|Swift|C\+\+|C#|\.NET|MongoDB|MySQL|PostgreSQL|Redis|GraphQL|REST|AWS|GCP|Azure|Docker|Kubernetes|Terraform|Supabase|Inngest)(?!\w)/gi;
 
