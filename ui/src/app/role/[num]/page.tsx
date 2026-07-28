@@ -17,7 +17,7 @@ import { notFound } from 'next/navigation';
 import { readTracker, readReport } from '@/lib/roles';
 import { parseReport, renderMarkdown } from '@/lib/report';
 import { Match } from '@/components/match';
-import { AiBadge } from '@/components/ai-badge';
+import { AiButton } from '@/components/ai-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -118,20 +118,12 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="flex items-center gap-2 font-semibold">
-                Want to apply?
-                <AiBadge what="rewrite your CV for this specific job" />
-              </p>
+              <p className="font-semibold">Want to apply?</p>
               <p className="mt-0.5 text-sm text-[var(--color-ink-soft)]">
                 Builds a CV tailored to this role, using the gaps above. Takes about a minute.
               </p>
             </div>
-            <button
-              type="button"
-              className="rounded-lg bg-[var(--color-act)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-act-hover)]"
-            >
-              Build my CV for this job
-            </button>
+            <AiButton what="rewrite your CV for this specific job">Build my CV for this job</AiButton>
           </div>
         )}
       </div>

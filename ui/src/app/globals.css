@@ -61,6 +61,17 @@
   --color-attention: #a45c1b;
   --color-attention-wash: #fdf3e7;
 
+  /* -- AI actions ------------------------------------------------------
+     A fourth colour, and the only one that earns an exception to the
+     three-colour rule. Anything that spends the user's AI allowance is
+     violet and carries the sparkle mark, so those actions are recognisable
+     as a class before the label is read. Violet is the de facto convention
+     for AI features, so the association arrives with the user. */
+  --color-ai: #6d3fc4;
+  --color-ai-hover: #5a32a6;
+  --color-ai-wash: #f3eefb;
+  --color-ai-line: #d9c9f2;
+
   --font-sans: 'DM Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 
