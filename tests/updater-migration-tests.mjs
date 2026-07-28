@@ -65,6 +65,8 @@ for (const [listName, entries] of [['SYSTEM_PATHS', systemPaths], ['BOOTSTRAP_PA
   }
 }
 
+// NOTE: the README.<lang>.md entries were removed with the translations
+// themselves. Frontrunner ships English only — see README.md "Translations".
 const requiredSystemPaths = [
   'modes/email.md',
   'modes/followup.md',
@@ -87,11 +89,6 @@ const requiredSystemPaths = [
   '.cursor/skills/',
   'tests/tracker-columns-tests.mjs',
   'tests/updater-migration-tests.mjs',
-  'README.ar.md',
-  'README.de.md',
-  'README.hi.md',
-  'README.ja.md',
-  'README.ua.md',
   'CHANGELOG.md',
   'CODE_OF_CONDUCT.md',
   'GOVERNANCE.md',

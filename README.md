@@ -117,6 +117,21 @@ Changes here are deliberately **additive** — new files that cannot conflict, p
 
 ---
 
+## Translations
+
+English only, deliberately. Upstream ships 17 README translations; carrying
+them here would mean 16 files nobody can keep accurate, and stale docs are
+worse than absent ones.
+
+The **market modes are a different thing and they stay** — `modes/de/`,
+`modes/fr/`, `modes/ja/` and the rest are evaluation logic, not documentation.
+They give a German posting German comp vocabulary (13. Monatsgehalt, Probezeit,
+Kündigungsfrist) rather than a translated README, and `language.output` in
+`config/profile.yml` still writes your reports and letters in your language.
+
+If Frontrunner grows enough that someone wants to own a translation, that is a
+welcome contribution — it is just not a promise being made up front.
+
 ## Credit
 
 Built on [career-ops](https://github.com/santifer/career-ops) by [Santiago Fernández de Valderrama](https://santifer.io). MIT licensed, copyright retained in [LICENSE](LICENSE).
