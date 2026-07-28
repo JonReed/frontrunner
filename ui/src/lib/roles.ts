@@ -118,8 +118,18 @@ type Base = Omit<Role, 'stage' | 'readiness' | 'nextAction' | 'priority'>;
 /**
  * Decide stage, readiness and next action.
  *
- * The thresholds mirror the CLI's own rules so the two never disagree:
- * >= 4.0 is a real candidate, 3.0-3.9 needs judgement, below that is parked.
+ * Thresholds mirror the CLI's own rules so the two never disagree: >= 4.0 is a
+ * real candidate, 3.0-3.9 needs judgement, below that is parked.
+ *
+ * IMPORTANT — the next action is the next FREE step wherever one exists.
+ *
+ * An earlier version made "Generate tailored CV" the primary button on the
+ * list. That asks someone to spend their AI allowance on a role they have not
+ * read yet, and the honest reaction is "I don't know enough to want to do
+ * that." Nobody commits budget to a job they have not looked at.
+ *
+ * So reading the assessment — which is already written and costs nothing —
+ * always comes first. Spending happens on the role page, after a decision.
  */
 export function classify(r: Base): Pick<Role, 'stage' | 'readiness' | 'nextAction' | 'priority'> {
   const s = r.status.toLowerCase();
@@ -137,7 +147,7 @@ export function classify(r: Base): Pick<Role, 'stage' | 'readiness' | 'nextActio
     return {
       stage: 'active',
       readiness: 'in-flight',
-      nextAction: { label: 'Prepare for interview', kind: 'follow-up', costsTokens: true },
+      nextAction: { label: 'Open', kind: 'follow-up', costsTokens: false },
       priority: 100,
     };
   }
@@ -146,7 +156,7 @@ export function classify(r: Base): Pick<Role, 'stage' | 'readiness' | 'nextActio
     return {
       stage: 'applied',
       readiness: 'in-flight',
-      nextAction: { label: 'Follow up', kind: 'follow-up', costsTokens: false },
+      nextAction: { label: 'Open', kind: 'follow-up', costsTokens: false },
       priority: 300,
     };
   }
@@ -158,16 +168,18 @@ export function classify(r: Base): Pick<Role, 'stage' | 'readiness' | 'nextActio
     return {
       stage: 'ready',
       readiness: 'ready-to-send',
-      nextAction: { label: 'Open posting and apply', kind: 'open-posting', costsTokens: false },
+      nextAction: { label: 'Review and apply', kind: 'open-posting', costsTokens: false },
       priority: 10,
     };
   }
 
   if (score >= 4.0) {
+    // Free: read why it scored well. The CV is offered on the role page once
+    // they have decided they want it.
     return {
       stage: 'prepare',
       readiness: 'one-step-away',
-      nextAction: { label: 'Generate tailored CV', kind: 'generate-cv', costsTokens: true },
+      nextAction: { label: 'See why it fits', kind: 'decide', costsTokens: false },
       priority: 20,
     };
   }
@@ -176,7 +188,7 @@ export function classify(r: Base): Pick<Role, 'stage' | 'readiness' | 'nextActio
     return {
       stage: 'triage',
       readiness: 'needs-decision',
-      nextAction: { label: 'Read the verdict', kind: 'decide', costsTokens: false },
+      nextAction: { label: 'See the assessment', kind: 'decide', costsTokens: false },
       priority: 50,
     };
   }

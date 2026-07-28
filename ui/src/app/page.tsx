@@ -13,7 +13,6 @@
 import Link from 'next/link';
 import { readTracker, summarise, type Role, type Readiness } from '@/lib/roles';
 import { Match } from '@/components/match';
-import { AiBadge } from '@/components/ai-badge';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,13 +24,13 @@ const BANDS: { key: Readiness; title: string; blurb: string }[] = [
   },
   {
     key: 'one-step-away',
-    title: 'Nearly ready',
-    blurb: 'These are strong matches. Build a CV tailored to each one.',
+    title: 'Strong matches',
+    blurb: 'Read why each one fits. If you agree, build a tailored CV from there.',
   },
   {
     key: 'needs-decision',
     title: 'Worth a look',
-    blurb: 'Decent matches that need your judgement before you spend effort.',
+    blurb: 'Decent matches. The assessment is already written — reading it is free.',
   },
   {
     key: 'in-flight',
@@ -70,12 +69,12 @@ function RoleRow({ role }: { role: Role }) {
         </div>
       </div>
 
+      {/*
+        Only free actions appear here. Spending the user's AI allowance is a
+        decision they make on the role page, once they have read the assessment
+        and actually want the thing.
+      */}
       <div className="flex shrink-0 items-center gap-2.5">
-        {role.nextAction.costsTokens && (
-          <AiBadge
-            what={role.nextAction.kind === 'generate-cv' ? 'rewrite your CV for this job' : 'help you prepare'}
-          />
-        )}
         <ActionButton role={role} />
       </div>
     </li>
@@ -116,10 +115,10 @@ function Headline({ ready, nearly }: { ready: number; nearly: number }) {
     return (
       <>
         <h1 className="text-[28px] font-bold leading-tight tracking-tight">
-          {nearly} strong {nearly === 1 ? 'match' : 'matches'} waiting
+          {nearly} strong {nearly === 1 ? 'match' : 'matches'} to look at
         </h1>
         <p className="mt-1 text-[15px] text-[var(--color-ink-soft)]">
-          Build a tailored CV for each and they are ready to go.
+          Each one has already been assessed against your CV. Reading that costs nothing.
         </p>
       </>
     );
