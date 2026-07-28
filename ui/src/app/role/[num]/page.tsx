@@ -43,7 +43,9 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
   const report = markdown ? parseReport(markdown) : null;
 
   return (
-    <>
+    // pb-28: the action bar is sticky, so without room beneath it the final
+    // section scrolls underneath and cannot be read.
+    <div className="pb-28">
       <Link
         href="/"
         className="mb-6 inline-block text-sm text-[var(--color-ink-faint)] transition hover:text-[var(--color-act)]"
@@ -99,7 +101,7 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
         The AI action sits at the BOTTOM, after the reasons to want it, and is
         badged so it is never a surprise.
       */}
-      <div className="sticky bottom-4 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-card)] p-5 shadow-sm">
+      <div className="sticky bottom-4 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-card)] p-5 shadow-md shadow-black/5">
         {role.hasPdf ? (
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
@@ -127,6 +129,6 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }

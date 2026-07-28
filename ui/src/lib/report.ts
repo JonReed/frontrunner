@@ -116,33 +116,54 @@ export function renderMarkdown(md: string): string {
   const inline = (t: string) =>
     esc(t)
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      // single-asterisk italics, after bold so ** is already consumed
+      .replace(/(^|[^*])\*([^*\n]+?)\*(?!\*)/g, '$1<em>$2</em>')
       .replace(/`(.+?)`/g, '<code class="rounded bg-[var(--color-paper)] px-1 py-0.5 text-[0.9em]">$1</code>')
       .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noreferrer" class="text-[var(--color-act)] underline underline-offset-2">$1</a>');
 
+  const lines = md.split('\n');
   const out: string[] = [];
-  let inTable = false;
   let inList = false;
-
   const closeList = () => { if (inList) { out.push('</ul>'); inList = false; } };
-  const closeTable = () => { if (inTable) { out.push('</tbody></table></div>'); inTable = false; } };
 
-  for (const raw of md.split('\n')) {
-    const line = raw.trimEnd();
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trimEnd();
 
-    if (/^\|[\s-:|]+\|$/.test(line)) continue;           // table separator
-
+    // --- tables: buffered, so the header row can be recognised -------------
     if (line.startsWith('|')) {
-      const cells = line.split('|').slice(1, -1).map((c) => inline(c.trim()));
-      if (!inTable) {
-        closeList();
-        out.push('<div class="overflow-x-auto"><table class="w-full text-sm"><tbody>');
-        inTable = true;
+      closeList();
+      const block: string[] = [];
+      while (i < lines.length && lines[i].trimEnd().startsWith('|')) {
+        block.push(lines[i].trimEnd());
+        i++;
       }
-      out.push('<tr class="border-b border-[var(--color-line)] last:border-0">' +
-        cells.map((c) => `<td class="py-2 pr-4 align-top">${c}</td>`).join('') + '</tr>');
+      i--;
+
+      const cellsOf = (row: string) => row.split('|').slice(1, -1).map((c) => c.trim());
+      const sepAt = block.findIndex((r) => /^\|[\s\-:|]+\|$/.test(r));
+      // A markdown table's first row is a HEADER when a --- separator follows
+      // it. Rendering it as data is what produced a stray "Field | Finding"
+      // row at the top of every A-block table.
+      const headerRow = sepAt === 1 ? cellsOf(block[0]) : null;
+      const bodyRows = block
+        .filter((r, idx) => idx !== sepAt && !(headerRow && idx === 0))
+        .map(cellsOf);
+
+      out.push('<div class="overflow-x-auto"><table class="w-full text-sm">');
+      if (headerRow) {
+        out.push('<thead><tr class="border-b border-[var(--color-line-strong)]">' +
+          headerRow.map((c) =>
+            `<th class="py-2 pr-4 text-left text-xs font-semibold uppercase tracking-wide text-[var(--color-ink-faint)]">${inline(c)}</th>`
+          ).join('') + '</tr></thead>');
+      }
+      out.push('<tbody>');
+      for (const cells of bodyRows) {
+        out.push('<tr class="border-b border-[var(--color-line)] last:border-0">' +
+          cells.map((c) => `<td class="py-2 pr-4 align-top">${inline(c)}</td>`).join('') + '</tr>');
+      }
+      out.push('</tbody></table></div>');
       continue;
     }
-    closeTable();
 
     if (/^[-*]\s+/.test(line)) {
       if (!inList) { out.push('<ul class="ml-4 list-disc space-y-1.5">'); inList = true; }
@@ -152,19 +173,17 @@ export function renderMarkdown(md: string): string {
     closeList();
 
     const h3 = line.match(/^###\s+(.+)/);
-    if (h3) { out.push(`<h4 class="mt-5 mb-1.5 font-semibold">${inline(h3[1])}</h4>`); continue; }
+    if (h3) { out.push(`<h4 class="mt-5 mb-1.5 font-semibold text-[var(--color-ink)]">${inline(h3[1])}</h4>`); continue; }
 
     if (line.startsWith('> ')) {
-      out.push(`<blockquote class="border-l-2 border-[var(--color-line-strong)] pl-3 italic text-[var(--color-ink-soft)]">${inline(line.slice(2))}</blockquote>`);
+      out.push(`<blockquote class="border-l-2 border-[var(--color-line-strong)] pl-3 italic">${inline(line.slice(2))}</blockquote>`);
       continue;
     }
 
     if (line.startsWith('```')) continue;
-
     if (line.trim() === '') { out.push(''); continue; }
     out.push(`<p>${inline(line)}</p>`);
   }
   closeList();
-  closeTable();
   return out.join('\n');
 }
