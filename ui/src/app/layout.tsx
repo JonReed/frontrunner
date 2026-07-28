@@ -43,8 +43,42 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </header>
         <main className="mx-auto max-w-4xl px-6 py-10">{children}</main>
-        <footer className="mx-auto max-w-4xl px-6 pb-10 text-xs text-[var(--color-ink-faint)]">
-          Your CV, notes and applications stay on this computer.
+        {/*
+          Footer priorities, in order:
+          1. Reassurance. This audience is handing over their entire employment
+             history; that their data never leaves the machine matters more to
+             them than who built it.
+          2. Attribution — quiet, and BOTH parties. Crediting the sponsor in the
+             UI while the upstream project appears only in a README would
+             undercut the honesty of calling this a fork. Both or neither.
+        */}
+        <footer className="mx-auto max-w-4xl px-6 pb-10">
+          <div className="border-t border-[var(--color-line)] pt-5 text-xs leading-relaxed text-[var(--color-ink-faint)]">
+            <p className="font-medium text-[var(--color-ink-soft)]">
+              Your CV, notes and applications stay on this computer.
+            </p>
+            <p className="mt-1.5">
+              Built by{' '}
+              <a
+                href="https://furls.co.uk"
+                target="_blank"
+                rel="noreferrer"
+                className="font-medium text-[var(--color-ink-soft)] underline decoration-[var(--color-line-strong)] underline-offset-2 hover:text-[var(--color-act)]"
+              >
+                Furls Digital
+              </a>
+              , on top of{' '}
+              <a
+                href="https://github.com/santifer/career-ops"
+                target="_blank"
+                rel="noreferrer"
+                className="font-medium text-[var(--color-ink-soft)] underline decoration-[var(--color-line-strong)] underline-offset-2 hover:text-[var(--color-act)]"
+              >
+                career-ops
+              </a>
+              . Open source, MIT licensed.
+            </p>
+          </div>
         </footer>
       </body>
     </html>

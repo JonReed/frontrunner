@@ -397,7 +397,11 @@ export async function acquireTrackerLock(lockDir, options = {}) {
  */
 export async function openTrackerTransaction(appsFile, options = {}) {
   const trackerPath = canonicalizeTrackerPath(appsFile);
-  const { lockDir = trackerLockDirFor(trackerPath), ...lockOptions } = options;
+  const {
+    lockDir = trackerLockDirFor(trackerPath),
+    writeOptions = {},
+    ...lockOptions
+  } = options;
   const lock = await acquireTrackerLock(lockDir, {
     timeoutMs: Number(process.env.CAREER_OPS_TRACKER_LOCK_TIMEOUT_MS) || 60_000,
     retryMs: Number(process.env.CAREER_OPS_TRACKER_LOCK_RETRY_MS) || 75,
@@ -418,7 +422,7 @@ export async function openTrackerTransaction(appsFile, options = {}) {
     },
     replace(content) {
       assertOpen();
-      writeFileAtomic(trackerPath, content);
+      writeFileAtomic(trackerPath, content, writeOptions);
     },
     close() {
       if (closed) return closeError;
@@ -447,11 +451,13 @@ export async function openTrackerTransaction(appsFile, options = {}) {
  * @param {string} content - Complete file content to write.
  * @returns {void}
  */
-export function writeFileAtomic(path, content) {
+export function writeFileAtomic(path, content, options = {}) {
   const tmpPath = join(dirname(path), `.${basename(path)}.${process.pid}.${Date.now()}.${randomUUID()}.tmp`);
   try {
     writeFileSync(tmpPath, content);
+    options.afterWrite?.(tmpPath);
     renameSync(tmpPath, path);
+    options.afterRename?.(path);
   } catch (err) {
     rmSync(tmpPath, { force: true });
     throw err;

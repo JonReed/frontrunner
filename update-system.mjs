@@ -16,9 +16,10 @@
  */
 
 import { execFile, execFileSync, execSync } from 'child_process';
-import { readFileSync, writeFileSync, existsSync, unlinkSync, rmSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, unlinkSync, rmSync, statSync } from 'fs';
 import { join, dirname, posix as pathPosix } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
+import { randomUUID } from 'crypto';
 
 // NOTE: this file must stay *self-loading* — no static (top-level) relative
 // imports. A pre-#1245 client's apply() self-reexec checks out ONLY
@@ -724,6 +725,111 @@ function addPaths(paths) {
   git('add', '--', ...paths);
 }
 
+function processIsAlive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (err) {
+    return err?.code === 'EPERM';
+  }
+}
+
+/**
+ * Atomically acquire the updater lock.
+ *
+ * The old existsSync()+writeFileSync() sequence allowed two updaters through
+ * the same check and left a permanent lock after SIGKILL. Exclusive creation
+ * closes the race; owner metadata lets the next run recover a dead process
+ * without asking the user to delete a mystery file.
+ */
+export function acquireUpdateLock(lockFile, options = {}) {
+  const pid = options.pid ?? process.pid;
+  const staleMs = options.staleMs ?? 10 * 60_000;
+  const token = options.token ?? randomUUID();
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      writeFileSync(lockFile, JSON.stringify({
+        pid,
+        token,
+        started_at: new Date().toISOString(),
+      }, null, 2), { flag: 'wx' });
+      return updateLockHandle(lockFile, token);
+    } catch (err) {
+      if (err?.code !== 'EEXIST') throw err;
+
+      let owner = null;
+      try { owner = JSON.parse(readFileSync(lockFile, 'utf8')); } catch {}
+      let recoverable = Boolean(owner?.pid) && !processIsAlive(owner.pid);
+      if (!owner?.pid) {
+        try { recoverable = Date.now() - statSync(lockFile).mtimeMs > staleMs; } catch { recoverable = true; }
+      }
+      if (recoverable) {
+        try {
+          unlinkSync(lockFile);
+          continue;
+        } catch (unlinkErr) {
+          if (unlinkErr?.code === 'ENOENT') continue;
+          throw unlinkErr;
+        }
+      }
+
+      const locked = new Error(`Update already in progress (${lockFile} is owned by PID ${owner?.pid ?? 'unknown'}).`);
+      locked.code = 'UPDATE_LOCKED';
+      throw locked;
+    }
+  }
+  throw new Error(`Could not recover updater lock at ${lockFile}`);
+}
+
+function updateLockHandle(lockFile, token) {
+  let released = false;
+  return {
+    token,
+    release() {
+      if (released) return;
+      let owner;
+      try {
+        owner = JSON.parse(readFileSync(lockFile, 'utf8'));
+      } catch (err) {
+        if (err?.code === 'ENOENT') released = true;
+        return;
+      }
+      if (owner?.token !== token) {
+        released = true;
+        return;
+      }
+      unlinkSync(lockFile);
+      released = true;
+    },
+  };
+}
+
+/**
+ * Transfer the parent updater's lock to its self-reexec child.
+ *
+ * The token changes during handoff so the waiting parent's eventual release
+ * cannot delete a lock now owned by the child. If the parent is killed, the
+ * child remains the recorded live owner and a third updater cannot enter.
+ */
+export function adoptUpdateLock(lockFile, expectedToken, options = {}) {
+  const owner = JSON.parse(readFileSync(lockFile, 'utf8'));
+  if (!expectedToken || owner?.token !== expectedToken) {
+    const err = new Error(`Cannot adopt updater lock at ${lockFile}: ownership changed.`);
+    err.code = 'UPDATE_LOCK_CHANGED';
+    throw err;
+  }
+  const token = options.token ?? randomUUID();
+  writeFileSync(lockFile, JSON.stringify({
+    pid: options.pid ?? process.pid,
+    token,
+    started_at: owner.started_at ?? new Date().toISOString(),
+    adopted_at: new Date().toISOString(),
+  }, null, 2));
+  return updateLockHandle(lockFile, token);
+}
+
 // ── CHECK ───────────────────────────────────────────────────────
 
 // curl helper used by check() — curl works inside the Claude Code sandbox
@@ -833,16 +939,17 @@ async function apply() {
   const initialStatusPaths = new Set(gitStatusEntries().map(entry => entry.path));
   const isReexec = process.env.CAREER_OPS_UPDATE_REEXEC === '1';
 
-  // Check for lock
   const lockFile = join(ROOT, '.update-lock');
-  if (existsSync(lockFile) && !isReexec) {
-    console.error('Update already in progress (.update-lock exists). If stuck, delete it manually.');
-    process.exit(1);
-  }
-
-  // Create lock
-  if (!isReexec) {
-    writeFileSync(lockFile, new Date().toISOString());
+  let updateLock = null;
+  if (isReexec) {
+    updateLock = adoptUpdateLock(lockFile, process.env.CAREER_OPS_UPDATE_LOCK_TOKEN);
+  } else {
+    try {
+      updateLock = acquireUpdateLock(lockFile);
+    } catch (err) {
+      console.error(err.message);
+      process.exit(1);
+    }
   }
 
   try {
@@ -887,6 +994,7 @@ async function apply() {
             ...process.env,
             CAREER_OPS_UPDATE_REEXEC: '1',
             CAREER_OPS_UPDATE_BACKUP_BRANCH: backupBranch,
+            CAREER_OPS_UPDATE_LOCK_TOKEN: updateLock.token,
           },
         });
         return;
@@ -1151,8 +1259,7 @@ async function apply() {
     console.log('already practicing it. Read it, sign it if you want to help:');
 
   } finally {
-    // Remove lock
-    if (!isReexec && existsSync(lockFile)) unlinkSync(lockFile);
+    updateLock?.release();
   }
 }
 

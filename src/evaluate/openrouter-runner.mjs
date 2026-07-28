@@ -187,7 +187,7 @@ export function cachedJdForUrl(url, { outDir = path.join(__dirname, 'jds') } = {
 // ---------------------------------------------------------------------------
 // Prompt caching (#1709)
 // ---------------------------------------------------------------------------
-// The static system prefix (shared + profile + mode + cv, ~12K tokens) is
+// The large static system prefix (shared + profile + mode + cv) is
 // byte-identical across every offer in a run, yet it was re-sent and re-billed
 // on each call. Send it as a structured content block with an ephemeral
 // `cache_control` breakpoint — OpenRouter's documented prompt-caching mechanism.

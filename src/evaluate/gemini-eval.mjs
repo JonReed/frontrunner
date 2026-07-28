@@ -302,7 +302,7 @@ console.log(`🤖  Calling Gemini (${modelName})... this may take 30-60 seconds.
 
 const genAI = new GoogleGenerativeAI(apiKey);
 // Prompt caching (#1709) — engine 3 of the four, adapted to Gemini's shape.
-// Gemini has no `cache_control` field; its lever is the ~12K-token static prefix
+// Gemini has no `cache_control` field; its lever is the large static prefix
 // (shared + oferta + cv) being a stable `systemInstruction` rather than the first
 // turn of `contents` — that's what its 2.5 models cache implicitly across
 // back-to-back requests. So the static context moves to `systemInstruction` and

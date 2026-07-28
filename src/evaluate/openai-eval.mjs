@@ -277,7 +277,7 @@ LEGITIMACY: <High Confidence | Proceed with Caution | Suspicious>
 
 // ---------------------------------------------------------------------------
 // Prompt caching (#1709) — engine 2 of the four from #1709, same shape as the
-// OpenRouter runner. The static prefix (shared + oferta + cv, ~12K tokens) is
+// OpenRouter runner. The large static prefix (shared + oferta + cv) is
 // byte-identical across every offer, yet was re-sent and re-billed each call.
 //
 // Host-gated on purpose: OpenAI-compatible gateways (OpenRouter, DeepSeek, …)

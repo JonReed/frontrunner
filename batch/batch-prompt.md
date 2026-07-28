@@ -20,7 +20,9 @@ You receive a job URL plus a local JD text file and must produce:
 
 ## Language Rule
 
-Before writing any user-visible prose, read `config/profile.yml` if it exists.
+Before writing any user-visible prose, resolve the profile from the injected
+Runtime personalization block when present; only read `config/profile.yml`
+when that block is absent.
 
 - Resolve `language.output`; default to `en` when the key is absent.
 - `language.output` controls all human-facing output: report prose, report headings, tracker notes, PDF text, cover/application text if any, and final user-facing summaries.

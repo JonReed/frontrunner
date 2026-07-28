@@ -64,7 +64,7 @@ const CONCURRENCY = 20;
 // Crash insurance for multi-hour directory sweeps: progress + matches are
 // checkpointed every CHECKPOINT_EVERY companies so --resume can continue a
 // dead run (with its ORIGINAL date window) instead of restarting from zero.
-const CHECKPOINT_PATH = 'data/cache/ats-full-checkpoint.json';
+const CHECKPOINT_PATH = process.env.CAREER_OPS_ATS_CHECKPOINT || 'data/cache/ats-full-checkpoint.json';
 const CHECKPOINT_EVERY = 500;
 
 export function loadCheckpoint(file = CHECKPOINT_PATH) {
@@ -106,17 +106,49 @@ export function checkpointCompatible(cp, opts) {
 // (ENOSPC, EACCES, read-only volume) would reject the whole sweep and discard
 // every in-memory match from a multi-hour run — the checkpoint killing the work
 // it exists to protect. A failed write costs resumability, not the results.
-function writeCheckpoint(cp) {
+export function writeCheckpoint(cp, file = CHECKPOINT_PATH) {
+  const tmp = `${file}.tmp-${process.pid}`;
   try {
-    mkdirSync(CACHE_DIR, { recursive: true });
-    const tmp = `${CHECKPOINT_PATH}.tmp`;
+    mkdirSync(path.dirname(file), { recursive: true });
     writeFileSync(tmp, JSON.stringify(cp), 'utf-8');
-    renameSync(tmp, CHECKPOINT_PATH); // atomic: a crash mid-write can't corrupt the checkpoint
+    renameSync(tmp, file); // atomic: a crash mid-write can't corrupt the checkpoint
     return true;
   } catch (err) {
     console.error(`\n⚠ checkpoint write failed (${err.message}) — sweep continues, --resume unavailable`);
     return false;
+  } finally {
+    try { if (existsSync(tmp)) unlinkSync(tmp); } catch {}
   }
+}
+
+/**
+ * Persist the latest safe resume point when a user or supervisor interrupts
+ * the scanner. Returns a cleanup function for successful completion.
+ */
+export function installCheckpointSignalHandlers({
+  snapshot,
+  checkpointPath = CHECKPOINT_PATH,
+  exit = code => process.exit(code),
+  signals = ['SIGINT', 'SIGTERM'],
+}) {
+  let handling = false;
+  const handlers = new Map();
+  for (const signal of signals) {
+    const handler = () => {
+      if (handling) return;
+      handling = true;
+      const saved = writeCheckpoint(snapshot(), checkpointPath);
+      console.error(saved
+        ? `\nInterrupted by ${signal}; progress saved to ${checkpointPath}. Resume with --resume.`
+        : `\nInterrupted by ${signal}; checkpoint could not be saved.`);
+      exit(signal === 'SIGINT' ? 130 : 143);
+    };
+    handlers.set(signal, handler);
+    process.on(signal, handler);
+  }
+  return () => {
+    for (const [signal, handler] of handlers) process.off(signal, handler);
+  };
 }
 
 // Cheap content fingerprint of a source's company list. --resume relies on the
@@ -663,6 +695,17 @@ async function main() {
     offers: newOffers,
     savedAt: new Date().toISOString(),
   });
+  let activeCurrent = null;
+  let activeCounters = null;
+  const removeSignalHandlers = opts.dryRun
+    ? () => {}
+    : installCheckpointSignalHandlers({
+      snapshot: () => ({
+        ...checkpointBase(),
+        current: activeCurrent,
+        counters: activeCounters ?? snapshotCounters(),
+      }),
+    });
 
   // Per-job filter chain, shared by the parallel sweep, the truncation retry
   // pass (workday), and date enrichment (icims). Closure over the filters and
@@ -741,6 +784,12 @@ async function main() {
 
     let errors = 0;
     const truncated = [];
+    activeCurrent = { name, resumeAt: startAt, datasetLen: list.length, datasetHash };
+    activeCounters = {
+      ...snapshotCounters(),
+      totalCompaniesScanned: totalCompaniesScanned - entries.length,
+      totalErrors: totalErrors + errors,
+    };
     await parallelEach(entries, CONCURRENCY, async (entry) => {
       try {
         // The whole per-company unit — fetch AND processJobs (which may issue
@@ -763,22 +812,24 @@ async function main() {
         if (opts.verbose) console.error(`  ✗ ${name}/${entry.name}: ${err.message}`);
       }
     }, ({ done, resumeAt }) => {
+      activeCurrent = { name, resumeAt: startAt + resumeAt, datasetLen: list.length, datasetHash };
+      activeCounters = {
+        ...snapshotCounters(),
+        totalCompaniesScanned: totalCompaniesScanned - (entries.length - done),
+        totalErrors: totalErrors + errors,
+      };
       if (done % 200 === 0 || done === entries.length) {
         progress(`  ${done}/${entries.length} scanned, ${newOffers.length} total matches\r`);
       }
       if (done % CHECKPOINT_EVERY === 0 && !opts.dryRun) {
         writeCheckpoint({
           ...checkpointBase(),
-          current: { name, resumeAt: startAt + resumeAt, datasetLen: list.length, datasetHash },
-          counters: {
-            ...snapshotCounters(),
-            // totalCompaniesScanned was bumped by the FULL entries.length up
-            // front; a checkpoint must store only work actually attempted, or
-            // a resumed run (which re-adds its own slice) double-counts the
-            // completed portion in the final summary.
-            totalCompaniesScanned: totalCompaniesScanned - (entries.length - done),
-            totalErrors: totalErrors + errors,
-          },
+          current: activeCurrent,
+          // totalCompaniesScanned was bumped by the FULL entries.length up
+          // front; a checkpoint must store only work actually attempted, or
+          // a resumed run (which re-adds its own slice) double-counts the
+          // completed portion in the final summary.
+          counters: activeCounters,
         });
       }
     });
@@ -805,6 +856,8 @@ async function main() {
     }
     totalErrors += errors;
     completedSources.add(name);
+    activeCurrent = null;
+    activeCounters = snapshotCounters();
     if (!opts.dryRun) {
       writeCheckpoint({ ...checkpointBase(), current: null, counters: snapshotCounters() });
     }
@@ -898,7 +951,10 @@ async function main() {
     }
   }
 
-  // Sweep completed — the checkpoint's job is done.
+  // Sweep completed — disable signal checkpointing before removing the final
+  // checkpoint, otherwise a late SIGTERM could recreate a misleading
+  // "unfinished" checkpoint after all results were already persisted.
+  removeSignalHandlers();
   if (!opts.dryRun && existsSync(CHECKPOINT_PATH)) unlinkSync(CHECKPOINT_PATH);
 
   // The authoritative machine-readable result: lets a caller (e.g. the web)
