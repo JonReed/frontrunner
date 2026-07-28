@@ -16,8 +16,8 @@
  *    can be unit-tested with inline fixtures without any mocking.
  *
  * Typical usage (via scan-ats-full.mjs --seeds flag):
- *   node scan-ats-full.mjs --seeds yc
- *   node scan-ats-full.mjs --seeds yc,a16z --since 7 --dry-run
+ *   node src/scan/scan-ats-full.mjs --seeds yc
+ *   node src/scan/scan-ats-full.mjs --seeds yc,a16z --since 7 --dry-run
  *
  * Direct usage:
  *   import { fetchYCCompanies, fetchA16zCompanies } from './vc-portfolios.mjs';

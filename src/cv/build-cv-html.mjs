@@ -622,7 +622,7 @@ async function main() {
     console.error('  node src/cv/build-cv-html.mjs --test');
     console.error('');
     console.error('  [template.html] defaults to templates/cv-template.html. Pass the path');
-    console.error('  printed by `node cv-templates.mjs resolve cv` to use a selected template.');
+    console.error('  printed by `node src/cv/cv-templates.mjs resolve cv` to use a selected template.');
     console.error('');
     console.error('  Section partials (#2183):');
     console.error('  If a sections/ directory exists alongside the template file,');

@@ -54,7 +54,33 @@ silently breaks any use of `ROOT` in that file.
 When behaviour must change, add a module and call it rather than rewriting
 theirs.
 
-**4. Use `git pull upstream main`, never `node update-system.mjs apply`.**
+**4. Merging upstream — the whole procedure.**
+
+```bash
+git fetch upstream && git merge upstream/main
+# resolve conflicts (see below), then:
+node src/lib/root-paths.mjs --fix     # repair references to the old flat layout
+node test-all.mjs                     # must be 0 failures
+git add -A && git commit
+```
+
+Conflicts are almost always **our paths vs their content**, and resolve the
+same way every time:
+
+| Conflict in | Resolution |
+|---|---|
+| An import block | Keep OUR paths, take any NEW imports they added |
+| A doc they improved | Take THEIRS, then `node src/lib/root-paths.mjs --fix` |
+| `README.md` | Always ours |
+
+Two things that will bite otherwise. Never `git add -A` before every conflict
+is resolved — it stages the conflict markers as content, and the suite then
+reports dozens of unrelated files as broken. And upstream writes against the
+flat layout, so their NEW code arrives referencing `scan.mjs` rather than
+`src/scan/scan.mjs`; `tests/frontrunner/root-paths.test.mjs` catches that, but
+only if you run the suite.
+
+**5. Use `git pull upstream main`, never `node update-system.mjs apply`.**
 The updater treats `batch/batch-runner.sh` as system-layer and silently
 reverts the JD pre-fetch wiring. If that happens, re-apply
 `patches/jd-prefetch.patch.md`.

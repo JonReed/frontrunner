@@ -9,7 +9,7 @@
 // web UI or the Go dashboard.
 //
 // Worse, one failure mode produced NO output at all: batch-runner.sh invokes
-// `node "$PROJECT_DIR/merge-tracker.mjs"` under `set -e`, so a moved file made
+// `node "$PROJECT_DIR/src/tracker/merge-tracker.mjs"` under `set -e`, so a moved file made
 // the whole runner exit silently with an empty stdout and a passing-looking
 // test elsewhere.
 //

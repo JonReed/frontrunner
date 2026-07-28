@@ -348,7 +348,7 @@ for (const e of entries) {
   const via = String(e.via || '').trim();
   if (company === '?') {
     if (COLMAP.via == null) {
-      warn(`#${e.num}: unknown employer (?) but the tracker has no Via column — add it with: node merge-tracker.mjs --migrate-via`);
+      warn(`#${e.num}: unknown employer (?) but the tracker has no Via column — add it with: node src/tracker/merge-tracker.mjs --migrate-via`);
       viaIssues++;
     } else if (!via || via === '—') {
       error(`#${e.num}: unknown employer (?) with no Via channel — record the agency/recruiter firm`);

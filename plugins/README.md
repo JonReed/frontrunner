@@ -16,7 +16,7 @@ changes. Two gates must both be satisfied:
 
 1. **Enable** the plugin in `config/plugins.yml` (copy `config/plugins.example.yml`).
 2. **Provide its keys** in your own `.env` (each plugin declares which it needs).
-   Run `node doctor.mjs` or `node plugins.mjs list` to see what's missing.
+   Run `node doctor.mjs` or `node src/plugins/plugins.mjs list` to see what's missing.
 
 ## Anatomy of a plugin
 
@@ -60,10 +60,10 @@ to `data/pipeline.md` through the canonical writer, so a plugin can't break the
 data formats the web reads. Non-provider hooks run explicitly:
 
 ```bash
-node plugins.mjs list
-node plugins.mjs run gmail                       # ingest
-node plugins.mjs run notion search "platform"    # search
-node plugins.mjs run notion export [--dry-run]   # export
+node src/plugins/plugins.mjs list
+node src/plugins/plugins.mjs run gmail                       # ingest
+node src/plugins/plugins.mjs run notion search "platform"    # search
+node src/plugins/plugins.mjs run notion export [--dry-run]   # export
 ```
 
 ### The `ctx` object

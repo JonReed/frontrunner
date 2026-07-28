@@ -25,13 +25,13 @@ data/pipeline.md
 
 ```bash
 # Seed from Y Combinator portfolio, last 7 days
-node scan-ats-full.mjs --seeds yc --since 7
+node src/scan/scan-ats-full.mjs --seeds yc --since 7
 
 # Seed from both YC and a16z, dry-run preview
-node scan-ats-full.mjs --seeds yc,a16z --dry-run
+node src/scan/scan-ats-full.mjs --seeds yc,a16z --dry-run
 
 # Combine seeds + regular ATS sources
-node scan-ats-full.mjs --seeds yc --ats greenhouse,lever --since 5
+node src/scan/scan-ats-full.mjs --seeds yc --ats greenhouse,lever --since 5
 
 # npm shortcuts
 npm run scan:seeds   # yc + a16z

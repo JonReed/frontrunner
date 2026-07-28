@@ -168,6 +168,8 @@ const SYSTEM_PATHS = [
   'src/scan/scan.mjs',
   'src/tracker/pipeline-lock.mjs',
   'src/paths.mjs',
+  'tests/frontrunner/root-paths.test.mjs',
+  'src/lib/root-paths.mjs',
   'src/analysis/classify-tier.mjs',
   'src/scan/scan-ats-full.mjs',
   'src/evaluate/match-star.mjs',

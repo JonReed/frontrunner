@@ -43,7 +43,7 @@ import('./generate-pdf.mjs').catch(()=>{});
 For an end-to-end test, generate a CV PDF from a known dirty HTML file and inspect the output:
 
 ```bash
-node generate-pdf.mjs /tmp/dirty-cv.html /tmp/clean-cv.pdf --format=a4
+node src/cv/generate-pdf.mjs /tmp/dirty-cv.html /tmp/clean-cv.pdf --format=a4
 # Expected log line:
 # 🧹 ATS normalization: N replacements (em-dash=X, smart-double-quote=Y, ...)
 ```

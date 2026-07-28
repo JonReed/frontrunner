@@ -27,6 +27,6 @@ tracked_companies:
 
 ## Then
 
-`node scan.mjs` runs the provider for that entry and writes the results to the
+`node src/scan/scan.mjs` runs the provider for that entry and writes the results to the
 pipeline like any other source. An optional `field_map.description` caches the
 JD locally under `jds/`.

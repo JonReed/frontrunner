@@ -336,7 +336,7 @@ Usage:
       // Sync tracker DB if tracker.mjs exists
       try {
         const { execSync } = await import('child_process');
-        execSync('node tracker.mjs sync', { stdio: 'ignore' });
+        execSync('node src/tracker/tracker.mjs sync', { stdio: 'ignore' });
         console.log('Synced database index (applications.db).');
       } catch (e) {
         // ignore

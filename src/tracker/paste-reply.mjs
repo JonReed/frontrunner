@@ -193,7 +193,7 @@ If no Subject:/From: header lines are found, the whole file is treated as the bo
 
 Appends one normalized candidate to data/reply-candidates.json (creates it if
 missing; never overwrites or removes existing entries). Run
-\`node reply-watch.mjs\` afterward to classify it and review tracker updates —
+\`node src/tracker/reply-watch.mjs\` afterward to classify it and review tracker updates —
 this script never runs reply-watch.mjs or touches data/applications.md itself.`);
 }
 
@@ -241,7 +241,7 @@ async function main() {
   console.log(`  subject:      ${candidate.subject || '(none)'}`);
   console.log(`  body_snippet: ${preview || '(none)'}`);
   console.log(`\ndata/reply-candidates.json now has ${total} candidate(s).`);
-  console.log('Next: run `node reply-watch.mjs` to classify and review this reply.');
+  console.log('Next: run `node src/tracker/reply-watch.mjs` to classify and review this reply.');
 }
 
 // Only run when executed directly (`node src/tracker/paste-reply.mjs`), not when imported

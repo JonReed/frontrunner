@@ -296,7 +296,7 @@ function reportDiagnostics(diag) {
   if (diag.badId) console.error(`  ${diag.badId} missing/duplicate id(s), reassigned in the index`);
   if (diag.badDate) console.error(`  ${diag.badDate} malformed date(s), kept as-is`);
   if (diag.strayPipes) console.error(`  ${diag.strayPipes} row(s) with stray pipes, folded into notes`);
-  console.error('Fix at the source with `node normalize-statuses.mjs` / `node dedup-tracker.mjs`, then re-sync.');
+  console.error('Fix at the source with `node src/tracker/normalize-statuses.mjs` / `node src/tracker/dedup-tracker.mjs`, then re-sync.');
   return total;
 }
 
