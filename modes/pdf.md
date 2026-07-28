@@ -22,12 +22,19 @@
 13. Inject keywords naturally into existing achievements (NEVER invent)
 14. Apply the six-second clarity gate from `modes/heuristics/recruiter-side.md`: top third must make target role, strongest fit, and proof obvious
 15. Read `name` from `config/profile.yml` → normalize to kebab-case lowercase (e.g. "John Doe" → "john-doe") → `{candidate}`
-16. Build the render payload (see the **JSON Input Schema** below) from the tailored content — emit compact structured JSON, **not** full HTML markup — and write it to `/tmp/cv-{candidate}-{company}.json`
-17. Run: `node src/cv/build-cv-html.mjs /tmp/cv-{candidate}-{company}.json output/cv-{candidate}-{company}.html {template}` — where `{template}` is the path printed by **Selecting the template** below (omit the argument to use the base `cv-template.html`). The script merges the payload into that template, owning every tag, CSS class, and the HTML escaping. Write to `output/` (NOT a temp dir — the recorded HTML is the durable rendering source and must survive temp cleanup)
-18. Run the fact gate: `node src/cv/verify-cv-facts.mjs output/cv-{candidate}-{company}.html`
+**Filename convention (IMPORTANT).** `{report}` is the zero-padded report
+number (`001`, `042`) — the same NNN used in `reports/NNN-…md`. It comes FIRST
+so that two roles at the same company cannot overwrite each other's CV. Without
+it, tailoring a second Monzo role silently destroys the first one's HTML, and
+its PDF too when both are generated on the same day. When there is no report
+number yet, use the tracker `#` instead; never omit it entirely.
+
+16. Build the render payload (see the **JSON Input Schema** below) from the tailored content — emit compact structured JSON, **not** full HTML markup — and write it to `/tmp/cv-{candidate}-{report}-{company}.json`
+17. Run: `node src/cv/build-cv-html.mjs /tmp/cv-{candidate}-{report}-{company}.json output/cv-{candidate}-{report}-{company}.html {template}` — where `{template}` is the path printed by **Selecting the template** below (omit the argument to use the base `cv-template.html`). The script merges the payload into that template, owning every tag, CSS class, and the HTML escaping. Write to `output/` (NOT a temp dir — the recorded HTML is the durable rendering source and must survive temp cleanup)
+18. Run the fact gate: `node src/cv/verify-cv-facts.mjs output/cv-{candidate}-{report}-{company}.html`
     - This is a hard gate before PDF rendering.
     - If it fails, stop and fix the generated HTML by removing invented metrics or adding verified evidence to `cv.md`, `article-digest.md`, or `config/cv-facts.json`.
-19. Execute: `node src/cv/generate-pdf.mjs output/cv-{candidate}-{company}.html output/cv-{candidate}-{company}-{YYYY-MM-DD}.pdf --format={letter|a4} --report={report number}`
+19. Execute: `node src/cv/generate-pdf.mjs output/cv-{candidate}-{report}-{company}.html output/cv-{candidate}-{report}-{company}-{YYYY-MM-DD}.pdf --format={letter|a4} --report={report number}`
     - `{report number}` is the NNN from the report filename/link (e.g. `008` for `reports/008-acme-….md`), not the tracker `#` column. Pass it whenever the application has (or will have) a report; it records the PDF↔report linkage in `data/pdf-index.tsv` so scripts and interfaces can find the exact PDF. Omit it only for one-off CVs with no tracker entry.
     - The rendered PDF has a two-page warning threshold by default. `--max-pages=N` accepts a positive integer; pass `--max-pages=1` when the user or market prefers a one-page CV.
     - If the rendered PDF exceeds its threshold, generation warns loudly with the actual and allowed page counts plus trimming guidance, then reports and indexes the unchanged PDF so existing longer-CV flows keep working.
@@ -197,7 +204,7 @@ URLs so the saved HTML remains portable. To inspect the result before PDF
 generation, run:
 
 ```bash
-node src/cv/build-cv-html.mjs --preview /tmp/cv-{candidate}-{company}.json {template}
+node src/cv/build-cv-html.mjs --preview /tmp/cv-{candidate}-{report}-{company}.json {template}
 ```
 
 The preview is written to `output/cv-preview.html`. A missing, unreadable, empty,
@@ -268,12 +275,12 @@ f. `commit-editing-transaction` to save (ONLY after user approval)
 a. `export-design` the duplicate as PDF (format: a4 or letter based on JD location)
 b. **IMMEDIATELY** download the PDF using Bash:
    ```bash
-   curl -sL -o "output/cv-{candidate}-{company}-canva-{YYYY-MM-DD}.pdf" "{download_url}"
+   curl -sL -o "output/cv-{candidate}-{report}-{company}-canva-{YYYY-MM-DD}.pdf" "{download_url}"
    ```
    The export URL is a pre-signed S3 link that expires in ~2 hours. Download it right away.
 c. Verify the download:
    ```bash
-   file output/cv-{candidate}-{company}-canva-{YYYY-MM-DD}.pdf
+   file output/cv-{candidate}-{report}-{company}-canva-{YYYY-MM-DD}.pdf
    ```
    Must show "PDF document". If it shows XML or HTML, the URL expired — re-export and retry.
 d. Report: PDF path, file size, Canva design URL (for manual tweaking)

@@ -344,7 +344,7 @@ Report header:
 **Legitimacy:** {High Confidence | Proceed with Caution | Suspicious}
 **Work Auth:** {✅ Sponsors | ➖ Not needed | ⚠️ Unstated | ⛔ No sponsorship}
 **URL:** {{URL}}
-**PDF:** {output/cv-candidate-{company-slug}-{{DATE}}.pdf if score >= resolved auto_pdf_score_threshold, otherwise a localized equivalent of `not generated — run /career-ops pdf {company-slug} to create on demand` in `language.output`}
+**PDF:** {output/cv-candidate-{report}-{company-slug}-{{DATE}}.pdf if score >= resolved auto_pdf_score_threshold, otherwise a localized equivalent of `not generated — run /career-ops pdf {company-slug} to create on demand` in `language.output`}
 **Batch ID:** {{ID}}
 
 
@@ -421,13 +421,13 @@ If score is greater than or equal to the threshold:
 8. Reorder experience bullets by relevance.
 9. Build a 6-8 item competency grid.
 10. Inject keywords ethically into existing achievements; never invent skills or metrics.
-11. Write HTML to `output/cv-candidate-{company-slug}.html`.
+11. Write HTML to `output/cv-candidate-{report}-{company-slug}.html`.
 12. Run:
 
 ```bash
 node src/cv/generate-pdf.mjs \
-  output/cv-candidate-{company-slug}.html \
-  output/cv-candidate-{company-slug}-{{DATE}}.pdf \
+  output/cv-candidate-{report}-{company-slug}.html \
+  output/cv-candidate-{report}-{company-slug}-{{DATE}}.pdf \
   --format={letter|a4} \
   --report={{REPORT_NUM}}
 ```
