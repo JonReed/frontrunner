@@ -13,6 +13,7 @@
 import Link from 'next/link';
 import { readTracker, summarise, type Role, type Readiness } from '@/lib/roles';
 import { Match } from '@/components/match';
+import { CvLinks } from '@/components/cv-links';
 
 export const dynamic = 'force-dynamic';
 
@@ -78,6 +79,7 @@ function RoleRow({ role }: { role: Role }) {
         always one click away, from every screen that shows a verdict.
       */}
       <div className="flex shrink-0 items-center gap-3">
+        {role.pdf && <CvLinks pdf={role.pdf} size="sm" />}
         {role.url && (
           <a
             href={role.url}

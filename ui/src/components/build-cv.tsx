@@ -31,7 +31,17 @@ const STEPS = [
   'Building the PDF',
 ];
 
-export function BuildCv({ roleNum, hasPdf }: { roleNum: number; hasPdf: boolean }) {
+export function BuildCv({
+  roleNum,
+  hasPdf,
+  pdf,
+  url,
+}: {
+  roleNum: number;
+  hasPdf: boolean;
+  pdf?: string | null;
+  url?: string | null;
+}) {
   const [job, setJob] = useState<Job | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -76,15 +86,31 @@ export function BuildCv({ roleNum, hasPdf }: { roleNum: number; hasPdf: boolean 
         <div>
           <p className="font-semibold">Your tailored CV is ready</p>
           <p className="mt-0.5 text-sm text-[var(--color-ink-soft)]">
-            Rewritten for this role. Nothing left but to send it.
+            Read it through, then apply on the company's own site.
           </p>
         </div>
-        <button
-          type="button"
-          className="rounded-lg bg-[var(--color-act)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-act-hover)]"
-        >
-          Open the job posting
-        </button>
+        <div className="flex items-center gap-2">
+          {pdf && (
+            <a
+              href={`/api/file?path=${encodeURIComponent(pdf)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="cursor-pointer rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-card)] px-3.5 py-2.5 text-sm font-medium text-[var(--color-ink-soft)] transition hover:border-[var(--color-act)] hover:text-[var(--color-act)]"
+            >
+              View my CV
+            </a>
+          )}
+          {url && (
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="cursor-pointer rounded-lg bg-[var(--color-act)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-act-hover)]"
+            >
+              Apply on their site
+            </a>
+          )}
+        </div>
       </div>
     );
   }
@@ -97,7 +123,7 @@ export function BuildCv({ roleNum, hasPdf }: { roleNum: number; hasPdf: boolean 
           aria-hidden="true"
         />
         <div className="min-w-0">
-          <p className="font-semibold text-[var(--color-ai)]">{STEPS[step]}…</p>
+          <p className="font-semibold text-[var(--color-ai)]">{job?.stage ?? STEPS[step]}…</p>
           <p className="mt-0.5 text-sm text-[var(--color-ink-soft)]">
             This usually takes under a minute. You can leave this page — it keeps going.
           </p>
@@ -145,7 +171,7 @@ export function BuildCv({ roleNum, hasPdf }: { roleNum: number; hasPdf: boolean 
         <button
           type="button"
           onClick={start}
-          className="mt-3 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-card)] px-3.5 py-2 text-sm font-medium transition hover:border-[var(--color-act)] hover:text-[var(--color-act)]"
+          className="mt-3 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-card)] px-3.5 py-2 text-sm font-medium transition hover:border-[var(--color-act)] hover:text-[var(--color-act)] cursor-pointer"
         >
           Try again
         </button>

@@ -15,7 +15,7 @@
  */
 
 import { readFile, readdir, open } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 /** Repo root: the career-ops checkout this UI lives inside. */
@@ -66,6 +66,9 @@ export interface Role {
    * opinion about a job also links to the job itself.
    */
   url: string | null;
+  /** Generated CV, when one exists. Read from data/pdf-index.tsv. */
+  pdf: string | null;
+  html: string | null;
   notes: string;
   stage: Stage;
   readiness: Readiness;
@@ -105,6 +108,8 @@ export async function readTracker(): Promise<Role[]> {
 
     const base = {
       url: null as string | null,
+      pdf: null as string | null,
+      html: null as string | null,
       num: Number(numRaw),
       date,
       company,
@@ -117,6 +122,18 @@ export async function readTracker(): Promise<Role[]> {
     };
 
     roles.push({ ...base, ...classify(base) });
+  }
+
+  // Attach generated documents. generate-pdf.mjs records each linkage here, so
+  // this is the authoritative map rather than guessing from filenames.
+  const pdfIndex = readPdfIndex();
+  for (const r of roles) {
+    const key = String(r.num).padStart(3, '0');
+    const entry = pdfIndex.get(key);
+    if (entry) {
+      r.pdf = entry.pdf;
+      r.html = entry.html;
+    }
   }
 
   // Enrich with posting URLs. Only the first 2KB of each report is read, so
@@ -268,6 +285,29 @@ export async function summarise() {
     parked: by('parked'),
     total: roles.length,
   };
+}
+
+/**
+ * report number -> generated documents, from data/pdf-index.tsv.
+ *
+ * generate-pdf.mjs writes this file on every render, so it is the
+ * authoritative mapping. Guessing from filenames would break the moment a
+ * company name contains a character the slugger treats differently.
+ */
+function readPdfIndex(): Map<string, { pdf: string; html: string }> {
+  const out = new Map<string, { pdf: string; html: string }>();
+  const file = join(ROOT, 'data', 'pdf-index.tsv');
+  if (!existsSync(file)) return out;
+  try {
+    for (const line of readFileSync(file, 'utf8').split('\n')) {
+      if (!line.trim() || line.startsWith('#')) continue;
+      const [num, pdf, html] = line.split('\t');
+      if (num && pdf) out.set(num.trim().padStart(3, '0'), { pdf: pdf.trim(), html: (html ?? '').trim() });
+    }
+  } catch {
+    /* a malformed index must not blank the screen */
+  }
+  return out;
 }
 
 /** Read just the `**URL:**` line from a report header. */

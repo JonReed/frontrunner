@@ -42,6 +42,14 @@ export interface Job {
   exitCode?: number;
   /** Last few lines of output — enough to explain a failure without a log viewer. */
   tail?: string;
+  /**
+   * What the worker is actually doing, inferred from its output.
+   *
+   * A timer-driven message is a guess; this is evidence. It matters because
+   * the run is genuinely slow, and "Rewriting your experience" after 40
+   * seconds of silence is the difference between waiting and giving up.
+   */
+  stage?: string;
   error?: string;
 }
 
@@ -58,9 +66,35 @@ function write(job: Job) {
   writeFileSync(jobPath(job.id), JSON.stringify(job, null, 2));
 }
 
+/**
+ * Map worker output to a human stage. Ordered most-specific first; the last
+ * match wins, so later progress overrides earlier.
+ */
+const STAGE_SIGNALS: [RegExp, string][] = [
+  [/reading|fetching|job description|\bJD\b/i, 'Reading the job description'],
+  [/cv\.md|profile\.yml|comparing|match/i, 'Comparing it with your CV'],
+  [/tailor|rewrit|summary|bullet/i, 'Rewriting your experience for this role'],
+  [/build-cv-html|html/i, 'Laying out your CV'],
+  [/generate-pdf|playwright|chromium|pdf/i, 'Building the PDF'],
+  [/pdf generated|✅|saved/i, 'Finishing up'],
+];
+
+function stageFromLog(id: string): string | undefined {
+  try {
+    const log = readFileSync(join(JOBS_DIR, `${id}.log`), 'utf8');
+    let found: string | undefined;
+    for (const [re, label] of STAGE_SIGNALS) if (re.test(log)) found = label;
+    return found;
+  } catch {
+    return undefined;
+  }
+}
+
 export function readJob(id: string): Job | null {
   try {
-    return JSON.parse(readFileSync(jobPath(id), 'utf8')) as Job;
+    const job = JSON.parse(readFileSync(jobPath(id), 'utf8')) as Job;
+    if (job.status === 'running') job.stage = stageFromLog(id) ?? job.stage;
+    return job;
   } catch {
     return null;
   }

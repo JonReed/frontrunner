@@ -18,6 +18,7 @@ import { readTracker, readReport } from '@/lib/roles';
 import { parseReport, renderMarkdown } from '@/lib/report';
 import { Match } from '@/components/match';
 import { BuildCv } from '@/components/build-cv';
+import { CvLinks } from '@/components/cv-links';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,13 +64,15 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
             <span className="text-sm font-medium text-[var(--color-ready)]">Tailored CV ready</span>
           )}
         </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+        {role.pdf && <CvLinks pdf={role.pdf} />}
         {/* Read the original before trusting anything below it. */}
         {role.url && (
           <a
             href={role.url}
             target="_blank"
             rel="noreferrer"
-            className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-card)] px-3 py-1.5 text-sm font-medium text-[var(--color-ink-soft)] transition hover:border-[var(--color-act)] hover:text-[var(--color-act)]"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-card)] px-3 py-1.5 text-sm font-medium text-[var(--color-ink-soft)] transition hover:border-[var(--color-act)] hover:text-[var(--color-act)]"
           >
             Read the original job advert
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
@@ -77,6 +80,7 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
             </svg>
           </a>
         )}
+        </div>
       </header>
 
       {/* The assessment. */}
@@ -116,7 +120,7 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
         badged so it is never a surprise.
       */}
       <div className="sticky bottom-4 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-card)] p-5 shadow-md shadow-black/5">
-        <BuildCv roleNum={role.num} hasPdf={role.hasPdf} />
+        <BuildCv roleNum={role.num} hasPdf={role.hasPdf} pdf={role.pdf} url={role.url} />
       </div>
     </div>
   );

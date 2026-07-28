@@ -18,6 +18,7 @@ const NAV = [
   { href: '/', label: 'Next up' },
   { href: '/applications', label: 'My applications' },
   { href: '/discover', label: 'Find roles' },
+  { href: '/profile', label: 'My details' },
 ];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

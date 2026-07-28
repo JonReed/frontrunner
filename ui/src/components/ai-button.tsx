@@ -38,7 +38,7 @@ export function AiButton({
       <button
         type="button"
         {...rest}
-        className={`inline-flex items-center gap-2 rounded-lg bg-[var(--color-ai)] font-semibold text-white transition hover:bg-[var(--color-ai-hover)] ${pad}`}
+        className={`inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[var(--color-ai)] font-semibold text-white transition hover:bg-[var(--color-ai-hover)] disabled:cursor-not-allowed disabled:opacity-60 ${pad}`}
       >
         <Sparkle />
         {children}
