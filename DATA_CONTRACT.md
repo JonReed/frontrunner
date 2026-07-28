@@ -33,7 +33,7 @@ These files contain your personal data, customizations, and work product. Update
 | `data/active-interviews.md` | Your active interview processes, incl. inline `[process-friction]` notes (read by `src/analysis/process-quality.mjs`) |
 | `data/agent-inbox.md` | Your append-only request queue drained at session start (written by `src/tracker/agent-inbox.mjs`) |
 | `data/reply-candidates.json` | Your normalized employer-reply candidates (subject, body, sender, signal — read by `src/tracker/reply-watch.mjs`) |
-| `data/pdf-index.tsv` | PDF↔report linkage manifest (written by `src/cv/generate-pdf.mjs`, read by `find.mjs`, the dashboard, and the `email` mode) |
+| `data/pdf-index.tsv` | PDF↔report linkage manifest (written by `src/cv/generate-pdf.mjs`, read by `find.mjs`, the interfaces, and the `email` mode) |
 | `data/offers/*` | Your received offers/contracts, promise notes, prep reports, and reply drafts (PII — gitignored, written by the `offer-prep` mode) |
 | `data/salary-observations.tsv` | Your append-only compensation observation log: `{tracker#}\t{date}\t{desired\|advertised\|actual}\t{amount}\t{currency}\t{source}\t{note}`. Written by interactive modes when a figure is stated/confirmed; never edited in place. Advertised figures come from reports' `advertised_comp` instead — reports are themselves observation sources. Read by `src/analysis/salary-gap.mjs` |
 | `data/status-log.tsv` | Your append-only status transition ledger: `{tracker#}\t{date}\t{from}\t{to}\t{source}\t{note}`. Appended by `src/tracker/set-status.mjs` on every real status change (the tracker stays the source of truth for *state*; the ledger records *when* transitions happened; the `src/tracker/set-status.mjs` append path lands with #1695 — until then this file may simply not exist); never edited in place — corrections are new `correction`-source lines. Read by `src/analysis/funnel-velocity.mjs` |
@@ -117,7 +117,6 @@ These files contain system logic, scripts, templates, and instructions that impr
 | `config/plugins.example.yml` | Plugin activation template (seed for `config/plugins.yml`) |
 | `batch/batch-prompt.md` | Batch worker prompt |
 | `batch/batch-runner.sh` | Batch orchestrator |
-| `dashboard/*` | Go TUI dashboard |
 | `templates/*` | Base templates |
 | `fonts/*` | Self-hosted fonts |
 | `.claude/skills/*` | Skill definitions (Claude Code) |
@@ -130,6 +129,12 @@ These files contain system logic, scripts, templates, and instructions that impr
 | `VERSION` | Current version number |
 | `DATA_CONTRACT.md` | This file |
 | `writing-samples/README.md` | System-owned onboarding documentation for the writing-samples directory |
+
+## Isolated Application Trees
+
+`web/` and `ui/` are versioned application code, never user data. They have
+their own packages and are deliberately excluded from `update-system.mjs`;
+updating the core must not partially replace either application.
 
 ## The Rule
 

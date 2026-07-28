@@ -104,12 +104,14 @@ Scripts maintain data consistency:
 | `src/tracker/normalize-statuses.mjs` | Maps status aliases to canonical values |
 | `src/cv/cv-sync-check.mjs` | Validates setup consistency |
 
-## Dashboard TUI
+## User Interfaces
 
-The `dashboard/` directory contains a standalone Go TUI application that visualizes the pipeline:
+The interfaces are local views over the same files used by the scripts and AI
+workflow:
 
-- Filter tabs: All, Evaluada, Aplicado, Entrevista, Top >=4, No Aplicar
-- Sort modes: Score, Date, Company, Status
-- Grouped/flat view
-- Lazy-loaded report previews
-- Inline status picker
+- `web/` is the inherited experimental web application.
+- `ui/` is Frontrunner's workflow-first interface and is still under
+  development.
+
+Neither interface owns a separate data store. Application state remains in
+`data/`, `reports/`, and the generated output directories.

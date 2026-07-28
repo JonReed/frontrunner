@@ -35,23 +35,12 @@ function checkNodeVersion() {
   const hasSqlite = major > 22 || (major === 22 && minor >= 5);
 
   if (hasSqlite) {
-    return { pass: true, label: `Node.js >= 22.5 (v${versionStr})` };
-  }
-
-  if (major >= 18) {
-    return {
-      warn: true,
-      label: `Node.js v${versionStr} detected. Node >= 22.5.0 is highly recommended because src/tracker/tracker.mjs (SQLite database indexing) requires node:sqlite.`,
-      fix: [
-        'Upgrade Node.js to v22.5.0 or later to enable full tracker database support.',
-        'The markdown tracker keeps working without it — the index is optional.',
-      ],
-    };
+    return { pass: true, label: `Node.js >= 22.5.0 (v${versionStr})` };
   }
 
   return {
     pass: false,
-    label: `Node.js >= 18 (found v${versionStr})`,
+    label: `Node.js >= 22.5.0 (found v${versionStr})`,
     fix: 'Install Node.js 22.5.0 or later from https://nodejs.org',
   };
 }
@@ -207,7 +196,7 @@ function checkPrereq({ path, fix }) {
 }
 
 function checkFonts() {
-  const fontsDir = join(projectRoot, 'fonts');
+  const fontsDir = join(projectRoot, 'templates', 'fonts');
   if (!existsSync(fontsDir)) {
     return {
       pass: false,

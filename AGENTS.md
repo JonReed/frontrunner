@@ -131,8 +131,7 @@ of unrelated files as having "syntax errors".
 
 - Reintroduce upstream branding: `career-ops.org`, their Discord, the manifesto
   promo, or funding config pointing at them.
-- Add a terminal UI. The Go dashboard was removed deliberately — the target
-  user is not in a terminal.
+- Add a terminal UI. The target user is not in a terminal.
 - Write user data into tracked files. `cv.md`, `config/*.yml`, `data/`,
   `reports/`, `jds/` are gitignored and must stay that way.
 
@@ -151,7 +150,8 @@ Built and used by [santifer](https://santifer.io) to evaluate 740+ offers, gener
 Two layers — full list in `DATA_CONTRACT.md`:
 
 - **User Layer (NEVER auto-updated; personalization goes HERE):** `cv.md`, `config/profile.yml`, `modes/_profile.md`, `modes/_custom.md`, `article-digest.md`, `portals.yml`, `data/*`, `reports/*`, `output/*`, `interview-prep/*`
-- **System Layer (auto-updatable; DON'T put user data here):** `modes/_shared.md` and all other modes, `AGENTS.md`, `CLAUDE.md`, `CODEX.md`, `OPENCODE.md`, `KIMI.md`, `GEMINI.md`, `*.mjs` scripts, `dashboard/*`, `templates/*`, `batch/*`
+- **System Layer (auto-updatable; DON'T put user data here):** `modes/_shared.md` and all other modes, `AGENTS.md`, `CLAUDE.md`, `CODEX.md`, `OPENCODE.md`, `KIMI.md`, `GEMINI.md`, `*.mjs` scripts, `templates/*`, `batch/*`
+- **Isolated application trees:** `web/*` and `ui/*` are versioned interface code, contain no user data, and are deliberately outside `update-system.mjs`.
 
 **THE RULE: When the user asks to customize facts or targeting (archetypes, narrative, negotiation scripts, proof points, location policy, comp targets), ALWAYS write to `modes/_profile.md` or `config/profile.yml`. When they ask for procedural house rules, custom workflows, output preferences, or automations, write to `modes/_custom.md` (copy it from `modes/_custom.template.md` if missing). NEVER edit `modes/_shared.md` for user-specific content.** This ensures system updates don't overwrite their customizations.
 

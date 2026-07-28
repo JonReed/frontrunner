@@ -27,7 +27,7 @@ If the fetch fails, stop Step 2 and tell the user you couldn't preview the chang
 Then, only if the fetch succeeded, for each System Layer file category show a summary:
 
 ```bash
-git diff HEAD..FETCH_HEAD --stat -- modes/ CLAUDE.md AGENTS.md *.mjs batch/ dashboard/ templates/ docs/ VERSION DATA_CONTRACT.md
+git diff HEAD..FETCH_HEAD --stat -- modes/ CLAUDE.md AGENTS.md *.mjs batch/ web/ ui/ templates/ docs/ VERSION DATA_CONTRACT.md
 ```
 
 Present to the user as a clear summary:
@@ -37,7 +37,7 @@ Present to the user as a clear summary:
 > **Changes summary:**
 > - Modes: {N} files changed (list which ones)
 > - Scripts: {N} files changed
-> - Dashboard: {N} files changed
+> - Interfaces: {N} files changed
 > - Templates: {N} files changed
 > - Other: {N} files changed
 >

@@ -3,7 +3,8 @@
 ## Prerequisites
 
 - An AI coding CLI — [Claude Code](https://claude.ai/code), Gemini CLI, Codex, Qwen Code, OpenCode, GitHub Copilot CLI, Antigravity CLI, or Grok Build CLI (see [Supported CLIs](SUPPORTED_CLIS.md))
-- [Node.js](https://nodejs.org) 18+ and `git` (`npx` ships with Node — the installer refuses to run without them) — note: the Gemini CLI integration requires Node.js 20+
+- [Node.js](https://nodejs.org) 22.5+ and Git. Node 22.5 is the minimum
+  because the tracker index uses the built-in `node:sqlite` module.
 
 ## Quick Start
 
@@ -87,9 +88,13 @@ node src/cv/cv-sync-check.mjs      # Check configuration
 node src/tracker/verify-pipeline.mjs     # Check pipeline integrity
 ```
 
-## Build Dashboard (Optional)
+## Experimental Web Interfaces
 
-```bash
-npm run serve:dashboard     # Opens TUI pipeline viewer
-npm run build:dashboard     # Optional: build the standalone binary
-```
+The supported workflow remains conversation-first. Two local web interfaces
+also exist for development and evaluation:
+
+- `web/` is the inherited career-ops web application.
+- `ui/` is the incomplete workflow-first Frontrunner interface.
+
+See each directory's package scripts before running it. Neither is currently a
+one-click consumer installation.

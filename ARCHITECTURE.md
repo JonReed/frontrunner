@@ -14,14 +14,15 @@ Career-ops is built on three commitments that every design decision serves:
 
 The single most important architectural rule: **system files** and **user files** are strictly separated.
 
-- **System layer** — the tool itself: `modes/`, scripts (`*.mjs`), templates, the dashboard. These are versioned and updated by `update-system.mjs`. Listed in `SYSTEM_PATHS`.
+- **System layer** — the updateable core: `modes/`, scripts (`*.mjs`), and templates. These are versioned and updated by `update-system.mjs`. Listed in `SYSTEM_PATHS`.
+- **Application trees** — `web/` and `ui/` are versioned interfaces with their own packages and release lifecycle. They contain no user data and sit outside `update-system.mjs`.
 - **User layer** — your data: `cv.md`, `config/profile.yml`, `modes/_profile.md`, `data/`, `reports/`, `jds/`, etc. The updater **never** touches these. Listed in `USER_PATHS`.
 
 `DATA_CONTRACT.md` is the source of truth for this boundary, and `updater-migration-tests.mjs` enforces that no system path ever overlaps a user path.
 
 ## Files are canonical — databases are derived
 
-Settled doctrine ([#918](https://github.com/santifer/career-ops/issues/918)): the human-readable, git-diffable files (`data/applications.md`, `reports/`, `data/pipeline.md`) are the **permanent source of truth**. SQLite exists only as a derived index (fast queries, reindex-on-delete) and will never become a primary store — not even opt-in. The reason is ecosystem-wide: the web UI, the Go dashboard, community plugins, and thousands of fork scripts all read the files; a second canonical store would force every reader to support two modes forever. Performance work is welcome **on the derived layer**; the files stay the brain.
+Settled doctrine ([#918](https://github.com/santifer/career-ops/issues/918)): the human-readable, git-diffable files (`data/applications.md`, `reports/`, `data/pipeline.md`) are the **permanent source of truth**. SQLite exists only as a derived index (fast queries, reindex-on-delete) and will never become a primary store — not even opt-in. The web interfaces, community plugins, and external scripts all read the files; a second canonical store would force every reader to support two modes forever. Performance work is welcome **on the derived layer**; the files stay the brain.
 
 ## Why the flat root
 
@@ -66,8 +67,12 @@ Safely pulls new system files from upstream without touching user data. It backs
 ### Multi-CLI entry files
 Each CLI reads its own entry file, all of which point at the canonical `AGENTS.md`: `CLAUDE.md` (full), and thin `@AGENTS.md` redirect wrappers `OPENCODE.md`, `CODEX.md`, `GEMINI.md`, plus the `.agents/skills/` skill entrypoints. This is the [open agent skill standard](https://agentskills.io).
 
-### Dashboard (optional)
-A standalone Go TUI under `dashboard/` for browsing the pipeline. Isolated from the core — never required.
+### User interfaces
+
+`web/` is the inherited, experimental local web application. `ui/` is
+Frontrunner's workflow-first replacement and is still under development. Both
+read the same canonical user files as the conversational and script workflows;
+neither maintains a separate database or source of truth.
 
 ## Data flow (a typical run)
 

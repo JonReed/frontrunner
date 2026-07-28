@@ -44,13 +44,12 @@ All scripts live in the project root as `.mjs` modules. Most are exposed via
 | `npm run star` | `src/evaluate/match-star.mjs` | Match a behavioural question to your best STAR story (zero-LLM) |
 | `npm run archive` | `src/scan/archive-posting.mjs` | Save a live job posting as PDF before it disappears |
 | `npm run prepare:application` | `src/evaluate/prepare-application.mjs` | Print an ATS prefill summary (read-only, never POSTs) |
-| `npm run build:dashboard` | `build-dashboard.mjs` | Build the Go TUI dashboard binary cross-platform |
 
 ---
 
 ## doctor
 
-Validates that all prerequisites are in place: Node.js >= 18, dependencies installed, Playwright chromium, required files (`cv.md`, `config/profile.yml`, `portals.yml`), fonts directory, and auto-creates `data/`, `output/`, `reports/` if missing.
+Validates that all prerequisites are in place: Node.js >= 22.5, dependencies installed, Playwright chromium, required files (`cv.md`, `config/profile.yml`, `portals.yml`), fonts directory, and auto-creates `data/`, `output/`, `reports/` if missing.
 
 ```bash
 npm run doctor
@@ -653,20 +652,6 @@ open the apply URL, and submit yourself. See
 
 ```bash
 npm run prepare:application -- --url https://boards.greenhouse.io/acme/jobs/123
-```
-
----
-
-## build:dashboard
-
-Cross-platform build wrapper for the Go TUI dashboard: picks the
-platform-correct output name (`career-dashboard.exe` on Windows, else
-`career-dashboard`), since a bare `go build -o` writes an extension-less
-binary on Windows. Requires Go 1.24+.
-
-```bash
-npm run build:dashboard
-npm run serve:dashboard    # or run the TUI directly without building
 ```
 
 ---

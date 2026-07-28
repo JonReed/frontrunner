@@ -1,15 +1,86 @@
 @import "tailwindcss";
 
-@theme {
-  --color-bg: #0b0b0d;
-  --color-surface: #141417;
-  --color-border: #26262b;
-  --color-text: #ededf0;
-  --color-muted: #8b8b96;
-  --color-accent: #f0873f;
-  --color-ready: #4ade80;
-  --color-soon: #fbbf24;
+/* ===========================================================================
+   Frontrunner design system
+   ---------------------------------------------------------------------------
+   Audience: someone job hunting. Not a developer. Paying for an AI
+   subscription. Job hunting is stressful and often demoralising, so the tone
+   is calm and competent — a good assistant, not a control panel.
+
+   Decisions, and why:
+
+   PAPER, NOT TERMINAL. A warm off-white rather than pure white (less glare,
+   reads as paper) and certainly not dark. A dark UI with an orange monospace
+   accent signals "developer tool", which is the opposite of the promise.
+
+   COLOUR CARRIES MEANING, NEVER DECORATION. Exactly three semantic colours:
+   blue for "you can act on this", green for "this is ready", amber for
+   "needs your attention". Everything else is a neutral, so a spot of colour
+   on the page always means something.
+
+   ONE TYPEFACE. DM Sans — geometric humanist, warm, highly legible, already
+   bundled in the repo so there is no network request and it works offline.
+   Hierarchy comes from size and weight, not from mixing families.
+
+   GENEROUS SPACING. Dense tables read as "software". Space reads as calm.
+   =========================================================================== */
+
+@font-face {
+  font-family: 'DM Sans';
+  src: url('/fonts/dm-sans-latin.woff2') format('woff2');
+  font-weight: 100 1000;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2074, U+20AC, U+2122, U+2212;
+}
+@font-face {
+  font-family: 'DM Sans';
+  src: url('/fonts/dm-sans-latin-ext.woff2') format('woff2');
+  font-weight: 100 1000;
+  font-display: swap;
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+2C60-2C7F, U+A720-A7FF;
 }
 
-html, body { background: var(--color-bg); color: var(--color-text); }
-body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+@theme {
+  /* -- surfaces ------------------------------------------------------- */
+  --color-paper: #faf9f7;
+  --color-card: #ffffff;
+  --color-line: #e8e5e0;
+  --color-line-strong: #d6d1c9;
+
+  /* -- text ----------------------------------------------------------- */
+  --color-ink: #1a1917;
+  --color-ink-soft: #57534e;
+  --color-ink-faint: #8a8580;
+
+  /* -- semantic: three, no more ---------------------------------------- */
+  --color-act: #2563a8;
+  --color-act-hover: #1d4d84;
+  --color-act-wash: #eef4fb;
+  --color-ready: #157a52;
+  --color-ready-wash: #e8f5ef;
+  --color-attention: #a45c1b;
+  --color-attention-wash: #fdf3e7;
+
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+html {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body { background: var(--color-paper); }
+
+/* Numbers align in columns without switching to a monospace face, which
+   would drag the "developer tool" feel back in. */
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* Keyboard users must never lose their place while tabbing through actions. */
+:focus-visible {
+  outline: 2px solid var(--color-act);
+  outline-offset: 2px;
+  border-radius: 4px;
+}

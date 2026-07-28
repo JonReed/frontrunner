@@ -5,7 +5,7 @@ Auto-discovered test files for the career-ops suite.
 ## Purpose
 
 `test-all.mjs` (repo root) is the suite runner: it executes its inline core
-checks (syntax, scripts, dashboard, data contract, personal data, paths) and
+checks (syntax, scripts, data contract, personal data, paths) and
 then auto-discovers every `*.test.mjs` file under this directory. There is no
 test framework by design — the suite must run on a fresh clone with only
 Node.js (`tests/helpers.mjs`).
@@ -28,7 +28,6 @@ Node.js (`tests/helpers.mjs`).
 
 ```bash
 node test-all.mjs                            # full suite — run before pushing
-node test-all.mjs --quick                    # full suite, skip dashboard build
 node test-all.mjs --only providers/themuse   # only matching tests/ files
 ```
 

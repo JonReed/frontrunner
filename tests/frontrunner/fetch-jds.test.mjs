@@ -9,11 +9,12 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 import { ROOT } from '#paths';
-const { parseJobUrl } = await import(join(ROOT, 'src/scan/fetch-jds.mjs'));
+const { parseJobUrl, runFetchJds } = await import(join(ROOT, 'src/scan/fetch-jds.mjs'));
 
 // ---------------------------------------------------------------------------
 // URL parsing — a misparse sends the whole board's roles to the WebFetch
@@ -96,4 +97,74 @@ test('script and style content is stripped, not inlined', () => {
   const out = htmlToText('&lt;script&gt;alert(1)&lt;/script&gt;Real content');
   assert.ok(!out.includes('alert'), 'script body leaked into the JD');
   assert.ok(out.includes('Real content'));
+});
+
+test('bulk ingestion writes JDs, deduplicates board calls, and preserves cache through failure', async (t) => {
+  const target = mkdtempSync(join(tmpdir(), 'frontrunner-fetch-jds-'));
+  t.after(() => rmSync(target, { recursive: true, force: true }));
+  const input = join(target, 'pipeline.md');
+  const outDir = join(target, 'jds');
+  const alpha1 = 'https://job-boards.greenhouse.io/alpha/jobs/1';
+  const alpha2 = 'https://job-boards.greenhouse.io/alpha/jobs/2';
+  const beta3 = 'https://job-boards.greenhouse.io/beta/jobs/3';
+
+  writeFileSync(
+    input,
+    [
+      `- [ ] ${alpha1} | Alpha | Director One |`,
+      `- [ ] ${alpha2} | Alpha | Director Two |`,
+      '',
+    ].join('\n'),
+  );
+
+  const calls = [];
+  const first = await runFetchJds({
+    input,
+    outDir,
+    fetchJson: async (url) => {
+      calls.push(url);
+      return {
+        jobs: [
+          { id: 1, title: 'Director One', location: { name: 'Remote' }, content: '&lt;p&gt;Own one&lt;/p&gt;' },
+          { id: 2, title: 'Director Two', location: { name: 'London' }, content: '&lt;p&gt;Own two&lt;/p&gt;' },
+        ],
+      };
+    },
+  });
+
+  assert.equal(first.requests, 1);
+  assert.equal(calls.length, 1, 'two roles on one board caused more than one request');
+  assert.equal(first.written, 2);
+  const firstIndex = readFileSync(join(outDir, 'index.tsv'), 'utf8');
+  assert.ok(firstIndex.includes(alpha1));
+  assert.ok(firstIndex.includes(alpha2));
+  const firstJdPath = firstIndex.split('\n').find((line) => line.startsWith(`${alpha1}\t`)).split('\t')[1];
+  assert.match(readFileSync(firstJdPath, 'utf8'), /# Director One[\s\S]*Own one/);
+
+  writeFileSync(
+    input,
+    [
+      `- [ ] ${alpha1} | Alpha | Director One |`,
+      `- [ ] ${alpha2} | Alpha | Director Two |`,
+      `- [ ] ${beta3} | Beta | Director Three |`,
+      '',
+    ].join('\n'),
+  );
+
+  const second = await runFetchJds({
+    input,
+    outDir,
+    fetchJson: async (url) => {
+      if (url.includes('/alpha/')) throw new Error('temporary outage');
+      return {
+        jobs: [{ id: 3, title: 'Director Three', location: { name: 'Remote' }, content: '&lt;p&gt;Own three&lt;/p&gt;' }],
+      };
+    },
+  });
+
+  assert.equal(second.errors.length, 1);
+  const recoveredIndex = readFileSync(join(outDir, 'index.tsv'), 'utf8');
+  assert.ok(recoveredIndex.includes(alpha1), 'cached alpha role was lost');
+  assert.ok(recoveredIndex.includes(alpha2), 'cached alpha role was lost');
+  assert.ok(recoveredIndex.includes(beta3), 'successful beta role was not merged');
 });

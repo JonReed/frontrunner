@@ -52,7 +52,7 @@ The review process you'll experience here is documented end-to-end in [Agentic m
 
 **Bigger contributions:**
 - New evaluation dimensions or scoring logic
-- Dashboard TUI features (in `dashboard/`)
+- Web interface improvements in `web/` or `ui/`
 - New skill modes (in `modes/`)
 - Script improvements (`.mjs` utilities)
 
@@ -71,13 +71,13 @@ We credit contributors publicly and invite high-signal folks up the ladder. Want
 
 career-ops core is **local-first and human-in-the-loop** by design — it runs on your machine and drafts applications for *you* to review and submit. Centralized infrastructure — hosted job aggregation, a shared matching service, proxies or Workers the project would operate — is **not part of the core**: it's heavier than a free local tool should carry, and it's where the project is headed as a *separate, opt-in service*. See the direction here: **[Where career-ops is going](https://github.com/santifer/career-ops/discussions/904)**.
 
-Rule of thumb before you build: **provider modules, languages, CLI support, modes, dashboard, docs and fixes → the core.** Bigger centralized or automation ideas (a hosted layer, auto-apply, scraping infrastructure) → **start in that discussion**, so we can route them together instead of a large PR that can't merge.
+Rule of thumb before you build: **provider modules, languages, CLI support, modes, local interfaces, docs and fixes → the core.** Bigger centralized or automation ideas (a hosted layer, auto-apply, scraping infrastructure) → **start in that discussion**, so we can route them together instead of a large PR that can't merge.
 
 ## Guidelines
 
 - Keep modes language-agnostic when possible (Claude handles both EN and ES)
 - Scripts should handle missing files gracefully (check `existsSync` before `readFileSync`)
-- Dashboard changes require a build (`npm run build:dashboard`) — test with real data before submitting
+- Interface changes must pass their package's typecheck and build, and should be tested with representative local data
 - Don't commit personal data (cv.md, profile.yml, applications.md, reports/)
 
 ## What we do NOT accept
@@ -99,13 +99,12 @@ npm run doctor                # Setup validation
 node src/tracker/verify-pipeline.mjs     # Health check
 node src/cv/cv-sync-check.mjs        # Config check
 
-# Dashboard
-npm run build:dashboard       # go build with platform-correct binary name
-npm run serve:dashboard       # launch the TUI against the repo root
+# Interfaces
+npm -C web run typecheck
+npm -C ui run typecheck
 
 # Tests
 node test-all.mjs             # Full suite — run before pushing/opening a PR
-node test-all.mjs --quick     # Full suite, skipping the dashboard build
 node test-all.mjs --only providers/themuse   # Run just one provider's test(s)
 ```
 
@@ -115,7 +114,7 @@ no registration needed. Do not add a section to `test-all.mjs` for this.
 
 **`--only` is a dev convenience, not a PR gate:** it runs *only* the discovered
 `tests/` files matching the given substring and skips every inline core
-section (syntax, scripts, dashboard, data contract, personal data, paths,
+section (syntax, scripts, data contract, personal data, paths,
 etc.). A green `--only` run is **not** a green suite — always run the full
 `node test-all.mjs` before pushing.
 

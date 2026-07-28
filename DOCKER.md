@@ -5,8 +5,8 @@ Use this when the host can't install Playwright/Chromium directly (e.g. Ubuntu
 laptops). The image is based on Microsoft's official Playwright image, which
 ships Chromium preinstalled and works on any Linux kernel Docker supports.
 
-No feature is dropped: PDF generation, scanner, liveness checker, dashboard
-(Go), batch workers, update system — everything runs inside the container.
+The core scripts run inside the container: PDF generation, scanning, liveness
+checks, batch workers, and update tooling.
 Your project directory is bind-mounted, so reports, CVs, profile, tracker, and
 all generated artifacts live on the host as before.
 
@@ -20,7 +20,7 @@ all generated artifacts live on the host as before.
 ```bash
 # from project root
 ./cops up           # builds image (first run takes a few minutes) and starts container
-./cops doctor       # confirms node + playwright + chromium + go are present
+./cops doctor       # confirms the core runtime prerequisites
 ```
 
 That's it. Container stays running in the background. Re-runs are instant.
@@ -44,7 +44,6 @@ The `./cops` wrapper forwards any command into the container.
 | Rollback | `./cops rollback` |
 | Interactive shell | `./cops shell` |
 | Raw node script | `./cops node src/scan/check-liveness.mjs <url>` |
-| Build dashboard | `./cops bash -c 'cd dashboard && go build -buildvcs=false -o career-dashboard . && ./career-dashboard --path ..'` |
 
 Unknown subcommands fall through to `docker compose exec` so anything works:
 
@@ -64,8 +63,8 @@ Unknown subcommands fall through to `docker compose exec` so anything works:
 
 ## How it works
 
-- `Dockerfile` — installs Node, Playwright/Chromium (preinstalled in base image),
-  Go (for the dashboard), LaTeX (for `src/cv/generate-latex.mjs`), and project deps.
+- `Dockerfile` — installs Node, Playwright/Chromium (preinstalled in the base
+  image), LaTeX (for `src/cv/generate-latex.mjs`), and project dependencies.
 - `docker-compose.yml` — bind-mounts the project at `/app` so host edits appear
   inside the container immediately. `node_modules` lives in a named volume to
   avoid host/container ABI mismatches.

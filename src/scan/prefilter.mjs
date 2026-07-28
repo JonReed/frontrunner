@@ -33,10 +33,10 @@
  *   node src/scan/prefilter.mjs --explain "Staff Product Engineer, AI"
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync } from 'node:fs';
 import yaml from 'js-yaml';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join, dirname, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { ROOT } from '#paths';
 const argv = process.argv.slice(2);
@@ -45,22 +45,6 @@ const argVal = (f, d) => {
   const i = argv.indexOf(f);
   return i !== -1 && argv[i + 1] ? argv[i + 1] : d;
 };
-
-if (hasFlag('-h') || hasFlag('--help')) {
-  console.log(`prefilter.mjs — deterministic rejection pass (zero LLM tokens)
-
-Usage:
-  node src/scan/prefilter.mjs [--input <file>] [--out <file>] [--jds <dir>] [--summary|--json]
-  node src/scan/prefilter.mjs --explain "<job title>"
-
-  --input <file>   Default: data/pipeline.md. Also accepts a TSV (col 2 = url).
-  --out <file>     Write surviving roles as a batch-input TSV.
-  --jds <dir>      JD text dir from fetch-jds.mjs. Default: jds
-  --rejects <file> Write rejected roles + reasons as TSV. Default: batch/prefilter-rejects.tsv
-  --explain <t>    Show how one title classifies, then exit.
-`);
-  process.exit(0);
-}
 
 // ---------------------------------------------------------------- config
 
@@ -187,25 +171,7 @@ export function classify(title, jdText = '', profile = PROFILE, rules = RULES) {
   return { verdict: 'keep', rule: lead ? 'leadership_signal' : 'unclear', evidence: lead ? t.match(lead)?.[0] ?? '' : '' };
 }
 
-// ---------------------------------------------------------------- explain mode
-
-if (hasFlag('--explain')) {
-  const t = argVal('--explain', '');
-  const r = classify(t);
-  console.log(`title:    ${t}`);
-  console.log(`verdict:  ${r.verdict.toUpperCase()}`);
-  console.log(`rule:     ${r.rule}`);
-  console.log(`evidence: ${r.evidence || '(none)'}`);
-  process.exit(0);
-}
-
 // ---------------------------------------------------------------- io
-
-const INPUT = argVal('--input', join(ROOT, 'data/pipeline.md'));
-const JDS = join(ROOT, argVal('--jds', 'jds'));
-const OUT = argVal('--out', '');
-const REJECTS = argVal('--rejects', join(ROOT, 'batch/prefilter-rejects.tsv'));
-const SUMMARY = hasFlag('--summary');
 
 function readRoles(file) {
   const raw = readFileSync(file, 'utf8');
@@ -237,13 +203,22 @@ function loadJdIndex(dir) {
   return idx;
 }
 
-function main() {
-  if (!existsSync(INPUT)) {
-    console.error(`prefilter: input not found: ${INPUT}`);
-    process.exit(1);
-  }
-  const roles = readRoles(INPUT);
-  const jdIndex = loadJdIndex(JDS);
+function atomicWrite(file, contents) {
+  mkdirSync(dirname(file), { recursive: true });
+  const tmp = `${file}.tmp-${process.pid}`;
+  writeFileSync(tmp, contents);
+  renameSync(tmp, file);
+}
+
+/**
+ * Run the destructive I/O portion against explicit paths.
+ * Keeping this callable lets tests exercise the same filesystem behavior as the
+ * CLI without touching a user's pipeline, cache, or audit log.
+ */
+export function runPrefilter({ input, jdsDir, out = '', rejects, profile = PROFILE, rules = RULES }) {
+  if (!existsSync(input)) throw new Error(`prefilter: input not found: ${input}`);
+  const roles = readRoles(input);
+  const jdIndex = loadJdIndex(jdsDir);
 
   const kept = [];
   const rejected = [];
@@ -258,22 +233,22 @@ function main() {
         /* unreadable JD is not a reason to reject */
       }
     }
-    const res = classify(r.title, jd);
+    const res = classify(r.title, jd, profile, rules);
     if (res.verdict === 'reject') rejected.push({ ...r, ...res });
     else kept.push({ ...r, ...res });
   }
 
   // Always write the audit trail — rule 1: never silently drop.
-  writeFileSync(
-    REJECTS,
+  atomicWrite(
+    rejects,
     `url\tcompany\ttitle\trule\tevidence\n${rejected
       .map((r) => [r.url, r.company, r.title, r.rule, r.evidence].join('\t'))
       .join('\n')}\n`,
   );
 
-  if (OUT) {
-    writeFileSync(
-      OUT,
+  if (out) {
+    atomicWrite(
+      out,
       `id\turl\tsource\tnotes\n${kept
         .map((r, i) => {
           const src = r.url.includes('greenhouse')
@@ -293,31 +268,76 @@ function main() {
   for (const r of rejected) byRule[r.rule] = (byRule[r.rule] ?? 0) + 1;
 
   const result = {
-    input: INPUT,
+    input,
     roles: roles.length,
     kept: kept.length,
     rejected: rejected.length,
     rejectedPct: roles.length ? Math.round((rejected.length / roles.length) * 100) : 0,
     byRule,
     jdsAvailable: jdIndex.size,
-    rejectsLog: REJECTS,
-    out: OUT || null,
+    rejectsLog: rejects,
+    out: out || null,
   };
+  return { result, kept, rejected };
+}
 
-  if (SUMMARY) {
+function main() {
+  if (hasFlag('-h') || hasFlag('--help')) {
+    console.log(`prefilter.mjs — deterministic rejection pass (zero LLM tokens)
+
+Usage:
+  node src/scan/prefilter.mjs [--input <file>] [--out <file>] [--jds <dir>] [--summary|--json]
+  node src/scan/prefilter.mjs --explain "<job title>"
+
+  --input <file>   Default: data/pipeline.md. Also accepts a TSV (col 2 = url).
+  --out <file>     Write surviving roles as a batch-input TSV.
+  --jds <dir>      JD text dir from fetch-jds.mjs. Default: jds
+  --rejects <file> Write rejected roles + reasons as TSV. Default: batch/prefilter-rejects.tsv
+  --explain <t>    Show how one title classifies, then exit.
+`);
+    return;
+  }
+
+  if (hasFlag('--explain')) {
+    const t = argVal('--explain', '');
+    const r = classify(t);
+    console.log(`title:    ${t}`);
+    console.log(`verdict:  ${r.verdict.toUpperCase()}`);
+    console.log(`rule:     ${r.rule}`);
+    console.log(`evidence: ${r.evidence || '(none)'}`);
+    return;
+  }
+
+  const input = resolve(ROOT, argVal('--input', 'data/pipeline.md'));
+  const jdsDir = resolve(ROOT, argVal('--jds', 'jds'));
+  const outArg = argVal('--out', '');
+  const out = outArg ? resolve(ROOT, outArg) : '';
+  const rejects = resolve(ROOT, argVal('--rejects', 'batch/prefilter-rejects.tsv'));
+  const summary = hasFlag('--summary');
+  const { result, kept, rejected } = runPrefilter({ input, jdsDir, out, rejects });
+
+  if (summary) {
     console.log('\n=== prefilter ===');
-    console.log(`  roles in:   ${roles.length}`);
+    console.log(`  roles in:   ${result.roles}`);
     console.log(`  kept:       ${kept.length}  (sent to the LLM)`);
     console.log(`  rejected:   ${rejected.length}  (${result.rejectedPct}% — zero tokens)`);
     console.log('\n  by rule:');
     for (const [k, v] of Object.entries(byRule).sort((a, b) => b[1] - a[1])) {
       console.log(`    ${String(v).padStart(4)}  ${k}`);
     }
-    console.log(`\n  audit trail: ${REJECTS}`);
-    if (OUT) console.log(`  batch input: ${OUT}`);
+    console.log(`\n  audit trail: ${rejects}`);
+    if (out) console.log(`  batch input: ${out}`);
   } else {
     console.log(JSON.stringify(result, null, 2));
   }
 }
 
-main();
+const isDirect = process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
+if (isDirect) {
+  try {
+    main();
+  } catch (err) {
+    console.error(err.message ?? err);
+    process.exitCode = 1;
+  }
+}

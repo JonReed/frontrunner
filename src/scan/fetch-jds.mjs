@@ -37,9 +37,9 @@
  * as `skipped` and the worker keeps its existing fallback path for them.
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, renameSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { ROOT } from '#paths';
 // ---------------------------------------------------------------- args
@@ -50,28 +50,6 @@ const argVal = (f, dflt) => {
   const i = argv.indexOf(f);
   return i !== -1 && argv[i + 1] ? argv[i + 1] : dflt;
 };
-
-if (hasFlag('-h') || hasFlag('--help')) {
-  console.log(`fetch-jds.mjs — bulk JD pre-fetcher (zero LLM tokens)
-
-Usage:
-  node src/scan/fetch-jds.mjs [--input <file>] [--out <dir>] [--summary|--json] [--force]
-
-  --input <file>  Source of URLs. Default: data/pipeline.md
-                  Accepts pipeline.md ("- [ ] <url> | ...") or a TSV whose
-                  second column is the URL (e.g. batch/batch-input.tsv).
-  --out <dir>     Output directory. Default: jds
-  --force         Re-fetch even if the JD file already exists.
-  --summary       Human-readable table.
-  --json          Machine-readable result (default).
-`);
-  process.exit(0);
-}
-
-const INPUT = argVal('--input', join(ROOT, 'data/pipeline.md'));
-const OUT_DIR = join(ROOT, argVal('--out', 'jds'));
-const FORCE = hasFlag('--force');
-const SUMMARY = hasFlag('--summary');
 
 // ---------------------------------------------------------------- helpers
 
@@ -161,12 +139,12 @@ export function parseJobUrl(raw) {
 // ---------------------------------------------------------------- board fetchers
 
 /** Fetch every posting for one board. Returns Map<jobId, {title, location, text}>. */
-async function fetchBoard(provider, slug, eu = false) {
+async function fetchBoard(provider, slug, eu = false, fetchJson = getJson) {
   const out = new Map();
 
   if (provider === 'greenhouse') {
     const host = eu ? 'boards-api.eu.greenhouse.io' : 'boards-api.greenhouse.io';
-    const data = await getJson(`https://${host}/v1/boards/${encodeURIComponent(slug)}/jobs?content=true`);
+    const data = await fetchJson(`https://${host}/v1/boards/${encodeURIComponent(slug)}/jobs?content=true`);
     for (const j of data.jobs ?? []) {
       out.set(String(j.id), {
         title: j.title ?? '',
@@ -178,7 +156,7 @@ async function fetchBoard(provider, slug, eu = false) {
   }
 
   if (provider === 'ashby') {
-    const data = await getJson(
+    const data = await fetchJson(
       `https://api.ashbyhq.com/posting-api/job-board/${encodeURIComponent(slug)}?includeCompensation=true`,
     );
     for (const j of data.jobs ?? []) {
@@ -192,7 +170,7 @@ async function fetchBoard(provider, slug, eu = false) {
   }
 
   if (provider === 'lever') {
-    const data = await getJson(`https://api.lever.co/v0/postings/${encodeURIComponent(slug)}?mode=json`);
+    const data = await fetchJson(`https://api.lever.co/v0/postings/${encodeURIComponent(slug)}?mode=json`);
     for (const j of data ?? []) {
       const text = j.descriptionPlain?.trim()
         ? String(j.descriptionPlain)
@@ -208,10 +186,7 @@ async function fetchBoard(provider, slug, eu = false) {
 // ---------------------------------------------------------------- input
 
 function readUrls(file) {
-  if (!existsSync(file)) {
-    console.error(`fetch-jds: input not found: ${file}`);
-    process.exit(1);
-  }
+  if (!existsSync(file)) throw new Error(`fetch-jds: input not found: ${file}`);
   const raw = readFileSync(file, 'utf8');
   const urls = [];
 
@@ -231,9 +206,31 @@ function readUrls(file) {
 
 // ---------------------------------------------------------------- main
 
-async function main() {
-  const urls = readUrls(INPUT);
-  mkdirSync(OUT_DIR, { recursive: true });
+function readManifest(outDir) {
+  const entries = new Map();
+  const index = join(outDir, 'index.tsv');
+  if (!existsSync(index)) return entries;
+  for (const line of readFileSync(index, 'utf8').split('\n').slice(1)) {
+    const [url, file] = line.split('\t');
+    if (url && file && existsSync(file)) entries.set(url, file);
+  }
+  return entries;
+}
+
+function atomicWrite(file, contents) {
+  const tmp = `${file}.tmp-${process.pid}`;
+  writeFileSync(tmp, contents);
+  renameSync(tmp, file);
+}
+
+/**
+ * Fetch and persist JDs using explicit paths and an injectable JSON transport.
+ * Existing valid manifest entries are merged so a transient board failure
+ * cannot make already-cached JDs disappear from the batch pipeline.
+ */
+export async function runFetchJds({ input, outDir, force = false, fetchJson = getJson }) {
+  const urls = readUrls(input);
+  mkdirSync(outDir, { recursive: true });
 
   /** @type {Map<string, {provider:string,slug:string,eu:boolean,items:{url:string,jobId:string}[]}>} */
   const boards = new Map();
@@ -255,12 +252,12 @@ async function main() {
   const written = [];
   const missed = [];
   const errors = [];
-  const manifest = [];
+  const manifest = readManifest(outDir);
 
   for (const [, b] of boards) {
     let postings;
     try {
-      postings = await fetchBoard(b.provider, b.slug, b.eu);
+      postings = await fetchBoard(b.provider, b.slug, b.eu, fetchJson);
     } catch (err) {
       errors.push({ board: `${b.provider}/${b.slug}`, error: String(err.message ?? err), roles: b.items.length });
       continue;
@@ -272,23 +269,28 @@ async function main() {
         missed.push(url);
         continue;
       }
-      const file = join(OUT_DIR, `${safe(b.provider)}-${safe(b.slug)}-${safe(jobId)}.md`);
-      if (!existsSync(file) || FORCE) {
+      const file = join(outDir, `${safe(b.provider)}-${safe(b.slug)}-${safe(jobId)}.md`);
+      if (!existsSync(file) || force) {
         writeFileSync(
           file,
           `# ${post.title}\n\n**Location:** ${post.location}\n**URL:** ${url}\n\n---\n\n${post.text}\n`,
         );
       }
       written.push({ url, file, chars: post.text.length });
-      manifest.push(`${url}\t${file}`);
+      manifest.set(url, file);
     }
   }
 
-  if (manifest.length) writeFileSync(join(OUT_DIR, 'index.tsv'), `url\tfile\n${manifest.join('\n')}\n`);
+  if (manifest.size) {
+    const rows = [...manifest.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([url, file]) => `${url}\t${file}`);
+    atomicWrite(join(outDir, 'index.tsv'), `url\tfile\n${rows.join('\n')}\n`);
+  }
 
   const totalChars = written.reduce((a, w) => a + w.chars, 0);
   const result = {
-    input: INPUT,
+    input,
     urls: urls.length,
     boards: boards.size,
     requests: boards.size, // one per board — the whole point
@@ -298,18 +300,44 @@ async function main() {
     errors,
     approxTokens: Math.round(totalChars / 4),
   };
+  return result;
+}
 
-  if (SUMMARY) {
+async function main() {
+  if (hasFlag('-h') || hasFlag('--help')) {
+    console.log(`fetch-jds.mjs — bulk JD pre-fetcher (zero LLM tokens)
+
+Usage:
+  node src/scan/fetch-jds.mjs [--input <file>] [--out <dir>] [--summary|--json] [--force]
+
+  --input <file>  Source of URLs. Default: data/pipeline.md
+                  Accepts pipeline.md ("- [ ] <url> | ...") or a TSV whose
+                  second column is the URL (e.g. batch/batch-input.tsv).
+  --out <dir>     Output directory. Default: jds
+  --force         Re-fetch even if the JD file already exists.
+  --summary       Human-readable table.
+  --json          Machine-readable result (default).
+`);
+    return;
+  }
+
+  const input = resolve(ROOT, argVal('--input', 'data/pipeline.md'));
+  const outDir = resolve(ROOT, argVal('--out', 'jds'));
+  const force = hasFlag('--force');
+  const summary = hasFlag('--summary');
+  const result = await runFetchJds({ input, outDir, force });
+
+  if (summary) {
     console.log('\n=== fetch-jds ===');
-    console.log(`  input:        ${INPUT}`);
-    console.log(`  urls:         ${urls.length}`);
-    console.log(`  boards:       ${boards.size}  (${boards.size} HTTP requests total)`);
-    console.log(`  JDs written:  ${written.length}  -> ${OUT_DIR}/`);
-    console.log(`  not on board: ${missed.length}   (posting closed or id mismatch)`);
-    console.log(`  skipped:      ${skipped.length}   (Workday/other — no bulk endpoint)`);
-    if (errors.length) {
-      console.log(`  board errors: ${errors.length}`);
-      for (const e of errors) console.log(`    - ${e.board}: ${e.error} (${e.roles} roles)`);
+    console.log(`  input:        ${input}`);
+    console.log(`  urls:         ${result.urls}`);
+    console.log(`  boards:       ${result.boards}  (${result.requests} HTTP requests total)`);
+    console.log(`  JDs written:  ${result.written}  -> ${outDir}/`);
+    console.log(`  not on board: ${result.missed}   (posting closed or id mismatch)`);
+    console.log(`  skipped:      ${result.skipped}   (Workday/other — no bulk endpoint)`);
+    if (result.errors.length) {
+      console.log(`  board errors: ${result.errors.length}`);
+      for (const e of result.errors) console.log(`    - ${e.board}: ${e.error} (${e.roles} roles)`);
     }
     console.log(`  JD text:      ~${result.approxTokens.toLocaleString()} tokens total, clean text`);
   } else {
@@ -317,7 +345,10 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error('fetch-jds failed:', err);
-  process.exit(1);
-});
+const isDirect = process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
+if (isDirect) {
+  main().catch((err) => {
+    console.error('fetch-jds failed:', err);
+    process.exitCode = 1;
+  });
+}

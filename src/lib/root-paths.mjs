@@ -28,21 +28,29 @@ import { execFileSync } from 'node:child_process';
 import { join, basename } from 'node:path';
 import { ROOT } from '#paths';
 
+const SELF_REFERENTIAL_FILES = new Set([
+  'src/lib/root-paths.mjs',
+  'tests/frontrunner/root-paths.test.mjs',
+]);
+
 /** Files worth scanning. Excludes the web app, which has its own layout. */
-function scannableFiles() {
-  const out = execFileSync('git', ['ls-files'], { cwd: ROOT, encoding: 'utf8' });
+function scannableFiles(root) {
+  const out = execFileSync('git', ['ls-files'], { cwd: root, encoding: 'utf8' });
   return out
     .split('\n')
     .filter(Boolean)
     .filter((f) => /\.(mjs|json|md|sh|yml|ts|tsx)$/.test(f))
     .filter((f) => !f.startsWith('node_modules/'))
     // scaffolder ships standalone and legitimately describes the upstream layout
-    .filter((f) => !f.startsWith('scaffolder/'));
+    .filter((f) => !f.startsWith('scaffolder/'))
+    // The detector and its destructive fixture necessarily contain examples of
+    // every forbidden form. Scanning those examples makes the check fail itself.
+    .filter((f) => !SELF_REFERENTIAL_FILES.has(f));
 }
 
 /** basename -> current path, for everything that lives under src/ now. */
-function movedScripts() {
-  const out = execFileSync('git', ['ls-files', 'src/**/*.mjs'], { cwd: ROOT, encoding: 'utf8' });
+function movedScripts(root) {
+  const out = execFileSync('git', ['ls-files', 'src/**/*.mjs'], { cwd: root, encoding: 'utf8' });
   const map = new Map();
   for (const f of out.split('\n').filter(Boolean)) {
     if (/\.test\.mjs$|-tests\.mjs$/.test(f)) continue;
@@ -72,13 +80,13 @@ function stalePatterns(base) {
 /**
  * @returns {{file:string, line:number, base:string, current:string, text:string}[]}
  */
-export function findStaleRootPaths() {
-  const moved = movedScripts();
+export function findStaleRootPaths(root = ROOT) {
+  const moved = movedScripts(root);
   const findings = [];
-  for (const file of scannableFiles()) {
+  for (const file of scannableFiles(root)) {
     let src;
     try {
-      src = readFileSync(join(ROOT, file), 'utf8');
+      src = readFileSync(join(root, file), 'utf8');
     } catch {
       continue;
     }
@@ -99,11 +107,11 @@ export function findStaleRootPaths() {
 }
 
 /** Repair every finding in place. @returns {number} files changed */
-export function fixStaleRootPaths() {
-  const moved = movedScripts();
+export function fixStaleRootPaths(root = ROOT) {
+  const moved = movedScripts(root);
   const touched = new Set();
-  for (const file of scannableFiles()) {
-    const path = join(ROOT, file);
+  for (const file of scannableFiles(root)) {
+    const path = join(root, file);
     let src;
     try {
       src = readFileSync(path, 'utf8');

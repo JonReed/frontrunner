@@ -4,17 +4,16 @@
  * test-all.mjs — Comprehensive test suite for career-ops
  *
  * Run before merging any PR or pushing changes.
- * Tests: syntax, scripts, dashboard, data contract, personal data, paths.
+ * Tests: syntax, scripts, data contract, personal data, paths, and backend workflows.
  *
  * Usage:
  *   node test-all.mjs                        # Run all tests
- *   node test-all.mjs --quick                # Skip dashboard build (faster)
  *   node test-all.mjs --only <substring>      # Run ONLY discovered tests/**\/*.test.mjs
  *                                             # files whose path contains <substring>
  *                                             # (e.g. --only providers/themuse).
  *
  *   LOUD WARNING: `--only` runs ONLY discovered tests/ files — every inline
- *   core section above (syntax, scripts, dashboard, data contract, personal
+ *   core section above (syntax, scripts, data contract, personal
  *   data, paths, etc.) is SKIPPED. A green `--only` run is NOT a green
  *   suite. Always run the full suite (no flags) before pushing.
  *
@@ -29,7 +28,7 @@ import { readFileSync, existsSync, readdirSync, mkdtempSync, mkdirSync, writeFil
 import { join, dirname, basename, delimiter } from 'path';
 import { tmpdir } from 'os';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { pass, fail, warn, run, fileExists, finish, ROOT, QUICK, NODE, getBash, toBashPath } from './tests/helpers.mjs';
+import { pass, fail, warn, run, fileExists, finish, ROOT, NODE, getBash, toBashPath } from './tests/helpers.mjs';
 
 /**
  * Read a repo-relative text file as UTF-8.
@@ -846,46 +845,6 @@ try {
   fail(`Liveness classification tests crashed: ${e.message}`);
 }
 
-// ── 4. DASHBOARD BUILD ──────────────────────────────────────────
-
-if (!QUICK) {
-  console.log('\n4. Dashboard build');
-  let hasGo = false;
-  try {
-    execSync('go version', { stdio: 'ignore' });
-    hasGo = true;
-  } catch {}
-  if (!hasGo) {
-    warn('Dashboard build skipped — go compiler not in env');
-  } else {
-    const isWindows = process.platform === 'win32';
-    const dashboardBuildTmp = mkdtempSync(join(tmpdir(), 'career-dashboard-build-'));
-    const outPath = join(dashboardBuildTmp, isWindows ? 'career-dashboard-test.exe' : 'career-dashboard-test');
-    const goEnv = { ...process.env };
-    if (isWindows && !goEnv.GOCACHE) {
-      goEnv.GOCACHE = join(tmpdir(), 'career-ops-go-build-cache');
-    }
-    if (goEnv.GOCACHE) {
-      try { mkdirSync(goEnv.GOCACHE, { recursive: true }); } catch (e) {}
-    }
-    const goBuild = run('go', ['build', '-o', outPath, '.'], {
-      cwd: join(ROOT, 'dashboard'),
-      env: goEnv,
-      stdio: ['pipe', 'pipe', 'pipe'],
-      timeout: 60000,
-    });
-    if (goBuild !== null) {
-      pass('Dashboard compiles');
-      try { rmSync(outPath, { force: true }); } catch (e) {}
-    } else {
-      fail('Dashboard build failed');
-    }
-    try { rmSync(dashboardBuildTmp, { recursive: true, force: true }); } catch (e) {}
-  }
-} else {
-  console.log('\n4. Dashboard build (skipped --quick)');
-}
-
 // ── 5. DATA CONTRACT ────────────────────────────────────────────
 
 console.log('\n5. Data contract validation');
@@ -1143,7 +1102,6 @@ for (const pattern of leakPatterns) {
     for (const line of result.split('\n')) {
       const file = line.split(':')[0];
       if (allowedFiles.some(a => file.includes(a))) continue;
-      if (file.includes('dashboard/go.mod')) continue;
       warn(`Possible personal data in ${file}: "${pattern}"`);
       leakFound = true;
     }
@@ -1406,23 +1364,11 @@ try {
   fail(`PDF renderer post-launch cleanup test crashed: ${error.message}`);
 }
 
-// ── 7c. UPDATER DASHBOARD REBUILD ─────────────────────────────────
+// ── 7c. UPDATER SAFETY ────────────────────────────────────────────
 
-console.log('\n7c. Updater dashboard rebuild');
+console.log('\n7c. Updater safety');
 
 const updateSystemScript = readFile('update-system.mjs');
-if (
-  /git\('diff',\s*'--name-only',\s*'HEAD',\s*'--',\s*'dashboard'\)/.test(updateSystemScript) &&
-  /path\.startsWith\(['"]dashboard\/['"]\)\s*&&\s*path\.endsWith\(['"]\.go['"]\)/.test(updateSystemScript) &&
-  /go build -o career-dashboard \./.test(updateSystemScript) &&
-  /cwd:\s*join\(ROOT,\s*['"]dashboard['"]\)/.test(updateSystemScript) &&
-  /dashboard binary rebuild skipped/.test(updateSystemScript)
-) {
-  pass('update-system rebuilds dashboard binary when dashboard Go sources change');
-} else {
-  fail('update-system does not rebuild dashboard binary after dashboard Go source updates');
-}
-
 if (updateSystemScript.includes("'CODEX.md'")) {
   pass('update-system preserves CODEX.md as a system-layer wrapper');
 } else {
@@ -1431,7 +1377,6 @@ if (updateSystemScript.includes("'CODEX.md'")) {
 
 try {
   const {
-    DASHBOARD_REBUILD_TIMEOUT_MS,
     NPM_INSTALL_TIMEOUT_MS,
     PLAYWRIGHT_INSTALL_TIMEOUT_MS,
     REEXEC_BUFFER_TIMEOUT_MS,
@@ -1449,7 +1394,6 @@ try {
     updatePathCount * UPDATE_PATH_CHECKOUT_BUDGET_MS +
     NPM_INSTALL_TIMEOUT_MS +
     PLAYWRIGHT_INSTALL_TIMEOUT_MS +
-    DASHBOARD_REBUILD_TIMEOUT_MS +
     REEXEC_BUFFER_TIMEOUT_MS;
 
   if (parsePositiveInt('42', 7) === 42 && parsePositiveInt('-1', 7) === 7 && parsePositiveInt('nope', 7) === 7) {

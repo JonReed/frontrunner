@@ -1,64 +1,83 @@
 /**
- * The stream — the default screen, and the whole point of the UI.
+ * "Next up" — the default screen, and the whole product in one page.
  *
- * One list, sorted by how close each role is to being SENT. No navigation
- * required: the first row is the most useful thing you can do right now, and
- * every row carries its own next action rather than making you go and find it.
+ * Sorted by how close each role is to being SENT, because the point of the
+ * tool is getting applications out. The first row is always the most useful
+ * thing the user can do right now, so no navigation is required to start.
+ *
+ * Tone matters here: job hunting is discouraging, and a screen that opens with
+ * "247 unscored" reads as a backlog you are failing to clear. So the headline
+ * counts what is READY, and the pile of unscanned roles is a quiet aside.
  */
 
 import Link from 'next/link';
 import { readTracker, summarise, type Role, type Readiness } from '@/lib/roles';
+import { Match } from '@/components/match';
+import { AiBadge } from '@/components/ai-badge';
 
 export const dynamic = 'force-dynamic';
 
 const BANDS: { key: Readiness; title: string; blurb: string }[] = [
-  { key: 'ready-to-send', title: 'Ready to send', blurb: 'CV is built. Open the posting and apply.' },
-  { key: 'one-step-away', title: 'One step away', blurb: 'Strong match. Needs a tailored CV.' },
-  { key: 'needs-decision', title: 'Needs your call', blurb: 'Close, but worth reading before you spend effort.' },
-  { key: 'in-flight', title: 'In flight', blurb: 'Already sent. Waiting or interviewing.' },
+  {
+    key: 'ready-to-send',
+    title: 'Ready to send',
+    blurb: 'Your tailored CV is built. All that is left is to apply.',
+  },
+  {
+    key: 'one-step-away',
+    title: 'Nearly ready',
+    blurb: 'These are strong matches. Build a CV tailored to each one.',
+  },
+  {
+    key: 'needs-decision',
+    title: 'Worth a look',
+    blurb: 'Decent matches that need your judgement before you spend effort.',
+  },
+  {
+    key: 'in-flight',
+    title: 'Already applied',
+    blurb: 'Sent and waiting. Nothing to do unless it goes quiet.',
+  },
 ];
 
-function Score({ score }: { score: number | null }) {
-  if (score === null) return <span className="text-[var(--color-muted)]">—</span>;
-  const tone =
-    score >= 4 ? 'text-[var(--color-ready)]' : score >= 3 ? 'text-[var(--color-soon)]' : 'text-[var(--color-muted)]';
-  return <span className={`font-mono text-sm ${tone}`}>{score.toFixed(1)}</span>;
+function ActionButton({ role }: { role: Role }) {
+  const primary = role.readiness === 'ready-to-send' || role.readiness === 'one-step-away';
+  return (
+    <Link
+      href={`/role/${role.num}`}
+      className={
+        primary
+          ? 'rounded-lg bg-[var(--color-act)] px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-act-hover)]'
+          : 'rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-card)] px-3.5 py-2 text-sm font-medium text-[var(--color-ink-soft)] transition hover:border-[var(--color-act)] hover:text-[var(--color-act)]'
+      }
+    >
+      {role.nextAction.label}
+    </Link>
+  );
 }
 
-function RoleRow({ r }: { r: Role }) {
+function RoleRow({ role }: { role: Role }) {
   return (
-    <li className="flex items-center gap-4 border-b border-[var(--color-border)] px-4 py-3 last:border-0 hover:bg-[var(--color-surface)]">
-      <Score score={r.score} />
+    <li className="flex flex-wrap items-center gap-x-4 gap-y-3 border-b border-[var(--color-line)] px-5 py-4 last:border-0 sm:flex-nowrap">
       <div className="min-w-0 flex-1">
-        <div className="truncate">
-          <span className="font-medium">{r.company}</span>
-          <span className="text-[var(--color-muted)]"> · {r.role}</span>
-        </div>
-        <div className="mt-0.5 text-xs text-[var(--color-muted)]">
-          {r.status}
-          {r.hasPdf && <span className="text-[var(--color-ready)]"> · CV ready</span>}
-          {r.notes && <span className="hidden sm:inline"> · {r.notes.slice(0, 60)}</span>}
+        <div className="truncate text-[15px] font-semibold">{role.company}</div>
+        <div className="truncate text-sm text-[var(--color-ink-soft)]">{role.role}</div>
+        <div className="mt-1.5 flex items-center gap-2">
+          <Match score={role.score} />
+          {role.hasPdf && (
+            <span className="text-xs font-medium text-[var(--color-ready)]">CV ready</span>
+          )}
         </div>
       </div>
 
-      {r.nextAction.kind !== 'none' && (
-        <div className="flex shrink-0 items-center gap-2">
-          {r.nextAction.costsTokens && (
-            <span
-              title="This action asks the model to do work, so it uses your subscription."
-              className="rounded border border-[var(--color-border)] px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-[var(--color-muted)]"
-            >
-              uses tokens
-            </span>
-          )}
-          <Link
-            href={`/role/${r.num}`}
-            className="rounded-md bg-[var(--color-accent)] px-3 py-1.5 text-sm font-medium text-black transition hover:opacity-90"
-          >
-            {r.nextAction.label}
-          </Link>
-        </div>
-      )}
+      <div className="flex shrink-0 items-center gap-2.5">
+        {role.nextAction.costsTokens && (
+          <AiBadge
+            what={role.nextAction.kind === 'generate-cv' ? 'rewrite your CV for this job' : 'help you prepare'}
+          />
+        )}
+        <ActionButton role={role} />
+      </div>
     </li>
   );
 }
@@ -66,67 +85,87 @@ function RoleRow({ r }: { r: Role }) {
 function Band({ title, blurb, roles }: { title: string; blurb: string; roles: Role[] }) {
   if (roles.length === 0) return null;
   return (
-    <section className="mb-8">
-      <div className="mb-2 flex items-baseline gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide">{title}</h2>
-        <span className="text-xs text-[var(--color-muted)]">{roles.length}</span>
-      </div>
-      <p className="mb-3 text-sm text-[var(--color-muted)]">{blurb}</p>
-      <ul className="overflow-hidden rounded-lg border border-[var(--color-border)]">
+    <section className="mb-10">
+      <h2 className="text-base font-bold tracking-tight">
+        {title} <span className="tabular font-normal text-[var(--color-ink-faint)]">{roles.length}</span>
+      </h2>
+      <p className="mb-3 mt-0.5 text-sm text-[var(--color-ink-soft)]">{blurb}</p>
+      <ul className="overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-card)]">
         {roles.map((r) => (
-          <RoleRow key={r.num} r={r} />
+          <RoleRow key={r.num} role={r} />
         ))}
       </ul>
     </section>
   );
 }
 
-export default async function StreamPage() {
+function Headline({ ready, nearly }: { ready: number; nearly: number }) {
+  if (ready > 0) {
+    return (
+      <>
+        <h1 className="text-[28px] font-bold leading-tight tracking-tight">
+          {ready} {ready === 1 ? 'application is' : 'applications are'} ready to send
+        </h1>
+        <p className="mt-1 text-[15px] text-[var(--color-ink-soft)]">
+          That is the highest-value thing you can do today.
+        </p>
+      </>
+    );
+  }
+  if (nearly > 0) {
+    return (
+      <>
+        <h1 className="text-[28px] font-bold leading-tight tracking-tight">
+          {nearly} strong {nearly === 1 ? 'match' : 'matches'} waiting
+        </h1>
+        <p className="mt-1 text-[15px] text-[var(--color-ink-soft)]">
+          Build a tailored CV for each and they are ready to go.
+        </p>
+      </>
+    );
+  }
+  return (
+    <>
+      <h1 className="text-[28px] font-bold leading-tight tracking-tight">You are all caught up</h1>
+      <p className="mt-1 text-[15px] text-[var(--color-ink-soft)]">
+        Nothing is waiting on you right now.
+      </p>
+    </>
+  );
+}
+
+export default async function NextUpPage() {
   const [roles, counts] = await Promise.all([readTracker(), summarise()]);
   const actionable = roles.filter((r) => r.readiness !== 'parked');
 
   return (
     <>
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {counts.readyToSend > 0
-            ? `${counts.readyToSend} ready to send`
-            : counts.oneStepAway > 0
-              ? `${counts.oneStepAway} nearly ready`
-              : 'Nothing waiting on you'}
-        </h1>
-        <p className="mt-1 text-sm text-[var(--color-muted)]">
-          {counts.inbox > 0 ? (
-            <>
-              {counts.inbox} unscored in the{' '}
-              <Link href="/find" className="text-[var(--color-accent)] underline underline-offset-2">
-                inbox
-              </Link>
-              .{' '}
-            </>
-          ) : null}
-          {counts.parked > 0 && `${counts.parked} parked and out of the way.`}
-        </p>
+      <div className="mb-9">
+        <Headline ready={counts.readyToSend} nearly={counts.oneStepAway} />
+        {counts.inbox > 0 && (
+          <p className="mt-3 text-sm text-[var(--color-ink-faint)]">
+            {counts.inbox.toLocaleString()} more roles found and not yet scored —{' '}
+            <Link href="/discover" className="font-medium text-[var(--color-act)] hover:underline">
+              take a look
+            </Link>
+            .
+          </p>
+        )}
       </div>
 
       {actionable.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-[var(--color-border)] p-10 text-center">
-          <p className="text-[var(--color-muted)]">
-            No roles need action.{' '}
-            <Link href="/find" className="text-[var(--color-accent)] underline underline-offset-2">
-              Find some
-            </Link>
-            .
+        <div className="rounded-xl border border-dashed border-[var(--color-line-strong)] bg-[var(--color-card)] p-12 text-center">
+          <p className="font-medium">No roles need your attention.</p>
+          <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
+            <Link href="/discover" className="text-[var(--color-act)] hover:underline">
+              Find some roles
+            </Link>{' '}
+            to get started.
           </p>
         </div>
       ) : (
         BANDS.map((b) => (
-          <Band
-            key={b.key}
-            title={b.title}
-            blurb={b.blurb}
-            roles={actionable.filter((r) => r.readiness === b.key)}
-          />
+          <Band key={b.key} title={b.title} blurb={b.blurb} roles={actionable.filter((r) => r.readiness === b.key)} />
         ))
       )}
     </>

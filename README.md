@@ -1,143 +1,237 @@
 # Frontrunner
 
-AI job search that **filters deterministically first** and spends the model only where judgement is actually needed.
+Find the jobs worth applying for, prepare a strong application, and keep track
+of what happens next.
 
-A fork of [career-ops](https://github.com/santifer/career-ops) — same scanners, same scoring rubric, same file formats. Rebuilt where it was expensive.
+Frontrunner is a local-first job-search system. It scans public job boards,
+removes obvious mismatches before using an AI model, evaluates the roles that
+remain against your real experience, and keeps your applications and documents
+in one place.
 
----
+It is a fork of [career-ops](https://github.com/santifer/career-ops). Frontrunner
+keeps its provider ecosystem, scoring framework, file formats, and safety rules,
+but changes how jobs are collected, filtered, and presented.
+
+> **Current status:** the core workflow works, but Frontrunner is not yet a
+> polished consumer application. Setup still requires Node.js, Git, and an AI
+> coding assistant. A workflow-first interface is under active development in
+> `ui/`. If you are not comfortable using developer tools, this release is
+> probably not ready for you yet.
+
+## What it does
+
+A typical Frontrunner search looks like this:
+
+1. **Find** — scan public company and ATS job boards.
+2. **Filter** — reject clear mismatches such as the wrong role family, level,
+   location, or compensation before spending model tokens.
+3. **Evaluate** — compare plausible roles with your CV, goals, and constraints.
+4. **Prepare** — create a tailored CV, cover letter, outreach, and interview
+   material using only claims supported by your source documents.
+5. **Track** — keep application status, reports, PDFs, replies, and follow-ups
+   together.
+
+Frontrunner never submits an application. It can prepare and prefill material,
+but you review it and make the final decision.
 
 ## Why this fork exists
 
-The parent project is good software with one blind spot: **it reaches for the LLM by default**, including for work a script does instantly and for free.
+career-ops has a capable job-search engine, but its batch workflow sends too
+much avoidable work to the model.
 
-Running 123 roles through it consumed most of a 5-hour Claude usage window. Three causes:
+In the run that prompted this fork:
 
-**1. It read job descriptions as rendered web pages.** Every worker pulled a full HTML page into the model's context to reach the job ad inside it.
+- workers read rendered job pages of roughly 18,200 tokens to extract job
+  descriptions of roughly 1,840 tokens;
+- roles with deterministic seniority, function, or salary mismatches were still
+  sent for model evaluation; and
+- low-scoring roles received reports almost as long as strong matches.
 
-```
-Anthropic — Applied AI Security Architect
-  raw HTML page   72,943 chars   ~18,200 tokens
-  clean JD text    7,367 chars    ~1,840 tokens   ← same content, 9.9x smaller
-```
+Frontrunner adds bulk job-description ingestion and a conservative deterministic
+prefilter before model evaluation.
 
-The ATS APIs return that text directly. Greenhouse returns **every job at a company in one request** with `?content=true`; Ashby and Lever return plain-text descriptions by default. The scanner already calls those endpoints and threw the descriptions away.
+### Measured results
 
-**2. It scored roles a regex could reject.** Of the rejections in that run, ~60% cited *seniority mismatch*, *role-family mismatch* or *salary below floor* — all decidable from the job title, in microseconds.
+Measured on the same 306-role pipeline:
 
-**3. It wrote ~2,200 words about every role**, including ones scoring 1.2 out of 5.
-
----
-
-## What changed
-
-Measured on the same 306-role pipeline, before and after:
-
-| | career-ops | Frontrunner | Improvement |
+| Measure | career-ops | Frontrunner | Change |
 |---|---:|---:|---:|
-| JD input per role | ~18,200 tokens | ~1,840 tokens | **−90%** |
-| HTTP requests to ingest 246 roles | 246 page fetches | 43 API calls | **−83%** |
-| Roles reaching the model | 246 | 131 | **−47%** |
-| Words written per sub-4.0 role | ~2,200 | ~400 | **−82%** |
-| Words written per sub-2.0 role | ~2,200 | 0 | **−100%** |
-| Wall clock per role | ~215s | ~155s | **−28%** |
-| **Total input across a full sweep** | — | — | **≈ −70%** |
+| JD input per role | ~18,200 tokens | ~1,840 tokens | −90% |
+| HTTP requests to ingest 246 roles | 246 | 43 | −83% |
+| Roles reaching the model | 246 | 131 | −47% |
+| Words written per sub-4.0 role | ~2,200 | ~400 | −82% |
+| Words written per sub-2.0 role | ~2,200 | 0 | −100% |
+| Wall-clock time per role | ~215s | ~155s | −28% |
+| Estimated total input for a full sweep | — | — | ~−70% |
 
-Every row except the last is directly measured. The total is an **estimate**: the system prompt, rubric and CV are unchanged and now dominate what remains, so your mileage moves with how aggressive your filters are.
+The final row is an estimate; the others are direct measurements. Against 89
+previously scored roles, the deterministic filter rejected no role that had
+scored 3.0 or above. Every rejection is logged with the rule and matching text
+so the filter can be audited and tuned.
 
-Time improves least because the fixed costs — process start, reading the rubric and CV — are untouched. Tokens are what your subscription meters, and tokens are where the win is.
+## Requirements
 
-None of it makes evaluations worse. Validated against 89 roles that already had LLM scores: **zero roles scoring 3.0+ were rejected by the deterministic pass.**
+- Node.js 22.5 or later
+- Git
+- An AI coding assistant that can work inside a local repository, such as
+  Codex, Claude Code, OpenCode, Qwen, Antigravity, Grok, Kimi, or Copilot
+- Chromium through Playwright for PDF generation
 
----
+## Install
 
-## Quick start
+There is not yet a one-click Frontrunner installer. The current installation
+path is:
 
 ```bash
 git clone https://github.com/JonReed/frontrunner.git
-cd frontrunner && npm install
+cd frontrunner
+npm install
+npx playwright install chromium
 ```
+
+Open your AI coding assistant in the `frontrunner` directory and say:
+
+```text
+Set up Frontrunner for me.
+```
+
+The assistant should ask for your CV, target roles, location, compensation
+expectations, and search preferences. It stores personal information only in
+the ignored user-data files described in [DATA_CONTRACT.md](DATA_CONTRACT.md).
+
+Once setup is complete, try:
+
+```text
+Scan for roles that fit my profile.
+```
+
+or paste a job-description URL and ask:
+
+```text
+Evaluate this role for me: https://example.com/job
+```
+
+Codex users can find invocation details in [CODEX.md](CODEX.md). Interactive
+Codex works with the same plain-language requests; slash commands are not
+guaranteed. For a one-shot headless run:
 
 ```bash
-cp config/profile.example.yml    config/profile.yml        # you
-cp config/prefilter.example.yml  config/prefilter.yml      # your filters
-cp templates/portals.example.yml portals.yml               # where to look
-cp modes/_custom.efficiency.template.md modes/_custom.md   # the efficiency rules
+codex exec "Run the Frontrunner scan workflow and summarise the new matches."
 ```
 
-Add your CV as `cv.md`, then open your AI CLI in the directory and talk to it.
+## Current interfaces
 
-Web UI (alpha, inherited): `cd web && npm ci && npm run dev` → `localhost:3000`.
+Frontrunner currently has three surfaces:
 
-Works with any AI coding CLI — Claude Code, Codex, OpenCode, Qwen, Antigravity, Grok, Kimi, Copilot. In CLIs that register slash commands, use `/career-ops`. In Codex, slash commands are not guaranteed, so ask in plain language instead — or run headless:
+- **Conversation** — the main supported workflow. Ask your AI coding assistant
+  to scan, evaluate, prepare, or track an application in plain language.
+- **`web/`** — the inherited career-ops web application. It is feature-rich but
+  remains an experimental, developer-started interface.
+- **`ui/`** — the new Frontrunner interface. It is organised around the next
+  useful action rather than implementation commands, but is still incomplete.
+
+Neither web interface should yet be presented as a finished non-technical
+installation experience.
+
+## Advanced: run the efficient batch pipeline directly
+
+The underlying stages remain available to technical users:
 
 ```bash
-codex exec "Run the career-ops scan mode and summarize new matches."
+node src/scan/scan.mjs
+node src/scan/fetch-jds.mjs --summary
+node src/scan/prefilter.mjs --summary --out batch/batch-input.tsv
+./batch/batch-runner.sh --parallel 3 --skip-pdf
 ```
 
-See [CODEX.md](CODEX.md) and [docs/SETUP.md](docs/SETUP.md) for the full invocation model.
+These stages mean:
 
-### The loop
+```text
+find → ingest clean job descriptions → reject definite mismatches → score
+```
+
+Only the final scoring stage needs a model. Prefilter rejections are written to
+`batch/prefilter-rejects.tsv`; review this file after a run to catch rules that
+are too aggressive.
+
+## Configure the prefilter
+
+`config/prefilter.example.yml` deliberately ships without opinions about which
+job families are wrong. Rejecting engineering roles makes sense for some
+leaders and would make the product useless for an engineer.
+
+The example contains optional presets for:
+
+- leadership versus individual-contributor roles;
+- commercial, people, finance, legal, clinical, and physical-operations work;
+- minimum seniority;
+- compensation floors;
+- active security-clearance requirements; and
+- visa-sponsorship requirements.
+
+The security-clearance and sponsorship blockers are disabled by default.
+Unclear roles pass through to evaluation: a false keep costs some computation,
+while a false rejection can cost an opportunity.
+
+## Data and privacy
+
+Your CV, profile, reports, application tracker, and generated documents stay in
+the local checkout. They are gitignored and separated from updateable system
+files.
+
+The canonical user data remains human-readable Markdown, YAML, and TSV. See
+[DATA_CONTRACT.md](DATA_CONTRACT.md) for the exact boundary.
+
+Generated application content is restricted to your CV, profile, portfolio
+digest, writing samples, and facts you explicitly provide. Frontrunner may
+rephrase evidence but must not invent experience, metrics, or authorship.
+
+## Relationship to career-ops
+
+Frontrunner follows upstream development and periodically merges provider
+fixes, new ATS support, evaluation improvements, and market-specific modes.
+It is not a thin theme or a drop-in package wrapper:
+
+- scripts have been reorganised into domain directories under `src/`;
+- repository paths are centralised through `src/paths.mjs`;
+- the inherited terminal interface and translated READMEs were removed;
+- JD ingestion and batch evaluation have changed; and
+- Frontrunner-specific tests protect the prefilter and repository layout.
+
+The user-data contract remains compatible, but internal paths and maintainer
+workflows can differ.
+
+### For maintainers: merging upstream
+
+Ordinary users should not need to merge upstream themselves. Maintainers use:
 
 ```bash
-node src/scan/scan.mjs                                            # find    - zero tokens
-node src/scan/fetch-jds.mjs --summary                             # ingest  - zero tokens
-node src/scan/prefilter.mjs --summary --out batch/batch-input.tsv # filter  - zero tokens
-./batch/batch-runner.sh --parallel 3 --skip-pdf          # score   - the only paid step
+git fetch upstream
+git merge upstream/main
+node src/lib/root-paths.mjs --fix
+node test-all.mjs
 ```
 
-Every rejection is logged to `batch/prefilter-rejects.tsv` with the rule that fired and the text it matched. Nothing is dropped silently.
+Use Git for upstream merges. Do not use `node update-system.mjs apply` to update
+Frontrunner: the inherited updater can overwrite fork-specific batch wiring.
 
----
+## Language support
 
-## The config has no opinions
+The documentation is maintained in English only.
 
-`config/prefilter.example.yml` ships with `ic_families` and `wrong_functions` **empty**, because what counts as a wrong role is entirely personal — rejecting `engineer` is right for a delivery director and absurd for an engineer.
-
-Presets sit in the file as comments. Uncomment what fits:
-
-- **Targeting leadership?** Enable the `ic_families` preset to filter IC roles out.
-- **An IC avoiding management?** Put the management preset into `wrong_functions`.
-- **Not in tech?** Commercial, finance, legal and clinical presets are all there.
-
-Two hard blockers — active security clearance, no visa sponsorship — ship **disabled**. Enable them only if they apply to you.
-
-Tune from evidence: run once, read the rejects log, adjust.
-
----
-
-## Keeping up with upstream
-
-Frontrunner tracks career-ops rather than diverging from it, so their provider fixes, new ATS vendors and market modes flow in:
-
-```bash
-git pull upstream main
-```
-
-Changes here are deliberately **additive** — new files that cannot conflict, plus one small insert in `batch/batch-runner.sh`. Use `git pull`, not `node update-system.mjs apply`: the updater treats that file as system-layer and silently reverts the JD wiring. If that happens, re-apply `patches/jd-prefetch.patch.md`.
-
----
-
-## Translations
-
-English only, deliberately. Upstream ships 17 README translations; carrying
-them here would mean 16 files nobody can keep accurate, and stale docs are
-worse than absent ones.
-
-The **market modes are a different thing and they stay** — `modes/de/`,
-`modes/fr/`, `modes/ja/` and the rest are evaluation logic, not documentation.
-They give a German posting German comp vocabulary (13. Monatsgehalt, Probezeit,
-Kündigungsfrist) rather than a translated README, and `language.output` in
-`config/profile.yml` still writes your reports and letters in your language.
-
-If Frontrunner grows enough that someone wants to own a translation, that is a
-welcome contribution — it is just not a promise being made up front.
+Market-specific evaluation modes remain available under directories such as
+`modes/de/`, `modes/fr/`, and `modes/ja/`. These provide local employment and
+compensation vocabulary; they are separate from the language used to write
+reports, CVs, and letters.
 
 ## Credit
 
-Built on [career-ops](https://github.com/santifer/career-ops) by [Santiago Fernández de Valderrama](https://santifer.io). MIT licensed, copyright retained in [LICENSE](LICENSE).
+Frontrunner is built on
+[career-ops](https://github.com/santifer/career-ops) by
+[Santiago Fernández de Valderrama](https://santifer.io). The upstream scanners,
+providers, evaluation framework, tracker, document pipeline, and much of the
+test suite remain foundational to this fork.
 
-The scanners, 70+ ATS providers, the A–F scoring rubric, the tracker integrity layer and a 2,200-test suite are all his work and all still here. This fork changes how job descriptions are ingested and which roles reach the model. That is a difference in priorities rather than a criticism — at a handful of roles a week, none of this costs enough to be worth optimising.
-
-"career-ops" is their trademark. Frontrunner is an independently named fork, per their [trademark policy](TRADEMARK.md).
-
-MIT.
+MIT licensed. Upstream copyright is retained in [LICENSE](LICENSE).
+`career-ops` is the upstream project's trademark; Frontrunner is independently
+named in accordance with [TRADEMARK.md](TRADEMARK.md).
