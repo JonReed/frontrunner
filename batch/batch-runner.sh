@@ -497,6 +497,21 @@ process_offer() {
   local jd_file
   jd_file="$(mktemp "${TMPDIR:-/tmp}/batch-jd-${id}.XXXXXX")"
 
+  # Pre-populate the JD from `node fetch-jds.mjs` output when available.
+  # Without this the file stays EMPTY and every worker falls through to
+  # batch-prompt.md step 1's "fetch {{URL}} with WebFetch" — pulling a full
+  # rendered HTML page (~18k tokens measured) into the model's context to
+  # obtain a ~1.8k-token job description. A 9.9x input saving per role.
+  local jd_index="$PROJECT_DIR/jds/index.tsv"
+  if [[ -f "$jd_index" ]]; then
+    local cached_jd
+    cached_jd="$(awk -F'\t' -v u="$url" '$1==u{print $2; exit}' "$jd_index")"
+    if [[ -n "$cached_jd" && -s "$cached_jd" ]]; then
+      cat "$cached_jd" > "$jd_file"
+      echo "    📄 JD pre-fetched ($(wc -c < "$jd_file" | tr -d ' ') bytes) — no WebFetch needed"
+    fi
+  fi
+
   echo "--- Processing offer #$id: $url (report $report_num, attempt $((retries + 1)))"
 
   # Build the prompt with placeholders replaced

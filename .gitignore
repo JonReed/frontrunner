@@ -112,3 +112,9 @@ plan/
 
 # Web — runtime cache/history the dashboard writes locally; nothing here is tracked.
 .career-ops-web/
+
+# Efficiency layer — generated artefacts, not source
+jds/
+batch/batch-input.filtered.tsv
+batch/prefilter-rejects.tsv
+config/prefilter.yml
