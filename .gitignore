@@ -120,3 +120,8 @@ batch/prefilter-rejects.tsv
 config/prefilter.yml
 src/**/output/
 .tmp-script-test-*/
+
+# UI v2
+ui/.next/
+ui/node_modules/
+ui/next-env.d.ts
