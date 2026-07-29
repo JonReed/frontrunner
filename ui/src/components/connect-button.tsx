@@ -33,6 +33,18 @@ type State = 'idle' | 'waiting' | 'stuck' | 'failed';
 export function ConnectButton() {
   const [state, setState] = useState<State>('idle');
   const startedAt = useRef(0);
+  /*
+    Guarded with a ref, not the state above.
+
+    setState does not take effect until React re-renders, so three clicks
+    landing in the same tick all pass a state check and each spawns its own
+    `claude auth login` — three browser windows for one sign-in. Measured: three
+    synchronous clicks produced three logins. A ref updates immediately, which
+    is what a re-entrancy guard actually needs. A double-click here is not
+    hypothetical: it is what someone does when they are not sure the first
+    click registered.
+  */
+  const starting = useRef(false);
 
   useEffect(() => {
     if (state !== 'waiting') return;
@@ -54,10 +66,17 @@ export function ConnectButton() {
   }, [state]);
 
   const connect = async () => {
+    if (starting.current) return;
+    starting.current = true;
     startedAt.current = Date.now();
     setState('waiting');
-    const { started } = await connectEngine();
-    if (!started) setState('failed');
+    try {
+      const { started } = await connectEngine();
+      if (!started) setState('failed');
+    } finally {
+      // Released so the retry button in the stuck and failed states works.
+      starting.current = false;
+    }
   };
 
   if (state === 'waiting') {

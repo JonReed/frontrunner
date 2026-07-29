@@ -51,10 +51,12 @@ function ActionButton({ role }: { role: Role }) {
   return (
     <Link
       href={`/role/${role.num}`}
+      // min-h-[40px] on a phone: this is the primary action on every row and it
+      // was 36px, under the standard the text links beside it already meet.
       className={
         primary
-          ? 'rounded-lg bg-[var(--color-act)] px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-act-hover)]'
-          : 'rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-card)] px-3.5 py-2 text-sm font-medium text-[var(--color-ink-soft)] transition hover:border-[var(--color-act)] hover:text-[var(--color-act)]'
+          ? 'inline-flex min-h-[40px] items-center rounded-lg bg-[var(--color-act)] px-3.5 text-sm font-semibold text-white transition hover:bg-[var(--color-act-hover)] sm:min-h-0 sm:py-2'
+          : 'inline-flex min-h-[40px] items-center rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-card)] px-3.5 text-sm font-medium text-[var(--color-ink-soft)] transition hover:border-[var(--color-act)] hover:text-[var(--color-act)] sm:min-h-0 sm:py-2'
       }
     >
       {role.nextAction.label}

@@ -289,6 +289,32 @@ progression the layout exists to show. One stage per row keeps the order.
 
 ---
 
+## When the engine is not there
+
+Every AI action spawns the Claude CLI, and it can be missing or signed out.
+That state is reported **before** it costs anything, never discovered by
+clicking and waiting — a failure after sixty seconds reads as "this product is
+broken", not "sign in first".
+
+Three surfaces, one fact. A banner on the screens that offer AI actions, but
+**only when something is wrong**: a green "all good" badge on every page is
+noise that trains people to ignore the banner that matters. Always-on detail
+on My details, where someone goes to ask what the tool is using. And on a role
+page it **replaces** the AI button rather than letting it fail.
+
+**The fix is a button, not a command.** Claude Code and the Claude desktop app
+keep separate credentials, so someone can install the app, sign into it, use it
+to set Frontrunner up, and still have an unauthenticated CLI — which makes this
+the state most new users land in. Telling them to open a terminal at that
+moment would break the constraint the whole product is built on.
+
+The button never claims a success it has not observed: "connected" appears only
+after the CLI itself reports it. After ninety seconds it stops implying
+progress and offers the command as a fallback, because a spinner that never
+resolves is worse than an honest dead end.
+
+---
+
 ## Accessibility
 
 Not a compliance exercise — this audience skews older than a developer tool's
