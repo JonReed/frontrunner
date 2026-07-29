@@ -32,8 +32,40 @@ import { useState } from 'react';
 
 const STEPS = ['Your CV', 'About you', 'What you want', 'Finish'] as const;
 
+/**
+ * One CV. Most people arrive with several.
+ *
+ * Someone who has been job hunting has an "operations" version and a
+ * "programme" version of the same career, worded differently and often
+ * containing different facts — a project one of them has room for and the
+ * other does not. Those extra versions are the best possible input for
+ * tailoring, because they are the user's own words about their own work,
+ * already vetted by them. Far better than anything scraped from a profile.
+ *
+ * But exactly one is canonical. `cv.md` is what roles are scored against, and
+ * the project's source-of-truth rules depend on there being a single answer to
+ * "what does this person claim". The others are a corpus: material to draw a
+ * suggestion from, never a fact that enters a CV on its own.
+ *
+ * That distinction is why they cannot simply be merged. An older version may
+ * word a title differently, quote a metric that was later revised, or list a
+ * role the user deliberately stopped claiming. Merging silently would
+ * resurrect dropped claims and put two in-scope sources into contradiction —
+ * which is the state in which "reformulated, never fabricated" is hardest to
+ * hold.
+ */
+export interface CvEntry {
+  id: string;
+  /** The user's own name for this version — "the ops one". */
+  label: string;
+  text: string;
+}
+
 export interface SetupDraft {
+  /** Canonical. Becomes cv.md. */
   cv: string;
+  /** Additional versions, kept as reference material. */
+  otherCvs: CvEntry[];
   fullName: string;
   email: string;
   location: string;
@@ -44,6 +76,7 @@ export interface SetupDraft {
 
 const EMPTY: SetupDraft = {
   cv: '',
+  otherCvs: [],
   fullName: '',
   email: '',
   location: '',
@@ -51,6 +84,30 @@ const EMPTY: SetupDraft = {
   salaryTarget: '',
   remote: '',
 };
+
+/**
+ * Formats we can read in the browser without a parser.
+ *
+ * Word and PDF are what most people actually have, and both need a real
+ * converter — PDF especially, where a two-column CV extracts as interleaved
+ * nonsense. Rather than silently mangling someone's career history, those are
+ * refused with an instruction that works today.
+ */
+const READABLE = /\.(md|markdown|txt|text|rtf)$/i;
+
+function readTextFile(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ''));
+    reader.onerror = () => reject(new Error('Could not read that file'));
+    reader.readAsText(file);
+  });
+}
+
+function wordCount(text: string) {
+  const t = text.trim();
+  return t ? t.split(/\s+/).length : 0;
+}
 
 /* ------------------------------------------------------------------ pieces */
 
@@ -109,13 +166,74 @@ function Progress({ step }: { step: number }) {
   );
 }
 
+/**
+ * Choose a file, for the people who would rather not paste.
+ *
+ * Text formats only, read in the browser and dropped straight into the box the
+ * user can still edit. Nothing is uploaded — the file never leaves the machine,
+ * which is also why this needs no server round trip.
+ */
+function FilePicker({
+  onText,
+  onError,
+}: {
+  onText: (text: string) => void;
+  onError: (message: string | null) => void;
+}) {
+  return (
+    <label className="inline-flex min-h-[40px] cursor-pointer items-center text-sm font-medium text-[var(--color-ink-soft)] underline decoration-[var(--color-line-strong)] underline-offset-2 transition hover:text-[var(--color-act)] sm:min-h-0">
+      or choose a file
+      <input
+        type="file"
+        className="sr-only"
+        accept=".md,.markdown,.txt,.text,.rtf"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          e.target.value = '';                    // let the same file be picked twice
+          if (!file) return;
+          if (!READABLE.test(file.name)) {
+            onError(
+              'Word and PDF files cannot be read directly yet. Open it, select all, and paste the text instead.',
+            );
+            return;
+          }
+          try {
+            onError(null);
+            onText(await readTextFile(file));
+          } catch {
+            onError('Could not read that file. Paste the text instead.');
+          }
+        }}
+      />
+    </label>
+  );
+}
+
 /* -------------------------------------------------------------------- flow */
+
+let nextCvId = 0;
 
 export function SetupFlow() {
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<SetupDraft>(EMPTY);
+  const [fileError, setFileError] = useState<string | null>(null);
   const set = <K extends keyof SetupDraft>(k: K, v: SetupDraft[K]) =>
     setDraft((d) => ({ ...d, [k]: v }));
+
+  const addCv = () =>
+    setDraft((d) => ({
+      ...d,
+      otherCvs: [...d.otherCvs, { id: `cv-${nextCvId++}`, label: '', text: '' }],
+    }));
+
+  const updateCv = (id: string, patch: Partial<CvEntry>) =>
+    setDraft((d) => ({
+      ...d,
+      otherCvs: d.otherCvs.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+    }));
+
+  const removeCv = (id: string) =>
+    setDraft((d) => ({ ...d, otherCvs: d.otherCvs.filter((c) => c.id !== id) }));
 
   // The CV is the only hard gate. Everything else can be filled in later from
   // My details, and blocking on it would be inventing work.
@@ -149,8 +267,8 @@ export function SetupFlow() {
             Start with your CV
           </h2>
           <p className="mt-1.5 text-[15px] text-[var(--color-ink-soft)]">
-            Paste it in — any format, formatting does not matter. Every job found is scored
-            against this, so it is the one thing that has to be here.
+            Paste it in — formatting does not matter. Every job found is scored against this, so
+            it is the one thing that has to be here.
           </p>
           <p className="mt-3 text-sm text-[var(--color-ink-faint)]">
             It is saved as a file on this computer and never uploaded. Parts of it are sent to
@@ -158,19 +276,100 @@ export function SetupFlow() {
           </p>
 
           <div className="mt-6">
-            <Field label="Your CV">
+            <Field label="Your main CV">
               <textarea
                 value={draft.cv}
                 onChange={(e) => set('cv', e.target.value)}
-                rows={14}
+                rows={12}
                 placeholder="Paste the whole thing here…"
                 className={`${FIELD} resize-y leading-relaxed`}
               />
             </Field>
-            <p className="-mt-3 text-sm text-[var(--color-ink-faint)]">
-              {draft.cv.trim() ? `${draft.cv.trim().split(/\s+/).length} words` : 'Nothing yet'}
-            </p>
+            <div className="-mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+              <span className="text-sm text-[var(--color-ink-faint)]">
+                {draft.cv.trim() ? `${wordCount(draft.cv)} words` : 'Nothing yet'}
+              </span>
+              <FilePicker onText={(t) => set('cv', t)} onError={setFileError} />
+            </div>
+            {fileError && (
+              <p className="mt-2 text-sm text-[var(--color-attention)]">{fileError}</p>
+            )}
           </div>
+
+          {/*
+            Other versions: optional, and deliberately quiet.
+
+            Valuable — most people have an "ops" CV and a "programme" CV of the
+            same career, and the differences between them are exactly what
+            makes tailoring good. But this is minute two of someone's first
+            session, and a first run that opens by demanding several documents
+            is a first run people abandon. So it is collapsed, clearly
+            optional, and says what it is for.
+          */}
+          <details className="mt-8 rounded-xl border border-[var(--color-line)] bg-[var(--color-card)] px-5 py-4">
+            <summary className="cursor-pointer text-[15px] font-semibold">
+              Have other versions of your CV?
+              <span className="ml-2 font-normal text-[var(--color-ink-faint)]">optional</span>
+            </summary>
+            <p className="mt-3 text-sm text-[var(--color-ink-soft)]">
+              Most people have a few, worded for different kinds of job. They are not scored
+              against and they do not replace the one above — they are kept as reference, so a
+              tailored CV can draw on how you have described your own work before.
+            </p>
+
+            {draft.otherCvs.length > 0 && (
+              <ul className="mt-4 flex flex-col gap-4">
+                {draft.otherCvs.map((cv, i) => (
+                  <li
+                    key={cv.id}
+                    className="rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] p-4"
+                  >
+                    <div className="mb-3 flex items-center gap-3">
+                      <input
+                        className={`${FIELD} py-1.5 text-sm`}
+                        value={cv.label}
+                        onChange={(e) => updateCv(cv.id, { label: e.target.value })}
+                        placeholder={`What is version ${i + 2} for?`}
+                        aria-label="What this version is for"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeCv(cv.id)}
+                        className="shrink-0 cursor-pointer rounded-lg px-2.5 py-1.5 text-sm font-medium text-[var(--color-ink-faint)] transition hover:text-[var(--color-attention)]"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <textarea
+                      className={`${FIELD} resize-y text-sm leading-relaxed`}
+                      rows={5}
+                      value={cv.text}
+                      onChange={(e) => updateCv(cv.id, { text: e.target.value })}
+                      placeholder="Paste this version…"
+                      aria-label="This version of your CV"
+                    />
+                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+                      <span className="text-sm text-[var(--color-ink-faint)]">
+                        {cv.text.trim() ? `${wordCount(cv.text)} words` : 'Nothing yet'}
+                      </span>
+                      <FilePicker
+                        onText={(t) => updateCv(cv.id, { text: t })}
+                        onError={setFileError}
+                      />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <button
+              type="button"
+              onClick={addCv}
+              className="mt-4 cursor-pointer rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-card)] px-3.5 py-2 text-sm font-medium text-[var(--color-ink-soft)] transition hover:border-[var(--color-act)] hover:text-[var(--color-act)]"
+            >
+              Add another version
+            </button>
+          </details>
         </section>
       )}
 
@@ -276,13 +475,22 @@ export function SetupFlow() {
             That is everything needed
           </h2>
           <p className="mb-6 mt-1.5 text-[15px] text-[var(--color-ink-soft)]">
-            Two files get written on this computer: your CV, and your details. Both are yours to
-            edit later from My details.
+            Everything below is written to files on this computer, and all of it is yours to edit
+            later from My details.
           </p>
 
           <dl className="mb-6 overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-card)] px-5">
             {[
-              ['Your CV', draft.cv.trim() ? `${draft.cv.trim().split(/\s+/).length} words` : '—'],
+              ['Your main CV', draft.cv.trim() ? `${wordCount(draft.cv)} words` : '—'],
+              [
+                'Other versions',
+                draft.otherCvs.filter((c) => c.text.trim()).length
+                  ? draft.otherCvs
+                      .filter((c) => c.text.trim())
+                      .map((c, i) => c.label.trim() || `Version ${i + 2}`)
+                      .join(', ')
+                  : 'None',
+              ],
               ['Name', draft.fullName || '—'],
               ['Email', draft.email || '—'],
               ['Location', draft.location || '—'],
