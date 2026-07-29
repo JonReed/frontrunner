@@ -560,6 +560,15 @@ export async function inlineLocalFonts(html) {
   return html.replace(FONT_REF, (match, _quote, name) => dataUrls.get(name) || match);
 }
 
+export function isAllowedPdfResourceUrl(value) {
+  try {
+    const protocol = new URL(value).protocol;
+    return protocol === 'file:' || protocol === 'data:';
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Render an HTML string to a PDF file via headless Chromium.
  *
@@ -612,7 +621,19 @@ export async function renderHtmlToPdf(html, outputPath, opts = {}) {
   let browser = null;
   try {
     browser = await launchBrowser({ headless: true });
-    const page = await browser.newPage();
+    // Generated documents do not need page JavaScript. Disabling it and
+    // rejecting remote subresources prevents a future escaping/template
+    // regression from turning PDF rendering into a local-file-origin browser.
+    const page = await browser.newPage({ javaScriptEnabled: false });
+    if (typeof page.route === 'function') {
+      await page.route('**/*', async (route) => {
+        if (isAllowedPdfResourceUrl(route.request().url())) {
+          await route.continue();
+        } else {
+          await route.abort('blockedbyclient');
+        }
+      });
+    }
 
     // Load from file:// so the page origin allows local subresources
     await page.goto(pathToFileURL(tmpHtmlPath).href, {

@@ -26,8 +26,9 @@ contains only a few compatibility entry points. Common commands are exposed via
 | `npm run liveness` | `src/scan/check-liveness.mjs` | Test if job URLs are still active |
 | `npm run extract` | `src/scan/browser-extract.mjs` | Headless read-only page extractor (opt-in `scan.extractor: cli`) — compact JSON for scan/JD |
 | `npm run scan` | `src/scan/scan.mjs` | Zero-token portal scanner |
-| `npm run pipeline` | `src/pipeline/run.mjs` | Canonical scan → cache → liveness → prefilter → evaluation flow |
-| `npm run pipeline:prepare` | `src/pipeline/run.mjs` | Run all zero-token pipeline stages without evaluation |
+| `npm run pipeline` | `src/pipeline/run.mjs` | Canonical scan → cache → liveness → prefilter → evaluation flow; one cross-process lease prevents overlapping runs and duplicate model spend |
+| `npm run pipeline:prepare` | `src/pipeline/run.mjs` | Run all zero-token pipeline stages without evaluation under the same whole-run lease |
+| `node src/scan/fetch-jds.mjs [--input file] [--out dir]` | `src/scan/fetch-jds.mjs` | Bulk-cache clean ATS descriptions; cache files and the merged manifest publish through the shared crash-safe JD store |
 | `npm run benchmark` | `src/benchmark/pipeline-benchmark.mjs` | Regenerate the efficiency artifact and README benchmark table |
 | `npm run benchmark:check` | `src/benchmark/pipeline-benchmark.mjs` | Fail if the benchmark artifact or README table is stale |
 | `npm run benchmark:prefilter` | `src/benchmark/prefilter-calibration.mjs` | Calibrate active deterministic rules against the scored-role corpus (`-- --check` fails on false rejects) |
@@ -37,8 +38,8 @@ contains only a few compatibility entry points. Common commands are exposed via
 | `npm run find` | `find.mjs` | Resolve a report#/tracker#/company query to its full pipeline identity |
 | `npm run invite-match` | `src/tracker/invite-match.mjs` | Fuzzy-match a pasted interview-invite email against `data/applications.md` |
 | `npm run paste-reply` | `src/tracker/paste-reply.mjs` | Manual/no-Gmail input into the `src/tracker/reply-watch.mjs` classification pipeline |
-| `npm run openai:tailor` | `src/evaluate/openai-tailor.mjs` | Tailor a CV via any OpenAI-compatible endpoint (headless companion to `src/evaluate/openai-eval.mjs`) |
-| `npm run or` | `src/evaluate/openrouter-runner.mjs` | OpenRouter evaluate/apply helper — no Claude CLI required |
+| `npm run openai:tailor` | `src/evaluate/openai-tailor.mjs` | Tailor via any OpenAI-compatible endpoint; the model returns bounded versioned JSON, then code injects trusted identity, renders, fact-checks and atomically publishes HTML |
+| `npm run or` | `src/evaluate/openrouter-runner.mjs` | OpenRouter evaluate/apply helper using fixed brokered endpoints, bounded responses, canonical scanning and a crash-safe concurrent model blacklist |
 | `npm run reconcile` | `src/tracker/reconcile-pipeline.mjs` | Remove batch-evaluated offers from pipeline.md "Pendientes" |
 | `npm run cover-letter` | `src/cv/generate-cover-letter.mjs` | Render a cover-letter JSON payload to PDF |
 | `npm run verify:portals` | `src/scan/verify-portals.mjs` | Probe ATS endpoints to confirm portals.yml slugs resolve (network) |
@@ -693,10 +694,6 @@ These have no `npm run` binding — modes and agents call them with
 | `node src/scan/discover-ats.mjs --in companies.yml [--write]` | Resolve companies to supported public ATS boards; preview by default, or validate and transactionally append unique boards to `portals.yml` with `--write` |
 | `node src/cv/generate-latex.mjs <input.tex> [output.pdf]` | Validate and compile a generated `.tex` CV via tectonic or pdflatex |
 | `node src/analysis/classify-tier.mjs` | Classify a job title into intern / entry / mid / senior |
-| `node src/plugins/plugins.mjs list\|run <id> [hook]\|enable <id>\|trust <id>\|remove <id>` | Plugin host and serialized, fail-closed activation/integrity-consent manager (see [PLUGINS.md](PLUGINS.md)) |
-| `node src/plugins/plugin-install.mjs` | Clone/scaffold/validate community plugins (allowlisted URLs, pinned SHA) |
-| `node src/plugins/plugin-audit.mjs` | Static safety scan for community/registry plugins |
-| `node src/plugins/validate-plugin-registry.mjs` | Shape gate for `plugins-registry/<id>.json` files |
 
 ---
 

@@ -104,11 +104,18 @@ export function RoleJourney({ stage, status }: { stage: Stage; status?: string }
 }
 
 /**
- * The whole population, one number per step.
+ * The whole population, in the same rail as a single role.
  *
- * Scrollable on a phone rather than stacked: six labelled counts as a vertical
- * list would push the actual content of every page below the fold, and this is
- * orientation, not the content itself.
+ * Previously a row of bordered cards that scrolled sideways on a phone — a
+ * second visual language for the one concept the interface is built around,
+ * which made two screens showing the same six steps look like two different
+ * ideas. It is now the rail above, with a count where a role page has a
+ * position.
+ *
+ * Six columns rather than a horizontal scroll, so nothing is hidden off the
+ * edge. The number carries the information and is always visible; the label
+ * appears from `sm` up, where there is room for a word under a 60px column.
+ * On a phone the caption underneath names the whole thing instead.
  */
 export function PipelineOverview({
   counts,
@@ -117,31 +124,36 @@ export function PipelineOverview({
   counts: Partial<Record<SpineStage, number>>;
   active?: SpineStage;
 }) {
+  const total = JOURNEY.reduce((sum, s) => sum + (counts[s.key] ?? 0), 0);
   return (
-    <nav aria-label="The whole process" className="-mx-6 mb-8 overflow-x-auto px-6 sm:mx-0 sm:px-0">
-      <ol className="flex min-w-max gap-1.5 sm:min-w-0">
+    <nav aria-label="The whole process" className="mb-8">
+      <ol className="flex gap-1.5">
         {JOURNEY.map((s) => {
           const n = counts[s.key] ?? 0;
           const isHere = active === s.key;
           return (
-            <li key={s.key} className="w-[92px] flex-none sm:w-auto sm:flex-1">
+            <li key={s.key} className="min-w-0 flex-1">
               <Link
                 href={HREF[s.key]}
                 aria-current={isHere ? 'step' : undefined}
-                className={`block rounded-lg border px-2.5 py-2 transition ${
-                  isHere
-                    ? 'border-[var(--color-act)] bg-[var(--color-act-wash)]'
-                    : 'border-[var(--color-line)] bg-[var(--color-card)] hover:border-[var(--color-line-strong)]'
-                }`}
+                className="group block"
               >
+                <Segment filled={n > 0 && !isHere} current={isHere} />
                 <span
-                  className={`tabular block text-[17px] font-bold leading-none ${
+                  className={`tabular mt-1.5 block text-[15px] font-semibold leading-none transition group-hover:text-[var(--color-act)] ${
                     n === 0 ? 'text-[var(--color-ink-faint)]' : 'text-[var(--color-ink)]'
                   }`}
                 >
                   {n}
                 </span>
-                <span className="mt-1 block truncate text-[11px] text-[var(--color-ink-soft)]">
+                {/*
+                  Labels stay on at phone width, unlike the role rail.
+                  There, the sentence underneath names the current step, so the
+                  labels are redundant. Here nothing else says what the numbers
+                  count, and "247 9 5 1 0 0" on its own is a puzzle. They wrap
+                  rather than truncate — two short lines beat "In proces…".
+                */}
+                <span className="mt-1 block text-[10px] leading-tight text-[var(--color-ink-faint)] sm:text-[11px]">
                   {s.short}
                 </span>
               </Link>
@@ -149,6 +161,12 @@ export function PipelineOverview({
           );
         })}
       </ol>
+      <p className="mt-2 text-sm text-[var(--color-ink-soft)] sm:mt-2.5">
+        <span className="font-semibold text-[var(--color-ink)]">
+          {total.toLocaleString()} {total === 1 ? 'role' : 'roles'}
+        </span>{' '}
+        across the process, from found to answered.
+      </p>
     </nav>
   );
 }

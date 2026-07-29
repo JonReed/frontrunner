@@ -275,6 +275,9 @@ for (const userPath of ['cv.md', 'config/profile.yml', 'modes/_profile.md', 'por
 
 const allowedSystemUserOverlap = new Set([
   'writing-samples/README.md',
+  // System-owned scaffold inside the user-layer cv-versions/ dir:
+  // updates may refresh the guide, but never the user's alternate CV files.
+  'cv-versions/README.md',
   // System-owned scaffold inside the user-layer interview-prep/ dir (#1242):
   // the updater ships these two, but never the real session files alongside them.
   'interview-prep/sessions/.gitkeep',

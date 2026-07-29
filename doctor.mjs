@@ -8,8 +8,6 @@
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import yaml from 'js-yaml';
-import { discoverPlugins, pluginRoots, pluginStatus } from './plugins/_engine.mjs';
 import { resolveExtractorMode } from './src/scan/browser-extract.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -299,32 +297,6 @@ function checkPipelineFile() {
   }
 }
 
-// Discover plugins + their non-secret config block, synchronously. Used by both
-// the human check and the --json onboarding state.
-function readPluginConfigSync(root) {
-  const cfgPath = join(root, 'config', 'plugins.yml');
-  if (!existsSync(cfgPath)) return {};
-  try { return yaml.load(readFileSync(cfgPath, 'utf8')) || {}; } catch { return {}; }
-}
-
-// Plugin layer health: list discovered plugins + whether each enabled one's keys
-// are present. WARN-not-FAIL so a half-configured plugin never blocks setup.
-function checkPlugins(root) {
-  let manifests;
-  try { manifests = discoverPlugins(pluginRoots(root)); } catch { return { pass: true, label: 'Plugins: none' }; }
-  if (manifests.length === 0) return { pass: true, label: 'Plugins: none installed' };
-  const cfg = readPluginConfigSync(root);
-  const lines = [];
-  const fixes = [];
-  for (const m of manifests) {
-    const s = pluginStatus(m, cfg);
-    lines.push(`${m.id} (${s.enabled ? 'enabled' : s.configured ? `missing ${s.missingEnv.join(', ')}` : 'off'})`);
-    if (s.configured && s.missingEnv.length) fixes.push(`${m.id}: add ${s.missingEnv.join(', ')} to .env`);
-  }
-  const label = `Plugins: ${lines.join(', ')}`;
-  return fixes.length ? { warn: true, label, fix: fixes } : { pass: true, label };
-}
-
 async function main() {
   console.log('\ncareer-ops doctor');
   console.log('================\n');
@@ -341,7 +313,6 @@ async function main() {
     checkPipelineFile(),
     checkAutoDir('output'),
     checkAutoDir('reports'),
-    checkPlugins(projectRoot),
   ];
 
   // Network-bound ATS slug probe — only under --strict.
@@ -411,15 +382,7 @@ function onboardingState(root) {
     .filter(({ path }) => !prereqPresent(root, path))
     .map(({ path }) => path);
   const warnings = playwrightMcpConfigured(root) ? [] : [PLAYWRIGHT_MCP_WARNING];
-  let plugins = [];
-  try {
-    const cfg = readPluginConfigSync(root);
-    plugins = discoverPlugins(pluginRoots(root)).map((m) => {
-      const s = pluginStatus(m, cfg);
-      return { id: m.id, hooks: m.hooks, enabled: s.enabled, missingEnv: s.missingEnv };
-    });
-  } catch { plugins = []; }
-  return { onboardingNeeded: missing.length > 0, missing, warnings, autoCopied, plugins };
+  return { onboardingNeeded: missing.length > 0, missing, warnings, autoCopied };
 }
 
 if (JSON_OUT) {

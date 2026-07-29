@@ -1,4 +1,4 @@
-// Type catalog for the provider plugin contract.
+// Type catalog for the provider adapter contract.
 //
 // This file is documentation-only — pure JSDoc @typedef annotations. The
 // project is plain ESM JavaScript with no build step; provider authors can

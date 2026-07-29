@@ -78,7 +78,10 @@ prefilter before model evaluation.
   return the same running job instead of launching a second paid model call.
   Reads, stale-job recovery, cancellation, and terminal completion are
   serialized per job, so a late process result cannot resurrect or overwrite a
-  job already made terminal.
+  job already made terminal. Direct CLI and application-service pipeline runs
+  also share one cross-process lease across the complete
+  scan→cache→liveness→prefilter→evaluation transaction; a competing run fails
+  before scanning or spending tokens, and a crashed owner is recovered.
 - **Model only for judgement:** provider APIs and deterministic code handle
   collection, description extraction, freshness, obvious mismatches, report
   rendering, pipeline state, and tracker-safe output. The model receives clean
@@ -87,13 +90,20 @@ prefilter before model evaluation.
   versioned JSON evidence and scores; code renders the A–G report instead of
   paying a model to reproduce boilerplate. The same renderer emits the machine
   summary used by salary, skill-gap, and pattern analysis.
+- **Deterministic CV rendering:** Claude and OpenAI-compatible tailoring return
+  the same closed, versioned JSON payload. Code injects identity from the local
+  profile, renders the selected template, verifies claims, and atomically
+  publishes the HTML—the model never emits an executable document.
 - **API-first job access:** Greenhouse, Lever, Ashby, and Workday APIs are used
   before a browser. Playwright is reserved for providers that cannot answer
   through a structured endpoint, and fallback text is cached rather than
   fetched again by the evaluator.
-- **One job-source result contract:** all built-in sources plus plugin
-  `provider`, `ingest`, and `search` hooks cross the same runtime boundary after
-  fetching. It rejects unsafe URLs and malformed records, removes unknown
+- **Bounded model transport:** OpenRouter model discovery and completions use
+  fixed endpoints through the same DNS-pinned, size-limited HTTP broker as job
+  ingestion. Responses cross a closed content/usage boundary, while failed
+  models are persisted with locked atomic merge semantics across processes.
+- **One job-source result contract:** all built-in sources cross the same
+  runtime boundary after fetching. It rejects unsafe URLs and malformed records, removes unknown
   fields, bounds job counts and every retained field, caps aggregate
   description data, deduplicates URLs, and reports anything dropped. Adding
   another source does not add another place to remember these controls.
@@ -109,10 +119,10 @@ prefilter before model evaluation.
   pasted reply candidates, and assessment events use it too; reply input is
   schema/size bounded and report updates are contained under `reports/`.
   Explicit ATS discovery also re-reads and re-deduplicates `portals.yml` inside
-  the lock, so simultaneous discoveries preserve every unique board. Plugin
-  activation and integrity consent are serialized and atomically replaced too:
-  concurrent enables cannot lose a pin, and malformed consent state prevents
-  plugin code from loading.
+  the lock, so simultaneous discoveries preserve every unique board. The
+  shared JD cache uses the same discipline: scanner, bulk-fetch and
+  browser-fallback publishers merge under one lock,
+  publish bounded JD files atomically, and commit `jds/index.tsv` last.
 - **Transactional evaluation publication:** every model provider uses one
   journaled report-to-tracker publisher. If the process, machine, or tracker
   merge fails after model tokens have already been spent, the next evaluation
@@ -319,12 +329,11 @@ not prompt wording that each provider has to remember.
   times out stalled bodies, and enforces response byte limits. Playwright
   applies the same destination policy to every page subrequest.
 - **Anonymous core sources:** built-in providers use public, anonymous
-  endpoints. A future authenticated source must be an isolated plugin with
-  explicit credentials and capabilities; credentials are never attached to
-  arbitrary job URLs.
-- **Bounded job-source output:** every core provider and every job-producing
-  plugin hook is reduced to one closed Job schema before filtering or
-  persistence. Malformed, credentialed or non-HTTP(S) URLs are dropped; result
+  endpoints. Authenticated job sources are intentionally unsupported;
+  credentials are never attached to arbitrary job URLs.
+- **Bounded job-source output:** every core provider is reduced to one closed
+  Job schema before filtering or persistence. Malformed, credentialed or
+  non-HTTP(S) URLs are dropped; result
   counts, descriptions, strings, dates and salary values have central limits;
   truncation and rejected records are emitted as audit telemetry.
 - **Hostile-document quarantine:** JD text is normalized, capped at 24,000
@@ -332,7 +341,7 @@ not prompt wording that each provider has to remember.
   enclosed in an explicit untrusted-data block. Detection is telemetry—not a
   claim that prompt injection can be sanitized away.
 - **Models have no authority:** Claude evaluation and CV tailoring run with
-  `--tools ""`, safe mode, no MCP servers, no plugins/hooks, no session
+  `--tools ""`, safe mode, no MCP servers or extension hooks, no session
   persistence, and schema-constrained output. Frontrunner never uses
   `--dangerously-skip-permissions`. OpenAI, Gemini, Ollama, and OpenRouter
   evaluators are API calls with no local tools.
@@ -348,7 +357,7 @@ The local UI is not a hosted scraping service and should not be exposed on a
 LAN or the public internet. Local-only operation also does not grant permission
 to scrape a site: users remain responsible for the terms and access rules of
 the sources they configure. Reviewed provider code, local-parser commands,
-plugins, the selected model provider, browser/OS compromise, and a hostile
+the selected model provider, browser/OS compromise, and a hostile
 local user remain outside the remote-job-content sandbox.
 
 See the [full threat model](docs/career-ops-threat-model.md), including the

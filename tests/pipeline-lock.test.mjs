@@ -13,8 +13,7 @@
  *      the same lock stale can have the second one's rmSync delete the first
  *      one's freshly created lock, after which both believe they hold it.
  *   3. Fresh-install robustness — the lock must not throw ENOENT when the
- *      parent data/ directory does not exist yet (src/plugins/plugins.mjs's cmdRun calls
- *      appendToPipeline with no directory pre-creation).
+ *      parent data/ directory does not exist yet.
  */
 
 import { test } from 'node:test';
@@ -70,7 +69,7 @@ test('acquirePipelineLock: configurable timing — the contention timeout is not
 test('acquirePipelineLock: creates a missing parent data/ directory instead of throwing ENOENT (fresh install)', async () => {
   const root = mkdtempSync(join(tmpdir(), 'career-ops-pipeline-lock-fresh-'));
   try {
-    // No data/ directory at all — the src/plugins/plugins.mjs cmdRun path.
+    // No data/ directory at all — exercise the fresh-install path.
     const p = join(root, 'data', 'pipeline.md');
     assert.equal(existsSync(dirname(p)), false);
     const lock = await acquirePipelineLock(p, { timeoutMs: 300, retryMs: 20 });

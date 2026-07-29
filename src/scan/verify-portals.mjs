@@ -36,7 +36,7 @@ import { loadProviders, resolveProvider } from '../../providers/_registry.mjs';
 
 const DEFAULT_PORTALS_PATH = process.env.CAREER_OPS_PORTALS || 'portals.yml';
 
-// The core providers/ directory — the SAME plugins the scanner loads. Resolved
+// The core providers/ directory — the SAME adapters the scanner loads. Resolved
 // from this file's location so it's independent of the caller's cwd.
 import { PROVIDERS_DIR } from '#paths';
 
@@ -302,7 +302,7 @@ function boundedProbeCtx(base) {
 }
 
 /**
- * Probe one non-ATS company through the provider plugin the scanner would use.
+ * Probe one non-ATS company through the provider adapter the scanner would use.
  *
  * @param {object} entry - tracked_companies entry.
  * @param {import('../../providers/_types.js').Provider} provider
@@ -349,7 +349,7 @@ export async function probeProvider(entry, provider, baseCtx) {
  * Two tiers, cheapest first:
  *   1. Greenhouse/Ashby/Lever slugs are probed directly (one JSON request each),
  *      with cross-probe suggestions when a slug 404s.
- *   2. Everything else is routed through the SAME provider plugins the scanner
+ *   2. Everything else is routed through the SAME provider adapters the scanner
  *      uses (Workday, SuccessFactors, SmartRecruiters, Avature, …), bounded to
  *      a few requests. This catches broken non-ATS boards that used to be
  *      reported as an un-actionable "skipped".
@@ -519,7 +519,7 @@ async function main() {
     fileFlag === -1 ? DEFAULT_PORTALS_PATH : args[fileFlag + 1] || '',
   );
 
-  // Load the scanner's provider plugins so non-ATS boards (Workday,
+  // Load the scanner's provider adapters so non-ATS boards (Workday,
   // SuccessFactors, SmartRecruiters, …) get a real reachability probe instead
   // of an un-actionable "skipped".
   const providers = await loadProviders(PROVIDERS_DIR);

@@ -60,9 +60,16 @@ src/pipeline/run.mjs
    evaluation replays any interrupted journal idempotently. Status updates to
    existing rows use `src/tracker/set-status.mjs`.
 
-CV tailoring is a separate, explicit action after evaluation. A tool-less model
-returns a bounded render payload to `src/cv/claude-tailor.mjs`; fixed code then
-renders, fact-checks, and creates the PDF.
+CV tailoring is a separate, explicit action after evaluation. Claude and
+OpenAI-compatible models return the same bounded, versioned payload defined by
+`src/cv/tailoring-contract.mjs`; identity comes only from the trusted local
+profile. Fixed code renders and fact-checks the result, and model output is
+never published as HTML.
+
+OpenRouter discovery and completion requests use fixed endpoints through
+`src/evaluate/openrouter-client.mjs`, which delegates networking to the central
+DNS-pinned broker and exposes only bounded content plus usage. Failed-model
+blacklisting uses locked atomic merge semantics across processes.
 
 ## Batch Processing
 
@@ -105,7 +112,6 @@ HTTP(S) URLs without credentials, bounded strings and descriptions, plausible
 dates and salary values, a per-fetch job cap, an aggregate description budget,
 and exact-URL deduplication. Invalid records are dropped with reason counts;
 non-array provider results fail closed rather than looking like an empty board.
-Plugin `provider`, `ingest`, and `search` results cross this same boundary.
 
 Every description crosses `src/security/job-document.mjs` before a model. It is
 bounded, fingerprinted, marked as hostile data, and never grants model tools.
@@ -119,6 +125,9 @@ and treats reports and generated HTML as untrusted output.
 - Persistent application jobs serialize reads, stale recovery, cancellation and
   terminal transitions per job. Cancellation is a contained durable marker
   observed by the owning controller, never a request to signal a stored PID.
+- The canonical pipeline holds one owner-verified cross-process lease across
+  scan, cache, liveness, prefilter and evaluation. Concurrent CLI/service runs
+  fail before shared artifacts or tokens are touched; dead owners recover.
 - Tracker mutations use shared locking and atomic replacement.
 - Application-answer report sections, pasted reply candidates and assessment
   events use the same boundary; report paths are contained under `reports/`
@@ -132,17 +141,17 @@ and treats reports and generated HTML as untrusted output.
 - Confirmed additions spanning `cv.md` and `article-digest.md` are serialized,
   write-ahead journaled and replayed only when each source still matches its
   recorded before-state; newer human edits fail closed.
-- Plugin activation and integrity/capability consent use locked atomic
-  replacement. Enable pins before activation, removal disables before deleting
-  the pin, and malformed consent state prevents plugin code from loading.
+- Scanner, bulk-fetch and browser-fallback JD cache writes share one locked
+  publication boundary. Bounded JD files are atomically replaced before the
+  merged manifest commits, so interruption cannot publish a partial target or
+  erase another process's entry.
 - The updater stages replacements and rolls back injected failures rather than
   leaving mixed versions.
 - The reverse ATS scanner checkpoints its lowest unfinished index and resumes
   safely after interruption.
 - Liveness uncertainty is never silently converted into an expired result.
-- Job-source records cannot bypass the central result schema through a new
-  scan, portal-probe, or job-producing plugin entry point; a regression test
-  inventories every consumer.
+- Job-source records cannot bypass the central result schema through a new scan
+  or portal-probe entry point; a regression test inventories every consumer.
 
 ## Data Flow
 

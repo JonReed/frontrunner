@@ -34,4 +34,4 @@ That Playwright caveat is the only real difference from the CLI experience. Two 
 
 ## Credit where due
 
-The community got here first: [woolly-earth/career-ops-cowork-guide](https://github.com/woolly-earth/career-ops-cowork-guide) is an excellent independent deep-dive — setup walkthrough plus customization patterns for multi-track senior searches — and the earlier `career-ops-plugin` adaptation showed how much demand there was for this surface. This page exists because they proved it works. If you want the long-form version with worked examples, read that guide.
+The community got here first: [woolly-earth/career-ops-cowork-guide](https://github.com/woolly-earth/career-ops-cowork-guide) is an excellent independent deep-dive with a setup walkthrough and customization patterns for multi-track senior searches. This page exists because they proved the workflow works. If you want the long-form version with worked examples, read that guide.

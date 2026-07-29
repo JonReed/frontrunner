@@ -20,9 +20,6 @@ These files contain your personal data, customizations, and work product. Update
 | `interview-prep/{company}-{role}.md` | Company-specific interview prep reports (written by `/career-ops interview-prep`) |
 | `interview-prep/sessions/*.md` | Interview sessions — real transcripts + mock sessions (sensitive: real names/companies; gitignored except scaffold). Drives `patterns` Step 1b targeting signal and `interview-redflag` analysis. Scaffold files (`README.md`, `.gitkeep`) are system-owned. |
 | `portals.yml` | Your customized company list |
-| `config/plugins.yml` | Your plugin activation toggles (opt-in; seeded from `config/plugins.example.yml`) |
-| `plugins.local/` | Your own / private plugins (never auto-updated) |
-| `plugins.lock` | Integrity pins + recorded consent for your enabled plugins (generated; never auto-updated) |
 | `data/applications.md` | Your application tracker (source of truth) |
 | `data/applications.db` | Derived query index over `applications.md` (SQLite, rebuilt by `node src/tracker/tracker.mjs sync` — safe to delete) |
 | `data/pipeline.md` | Your URL inbox |
@@ -42,6 +39,7 @@ These files contain your personal data, customizations, and work product. Update
 | `data/blacklist.md` | Your do-not-apply company list (opt-in — absence = no filtering; never auto-populated: only you, or the agent on your explicit instruction, write to it. Respected by `src/scan/scan.mjs` and the `auto-pipeline`/`oferta`/`apply` gates; never a scoring input) |
 | `data/assessments.tsv` | Your append-only skills-assessment log: `{date}\t{company}\t{report#\|-}\t{platform}\t{subject}\t{threshold%\|-}\t{score%\|-}\t{stale_note}`. Appended by `node src/analysis/assessment-log.mjs add`; never edited in place. Empty stale_note = no staleness observed. Read by `src/analysis/assessment-log.mjs` |
 | `writing-samples/*` | Your personal writing samples for style calibration (except `writing-samples/README.md`, which is system-owned documentation delivered by updates) |
+| `cv-versions/*` | Your alternate and historical CV source files (except `cv-versions/README.md`, which is system-owned documentation delivered by updates) |
 | `reports/*` | Your evaluation reports |
 | `output/*` | Your generated PDFs |
 | `jds/*` | Your saved job descriptions |
@@ -111,11 +109,6 @@ These files contain system logic, scripts, templates, and instructions that impr
 | `AGENTS.md` | Canonical agent instructions (imported by CLI-specific wrappers) |
 | `*.mjs` | Utility scripts |
 | `providers/` | Job-source provider modules for the zero-token scanner |
-| `plugins/` | Bundled plugins + the plugin engine (opt-in external integrations) |
-| `src/plugins/plugins.mjs` | Plugin CLI (list/run/available/add/new/enable/skill/trust/remove) |
-| `plugins-registry/` | Curated community plugins, one `<id>.json` per plugin (the trust root) |
-| `src/plugins/plugin-install.mjs` / `src/plugins/plugin-audit.mjs` / `src/plugins/validate-plugin-registry.mjs` | Plugin install/audit/registry-validation utilities |
-| `config/plugins.example.yml` | Plugin activation template (seed for `config/plugins.yml`) |
 | `batch/batch-prompt.md` | Batch worker prompt |
 | `batch/batch-runner.sh` | Batch orchestrator |
 | `templates/*` | Base templates |
@@ -130,6 +123,7 @@ These files contain system logic, scripts, templates, and instructions that impr
 | `VERSION` | Current version number |
 | `DATA_CONTRACT.md` | This file |
 | `writing-samples/README.md` | System-owned onboarding documentation for the writing-samples directory |
+| `cv-versions/README.md` | System-owned onboarding documentation for the CV-versions directory |
 
 ## Application Trees
 

@@ -14,7 +14,7 @@ test('provider descriptions flow from scan cache to ingestion without another HT
   const input = join(root, 'pipeline.md');
   const url = 'https://jobs.lever.co/acme/role-123';
 
-  const cache = cacheProviderDescriptions(
+  const cache = await cacheProviderDescriptions(
     [{
       url,
       company: 'Acme',

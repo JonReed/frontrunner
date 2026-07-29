@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * scan.mjs — Zero-token portal scanner with a plugin-based provider layer.
+ * scan.mjs — Zero-token portal scanner with a modular provider layer.
  *
  * Providers live in providers/*.mjs and are loaded at startup. Each provider
  * exports a default object with:
@@ -40,7 +40,6 @@ import { makeHttpCtx } from '../../providers/_http.mjs';
 import { fetchProviderJobs } from '../../providers/_contract.mjs';
 import { buildTrustValidator } from '../../providers/_trust-validator.mjs';
 import { loadProviders, resolveProvider } from '../../providers/_registry.mjs';
-import { mergeProviderPlugins } from '../../plugins/_engine.mjs';
 import { classifyFetchError } from './verify-portals.mjs';
 import { cacheProviderDescriptions } from './jd-cache.mjs';
 import { fingerprintText, findCrossListings } from '../lib/fingerprint-core.mjs';
@@ -1382,8 +1381,8 @@ Paste job URLs below as \`- [ ] {url}\` then run \`/career-ops pipeline\`.
 const PENDING_MARKERS = ['## Pending', '## Pendientes'];
 const PROCESSED_MARKERS = ['## Processed', '## Procesadas'];
 
-// Locked (src/tracker/pipeline-lock.mjs) so scan.mjs, scan-ats-full.mjs, and src/plugins/plugins.mjs
-// (pipeline mode) — the three current callers — can never interleave their
+// Locked (src/tracker/pipeline-lock.mjs) so scan.mjs and scan-ats-full.mjs
+// can never interleave their
 // read-modify-write and silently drop each other's offers.
 export async function appendToPipeline(offers) {
   if (offers.length === 0) return;
@@ -1749,10 +1748,6 @@ async function main() {
 
   // 1. Load providers
   const providers = await loadProviders(PROVIDERS_DIR);
-  // Opt-in: merge enabled keyed/auth-gated provider plugins. Returns immediately
-  // (no discovery, no dotenv, no process.env mutation) when config/plugins.yml is
-  // absent — so a plain scan with no plugins configured stays byte-identical.
-  await mergeProviderPlugins(providers, { root: path.dirname(PROVIDERS_DIR) });
   if (providers.size === 0) {
     console.error('Error: no providers loaded from providers/');
     process.exit(1);
@@ -2051,7 +2046,7 @@ async function main() {
   if (!dryRun && verifiedOffers.length > 0) {
     await appendToPipeline(verifiedOffers);
     try {
-      const jdCache = cacheProviderDescriptions(verifiedOffers);
+      const jdCache = await cacheProviderDescriptions(verifiedOffers);
       if (jdCache.cached > 0) {
         console.log(`Cached JD text from provider APIs: ${jdCache.cached}`);
       }

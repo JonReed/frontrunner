@@ -23,6 +23,10 @@ import { runFetchJds } from '../scan/fetch-jds.mjs';
 import { cacheProviderDescriptions, readJdManifest } from '../scan/jd-cache.mjs';
 import { createLivenessChecker } from '../scan/liveness-service.mjs';
 import { runPrefilter } from '../scan/prefilter.mjs';
+import {
+  FileLockTimeoutError,
+  acquireFileLock,
+} from '../lib/file-lock.mjs';
 import { withPipelineLock } from '../tracker/pipeline-lock.mjs';
 
 function atomicWrite(file, contents) {
@@ -30,6 +34,18 @@ function atomicWrite(file, contents) {
   const tmp = `${file}.tmp-${process.pid}`;
   writeFileSync(tmp, contents);
   renameSync(tmp, file);
+}
+
+export class PipelineRunBusyError extends FileLockTimeoutError {
+  constructor(lockDir, timeoutMs) {
+    super(lockDir, timeoutMs);
+    this.name = 'PipelineRunBusyError';
+    this.message = `pipeline run already active: ${lockDir}`;
+  }
+}
+
+export function pipelineRunLockTarget(activeInput) {
+  return join(dirname(activeInput), '.pipeline-run');
 }
 
 export function readPipelineRoles(file) {
@@ -173,119 +189,145 @@ export async function runCanonicalPipeline({
   scan = true,
   scanRunner = () => defaultRun(process.execPath, [join(ROOT, 'src/scan/scan.mjs')]),
   fetchJds = runFetchJds,
-  checker = createLivenessChecker(),
+  checker = null,
   prefilter = runPrefilter,
   evaluationRunner = defaultEvaluationRunner,
+  runLock = pipelineRunLockTarget(activeInput),
+  runLockOptions = {},
 } = {}) {
-  if (scan) await scanRunner();
-  if (!existsSync(input)) throw new Error(`pipeline input not found: ${input}`);
-
-  const roles = readPipelineRoles(input);
-  const cache = await fetchJds({ input, outDir: jdsDir });
-  const manifest = readJdManifest(jdsDir);
-  const live = [];
-  const livenessRejected = [];
-  const livenessRows = [];
-  const fallbackDescriptions = [];
+  const lease = await acquireFileLock(runLock, {
+    timeoutMs: 0,
+    ...runLockOptions,
+    ownerFields: {
+      operation: 'canonical-pipeline',
+      input,
+      ...(runLockOptions.ownerFields ?? {}),
+    },
+    createTimeoutError: (lockDir, timeoutMs) =>
+      new PipelineRunBusyError(lockDir, timeoutMs),
+  });
 
   try {
-    for (const role of roles) {
-      const local = readLocalDescription(role.url);
-      let result;
-      if (local) {
-        if (local.error) {
-          result = { result: 'expired', source: 'local', reason: local.error };
+    if (scan) await scanRunner();
+    if (!existsSync(input)) throw new Error(`pipeline input not found: ${input}`);
+
+    const roles = readPipelineRoles(input);
+    const activeChecker = checker ?? createLivenessChecker();
+    let cache;
+    let manifest;
+    try {
+      cache = await fetchJds({ input, outDir: jdsDir });
+      manifest = readJdManifest(jdsDir);
+    } catch (error) {
+      await activeChecker.close();
+      throw error;
+    }
+    const live = [];
+    const livenessRejected = [];
+    const livenessRows = [];
+    const fallbackDescriptions = [];
+
+    try {
+      for (const role of roles) {
+        const local = readLocalDescription(role.url);
+        let result;
+        if (local) {
+          if (local.error) {
+            result = { result: 'expired', source: 'local', reason: local.error };
+          } else {
+            const heading = local.text.match(/^#\s+(.+)$/m)?.[1]?.trim();
+            if (!role.title && heading) role.title = heading;
+            fallbackDescriptions.push({ ...role, description: local.text });
+            result = { result: 'active', source: 'local', reason: 'local JD file is readable' };
+          }
         } else {
-          const heading = local.text.match(/^#\s+(.+)$/m)?.[1]?.trim();
-          if (!role.title && heading) role.title = heading;
-          fallbackDescriptions.push({ ...role, description: local.text });
-          result = { result: 'active', source: 'local', reason: 'local JD file is readable' };
-        }
-      } else {
-        result = await checker.check(role.url);
-        if (result.result !== 'expired' && !manifest.has(role.url) && typeof checker.extract === 'function') {
-          try {
-            const extracted = await checker.extract(role.url);
-            if (extracted?.text) {
-              if (!role.title && extracted.title) role.title = extracted.title;
-              fallbackDescriptions.push({ ...role, description: extracted.text });
+          result = await activeChecker.check(role.url);
+          if (result.result !== 'expired' && !manifest.has(role.url) && typeof activeChecker.extract === 'function') {
+            try {
+              const extracted = await activeChecker.extract(role.url);
+              if (extracted?.text) {
+                if (!role.title && extracted.title) role.title = extracted.title;
+                fallbackDescriptions.push({ ...role, description: extracted.text });
+              }
+            } catch (error) {
+              result = {
+                ...result,
+                reason: `${result.reason ?? result.result}; description fallback failed: ${error.message}`,
+              };
             }
-          } catch (error) {
-            result = {
-              ...result,
-              reason: `${result.reason ?? result.result}; description fallback failed: ${error.message}`,
-            };
           }
         }
+        livenessRows.push({ ...role, ...result });
+        if (result.result === 'expired') livenessRejected.push({ ...role, ...result });
+        else live.push(role); // uncertainty keeps the role: false rejects cost opportunities
       }
-      livenessRows.push({ ...role, ...result });
-      if (result.result === 'expired') livenessRejected.push({ ...role, ...result });
-      else live.push(role); // uncertainty keeps the role: false rejects cost opportunities
+    } finally {
+      await activeChecker.close();
     }
-  } finally {
-    await checker.close();
-  }
 
-  const fallbackCache = fallbackDescriptions.length
-    ? cacheProviderDescriptions(fallbackDescriptions, { outDir: jdsDir })
-    : { cached: 0, manifestSize: manifest.size };
+    const fallbackCache = fallbackDescriptions.length
+      ? await cacheProviderDescriptions(fallbackDescriptions, { outDir: jdsDir })
+      : { cached: 0, manifestSize: manifest.size };
 
-  atomicWrite(activeInput, rolesTsv(live));
-  atomicWrite(
-    livenessResults,
-    `url\tcompany\ttitle\tresult\tsource\treason\n${livenessRows
-      .map((row) => [row.url, row.company, row.title, row.result, row.source, row.reason]
-        .map((value) => String(value ?? '').replace(/[\t\r\n]+/g, ' '))
-        .join('\t'))
-      .join('\n')}\n`,
-  );
-
-  const filtered = prefilter({
-    input: activeInput,
-    jdsDir,
-    out: batchInput,
-    rejects,
-  });
-  if (livenessRejected.length) {
-    const existing = readFileSync(rejects, 'utf8').trimEnd();
-    const extra = livenessRejected.map((row) =>
-      [row.url, row.company, row.title, 'posting_expired', row.reason]
-        .map((value) => String(value ?? '').replace(/[\t\r\n]+/g, ' '))
-        .join('\t'));
-    atomicWrite(rejects, `${existing}\n${extra.join('\n')}\n`);
-  }
-
-  await markPipelineOutcomes(input, new Map([
-    ...livenessRejected.map((role) => [role.url, 'posting expired']),
-    ...filtered.rejected.map((role) => [role.url, `prefilter rejected (${role.rule})`]),
-  ]));
-
-  const evaluation = await evaluationRunner({
-    engine,
-    kept: filtered.kept,
-    jdsDir,
-  });
-  if (engine !== 'none' && evaluation.completed?.length) {
-    await markPipelineOutcomes(
-      input,
-      new Map(evaluation.completed.map((url) => [url, 'evaluated'])),
+    atomicWrite(activeInput, rolesTsv(live));
+    atomicWrite(
+      livenessResults,
+      `url\tcompany\ttitle\tresult\tsource\treason\n${livenessRows
+        .map((row) => [row.url, row.company, row.title, row.result, row.source, row.reason]
+          .map((value) => String(value ?? '').replace(/[\t\r\n]+/g, ' '))
+          .join('\t'))
+        .join('\n')}\n`,
     );
-  }
 
-  return {
-    stages: [...(scan ? ['scan'] : []), 'cache', 'liveness', 'prefilter', 'evaluation'],
-    inputRoles: roles.length,
-    cache: { ...cache, fallbackCached: fallbackCache.cached },
-    liveness: {
-      active: livenessRows.filter((r) => r.result === 'active').length,
-      uncertain: livenessRows.filter((r) => r.result === 'uncertain').length,
-      expired: livenessRejected.length,
-      api: livenessRows.filter((r) => r.source === 'api').length,
-      browser: livenessRows.filter((r) => r.source === 'browser').length,
-    },
-    prefilter: filtered.result,
-    evaluation,
-  };
+    const filtered = prefilter({
+      input: activeInput,
+      jdsDir,
+      out: batchInput,
+      rejects,
+    });
+    if (livenessRejected.length) {
+      const existing = readFileSync(rejects, 'utf8').trimEnd();
+      const extra = livenessRejected.map((row) =>
+        [row.url, row.company, row.title, 'posting_expired', row.reason]
+          .map((value) => String(value ?? '').replace(/[\t\r\n]+/g, ' '))
+          .join('\t'));
+      atomicWrite(rejects, `${existing}\n${extra.join('\n')}\n`);
+    }
+
+    await markPipelineOutcomes(input, new Map([
+      ...livenessRejected.map((role) => [role.url, 'posting expired']),
+      ...filtered.rejected.map((role) => [role.url, `prefilter rejected (${role.rule})`]),
+    ]));
+
+    const evaluation = await evaluationRunner({
+      engine,
+      kept: filtered.kept,
+      jdsDir,
+    });
+    if (engine !== 'none' && evaluation.completed?.length) {
+      await markPipelineOutcomes(
+        input,
+        new Map(evaluation.completed.map((url) => [url, 'evaluated'])),
+      );
+    }
+
+    return {
+      stages: [...(scan ? ['scan'] : []), 'cache', 'liveness', 'prefilter', 'evaluation'],
+      inputRoles: roles.length,
+      cache: { ...cache, fallbackCached: fallbackCache.cached },
+      liveness: {
+        active: livenessRows.filter((r) => r.result === 'active').length,
+        uncertain: livenessRows.filter((r) => r.result === 'uncertain').length,
+        expired: livenessRejected.length,
+        api: livenessRows.filter((r) => r.source === 'api').length,
+        browser: livenessRows.filter((r) => r.source === 'browser').length,
+      },
+      prefilter: filtered.result,
+      evaluation,
+    };
+  } finally {
+    lease.release();
+  }
 }
 
 function argValue(args, name, fallback) {

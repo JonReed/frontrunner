@@ -87,8 +87,7 @@ test('every module resolves its imports', () => {
   const broken = [];
   for (const m of MODULES) {
     const dir = dirname(join(ROOT, m));
-    // Strip comments first — plugins/_lock.mjs documents `import('./anything.mjs')`
-    // in prose, which is not an import.
+    // Strip comments first so import-like prose is not treated as code.
     const src = readFileSync(join(ROOT, m), 'utf8')
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .replace(/^\s*\/\/.*$/gm, '');
@@ -132,7 +131,6 @@ test('no module outside src/paths.mjs derives the repo root from its own locatio
   for (const m of MODULES) {
     if (ALLOWED.has(m)) continue;
     if (!m.includes('/')) continue;             // root-level: own dirname IS the root
-    if (m.startsWith('plugins/')) continue;     // third-party packages, standalone
     if (m.startsWith('batch/')) continue;       // standalone batch tooling
     if (m.startsWith('scaffolder/')) continue;  // separate published package
     const src = readFileSync(join(ROOT, m), 'utf8');
@@ -151,8 +149,7 @@ test('no module reaches outside the repo with ../..', () => {
   const offenders = [];
   for (const m of MODULES) {
     if (m.startsWith('scaffolder/')) continue;  // published standalone; paths differ
-    // Strip comments first — plugins/_lock.mjs documents `import('./anything.mjs')`
-    // in prose, which is not an import.
+    // Strip comments first so import-like prose is not treated as code.
     const src = readFileSync(join(ROOT, m), 'utf8')
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .replace(/^\s*\/\/.*$/gm, '');

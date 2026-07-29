@@ -142,20 +142,4 @@ test('every core provider consumer routes fetch results through the contract', (
     );
   }
 
-  const pluginHost = readFileSync(join(ROOT, 'src/plugins/plugins.mjs'), 'utf8');
-  assert.match(pluginHost, /enforceProviderResult\s*\(/,
-    'job-producing plugin hooks bypass the provider-result contract');
-  assert.doesNotMatch(pluginHost, /function\s+sanitizeJob\s*\(/,
-    'the weaker legacy plugin job sanitizer is still present');
-  assert.equal(
-    (pluginHost.match(/pluginId:\s*id/gu) ?? []).length,
-    3,
-    'explicit ingest/search, export, and notify commands must scope the runner to the named plugin',
-  );
-  const pluginEngine = readFileSync(join(ROOT, 'plugins/_engine.mjs'), 'utf8');
-  assert.match(
-    pluginEngine,
-    /\.filter\(plugin\s*=>\s*pluginId\s*===\s*undefined\s*\|\|\s*plugin\.id\s*===\s*pluginId\)/u,
-    'the plugin runner ignores its explicit plugin scope',
-  );
 });

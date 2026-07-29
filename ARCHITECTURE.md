@@ -24,12 +24,12 @@ The single most important architectural rule: **system files** and **user files*
 
 ## Files are canonical — databases are derived
 
-Settled doctrine ([#918](https://github.com/santifer/career-ops/issues/918)): the human-readable, git-diffable files (`data/applications.md`, `reports/`, `data/pipeline.md`) are the **permanent source of truth**. SQLite exists only as a derived index (fast queries, reindex-on-delete) and will never become a primary store — not even opt-in. The web interfaces, community plugins, and external scripts all read the files; a second canonical store would force every reader to support two modes forever. Performance work is welcome **on the derived layer**; the files stay the brain.
+Settled doctrine ([#918](https://github.com/santifer/career-ops/issues/918)): the human-readable, git-diffable files (`data/applications.md`, `reports/`, `data/pipeline.md`) are the **permanent source of truth**. SQLite exists only as a derived index (fast queries, reindex-on-delete) and will never become a primary store — not even opt-in. The web interfaces and external scripts read the files; a second canonical store would force every reader to support two modes forever. Performance work is welcome **on the derived layer**; the files stay the brain.
 
 ## Domain layout and stable entry points
 
 Backend modules are grouped by responsibility under `src/`: scanning,
-evaluation, tracking, CV generation, analysis, security, plugins, pipeline
+evaluation, tracking, CV generation, analysis, security, pipeline
 orchestration, and the local application-service boundary. Repository-root
 scripts are retained only as stable human and CI entry points. All modules
 derive paths from `src/paths.mjs`, so internal files can move without silently
@@ -56,18 +56,30 @@ Finds jobs from **open, no-auth public sources**. `src/scan/scan.mjs` is
 zero-token: it calls public ATS APIs (Greenhouse, Ashby, Lever, BambooHR,
 Teamtailor, Workday, Breezy) and RSS/JSON boards via per-board modules in
 `providers/`. Every result then crosses `providers/_contract.mjs`, which
-enforces the same closed, bounded Job schema for built-in sources and plugin
-`provider`, `ingest`, and `search` hooks before any filter or persistence step.
-Auth-gated/login-required sources are intentionally out of core (they belong
-in the plugin layer). Results land in `data/pipeline.md`.
+enforces the same closed, bounded Job schema for every built-in source before
+any filter or persistence step. Auth-gated/login-required sources are
+intentionally unsupported. Results land in `data/pipeline.md`.
 
 ### Evaluation — `modes/oferta.md` + `modes/_shared.md`
 The heart of the tool. `oferta.md` defines the A–G evaluation blocks; `_shared.md` defines the 1–5 scoring system, archetype detection, posting-legitimacy signals, and global rules. The AI reads these plus your `cv.md` and produces a structured report.
 
 **Standalone evaluators** let you run the same scoring without an interactive CLI, against cheaper/local models: `src/evaluate/gemini-eval.mjs` (Google free tier), `src/evaluate/ollama-eval.mjs` (fully local), and `src/evaluate/openai-eval.mjs` (any OpenAI-compatible endpoint).
 
+OpenRouter uses `src/evaluate/openrouter-client.mjs`: fixed service endpoints,
+the shared DNS-pinned/size-bounded HTTP broker, and a closed response shape.
+`src/evaluate/model-blacklist.mjs` persists failed-model safety state through a
+locked atomic merge, so concurrent evaluators cannot overwrite one another.
+Its `scan` command delegates to the canonical scanner and owns no scan writes.
+
 ### Generation — PDFs, CVs, cover letters
-`src/cv/generate-pdf.mjs` (Playwright HTML→PDF), `src/cv/generate-latex.mjs` / `src/cv/build-cv-latex.mjs`, `src/cv/generate-cover-letter.mjs`. ATS-safe templates live in `templates/` and `fonts/`.
+`src/cv/tailoring-contract.mjs` is the provider-neutral, versioned model-output
+boundary for CV tailoring. Claude and OpenAI-compatible workers return bounded
+content without identity or markup; fixed code injects trusted profile fields,
+renders the selected template, verifies claims, and atomically publishes HTML.
+`src/cv/generate-pdf.mjs` converts HTML to PDF;
+`src/cv/generate-latex.mjs` / `src/cv/build-cv-latex.mjs` and
+`src/cv/generate-cover-letter.mjs` provide the other generation paths. ATS-safe
+templates live in `templates/` and `fonts/`.
 
 ### Tracking — `data/` + `reports/` + tracker scripts
 Every evaluated offer is registered. `data/applications.md` is the canonical
@@ -96,10 +108,11 @@ Confirmed candidate-source additions use
 `src/tracker/add-entry-publication.mjs`: a bounded write-ahead journal makes a
 joint `cv.md` + `article-digest.md` change recoverable, while before-state
 hashes stop recovery from overwriting a human edit made after interruption.
-Plugin activation in `config/plugins.yml` and integrity/capability consent in
-`plugins.lock` use the same locked replacement boundary. The enable path
-persists the pin before activation; removal disables first. Malformed or
-unwritable consent state therefore leaves plugin code inactive.
+JD cache publication is centralized in `src/scan/jd-cache-store.mjs`.
+Scanner descriptions, bulk ATS fetching and browser fallback all re-read and
+merge `jds/index.tsv` under one lock, atomically publish bounded description
+files, and replace the manifest last. Concurrent publishers cannot lose entries
+and an interrupted manifest replacement leaves the prior index readable.
 
 ### Liveness — never evaluate a dead posting
 `src/scan/check-liveness.mjs` / `liveness-*.mjs` verify a posting is still open (zero-token) before it costs evaluation time.
@@ -117,6 +130,13 @@ requests, and crash recovery for the UI. Supervised operations are isolated
 into a process group/tree, so cancellation and timeout terminate model, browser
 and renderer descendants before the job becomes terminal. See
 [`docs/APPLICATION_SERVICE.md`](docs/APPLICATION_SERVICE.md).
+
+The canonical pipeline additionally owns a cross-process run lease for its
+entire scan → cache → liveness → prefilter → evaluation transaction. This
+covers direct CLI calls as well as application-service children, prevents
+shared `jds/` and `batch/` artifacts from interleaving, and stops a second
+process before it can duplicate model spend. Dead owners are recovered through
+the shared owner-verified lock implementation.
 
 ### Self-update — `update-system.mjs`
 Safely pulls new system files from the official Frontrunner repository without

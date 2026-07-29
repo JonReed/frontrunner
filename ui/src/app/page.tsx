@@ -182,29 +182,42 @@ export default async function NextUpPage() {
 
   return (
     <>
+      {/*
+        No "247 more roles found" line here any more. The rail below opens with
+        that same count, labelled and linked, so saying it twice was the
+        interface repeating itself — and the sentence version led with a
+        backlog, which is the wrong first thing to tell someone whose next
+        action is sitting further down the page.
+      */}
       <div className="mb-7">
         <Headline ready={counts.readyToSend} nearly={counts.oneStepAway} />
-        {counts.inbox > 0 && (
-          <p className="mt-3 text-sm text-[var(--color-ink-faint)]">
-            {counts.inbox.toLocaleString()} more roles found and not yet scored —{' '}
-            <Link href="/found" className="font-medium text-[var(--color-act)] hover:underline">
-              take a look
-            </Link>
-            .
-          </p>
-        )}
       </div>
 
       <PipelineOverview counts={stageCounts} />
 
       {actionable.length === 0 ? (
+        /*
+          Two genuinely different empty states.
+
+          "Nothing needs your attention" while several hundred roles sit
+          unassessed is not calm, it is wrong — and it points someone at a
+          scan they do not need to run. What is true depends on whether the
+          scanner has found anything yet.
+        */
         <div className="rounded-xl border border-dashed border-[var(--color-line-strong)] bg-[var(--color-card)] p-12 text-center">
-          <p className="font-medium">No roles need your attention.</p>
+          <p className="font-medium">Nothing needs your attention.</p>
           <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
-            <Link href="/found" className="text-[var(--color-act)] hover:underline">
-              Find some roles
-            </Link>{' '}
-            to get started.
+            {counts.inbox > 0 ? (
+              <>
+                {counts.inbox.toLocaleString()} roles are waiting to be assessed —{' '}
+                <Link href="/found" className="text-[var(--color-act)] hover:underline">
+                  see what was found
+                </Link>
+                .
+              </>
+            ) : (
+              'Run a search to look for openings that match your profile.'
+            )}
           </p>
         </div>
       ) : (

@@ -217,11 +217,26 @@ each screen carries the same six-step rail:
 
 > Found · Deciding · Preparing · Ready · Applied · In process
 
-On a role page it marks that role's position (*Step 3 of 6: Preparing — then
-Ready*). On a list page it carries counts, so the shape of the pipeline is
-visible without leaving the page. The stage names live in one file,
-`lib/journey.ts`, because a board that says "Deciding" while a rail says
-something else makes the whole instrument untrustworthy.
+It is the **same rail everywhere** — identical segments, labels and placement.
+Only the caption underneath changes, because only the caption has different
+information to give: a role page names that role's position (*Step 3 of 6:
+Preparing — then Ready*), a list page gives the total (*262 roles across the
+process*).
+
+List pages briefly used a different treatment — bordered cards that scrolled
+sideways on a phone. Two visual languages for the one concept the product is
+built around made two screens showing the same six steps look like two
+different ideas, and the version that scrolled hid the last two steps off the
+edge. One rail, six columns, nothing hidden.
+
+The stage names live in one file, `lib/journey.ts`, because a board that says
+"Deciding" while a rail says something else makes the whole instrument
+untrustworthy.
+
+The homepage no longer repeats the count in prose. It said *"247 more roles
+found and not yet scored"* directly above a rail whose first column says
+exactly that — and the sentence led with a backlog, which is the wrong first
+thing to tell someone whose next action is further down the page.
 
 Two deliberate omissions. It is **not a progress bar** — a percentage would
 imply the end is reachable by effort alone, and most roles stop at "Applied".

@@ -1,23 +1,22 @@
 import { randomBytes } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 
-function localHostname(value: string | null) {
-  if (!value) return false;
-  const host = value.toLowerCase().replace(/:\d+$/, '').replace(/^\[|\]$/g, '');
-  return host === '127.0.0.1' || host === 'localhost' || host === '::1';
-}
+export const UI_HOSTS = new Set([
+  '127.0.0.1:3100',
+  'localhost:3100',
+]);
+export const UI_ORIGINS = new Set([
+  'http://127.0.0.1:3100',
+  'http://localhost:3100',
+]);
 
 export function proxy(request: NextRequest) {
-  if (!localHostname(request.headers.get('host'))) {
+  if (!UI_HOSTS.has(request.headers.get('host')?.toLowerCase() ?? '')) {
     return new NextResponse('Frontrunner is local-only', { status: 403 });
   }
   const origin = request.headers.get('origin');
-  if (origin) {
-    try {
-      if (!localHostname(new URL(origin).hostname)) return new NextResponse('Cross-origin request denied', { status: 403 });
-    } catch {
-      return new NextResponse('Invalid Origin', { status: 403 });
-    }
+  if (origin && !UI_ORIGINS.has(origin.toLowerCase())) {
+    return new NextResponse('Cross-origin request denied', { status: 403 });
   }
 
   const nonce = randomBytes(16).toString('base64');
@@ -42,6 +41,8 @@ export function proxy(request: NextRequest) {
   response.headers.set('content-security-policy', csp);
   response.headers.set('x-content-type-options', 'nosniff');
   response.headers.set('x-frame-options', 'DENY');
+  response.headers.set('cross-origin-opener-policy', 'same-origin');
+  response.headers.set('cross-origin-resource-policy', 'same-origin');
   response.headers.set('referrer-policy', 'no-referrer');
   response.headers.set('permissions-policy', 'camera=(), microphone=(), geolocation=(), payment=()');
   response.headers.set('cache-control', 'no-store');
@@ -49,5 +50,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  // Keep the local-only boundary in front of every asset and framework route,
+  // not only application pages and actions.
+  matcher: ['/:path*'],
 };

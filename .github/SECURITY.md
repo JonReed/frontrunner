@@ -27,7 +27,6 @@ Security-sensitive areas include:
 - local file access, path containment, command execution, and update handling;
 - the local web interfaces, including origin checks, XSS, and unsafe URL use;
 - generated HTML/PDF content and hostile job-description rendering;
-- plugin installation, registry validation, permissions, and network egress;
 - GitHub Actions, release automation, and dependency supply-chain controls.
 
 Vulnerabilities in third-party dependencies are in scope when they create a

@@ -37,13 +37,17 @@
  * as `skipped` and the worker keeps its existing fallback path for them.
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync, renameSync } from 'node:fs';
+import { readFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { ROOT } from '#paths';
 import { fetchJson as safeFetchJson } from '../../providers/_http.mjs';
 import { normalizeJobText } from '../security/job-document.mjs';
+import {
+  publishJdCacheEntries,
+  readJdManifest,
+} from './jd-cache-store.mjs';
 // ---------------------------------------------------------------- args
 
 const argv = process.argv.slice(2);
@@ -230,32 +234,21 @@ function readUrls(file) {
 
 // ---------------------------------------------------------------- main
 
-function readManifest(outDir) {
-  const entries = new Map();
-  const index = join(outDir, 'index.tsv');
-  if (!existsSync(index)) return entries;
-  for (const line of readFileSync(index, 'utf8').split('\n').slice(1)) {
-    const [url, file] = line.split('\t');
-    if (url && file && existsSync(file)) entries.set(url, file);
-  }
-  return entries;
-}
-
-function atomicWrite(file, contents) {
-  const tmp = `${file}.tmp-${process.pid}`;
-  writeFileSync(tmp, contents);
-  renameSync(tmp, file);
-}
-
 /**
  * Fetch and persist JDs using explicit paths and an injectable JSON transport.
  * Existing valid manifest entries are merged so a transient board failure
  * cannot make already-cached JDs disappear from the batch pipeline.
  */
-export async function runFetchJds({ input, outDir, force = false, fetchJson = getJson }) {
+export async function runFetchJds({
+  input,
+  outDir,
+  force = false,
+  fetchJson = getJson,
+  publishOptions = {},
+}) {
   const urls = readUrls(input);
   mkdirSync(outDir, { recursive: true });
-  const manifest = readManifest(outDir);
+  const manifest = readJdManifest(outDir);
 
   /** @type {Map<string, {provider:string,slug:string,eu:boolean,items:{url:string,jobId:string}[]}>} */
   const boards = new Map();
@@ -284,6 +277,7 @@ export async function runFetchJds({ input, outDir, force = false, fetchJson = ge
   }
 
   const written = [];
+  const publications = [];
   const missed = [];
   const errors = [];
 
@@ -303,21 +297,21 @@ export async function runFetchJds({ input, outDir, force = false, fetchJson = ge
         continue;
       }
       const file = join(outDir, `${safe(b.provider)}-${safe(b.slug)}-${safe(jobId)}.md`);
-      if (!existsSync(file) || force) {
-        writeFileSync(file, `${normalizeJobText(
+      publications.push({
+        url,
+        name: `${safe(b.provider)}-${safe(b.slug)}-${safe(jobId)}.md`,
+        content: normalizeJobText(
           `# ${post.title}\n\n**Location:** ${post.location}\n**URL:** ${url}\n\n---\n\n${post.text}`,
-        )}\n`);
-      }
+        ),
+        overwrite: force,
+      });
       written.push({ url, file, chars: post.text.length });
       manifest.set(url, file);
     }
   }
 
-  if (manifest.size) {
-    const rows = [...manifest.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([url, file]) => `${url}\t${file}`);
-    atomicWrite(join(outDir, 'index.tsv'), `url\tfile\n${rows.join('\n')}\n`);
+  if (publications.length) {
+    await publishJdCacheEntries(outDir, publications, publishOptions);
   }
 
   const totalChars = [...cached, ...written].reduce((a, w) => a + w.chars, 0);

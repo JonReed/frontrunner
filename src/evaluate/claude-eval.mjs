@@ -3,7 +3,7 @@
  * Tool-less Claude evaluator.
  *
  * Claude receives only bounded text and must return the scoring JSON schema.
- * It has no Read, Write, Bash, browser, MCP, plugin, hook, or session tools.
+ * It has no Read, Write, Bash, browser, MCP, extension, hook, or session tools.
  * Deterministic code validates the response and writes reports/tracker rows.
  */
 

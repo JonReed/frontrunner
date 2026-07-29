@@ -18,19 +18,19 @@ merges cannot quietly reintroduce it.
 
 | Boundary | Status | Enforcement |
 |---|---|---|
-| Privileged JD-facing agents | Fixed | `src/evaluate/claude-eval.mjs` and `src/cv/claude-tailor.mjs` use safe mode, `--tools ""`, strict MCP isolation, no session persistence and JSON Schema output |
+| Privileged JD-facing agents and document generation | Fixed | Claude uses safe mode, `--tools ""`, strict MCP isolation and no session persistence; Claude and OpenAI-compatible tailoring share a closed, versioned JSON contract and deterministic renderer |
 | Central SSRF/redirect policy | Fixed and connection-pinned for shared provider/JD HTTP; browser fallback retains Chromium DNS TOCTOU residual | `src/security/remote-target-policy.mjs`, `providers/_http.mjs`, `src/scan/liveness-browser.mjs` |
 | Response/JD/output bounds | Fixed | streaming byte caps in `_http.mjs`; 24K-character JD cap; scoring string/cardinality limits |
+| OpenRouter transport and fallback state | Fixed | fixed brokered endpoints, bounded model/response contracts, Frontrunner attribution, and locked atomic blacklist merge |
 | Prompt-injection authority | Fixed | hostile-data framing plus zero-tool models; detection remains telemetry only |
 | Report XSS/unsafe links | Fixed in new UI | escaped React rendering, HTTP(S) URL allowlist, CSP, no `dangerouslySetInnerHTML` |
 | UI exposure/action boundary | Fixed for intended local deployment | listener pinned to `127.0.0.1`; non-local Host/Origin rejected |
 | UI filesystem traversal | Fixed | strict job IDs plus canonical report/output containment |
 | Generated HTML active content | Fixed | escaped deterministic builder plus sandbox CSP on previews |
 | Provider supply-chain capability audit | Fixed for core adapters; residual reviewed-code trust | regression test forbids direct fetch and child-process imports; `local-parser` remains an explicit operator-configured exception |
-| Job-source result integrity | Fixed | `providers/_contract.mjs` enforces one closed, bounded Job schema after every core/plugin provider fetch and plugin `ingest`/`search` result; every scanner, probe and job-producing plugin path is inventory-tested against bypass |
+| Job-source result integrity | Fixed | `providers/_contract.mjs` enforces one closed, bounded Job schema after every provider fetch; every scanner and probe path is inventory-tested against bypass |
 | Local backend operation boundary | Fixed | versioned exact-key requests, fixed operation catalog, `shell: false`, bounded events/results, whole-process-tree cancellation/timeouts, atomic paid-job claims and marker-based cross-process cancellation in `src/application/` |
-| Durable local user state | Fixed for tracker, scanner audit, pipeline, application jobs, agent inbox, application answers, reply candidates, assessment events, portal discovery and confirmed candidate-source additions | owner-verified cross-process file locks, durable temporary writes and atomic same-directory replacement in `src/lib/file-lock.mjs` and `src/lib/locked-file.mjs`; report mutations are path-contained, hostile reply/portal records are bounded, and joint CV/proof-point publication is journaled with before-state conflict detection |
-| Plugin activation and consent integrity | Fixed for local durability; plugin code remains trusted local code | `config/plugins.yml` and `plugins.lock` use serialized atomic replacement; enable pins before activation, removal disables first, malformed state blocks loading, and destructive tests cover concurrent and interrupted writes |
+| Durable local user state | Fixed for tracker, scanner audit, pipeline files and whole-run coordination, JD cache publication, application jobs, agent inbox, application answers, reply candidates, assessment events, portal discovery and confirmed candidate-source additions | owner-verified cross-process file locks, durable temporary writes and atomic same-directory replacement in `src/lib/file-lock.mjs` and `src/lib/locked-file.mjs`; the canonical pipeline holds one lease through evaluation, JD publishers merge a bounded cache under one lock, report mutations are path-contained, hostile reply/portal records are bounded, and joint CV/proof-point publication is journaled with before-state conflict detection |
 | Evaluation publication integrity | Fixed | every evaluator uses a bounded, path-derived write-ahead journal; report and tracker publication replay idempotently after crash or merge failure |
 | Inherited privileged web runtime | Removed from reachable product surface | `web` package start commands fail closed; request-wide proxy returns `410 Gone` even when Next.js is launched directly |
 
@@ -45,6 +45,10 @@ parent cannot leave a descendant alive to mutate state.
 Durable-state tests race independent scanner and inbox processes, inject a
 pre-rename failure, and assert that every row survives without torn files,
 duplicate headers, abandoned locks or temporary files.
+Pipeline-run tests race complete independent orchestrators, prove only one can
+reach evaluation, recover a dead owner, and inject failure before retry.
+JD-cache tests race independent publishers, interrupt manifest replacement,
+retry orphan recovery, and bound hostile metadata while enforcing containment.
 Evaluation-publication tests inject tracker failure, terminate a process after
 its report write, race concurrent recovery, and prove a corrupted journal
 cannot redirect writes outside fixed report/tracker paths.
@@ -59,9 +63,6 @@ a symlink.
 Portal-discovery tests race independent writers with duplicate boards, inject a
 replacement failure, preserve comments and unrelated configuration, and reject
 malformed YAML or unsafe discovered URLs before mutation.
-Plugin-consent tests race independent enable processes, inject activation and
-lock replacement failures, and prove malformed consent state blocks imports
-without losing prior settings or integrity pins.
 Provider-contract tests inject malformed arrays, unsafe URLs, throwing record
 accessors, oversized fields, description floods and result floods, and assert
 that every consumer uses the same boundary.
@@ -79,9 +80,8 @@ supported launch path and a direct Next.js bypass remain unavailable.
 - Runtime paths are assessed separately from provider/developer code, CI,
   tests, update tooling, and upstream merges.
 - The UI is intended for one user and must remain bound to the local machine.
-- Core providers use anonymous public endpoints only. Authenticated sources, if
-  ever supported, must be isolated as plugins with separate credentials and
-  capabilities.
+- Core providers use anonymous public endpoints only. Authenticated sources are
+  intentionally unsupported.
 - Every website, API response, feed entry, job URL, job description, and field
   derived from one is attacker-controlled data.
 - Candidate CV/profile data, local files, API credentials, and AI CLI sessions
@@ -115,9 +115,10 @@ Open questions that would change risk:
 - API evaluators send candidate context plus JD text to model providers and
   accept versioned JSON (`src/evaluate/*-eval.mjs`,
   `src/evaluate/scoring-contract.mjs`).
-- Claude evaluation and UI tailoring launch tool-less, schema-constrained model
-  subprocesses; deterministic modules perform the writes
-  (`src/evaluate/claude-eval.mjs`, `src/cv/claude-tailor.mjs`).
+- Claude evaluation launches a tool-less, schema-constrained model subprocess.
+  Claude and OpenAI-compatible CV tailoring share
+  `src/cv/tailoring-contract.mjs`; deterministic modules inject identity,
+  render, fact-check and publish the result.
 - Deterministic code writes reports, tracker additions, cached JDs, and PDFs.
 - The local application service validates operation data and supervises fixed
   backend entry points (`src/application/`).
@@ -139,7 +140,7 @@ current behavior.
   Liveness browsing validates public DNS and intercepts subrequests; not every
   browser/fetch path uses the same guard.
 - Provider adapter → scanner: loosely typed `Job` objects cross an internal
-  plugin boundary. Runtime checks require an array, but there is no complete
+  adapter boundary. Runtime checks require an array, but there is no complete
   central schema or universal field-size policy.
 - Scanner → local cache/pipeline: hostile text and URLs become Markdown, TSV,
   and JD files. Several field escaping and atomic-write controls exist.
@@ -321,7 +322,6 @@ flowchart LR
 | `src/application/` | Fixed local operation catalog, validation, lifecycle, cancellation and timeout boundary | TM-004, TM-008 |
 | `src/evaluate/scoring-contract.mjs` | Tool-less structured boundary and semantic prompt-injection target | TM-003, TM-006 |
 | `src/evaluate/openrouter-runner.mjs` | Retains separate legacy fetch/browser logic | TM-002, TM-005 |
-| `src/plugins/plugin-audit.mjs` | Existing audit pattern can be extended to core provider capabilities | TM-007 |
 
 ## Implemented central architecture
 
@@ -363,8 +363,8 @@ rendering and state safety are inherited automatically.
   and developer-configured local parsers.
 - Incorporated the confirmed local-only, single-user UI and anonymous-provider
   constraints.
-- Kept authenticated plugins, hosted/multi-user deployment, scraping legality,
-  and OS/browser zero-days outside the current ranking.
+- Kept hosted/multi-user deployment, scraping legality, and OS/browser
+  zero-days outside the current ranking.
 - The Node HTTP broker pins its socket to the validated DNS answer. Playwright
   validates every requested URL and DNS answer, but Chromium performs the final
   connection itself; DNS rebinding between those two steps remains a browser

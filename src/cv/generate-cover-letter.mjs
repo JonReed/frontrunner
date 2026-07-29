@@ -50,6 +50,17 @@ function asUrl(value) {
   return /^https?:\/\//i.test(value) ? value : `https://${value}`;
 }
 
+export function safeFootnoteUrl(value) {
+  if (typeof value !== "string" || value.length > 2_000) return "";
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== "https:" || parsed.username || parsed.password) return "";
+    return parsed.href;
+  } catch {
+    return "";
+  }
+}
+
 function buildContactLine(candidate) {
   const parts = [];
   if (candidate.location) parts.push(escapeHtml(candidate.location));
@@ -95,8 +106,9 @@ function buildFootnotesBlock(footnotes) {
     if (typeof fn === "object" && fn !== null) {
       const marker = escapeHtml(fn.marker || "");
       const text = escapeHtml(fn.text || "");
-      const url = fn.url
-        ? ` <a href="${escapeHtml(fn.url)}">${escapeHtml(fn.url)}</a>`
+      const safeUrl = safeFootnoteUrl(fn.url);
+      const url = safeUrl
+        ? ` <a href="${escapeHtml(safeUrl)}">${escapeHtml(safeUrl)}</a>`
         : "";
       return `    <p>${marker} ${text}${url}</p>`;
     }

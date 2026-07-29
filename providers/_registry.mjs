@@ -1,6 +1,6 @@
 // Provider registry — loading and routing shared by the scanner and the portal
 // health check. Files prefixed with _ are never loaded as providers by src/scan/scan.mjs,
-// so this helper module lives safely alongside the provider plugins.
+// so this helper module lives safely alongside the provider adapters.
 //
 // Extracted from src/scan/scan.mjs (#1451-era inline definitions) so src/scan/verify-portals.mjs
 // can route non-ATS boards through the SAME provider layer the scanner uses,
@@ -12,7 +12,7 @@ import path from 'path';
 import { pathToFileURL } from 'url';
 
 /**
- * Load every provider plugin in a directory into an id→provider Map.
+ * Load every provider adapter in a directory into an id→provider Map.
  *
  * Alphabetical order so detect() priority is deterministic across machines.
  * Malformed modules (wrong shape, duplicate id, import error) are logged and

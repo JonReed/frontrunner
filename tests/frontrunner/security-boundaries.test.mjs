@@ -183,10 +183,16 @@ test('core providers cannot bypass the central HTTP broker or spawn commands', (
 });
 
 test('CV tailoring excludes identity and local paths from model output', () => {
-  const source = readFileSync(join(ROOT, 'src', 'cv', 'claude-tailor.mjs'), 'utf8');
-  assert.match(source, /payload\.candidate\s*=\s*trustedCandidate\(profile\)/);
-  assert.doesNotMatch(source, /required:\s*\[[^\]]*'candidate'/);
-  assert.doesNotMatch(source, /payload\.experience\?\.\[0\]\?\.company/);
+  const claude = readFileSync(join(ROOT, 'src', 'cv', 'claude-tailor.mjs'), 'utf8');
+  const openai = readFileSync(join(ROOT, 'src', 'evaluate', 'openai-tailor.mjs'), 'utf8');
+  const contract = readFileSync(join(ROOT, 'src', 'cv', 'tailoring-contract.mjs'), 'utf8');
+  assert.match(claude, /payload\.candidate\s*=\s*trustedCandidate\(profile\)/);
+  assert.match(openai, /payload\.candidate\s*=\s*trustedCandidate\(profile\)/);
+  assert.doesNotMatch(contract, /required:\s*\[[^\]]*['"]candidate['"]/);
+  assert.doesNotMatch(`${claude}\n${openai}`, /payload\.experience\?\.\[0\]\?\.company/);
+  assert.doesNotMatch(openai, /Output ONLY raw HTML|tailoredHtml/);
+  assert.match(claude, /replaceFileAtomic\(html,\s*readFileSync\(renderedHtml/);
+  assert.match(openai, /replaceFileAtomic\(outputPath,\s*readFileSync\(renderedFile/);
 });
 
 test('UI worker state uses atomic replacement rather than truncating live state', () => {

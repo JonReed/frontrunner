@@ -7,9 +7,6 @@
 /.github/ @JonReed
 /providers/_http.mjs @JonReed
 /src/security/ @JonReed
-/src/plugins/ @JonReed
-/plugins/ @JonReed
-/plugins-registry/ @JonReed
 /update-system.mjs @JonReed
 /modes/ @JonReed
 /ui/ @JonReed

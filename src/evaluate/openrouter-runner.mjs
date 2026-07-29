@@ -36,6 +36,14 @@ import {
   renderEvaluationReport,
 } from './scoring-contract.mjs';
 import { frameUntrustedJobText } from '../security/job-document.mjs';
+import {
+  fetchOpenRouterModels,
+  requestOpenRouterCompletion,
+} from './openrouter-client.mjs';
+import {
+  addModelsToBlacklist,
+  readModelBlacklist,
+} from './model-blacklist.mjs';
 import { saveEvaluation } from './save-evaluation.mjs';
 
 import { ROOT as __dirname } from '#paths';
@@ -58,8 +66,6 @@ if (fs.existsSync(envPath)) {
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-const OPENROUTER_API_URL    = 'https://openrouter.ai/api/v1/chat/completions';
-const OPENROUTER_MODELS_URL = 'https://openrouter.ai/api/v1/models';
 const MAX_TOKENS            = 8192;
 const MODEL_TIMEOUT_MS      = 15_000; // abort a single model call after 15 s
 
@@ -85,16 +91,11 @@ let modelIndex = 0;      // current position in rotation
 // Persistent blacklist file — survives process restarts
 const BLACKLIST_FILE = path.join(__dirname, 'data', 'model-blacklist.json');
 function loadPersistedBlacklist() {
-  try {
-    const data = JSON.parse(fs.readFileSync(BLACKLIST_FILE, 'utf-8'));
-    return Array.isArray(data) ? data : [];
-  } catch { return []; }
+  return [...readModelBlacklist(BLACKLIST_FILE)];
 }
-function saveBlacklist(set) {
-  try {
-    fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
-    fs.writeFileSync(BLACKLIST_FILE, JSON.stringify([...set], null, 2), 'utf-8');
-  } catch {}
+async function saveBlacklist(set) {
+  const persisted = await addModelsToBlacklist(BLACKLIST_FILE, set);
+  for (const model of persisted) blacklistedModels.add(model);
 }
 
 // Models that failed permanently (403, timeout, persistent 429) — never retry
@@ -112,19 +113,10 @@ async function loadFreeModels() {
   if (freeModels !== null) return freeModels;
 
   try {
-    const resp = await fetch(OPENROUTER_MODELS_URL, {
-      headers: { 'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}` }
+    const list = await fetchOpenRouterModels({
+      apiKey: process.env.OPENROUTER_API_KEY,
+      timeoutMs: MODEL_TIMEOUT_MS,
     });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const data = await resp.json();
-
-    // A model is free when its prompt and completion pricing are both "0"
-    const list = (data.data ?? [])
-      .filter(m => {
-        const p = m.pricing ?? {};
-        return String(p.prompt) === '0' && String(p.completion) === '0';
-      })
-      .map(m => m.id);
 
     if (list.length === 0) throw new Error('No free models found in API response');
 
@@ -168,12 +160,6 @@ async function cmdModels() {
 function readFile(relPath) {
   try { return fs.readFileSync(path.join(__dirname, relPath), 'utf-8'); }
   catch { return null; }
-}
-
-function writeFile(relPath, content) {
-  const full = path.join(__dirname, relPath);
-  fs.mkdirSync(path.dirname(full), { recursive: true });
-  fs.writeFileSync(full, content, 'utf-8');
 }
 
 function fileExists(relPath) {
@@ -227,45 +213,16 @@ async function callOpenRouter(systemPrompt, userMessage) {
   if (pinnedModel) {
     activeModel = pinnedModel;
     process.stdout.write(`[model] ${pinnedModel} (pinned) ... `);
-    const body = JSON.stringify({
+    const result = await requestOpenRouterCompletion({
+      apiKey: key,
       model: pinnedModel,
-      messages: [
-        buildCachedSystemMessage(systemPrompt),
-        { role: 'user', content: userMessage },
-      ],
-      max_tokens: MAX_TOKENS,
+      systemMessage: buildCachedSystemMessage(systemPrompt),
+      userMessage,
+      maxTokens: MAX_TOKENS,
+      timeoutMs: MODEL_TIMEOUT_MS,
     });
-    const ctrl = new AbortController();
-    const timerId = setTimeout(() => ctrl.abort(), MODEL_TIMEOUT_MS);
-    try {
-      const resp = await fetch(OPENROUTER_API_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${key}`,
-          'Content-Type':  'application/json',
-          'HTTP-Referer':  'https://github.com/santifer/career-ops',
-          'X-Title':       'career-ops',
-        },
-        body,
-        signal: ctrl.signal,
-      });
-      if (!resp.ok) {
-        const t = await resp.text();
-        throw new Error(`HTTP ${resp.status}: ${t.slice(0, 120)}`);
-      }
-      const data = await resp.json();
-      if (data.error) throw new Error(data.error.message);
-      const content = data.choices?.[0]?.message?.content ?? '';
-      if (!content) throw new Error('Empty response');
-      console.log('OK');
-      const usage = normalizeOpenAIUsage(data.usage);
-      return { content, usage };
-    } catch (e) {
-      if (e.name === 'AbortError') throw new Error(`Pinned model timed out after ${MODEL_TIMEOUT_MS / 1000}s`);
-      throw e;
-    } finally {
-      clearTimeout(timerId);
-    }
+    console.log('OK');
+    return { content: result.content, usage: normalizeOpenAIUsage(result.usage) };
   }
 
   const models = await loadFreeModels();
@@ -286,68 +243,35 @@ async function callOpenRouter(systemPrompt, userMessage) {
     process.stdout.write(`[model] ${model} ... `);
 
     try {
-      const body = JSON.stringify({
+      const data = await requestOpenRouterCompletion({
+        apiKey: key,
         model,
-        messages: [
-          buildCachedSystemMessage(systemPrompt),
-          { role: 'user', content: userMessage },
-        ],
-        max_tokens: MAX_TOKENS,
+        systemMessage: buildCachedSystemMessage(systemPrompt),
+        userMessage,
+        maxTokens: MAX_TOKENS,
+        timeoutMs: MODEL_TIMEOUT_MS,
       });
-
-      const controller = new AbortController();
-      const timerId = setTimeout(() => controller.abort(), MODEL_TIMEOUT_MS);
-      let data;
-      try {
-        const resp = await fetch(OPENROUTER_API_URL, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${key}`,
-            'Content-Type':  'application/json',
-            'HTTP-Referer':  'https://github.com/santifer/career-ops',
-            'X-Title':       'career-ops',
-          },
-          body,
-          signal: controller.signal,
-        });
-        if (!resp.ok) {
-          const t = await resp.text();
-          throw new Error(`HTTP ${resp.status}: ${t.slice(0, 120)}`);
-        }
-        data = await resp.json();
-      } catch (e) {
-        if (e.name === 'AbortError') throw new Error(`Timeout after ${MODEL_TIMEOUT_MS / 1000}s`);
-        throw e;
-      } finally {
-        clearTimeout(timerId);
-      }
-      if (data.error) throw new Error(data.error.message);
-
-      const content = data.choices?.[0]?.message?.content ?? '';
-      if (!content) throw new Error('Empty response');
-
-      const usage = normalizeOpenAIUsage(data.usage);
 
       modelIndex = (modelIndex + attempt + 1) % active.length;
       console.log('OK');
-      return { content, usage };
+      return { content: data.content, usage: normalizeOpenAIUsage(data.usage) };
 
     } catch (e) {
       lastError = e;
       const msg = e.message.split('\n')[0];
 
-          const is403     = msg.includes('HTTP 403');
+      const is403 = msg.includes('HTTP 403');
       const isTimeout = msg.startsWith('Timeout');
       const is429     = msg.includes('HTTP 429') || msg.includes('rate-li') || msg.includes('rate limit') || msg.includes('temporarily rate');
       if (is403 || isTimeout) {
         blacklistedModels.add(model);
-        saveBlacklist(blacklistedModels);
+        await saveBlacklist(blacklistedModels);
         console.log(`SKIP (blacklisted: ${msg})`);
       } else if (is429) {
         rateLimitCounts[model] = (rateLimitCounts[model] ?? 0) + 1;
         if (rateLimitCounts[model] >= 3) {
           blacklistedModels.add(model);
-          saveBlacklist(blacklistedModels);
+          await saveBlacklist(blacklistedModels);
           console.log(`SKIP (auto-blacklisted: persistent 429)`);
         } else {
           console.log(`FAILED (HTTP 429 [${rateLimitCounts[model]}/3])`);
@@ -409,12 +333,8 @@ async function fetchJobPage(url) {
 }
 
 // ---------------------------------------------------------------------------
-// portals.yml parser — reads the canonical schema with js-yaml (same library and
-// field names as src/scan/scan.mjs: `title_filter.positive/negative` + `tracked_companies`),
-// so it never drifts from the main scanner. The runner's no-CLI scan path covers
-// companies that expose a direct JSON `api:`; careers_url-only / Playwright /
-// search-query companies are handled by the full /career-ops scan pipeline.
-// `rawOverride` lets tests feed YAML text directly (see test-all.mjs drift guard).
+// Compatibility-only portals parser retained for older callers. The runner's
+// scan command always executes src/scan/scan.mjs and never publishes state.
 // ---------------------------------------------------------------------------
 function normKeywords(v) {
   if (!Array.isArray(v)) return [];
@@ -441,43 +361,6 @@ export function parsePortals(rawOverride) {
     .map(c => ({ name: String(c.name ?? c.company ?? 'Unknown'), api: String(c.api).trim() }));
 
   return { companies, titleMatches };
-}
-
-function addToPipeline(entries) {
-  const history = readFile('data/scan-history.tsv') ?? 'url\tfirst_seen\tportal\ttitle\tcompany\tstatus\tlocation\n';
-  const seenUrls = new Set(history.split('\n').slice(1).map(l => l.split('\t')[0]).filter(Boolean));
-
-  const existingPipeline = readFile('data/pipeline.md') ?? '# Pipeline\n\n## Pending\n';
-  const existingApps     = readFile('data/applications.md') ?? '';
-  // extract URLs already tracked in applications.md (mirrors src/scan/scan.mjs dedup logic)
-  const appliedUrls = new Set(
-    existingApps.split('\n')
-      .map(l => l.match(/https?:\/\/[^\s|)]+/))
-      .filter(Boolean).map(m => m[0])
-  );
-
-  const newEntries = entries.filter(e => {
-    if (seenUrls.has(e.url)) return false;
-    if (appliedUrls.has(e.url)) return false;
-    // skip if already queued in pipeline
-    if (existingPipeline.includes(e.url)) return false;
-    return true;
-  });
-
-  if (newEntries.length === 0) return 0;
-
-  const today = new Date().toISOString().split('T')[0];
-  let pipeline = existingPipeline;
-  let hist = history;
-
-  for (const e of newEntries) {
-    pipeline += `- [ ] ${e.url} | ${e.company} | ${e.role}\n`;
-    hist     += `${e.url}\t${today}\tscan\t${e.role}\t${e.company}\tadded\t${e.location ?? ''}\n`;
-  }
-
-  writeFile('data/pipeline.md', pipeline);
-  writeFile('data/scan-history.tsv', hist);
-  return newEntries.length;
 }
 
 // ---------------------------------------------------------------------------

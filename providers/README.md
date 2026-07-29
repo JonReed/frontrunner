@@ -61,7 +61,6 @@ that normalization. Every core scanner and probe invokes
 
 A non-array result fails the source loudly. Individual malformed records are
 dropped so one bad posting cannot discard every valid posting on the board.
-These rules also apply to enabled provider plugins.
 
 ### Context (`ctx`)
 
@@ -114,6 +113,5 @@ pattern). A shared regression test enforces this across providers:
    [docs/SUPPORTED_JOB_BOARDS.md](../docs/SUPPORTED_JOB_BOARDS.md) in the
    same PR.
 
-Core providers must be zero-auth against public endpoints; auth-gated or
-login-required sources belong in the plugin layer instead (see
-[ARCHITECTURE.md](../ARCHITECTURE.md) and `CONTRIBUTING.md`).
+Core providers must be zero-auth against public endpoints. Auth-gated or
+login-required sources are not supported by the core scanner.
