@@ -7,7 +7,7 @@
   },
   "private": true,
   "engines": {
-    "node": ">=18"
+    "node": ">=22.5.0"
   },
   "scripts": {
     "doctor": "node doctor.mjs",

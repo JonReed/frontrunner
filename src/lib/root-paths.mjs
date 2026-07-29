@@ -72,6 +72,8 @@ function stalePatterns(base) {
     new RegExp(`\\$\\{?[A-Z_]+\\}?/${b}`, 'g'),
     // node scan.mjs   (help text, docs, npm scripts)
     new RegExp(`node ${b}(?![\\w/.-])`, 'g'),
+    // run(NODE, ['scan.mjs']) / execFileSync(process.execPath, ["scan.mjs"])
+    new RegExp(`(?:run|execFile(?:Sync)?|spawn(?:Sync)?)\\(\\s*(?:NODE|process\\.execPath)\\s*,\\s*\\[\\s*['"]${b}['"]`, 'g'),
   ];
 }
 

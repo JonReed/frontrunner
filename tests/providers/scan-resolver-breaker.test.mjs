@@ -8,7 +8,7 @@ console.log('\nScan — resolver circuit breaker');
 
 try {
   const { parallelEach } = await import(
-    pathToFileURL(join(ROOT, 'scan-ats-full.mjs')).href
+    pathToFileURL(join(ROOT, 'src/scan/scan-ats-full.mjs')).href
   );
 
   // --- parallelEach stops pulling work once shouldStop flips ---

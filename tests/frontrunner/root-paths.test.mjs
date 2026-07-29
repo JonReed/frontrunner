@@ -45,20 +45,28 @@ test('destructive fixer repairs tracked invocations, leaves prose alone, and is 
       '',
     ].join('\n'),
   );
-  put('scripts/launch.mjs', "const command = join(ROOT, 'scan.mjs');\n");
+  put(
+    'scripts/launch.mjs',
+    [
+      "const command = join(ROOT, 'scan.mjs');",
+      "const result = run(NODE, ['scan.mjs']);",
+      '',
+    ].join('\n'),
+  );
   execFileSync('git', ['init', '-q'], { cwd: root });
   execFileSync('git', ['add', '.'], { cwd: root });
 
   const before = findStaleRootPaths(root);
   assert.deepEqual(
     before.map(({ file, line }) => `${file}:${line}`).sort(),
-    ['docs/usage.md:1', 'scripts/launch.mjs:1'],
+    ['docs/usage.md:1', 'scripts/launch.mjs:1', 'scripts/launch.mjs:2'],
   );
 
   assert.equal(fixStaleRootPaths(root), 2);
   assert.match(readFileSync(join(root, 'docs/usage.md'), 'utf8'), /node src\/scan\/scan\.mjs/);
   assert.match(readFileSync(join(root, 'docs/usage.md'), 'utf8'), /file scan\.mjs is/);
   assert.match(readFileSync(join(root, 'scripts/launch.mjs'), 'utf8'), /join\(ROOT, 'src\/scan\/scan\.mjs'\)/);
+  assert.match(readFileSync(join(root, 'scripts/launch.mjs'), 'utf8'), /run\(NODE, \['src\/scan\/scan\.mjs'\]\)/);
   assert.deepEqual(findStaleRootPaths(root), []);
   assert.equal(fixStaleRootPaths(root), 0, 'second repair changed already-correct files');
 });

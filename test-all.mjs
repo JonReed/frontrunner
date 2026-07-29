@@ -6573,7 +6573,7 @@ try {
     writeFileSync(join(additionsDir, '004-acme.tsv'),
       '4\t2026-01-09\tAcme\tSr Platform Engineer, Observability (Remote)\tEvaluated\t4.2/5\t❌\t[4](reports/004-acme-2026-01-09.md)\trepost re-eval\n');
 
-    const clobberResult = run(NODE, ['merge-tracker.mjs'], { env: { ...process.env, CAREER_OPS_TRACKER: tracker, CAREER_OPS_ADDITIONS: additionsDir } });
+    const clobberResult = run(NODE, ['src/tracker/merge-tracker.mjs'], { env: { ...process.env, CAREER_OPS_TRACKER: tracker, CAREER_OPS_ADDITIONS: additionsDir } });
     if (clobberResult === null) {
       fail('merge-tracker.mjs crashed during sibling-req clobber guard test');
     } else {
@@ -6626,7 +6626,7 @@ try {
 // tier-2 redesign, deliberately out of scope for this #2165 bugfix.
 console.log('\n🧪 Testing merge-tracker tier-2 (entry num) title preservation...');
 try {
-  const { roleFuzzyMatch } = await import(pathToFileURL(join(ROOT, 'role-matcher.mjs')).href);
+  const { roleFuzzyMatch } = await import(pathToFileURL(join(ROOT, 'src/tracker/role-matcher.mjs')).href);
   const tier2Tmp = mkdtempSync(join(tmpdir(), 'career-ops-tier2-'));
   try {
     mkdirSync(join(tier2Tmp, 'data'));
@@ -6658,7 +6658,7 @@ try {
       fail('tier-2 fixture roles now fuzzy-match — this test no longer isolates tier-2');
     }
 
-    const tier2Result = run(NODE, ['merge-tracker.mjs'], { env: { ...process.env, CAREER_OPS_TRACKER: tracker, CAREER_OPS_ADDITIONS: additionsDir } });
+    const tier2Result = run(NODE, ['src/tracker/merge-tracker.mjs'], { env: { ...process.env, CAREER_OPS_TRACKER: tracker, CAREER_OPS_ADDITIONS: additionsDir } });
     if (tier2Result === null) {
       fail('merge-tracker.mjs crashed during tier-2 title preservation test');
     } else {
@@ -7197,7 +7197,7 @@ try {
       '1\t2026-01-06\tEmpresa Ejemplo\tData Lead\tEvaluated\t4.1/5\t❌\t' +
       '[1](reports/001-empresa-ejemplo-2026-01-05.md)\tre-evaluated after JD update\n');
 
-    const hOut = run(NODE, ['merge-tracker.mjs'], {
+    const hOut = run(NODE, ['src/tracker/merge-tracker.mjs'], {
       env: { ...process.env, CAREER_OPS_TRACKER: hTracker, CAREER_OPS_ADDITIONS: hAdditions },
     });
 
@@ -7242,7 +7242,7 @@ try {
     let badOut = '';
     let badCode = 0;
     try {
-      badOut = execFileSync(NODE, ['verify-pipeline.mjs'], {
+      badOut = execFileSync(NODE, ['src/tracker/verify-pipeline.mjs'], {
         cwd: ROOT, encoding: 'utf-8', timeout: 30000,
         env: { ...process.env, CAREER_OPS_TRACKER: hBadRow, CAREER_OPS_REPORTS: hReports },
       });
@@ -7267,7 +7267,7 @@ try {
     let hdrOut = '';
     let hdrCode = 0;
     try {
-      hdrOut = execFileSync(NODE, ['verify-pipeline.mjs'], {
+      hdrOut = execFileSync(NODE, ['src/tracker/verify-pipeline.mjs'], {
         cwd: ROOT, encoding: 'utf-8', timeout: 30000,
         env: { ...process.env, CAREER_OPS_TRACKER: hHeaderish, CAREER_OPS_REPORTS: hReports },
       });
@@ -7294,7 +7294,7 @@ try {
     // to LEGACY_COLMAP (#2274). On a plain 9-column table the fallback happens
     // to line up and hides the bug; with a Location column inserted, the Score
     // cell is read from Location instead — an ES tracker scored "Remote".
-    const trackerParse = await import(pathToFileURL(join(ROOT, 'tracker-parse.mjs')).href);
+    const trackerParse = await import(pathToFileURL(join(ROOT, 'src/tracker/tracker-parse.mjs')).href);
     const esHeader = '| # | Fecha | Empresa | Puesto | Location | Score | Status | PDF | Report | Notes |';
     const esMap = trackerParse.detectColumns([esHeader]);
     if (esMap && esMap.score === 6 && esMap.company === 3 && esMap.role === 4 && esMap.location === 5) {

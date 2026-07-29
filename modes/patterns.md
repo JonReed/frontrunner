@@ -112,7 +112,7 @@ Then present the cards, sorted silent-first (the script already orders them this
 
 ### Funnel Calibration lens (optional)
 
-If the tracker has Applied-or-beyond rows, run `node funnel-velocity.mjs --summary` as an additional lens: the candidate's funnel rates vs candidate-side market benchmark ranges, in-flight applications past the typical first-response window, and (once `data/status-log.tsv` has accrued transitions) median days per stage hop. Zero tokens — never recompute these numbers manually. Presentation rules (these are hard MUSTs, not style suggestions):
+If the tracker has Applied-or-beyond rows, run `node src/analysis/funnel-velocity.mjs --summary` as an additional lens: the candidate's funnel rates vs candidate-side market benchmark ranges, in-flight applications past the typical first-response window, and (once `data/status-log.tsv` has accrued transitions) median days per stage hop. Zero tokens — never recompute these numbers manually. Presentation rules (these are hard MUSTs, not style suggestions):
 
 - **Above-range rates**: encouragement is wanted — this lens exists to counter silence-anxiety — but MUST keep the script's selection-bias note (targeted applications are expected to beat mass-platform averages). Confirmed filter quality, not market ease.
 - **Below-range rates**: calibration plus exactly one concrete action (follow-up compliance via followup mode, or score-threshold review via patterns Step 2). Never verdicts about the candidate.
