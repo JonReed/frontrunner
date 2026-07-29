@@ -13,7 +13,9 @@ import {
 
 const SCANNER_URL = new URL('../../src/scan/scan-ats-full.mjs', import.meta.url).href;
 
-test('SIGTERM writes the latest safe scanner resume point before exiting', async () => {
+test('SIGTERM writes the latest safe scanner resume point before exiting', {
+  skip: process.platform === 'win32' && 'Windows does not deliver POSIX SIGTERM handlers',
+}, async () => {
   const dir = mkdtempSync(join(tmpdir(), 'frontrunner-scan-interrupt-'));
   const checkpointPath = join(dir, 'checkpoint.json');
   try {

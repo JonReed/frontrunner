@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-const ROOT = new URL('../../', import.meta.url).pathname;
+import { ROOT } from '#paths';
+
 const read = (file) => readFileSync(join(ROOT, file), 'utf8');
 
 test('README documents the executable canonical pipeline and generated benchmark', () => {

@@ -11,8 +11,8 @@
   "tokens": {
     "input": {
       "legacy": 277006,
-      "frontrunner": 18533,
-      "reductionPct": 93.3
+      "frontrunner": 18939,
+      "reductionPct": 93.2
     },
     "output": {
       "legacy": 17125,
@@ -29,5 +29,5 @@
     "count": 0,
     "roles": []
   },
-  "wallTimeMs": 2.025
+  "wallTimeMs": 2.146
 }

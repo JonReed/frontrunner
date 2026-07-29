@@ -7550,7 +7550,7 @@ try {
   ]);
   writeFileSync(join(fakeBin, 'claude'), [
     '#!/usr/bin/env bash',
-    'echo "You\\x27ve hit your session limit · resets 12:30pm (Asia/Taipei)"',
+    `printf '%s\\n' "You've hit your session limit · resets 12:30pm (Asia/Taipei)"`,
     'exit 1',
   ].join('\n') + '\n');
   if (process.platform === 'win32') {

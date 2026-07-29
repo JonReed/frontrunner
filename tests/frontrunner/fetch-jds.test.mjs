@@ -13,8 +13,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { ROOT } from '#paths';
-const { parseJobUrl, runFetchJds } = await import(join(ROOT, 'src/scan/fetch-jds.mjs'));
+import { htmlToText, parseJobUrl, runFetchJds } from '../../src/scan/fetch-jds.mjs';
 
 // ---------------------------------------------------------------------------
 // URL parsing — a misparse sends the whole board's roles to the WebFetch
@@ -76,8 +75,6 @@ test('a greenhouse URL without a job id is rejected, not mis-sliced', () => {
 // HTML → text. Greenhouse returns entity-escaped HTML; Ashby and Lever return
 // plain text. Both paths must land on readable output.
 // ---------------------------------------------------------------------------
-
-const { htmlToText } = await import(join(ROOT, 'src/scan/fetch-jds.mjs'));
 
 test('entity-escaped HTML becomes readable text', () => {
   const src = '&lt;p&gt;We want a &lt;strong&gt;Director&lt;/strong&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Own delivery&lt;/li&gt;&lt;/ul&gt;';

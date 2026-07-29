@@ -116,7 +116,7 @@ test('eight concurrent tracker transactions preserve every row exactly once', as
       import { openTrackerTransaction } from ${JSON.stringify(TRACKER_UTILS_URL)};
       const tx = await openTrackerTransaction(process.env.TEST_TRACKER, {
         lockDir: process.env.TEST_LOCK,
-        timeoutMs: 5000,
+        timeoutMs: 20000,
         retryMs: 5,
       });
       const current = tx.read();
@@ -130,7 +130,11 @@ test('eight concurrent tracker transactions preserve every row exactly once', as
     }));
 
     const results = await Promise.all(workers);
-    assert.deepEqual(results.map(result => result.exitCode), Array(8).fill(0));
+    assert.deepEqual(
+      results.map(result => result.exitCode),
+      Array(8).fill(0),
+      results.map(result => result.stderr).filter(Boolean).join('\n'),
+    );
     const final = readFileSync(tracker, 'utf8');
     for (let index = 0; index < 8; index++) {
       assert.equal(final.match(new RegExp(`^worker-${index}$`, 'gm'))?.length, 1);

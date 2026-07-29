@@ -23,10 +23,10 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
 
-const HERE = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(HERE, '..', '..');
+import { ROOT } from '#paths';
+import { classify } from '../../src/scan/prefilter.mjs';
 
-const { classify } = await import(join(ROOT, 'src/scan/prefilter.mjs'));
+const HERE = dirname(fileURLToPath(import.meta.url));
 
 /** Compile a rule set the way prefilter.mjs does, from an explicit config. */
 function rulesFrom(cfg) {

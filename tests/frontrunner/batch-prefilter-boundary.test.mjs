@@ -14,9 +14,9 @@ import { spawnSync } from 'node:child_process';
 import { delimiter, join } from 'node:path';
 import { tmpdir } from 'node:os';
 
-const ROOT = new URL('../../', import.meta.url).pathname;
+import { ROOT } from '#paths';
 
-const { runPrefilter } = await import(new URL('../../src/scan/prefilter.mjs', import.meta.url));
+import { runPrefilter } from '../../src/scan/prefilter.mjs';
 
 test('destructive batch boundary: missing prefilter fails closed before launching a worker', (t) => {
   const dir = mkdtempSync(join(tmpdir(), 'frontrunner-batch-gate-'));
