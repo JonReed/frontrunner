@@ -116,7 +116,7 @@ rejects and tune the rules.
 
 `batch/batch-runner.sh` is in the updater's SYSTEM_PATHS, so an update reverts the
 JD pre-fetch wiring and the batch silently goes back to fetching HTML pages.
-Re-apply `patches/jd-prefetch.patch.md`, then `bash -n batch/batch-runner.sh`.
+Check `batch/batch-runner.sh` still writes the JD file it passes as `{{JD_FILE}}`, then `bash -n batch/batch-runner.sh`.
 
 `src/scan/fetch-jds.mjs` and `src/scan/prefilter.mjs` are registered system files.
 After an upstream merge, run the normal Frontrunner path-repair and full-test procedure;

@@ -149,10 +149,10 @@ function updateReadmeBenchmark(result, { check = false } = {}) {
 
 function main() {
   const args = process.argv.slice(2);
-  const corpusPath = join(ROOT, 'benchmarks', 'pipeline-corpus.json');
-  const calibrationCorpusPath = join(ROOT, 'benchmarks', 'prefilter-scored-corpus.json');
-  const calibrationConfigPath = join(ROOT, 'benchmarks', 'prefilter-leadership.yml');
-  const artifactPath = join(ROOT, 'benchmarks', 'pipeline-benchmark.json');
+  const corpusPath = join(ROOT, 'src', 'benchmark', 'corpora', 'pipeline-corpus.json');
+  const calibrationCorpusPath = join(ROOT, 'src', 'benchmark', 'corpora', 'prefilter-scored-corpus.json');
+  const calibrationConfigPath = join(ROOT, 'src', 'benchmark', 'corpora', 'prefilter-leadership.yml');
+  const artifactPath = join(ROOT, 'src', 'benchmark', 'corpora', 'pipeline-benchmark.json');
   const corpus = JSON.parse(readFileSync(corpusPath, 'utf8'));
   const fixtureCv = '# CV\nDirector of Engineering. Led platform teams.';
   const fixtureProfile = 'target_roles:\n  - Engineering leadership\n';
@@ -171,7 +171,7 @@ function main() {
   const calibration = runPrefilterCalibration({
     corpus: JSON.parse(readFileSync(calibrationCorpusPath, 'utf8')),
     rules: readPrefilterConfig(calibrationConfigPath),
-    source: 'benchmarks/prefilter-scored-corpus.json',
+    source: 'src/benchmark/corpora/prefilter-scored-corpus.json',
   });
   const result = runPipelineBenchmark({
     corpus,

@@ -27,7 +27,7 @@ import { randomUUID } from 'crypto';
 // relative import here crashes that re-exec with ERR_MODULE_NOT_FOUND on the
 // old→new jump, before the fuller checkout that would materialize the imported
 // module ever runs (#1706). Local modules (e.g. the skill-entrypoints helper
-// under scaffolder/) are instead pulled in lazily at their point of use, by
+// under src/lib/) are instead pulled in lazily at their point of use, by
 // which time the full update stage has already checked them out. The
 // updater-migration and test-all suites enforce this invariant.
 
@@ -185,7 +185,6 @@ const SYSTEM_PATHS = [
   'src/scan/jd-cache-store.mjs',
   'src/scan/prefilter.mjs',
   'src/scan/prefilter-config.mjs',
-  'patches/jd-prefetch.patch.md',
   'src/tracker/sync-pdf-flags.mjs',
   'src/tracker/tracker-links.mjs',
   'src/tracker/tracker.mjs',
@@ -246,12 +245,13 @@ const SYSTEM_PATHS = [
   'src/cv/tailoring-contract.mjs',
   'src/lib/file-lock.mjs',
   'src/lib/locked-file.mjs',
+  'src/lib/skill-entrypoints.mjs',
   'src/security/',
   'src/application/',
   'src/pipeline/run.mjs',
   'src/benchmark/pipeline-benchmark.mjs',
   'src/benchmark/prefilter-calibration.mjs',
-  'benchmarks/',
+  'src/benchmark/corpora/',
   'src/scan/browser-extract.mjs',
   'src/analysis/analyze-patterns.mjs',
   'src/analysis/upskill.mjs',
@@ -317,14 +317,8 @@ const SYSTEM_PATHS = [
   '.editorconfig',
   '.agents/',
   '.claude/skills/',
-  '.cursor/skills/',
-  '.opencode/skills/',
-  '.opencode/commands/',
   '.claude-plugin/',
-  '.qwen/',
   '.antigravitycli/skills/',
-  '.grok/skills/',
-  '.kimi/skills/',
   'docs/',
   'writing-samples/README.md',
   'cv-versions/README.md',
@@ -351,16 +345,11 @@ const SYSTEM_PATHS = [
   'tests/profile-photo.test.mjs',
   'templates/cv-template.zh-minimal.html',
   'tests/zh-minimal-template.test.mjs',
-  'scaffolder/',
 ];
 
 const BOOTSTRAP_PATHS = [
   '.agents/',
-  '.cursor/skills/',
-  '.opencode/skills/',
   '.antigravitycli/skills/',
-  '.grok/skills/',
-  '.kimi/skills/',
   'providers/',
   'src/scan/liveness-browser.mjs',
   'src/tracker/tracker-links.mjs',
@@ -368,7 +357,6 @@ const BOOTSTRAP_PATHS = [
   'src/tracker/tracker-utils.mjs',
   'src/tracker/tracker-parse.mjs',
   'src/tracker/tracker-aliases.json',
-  'scaffolder/',
   'src/tracker/reserve-report-num.mjs',
   'tests/updater-migration-tests.mjs',
   'src/scan/validate-portals.mjs',
@@ -605,7 +593,7 @@ function mergePathLists(...lists) {
 // loads without a missing-module crash. Today this is the entry plus its only
 // local import; resolveReexecCheckout derives the real set from the fetched
 // source, so this is only a defensive fallback if parsing ever misses one.
-const REEXEC_FALLBACK_FILES = ['update-system.mjs', 'scaffolder/bin/skill-entrypoints.mjs'];
+const REEXEC_FALLBACK_FILES = ['update-system.mjs', 'src/lib/skill-entrypoints.mjs'];
 
 // Extracts static relative import/export specifiers ('./x.mjs', '../y.mjs')
 // from ESM source. Bare ('node:fs') and package ('js-yaml') specifiers are
@@ -1215,9 +1203,9 @@ async function apply() {
     }
 
     // Lazy import: keep update-system.mjs self-loading (see the top-of-file
-    // note). scaffolder/ was just checked out by the update stage above, so the
+    // note). src/lib/ was just checked out by the update stage above, so the
     // module resolves here even on a pre-#1245 old→new re-exec.
-    const { ensureSkillEntrypoints } = await import('./scaffolder/bin/skill-entrypoints.mjs');
+    const { ensureSkillEntrypoints } = await import('./src/lib/skill-entrypoints.mjs');
     const materializedSkillEntrypoints = ensureSkillEntrypoints(ROOT);
     if (materializedSkillEntrypoints.length > 0) {
       for (const path of materializedSkillEntrypoints) {

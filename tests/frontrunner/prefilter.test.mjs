@@ -32,7 +32,7 @@ function rulesFrom(cfg) {
 }
 
 const exampleCfg = yaml.load(readFileSync(join(ROOT, 'config/prefilter.example.yml'), 'utf8'));
-const leadershipCfg = yaml.load(readFileSync(join(ROOT, 'benchmarks/prefilter-leadership.yml'), 'utf8'));
+const leadershipCfg = yaml.load(readFileSync(join(ROOT, 'src/benchmark/corpora/prefilter-leadership.yml'), 'utf8'));
 
 const leadership = rulesFrom(leadershipCfg);
 const shipped = rulesFrom(exampleCfg);
@@ -42,7 +42,7 @@ const noProfile = { minComp: 0, currency: 'GBP' };
 // 1. PROPERTY — never reject what the model rated highly
 // ---------------------------------------------------------------------------
 
-const corpus = JSON.parse(readFileSync(join(ROOT, 'benchmarks/prefilter-scored-corpus.json'), 'utf8'));
+const corpus = JSON.parse(readFileSync(join(ROOT, 'src/benchmark/corpora/prefilter-scored-corpus.json'), 'utf8'));
 
 test('property: no role scoring >= 4.0 is ever rejected', () => {
   const wrongly = corpus

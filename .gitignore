@@ -100,8 +100,6 @@ data/model-blacklist.json
 # CLI-specific local config
 .claude/settings.local.json
 .claude/memory/
-.opencode/settings.local.json
-.opencode/memory/
 career-dashboard
 career-dashboard.exe
 package-lock.json

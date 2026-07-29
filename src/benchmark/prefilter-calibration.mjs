@@ -126,7 +126,7 @@ Usage:
 
 Options:
   --config <file>    Rules to calibrate. Default: active user config, then shipped example
-  --corpus <file>    Scored role corpus. Default: benchmarks/prefilter-scored-corpus.json
+  --corpus <file>    Scored role corpus. Default: src/benchmark/corpora/prefilter-scored-corpus.json
   --threshold <n>    False-reject threshold from 0 to 5. Default: 3
   --json             Print machine-readable output
   --check            Exit non-zero when any role at or above the threshold is rejected
@@ -141,7 +141,7 @@ Options:
   const corpusPath = resolve(argValue(
     args,
     '--corpus',
-    join(ROOT, 'benchmarks', 'prefilter-scored-corpus.json'),
+    join(ROOT, 'src', 'benchmark', 'corpora', 'prefilter-scored-corpus.json'),
   ));
   if (!existsSync(corpusPath)) throw new Error(`calibration corpus does not exist: ${corpusPath}`);
   const threshold = Number(argValue(args, '--threshold', '3'));

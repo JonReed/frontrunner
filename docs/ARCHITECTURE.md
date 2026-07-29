@@ -120,6 +120,10 @@ Scanner descriptions, bulk ATS fetching and browser fallback all re-read and
 merge `jds/index.tsv` under one lock, atomically publish bounded description
 files, and replace the manifest last. Concurrent publishers cannot lose entries
 and an interrupted manifest replacement leaves the prior index readable.
+Completed backend operations use the same boundary for the bounded local
+`data/run-history.ndjson`. The history contains safe operational metadata and
+aggregate counts only—not remote content, prompts, generated output, URLs, logs
+or environment values—and audit failure never changes the backend result.
 
 ### Liveness — never evaluate a dead posting
 `src/scan/check-liveness.mjs` / `liveness-*.mjs` verify a posting is still open (zero-token) before it costs evaluation time.
@@ -131,12 +135,20 @@ Local interfaces request a versioned operation such as `scan.run`,
 application data, maps it to a fixed Node entry point, and owns structured
 events, result envelopes, timeouts, and cancellation. Clients cannot supply
 executables, working directories, arbitrary flags, or shell fragments. A
-persistent job manager adds atomic per-role claims, per-job transactional
-state, bounded crash-safe logs, reload-safe state, durable cancellation
-requests, and crash recovery for the UI. Supervised operations are isolated
-into a process group/tree, so cancellation and timeout terminate model, browser
-and renderer descendants before the job becomes terminal. See
+persistent job manager covers every catalog operation with canonical
+cross-process claims (per tracker role for CVs and per operation for scan or
+pipeline work), per-job transactional state, bounded crash-safe logs,
+operation-specific stale deadlines, reload-safe state, durable cancellation
+requests, and crash recovery. Caller idempotency labels cannot override those
+claims. Supervised operations are isolated into a process group/tree, so
+cancellation and timeout terminate model, browser and renderer descendants
+before the job becomes terminal. See
 [`APPLICATION_SERVICE.md`](APPLICATION_SERVICE.md).
+
+Both direct application requests and persistent jobs publish one terminal run
+record. A supervised pipeline child suppresses its own standalone record so the
+parent job remains the single lifecycle authority; direct CLI pipeline runs
+record themselves.
 
 The canonical pipeline additionally owns a cross-process run lease for its
 entire scan → cache → liveness → prefilter → evaluation transaction. This
@@ -154,7 +166,7 @@ the target updater, then checks out only `SYSTEM_PATHS`.
 `BOOTSTRAP_PATHS` covers very old installs.
 
 ### Multi-CLI entry files
-Each CLI reads its own entry file, all of which point at the canonical `AGENTS.md`: `CLAUDE.md` (full), and thin `@AGENTS.md` redirect wrappers `OPENCODE.md`, `CODEX.md`, `GEMINI.md`, plus the `.agents/skills/` skill entrypoints. This is the [open agent skill standard](https://agentskills.io).
+Each CLI reads its own entry file, all of which point at the canonical `AGENTS.md`: `CLAUDE.md` (full), thin `@AGENTS.md` redirect wrappers `CODEX.md` and `GEMINI.md`, plus the `.agents/skills/` skill entrypoints — canonical, with copies materialized for Claude Code and Antigravity by `src/lib/skill-entrypoints.mjs`. This is the [open agent skill standard](https://agentskills.io).
 
 ### User interfaces
 
@@ -304,9 +316,10 @@ and treats reports and generated HTML as untrusted output.
 
 ## Failure and Concurrency Boundaries
 
-- Persistent application jobs serialize reads, stale recovery, cancellation and
-  terminal transitions per job. Cancellation is a contained durable marker
-  observed by the owning controller, never a request to signal a stored PID.
+- Persistent application jobs serialize canonical deduplication claims, reads,
+  operation-specific stale recovery, cancellation and terminal transitions.
+  Cancellation is a contained durable marker observed by the owning controller,
+  never a request to signal a stored PID.
 - The canonical pipeline holds one owner-verified cross-process lease across
   scan, cache, liveness, prefilter and evaluation. Concurrent CLI/service runs
   fail before shared artifacts or tokens are touched; dead owners recover.

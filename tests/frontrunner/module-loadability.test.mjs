@@ -132,7 +132,6 @@ test('no module outside src/paths.mjs derives the repo root from its own locatio
     if (ALLOWED.has(m)) continue;
     if (!m.includes('/')) continue;             // root-level: own dirname IS the root
     if (m.startsWith('batch/')) continue;       // standalone batch tooling
-    if (m.startsWith('scaffolder/')) continue;  // separate published package
     const src = readFileSync(join(ROOT, m), 'utf8');
     // Match ANY use, not just `const X = ...`. scan.mjs built its providers
     // path inline — path.resolve(path.dirname(fileURLToPath(...)), 'providers')
@@ -148,7 +147,6 @@ test('no module outside src/paths.mjs derives the repo root from its own locatio
 test('no module reaches outside the repo with ../..', () => {
   const offenders = [];
   for (const m of MODULES) {
-    if (m.startsWith('scaffolder/')) continue;  // published standalone; paths differ
     // Strip comments first so import-like prose is not treated as code.
     const src = readFileSync(join(ROOT, m), 'utf8')
       .replace(/\/\*[\s\S]*?\*\//g, '')

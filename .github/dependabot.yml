@@ -55,24 +55,6 @@ updates:
         patterns: ["*"]
         update-types: ["minor", "patch"]
 
-  - package-ecosystem: "npm"
-    directory: "/scaffolder"
-    schedule:
-      interval: "daily"
-      time: "06:00"
-      timezone: "Europe/London"
-    cooldown:
-      default-days: 7
-      semver-major-days: 30
-      semver-minor-days: 7
-      semver-patch-days: 3
-      include: ["*"]
-    open-pull-requests-limit: 3
-    groups:
-      scaffolder-minor-and-patch:
-        patterns: ["*"]
-        update-types: ["minor", "patch"]
-
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

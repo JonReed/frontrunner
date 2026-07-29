@@ -1,7 +1,14 @@
-// Shared CLI skill entrypoint bootstrap — used by npx init and update-system.
-// Ensures every supported CLI gets .*/skills/career-ops/SKILL.md even when the
-// cloned release predates a CLI (e.g. Grok on v1.13.0). Materializes pointer
-// files to canonical content on filesystems without symlink support.
+// Shared CLI skill entrypoint bootstrap — used by update-system.
+//
+// .agents/skills/career-ops/SKILL.md is canonical; each supported CLI gets a
+// copy at the location it looks in. Copies rather than symlinks because not
+// every filesystem supports them.
+//
+// Only the supported CLIs are listed. Frontrunner supports Claude Code and
+// Codex, plus Antigravity for the free tier — and Codex reads CODEX.md rather
+// than a skills directory, so it needs no entry. Copies for Cursor, OpenCode,
+// Qwen, Grok and Kimi were removed with those CLIs: eight byte-identical
+// copies of one 202-line file is not support, it is duplication.
 import { readFileSync, writeFileSync, existsSync, mkdirSync, lstatSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 
@@ -13,27 +20,7 @@ export const SKILL_ENTRYPOINTS = [
     pointer: '../../../.agents/skills/career-ops/SKILL.md',
   },
   {
-    path: '.cursor/skills/career-ops/SKILL.md',
-    pointer: '../../../.agents/skills/career-ops/SKILL.md',
-  },
-  {
-    path: '.opencode/skills/career-ops/SKILL.md',
-    pointer: '../../../.agents/skills/career-ops/SKILL.md',
-  },
-  {
-    path: '.qwen/skills/career-ops/SKILL.md',
-    pointer: '../../../.agents/skills/career-ops/SKILL.md',
-  },
-  {
     path: '.antigravitycli/skills/career-ops/SKILL.md',
-    pointer: '../../../.agents/skills/career-ops/SKILL.md',
-  },
-  {
-    path: '.grok/skills/career-ops/SKILL.md',
-    pointer: '../../../.agents/skills/career-ops/SKILL.md',
-  },
-  {
-    path: '.kimi/skills/career-ops/SKILL.md',
     pointer: '../../../.agents/skills/career-ops/SKILL.md',
   },
 ];

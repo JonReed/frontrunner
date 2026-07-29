@@ -73,15 +73,22 @@ prefilter before model evaluation.
   in the background. The persistent backend accepts a validated job ID and
   writes a contained cancellation request; the owning controller observes it
   and aborts the operation without signalling an unverified or recycled PID.
-- **No duplicate AI spend:** UI jobs are persisted across reloads and claimed
-  atomically per role. Simultaneous clicks, requests, or server processes
-  return the same running job instead of launching a second paid model call.
-  Reads, stale-job recovery, cancellation, and terminal completion are
-  serialized per job, so a late process result cannot resurrect or overwrite a
-  job already made terminal. Direct CLI and application-service pipeline runs
-  also share one cross-process lease across the complete
+- **No duplicate AI spend:** persistent local jobs cover CV builds, scans,
+  zero-token preparation and full pipeline runs. Catalog-owned deduplication
+  keys prevent even inconsistent caller idempotency labels from splitting one
+  operation into duplicate work. Reads, operation-specific stale recovery,
+  cancellation, and terminal completion are serialized per job, so a late
+  process result cannot resurrect or overwrite a job already made terminal.
+  Direct CLI and application-service pipeline runs also share one
+  cross-process lease across the complete
   scan→cache→liveness→prefilter→evaluation transaction; a competing run fails
   before scanning or spending tokens, and a crashed owner is recovered.
+- **Crash-safe local run history:** completed backend operations append a
+  bounded record to `data/run-history.ndjson` with status, duration, token-cost
+  classification, safe pipeline counts and provider-reported token usage when
+  available. Concurrent processes cannot lose records, interrupted replacement
+  preserves the prior file, and the history never stores job URLs,
+  descriptions, prompts, model output or environment data.
 - **Model only for judgement:** provider APIs and deterministic code handle
   collection, description extraction, freshness, obvious mismatches, report
   rendering, pipeline state, and tracker-safe output. The model receives clean
@@ -159,7 +166,7 @@ below 3.0 (17%) and rejects **0 roles scoring 3.0 or above**.
 <!-- pipeline-benchmark:end -->
 
 These numbers come from
-[`benchmarks/pipeline-benchmark.json`](benchmarks/pipeline-benchmark.json), not
+[`src/benchmark/corpora/pipeline-benchmark.json`](src/benchmark/corpora/pipeline-benchmark.json), not
 from hand-edited README estimates. Run `npm run benchmark` to regenerate the
 artifact and `npm run benchmark:check` to fail when it is stale. The fixture is
 a deterministic regression benchmark, not a promise that every live job board
@@ -311,6 +318,11 @@ Ollama if that content must never leave the machine.
 
 The canonical user data remains human-readable Markdown, YAML, and TSV. See
 [DATA_CONTRACT.md](DATA_CONTRACT.md) for the exact boundary.
+
+Operational run history is local user data too. `data/run-history.ndjson` keeps
+at most 1,000 records and 2 MiB, uses private file permissions, and contains
+only bounded statuses, timings and aggregate counts. It is not uploaded or
+reported to Frontrunner.
 
 Generated application content is restricted to your CV, profile, portfolio
 digest, writing samples, and facts you explicitly provide. Frontrunner may

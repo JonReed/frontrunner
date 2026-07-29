@@ -84,10 +84,7 @@ const requiredSystemPaths = [
   'config/profile.example.yml',
   '.env.example',
   '.claude-plugin/',
-  '.qwen/',
   '.antigravitycli/skills/',
-  '.grok/skills/',
-  '.cursor/skills/',
   'tests/tracker-columns-tests.mjs',
   'tests/updater-migration-tests.mjs',
   'SECURITY.md',
@@ -96,10 +93,7 @@ const requiredSystemPaths = [
 
 const requiredBootstrapPaths = [
   '.agents/',
-  '.cursor/skills/',
-  '.opencode/skills/',
   '.antigravitycli/skills/',
-  '.grok/skills/',
   'providers/',
   'src/scan/liveness-browser.mjs',
   'src/tracker/role-matcher.mjs',
@@ -134,7 +128,7 @@ const twoPassManifestChecks = [
   },
   {
     name: 're-exec fallback still covers the skill-entrypoints import (#1245)',
-    pattern: /REEXEC_FALLBACK_FILES\s*=\s*\[[^\]]*'scaffolder\/bin\/skill-entrypoints\.mjs'/,
+    pattern: /REEXEC_FALLBACK_FILES\s*=\s*\[[^\]]*'src\/lib\/skill-entrypoints\.mjs'/,
   },
   {
     name: 'apply re-execs through the current Node binary',

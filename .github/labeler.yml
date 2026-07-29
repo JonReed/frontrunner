@@ -12,11 +12,7 @@
           - modes/*.md
           - modes/**/*.md
           - .claude/skills/**
-          - .cursor/skills/**
-          - .opencode/skills/**
-          - .qwen/skills/**
           - .antigravitycli/skills/**
-          - .grok/skills/**
 
 "🔧 scripts":
   - changed-files:
@@ -52,7 +48,6 @@
           - ui/package-lock.json
           - web/package.json
           - web/package-lock.json
-          - scaffolder/package.json
 
 "⚙️ ci":
   - changed-files:

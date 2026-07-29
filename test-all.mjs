@@ -873,12 +873,7 @@ const systemFiles = [
   'modes/heuristics/recruiter-side.md',
   'templates/states.yml', 'templates/cv-template.html',
   '.claude/skills/career-ops/SKILL.md',
-  '.cursor/skills/career-ops/SKILL.md',
-  '.opencode/skills/career-ops/SKILL.md',
-  '.qwen/skills/career-ops/SKILL.md',
   '.antigravitycli/skills/career-ops/SKILL.md',
-  '.grok/skills/career-ops/SKILL.md',
-  '.kimi/skills/career-ops/SKILL.md',
 ];
 
 for (const f of systemFiles) {
@@ -891,7 +886,7 @@ for (const f of systemFiles) {
 
 // Per-CLI SKILL.md entrypoints must be SYMLINKS in the git index (mode 120000).
 // A regular-file blob whose content is the link path as text ships a broken,
-// empty skill to every user of that CLI — exactly what happened to .kimi/ when
+// empty skill to every user of that CLI — exactly what happened to a CLI whose
 // a symlink was created under core.symlinks=false and committed as-is. Checking
 // the INDEX mode (not the filesystem) keeps this assertion true on Windows
 // checkouts too.
@@ -3715,11 +3710,7 @@ console.log('\n12. Skill symlink integrity');
 const canonicalSkill = '.agents/skills/career-ops/SKILL.md';
 const symlinks = [
   '.claude/skills/career-ops/SKILL.md',
-  '.cursor/skills/career-ops/SKILL.md',
-  '.opencode/skills/career-ops/SKILL.md',
-  '.qwen/skills/career-ops/SKILL.md',
   '.antigravitycli/skills/career-ops/SKILL.md',
-  '.grok/skills/career-ops/SKILL.md',
 ];
 
 let canonicalReal = null;
@@ -3814,22 +3805,22 @@ console.log('\n12a. Skill entrypoint materialization');
   try {
     const canonicalDir = join(fixtureRoot, '.agents', 'skills', 'career-ops');
     const claudeDir = join(fixtureRoot, '.claude', 'skills', 'career-ops');
-    const opencodeDir = join(fixtureRoot, '.opencode', 'skills', 'career-ops');
+    const antigravityDir = join(fixtureRoot, '.antigravitycli', 'skills', 'career-ops');
     mkdirSync(canonicalDir, { recursive: true });
     mkdirSync(claudeDir, { recursive: true });
-    mkdirSync(opencodeDir, { recursive: true });
+    mkdirSync(antigravityDir, { recursive: true });
 
     const fixtureSkill = '---\nname: career-ops\n---\n\n# canonical skill\n';
     const pointer = '../../../.agents/skills/career-ops/SKILL.md';
     writeFileSync(join(canonicalDir, 'SKILL.md'), fixtureSkill);
     writeFileSync(join(claudeDir, 'SKILL.md'), pointer);
-    writeFileSync(join(opencodeDir, 'SKILL.md'), pointer);
+    writeFileSync(join(antigravityDir, 'SKILL.md'), pointer);
 
-    const skills = await import(pathToFileURL(join(ROOT, 'scaffolder/bin/skill-entrypoints.mjs')).href);
+    const skills = await import(pathToFileURL(join(ROOT, 'src/lib/skill-entrypoints.mjs')).href);
     const materialized = skills.materializeSkillEntrypoints(fixtureRoot).sort();
     const expected = [
+      '.antigravitycli/skills/career-ops/SKILL.md',
       '.claude/skills/career-ops/SKILL.md',
-      '.opencode/skills/career-ops/SKILL.md',
     ];
 
     if (JSON.stringify(materialized) === JSON.stringify(expected)) {
@@ -3839,8 +3830,8 @@ console.log('\n12a. Skill entrypoint materialization');
     }
 
     const claudeSkill = readFileSync(join(claudeDir, 'SKILL.md'), 'utf-8');
-    const opencodeSkill = readFileSync(join(opencodeDir, 'SKILL.md'), 'utf-8');
-    if (claudeSkill === fixtureSkill && opencodeSkill === fixtureSkill) {
+    const antigravitySkill = readFileSync(join(antigravityDir, 'SKILL.md'), 'utf-8');
+    if (claudeSkill === fixtureSkill && antigravitySkill === fixtureSkill) {
       pass('materialized skill entrypoints match canonical content');
     } else {
       fail('materialized skill entrypoints do not match canonical content');
@@ -3876,7 +3867,7 @@ console.log('\n12a-bis. Every tracked skill entrypoint is materializable');
     if (tracked.length === 0) {
       fail('git ls-files returned no skill entrypoints — this check could not inspect anything');
     } else {
-      const skills = await import(pathToFileURL(join(ROOT, 'scaffolder/bin/skill-entrypoints.mjs')).href);
+      const skills = await import(pathToFileURL(join(ROOT, 'src/lib/skill-entrypoints.mjs')).href);
       const listed = new Set(skills.SKILL_ENTRYPOINTS.map((e) => e.path));
       const unlisted = tracked.filter((p) => !listed.has(p));
 
@@ -3906,7 +3897,7 @@ console.log('\n12b. Skill entrypoint bootstrap (npx / old releases)');
     writeFileSync(join(canonicalDir, 'SKILL.md'), fixtureSkill);
     writeFileSync(join(claudeDir, 'SKILL.md'), pointer);
 
-    const skills = await import(pathToFileURL(join(ROOT, 'scaffolder/bin/skill-entrypoints.mjs')).href);
+    const skills = await import(pathToFileURL(join(ROOT, 'src/lib/skill-entrypoints.mjs')).href);
     const touched = skills.ensureSkillEntrypoints(fixtureRoot).sort();
     // Derived from SKILL_ENTRYPOINTS, never hand-listed. A literal array here is
     // a second copy of the same list, and a second copy goes stale: adding Kimi
@@ -3922,9 +3913,9 @@ console.log('\n12b. Skill entrypoint bootstrap (npx / old releases)');
       fail(`unexpected bootstrapped skill entrypoints: ${JSON.stringify(touched)}`);
     }
 
-    const grokSkill = readFileSync(join(fixtureRoot, '.grok', 'skills', 'career-ops', 'SKILL.md'), 'utf-8');
+    const agSkill = readFileSync(join(fixtureRoot, '.antigravitycli', 'skills', 'career-ops', 'SKILL.md'), 'utf-8');
     const claudeSkill = readFileSync(join(claudeDir, 'SKILL.md'), 'utf-8');
-    if (grokSkill === fixtureSkill && claudeSkill === fixtureSkill) {
+    if (agSkill === fixtureSkill && claudeSkill === fixtureSkill) {
       pass('ensureSkillEntrypoints materializes canonical skill content');
     } else {
       fail('bootstrapped skill entrypoints do not match canonical content');
@@ -3943,7 +3934,7 @@ console.log('\n12b. Skill entrypoint bootstrap (npx / old releases)');
   try {
     const updater = await import(pathToFileURL(join(ROOT, 'update-system.mjs')).href);
     const sample = [
-      "import { a } from './scaffolder/bin/skill-entrypoints.mjs';",
+      "import { a } from './src/lib/skill-entrypoints.mjs';",
       'import b from "../lib/helper.mjs";',
       "export { c } from './sibling.mjs';",
       "import './side-effect.mjs';",
@@ -3953,9 +3944,9 @@ console.log('\n12b. Skill entrypoint bootstrap (npx / old releases)');
     const specs = updater.relativeImportSpecifiers(sample).sort();
     const expected = [
       '../lib/helper.mjs',
-      './scaffolder/bin/skill-entrypoints.mjs',
       './sibling.mjs',
       './side-effect.mjs',
+      './src/lib/skill-entrypoints.mjs',
     ];
     if (JSON.stringify(specs) === JSON.stringify(expected)) {
       pass('relativeImportSpecifiers extracts relative imports, ignores bare/package (#1245)');
@@ -3985,7 +3976,7 @@ console.log('\n12b. Skill entrypoint bootstrap (npx / old releases)');
 
 {
   // #1706 end-to-end regression: reproduce the old→new re-exec by checking out
-  // ONLY update-system.mjs into an otherwise-empty dir (no scaffolder/) and
+  // ONLY update-system.mjs into an otherwise-empty dir (no src/lib/) and
   // importing it. Before the lazy-import fix this threw ERR_MODULE_NOT_FOUND at
   // module load; it must now load standalone.
   const isolatedRoot = mkdtempSync(join(tmpdir(), 'career-ops-updater-standalone-'));
@@ -3995,7 +3986,7 @@ console.log('\n12b. Skill entrypoint bootstrap (npx / old releases)');
     writeFileSync(isolatedUpdater, updaterSource);
     try {
       await import(pathToFileURL(isolatedUpdater).href);
-      pass('update-system.mjs imports standalone without scaffolder/ present (#1706)');
+      pass('update-system.mjs imports standalone without src/lib/ present (#1706)');
     } catch (err) {
       fail(`update-system.mjs failed to import standalone (old→new re-exec crash, #1706): ${err.code || err.message}`);
     }
@@ -4016,7 +4007,7 @@ console.log('\n12b. Skill entrypoint bootstrap (npx / old releases)');
     mkdirSync(join(canonicalDir, 'SKILL.md'));
     writeFileSync(join(claudeDir, 'SKILL.md'), pointer);
 
-    const skills = await import(pathToFileURL(join(ROOT, 'scaffolder/bin/skill-entrypoints.mjs')).href);
+    const skills = await import(pathToFileURL(join(ROOT, 'src/lib/skill-entrypoints.mjs')).href);
     const materialized = skills.materializeSkillEntrypoints(fixtureRoot);
     const claudeSkill = readFileSync(join(claudeDir, 'SKILL.md'), 'utf-8');
     if (materialized.length === 0 && claudeSkill === pointer) {
@@ -4036,21 +4027,21 @@ console.log('\n12b. Skill entrypoint bootstrap (npx / old releases)');
   try {
     const canonicalDir = join(fixtureRoot, '.agents', 'skills', 'career-ops');
     const claudeDir = join(fixtureRoot, '.claude', 'skills', 'career-ops');
-    const opencodeDir = join(fixtureRoot, '.opencode', 'skills', 'career-ops');
+    const antigravityDir = join(fixtureRoot, '.antigravitycli', 'skills', 'career-ops');
     mkdirSync(canonicalDir, { recursive: true });
     mkdirSync(claudeDir, { recursive: true });
-    mkdirSync(opencodeDir, { recursive: true });
+    mkdirSync(antigravityDir, { recursive: true });
 
     const fixtureSkill = '---\nname: career-ops\n---\n\n# canonical skill\n';
     const pointer = '../../../.agents/skills/career-ops/SKILL.md';
     writeFileSync(join(canonicalDir, 'SKILL.md'), fixtureSkill);
     mkdirSync(join(claudeDir, 'SKILL.md'));
-    writeFileSync(join(opencodeDir, 'SKILL.md'), pointer);
+    writeFileSync(join(antigravityDir, 'SKILL.md'), pointer);
 
-    const skills = await import(pathToFileURL(join(ROOT, 'scaffolder/bin/skill-entrypoints.mjs')).href);
+    const skills = await import(pathToFileURL(join(ROOT, 'src/lib/skill-entrypoints.mjs')).href);
     const materialized = skills.materializeSkillEntrypoints(fixtureRoot);
-    const opencodeSkill = readFileSync(join(opencodeDir, 'SKILL.md'), 'utf-8');
-    if (JSON.stringify(materialized) === JSON.stringify(['.opencode/skills/career-ops/SKILL.md']) && opencodeSkill === fixtureSkill) {
+    const antigravitySkill = readFileSync(join(antigravityDir, 'SKILL.md'), 'utf-8');
+    if (JSON.stringify(materialized) === JSON.stringify(['.antigravitycli/skills/career-ops/SKILL.md']) && antigravitySkill === fixtureSkill) {
       pass('update-system skips non-file skill entrypoints while materializing valid pointers');
     } else {
       fail(`non-file skill entrypoint handling was unexpected: ${JSON.stringify(materialized)}`);
@@ -4081,10 +4072,10 @@ console.log('\n12c. Materialized skill index mode');
   try {
     const canonicalDir = join(fixtureRoot, '.agents', 'skills', 'career-ops');
     const claudeDir = join(fixtureRoot, '.claude', 'skills', 'career-ops');
-    const opencodeDir = join(fixtureRoot, '.opencode', 'skills', 'career-ops');
+    const antigravityDir = join(fixtureRoot, '.antigravitycli', 'skills', 'career-ops');
     mkdirSync(canonicalDir, { recursive: true });
     mkdirSync(claudeDir, { recursive: true });
-    mkdirSync(opencodeDir, { recursive: true });
+    mkdirSync(antigravityDir, { recursive: true });
 
     const fixtureSkill = '---\nname: career-ops\n---\n\n# canonical skill\n';
     const pointer = '../../../.agents/skills/career-ops/SKILL.md';
@@ -4096,30 +4087,30 @@ console.log('\n12c. Materialized skill index mode');
 
     writeFileSync(join(canonicalDir, 'SKILL.md'), fixtureSkill);
     writeFileSync(join(claudeDir, 'SKILL.md'), pointer);
-    writeFileSync(join(opencodeDir, 'SKILL.md'), pointer);
+    writeFileSync(join(antigravityDir, 'SKILL.md'), pointer);
     gitRun(['add', '--', '.agents/skills/career-ops/SKILL.md']);
 
     const pointerBlob = gitRun(['hash-object', '-w', '--stdin'], { input: pointer });
     gitRun(['update-index', '--add', '--cacheinfo', `120000,${pointerBlob},.claude/skills/career-ops/SKILL.md`]);
-    gitRun(['update-index', '--add', '--cacheinfo', `120000,${pointerBlob},.opencode/skills/career-ops/SKILL.md`]);
+    gitRun(['update-index', '--add', '--cacheinfo', `120000,${pointerBlob},.antigravitycli/skills/career-ops/SKILL.md`]);
 
     const updater = await import(pathToFileURL(join(ROOT, 'update-system.mjs')).href);
-    const skills = await import(pathToFileURL(join(ROOT, 'scaffolder/bin/skill-entrypoints.mjs')).href);
+    const skills = await import(pathToFileURL(join(ROOT, 'src/lib/skill-entrypoints.mjs')).href);
     const materialized = skills.materializeSkillEntrypoints(fixtureRoot);
     updater.prepareMaterializedSkillEntrypointsForStage(materialized, fixtureRoot);
-    gitRun(['add', '--', '.claude/skills/', '.opencode/skills/']);
+    gitRun(['add', '--', '.claude/skills/', '.antigravitycli/skills/']);
 
     const claudeIndex = gitRun(['ls-files', '-s', '--', '.claude/skills/career-ops/SKILL.md']);
-    const opencodeIndex = gitRun(['ls-files', '-s', '--', '.opencode/skills/career-ops/SKILL.md']);
-    if (claudeIndex.startsWith('100644 ') && opencodeIndex.startsWith('100644 ')) {
+    const antigravityIndex = gitRun(['ls-files', '-s', '--', '.antigravitycli/skills/career-ops/SKILL.md']);
+    if (claudeIndex.startsWith('100644 ') && antigravityIndex.startsWith('100644 ')) {
       pass('materialized skill entrypoints stage as regular files, not symlink blobs');
     } else {
-      fail(`materialized skill entrypoints staged with wrong modes: ${JSON.stringify([claudeIndex, opencodeIndex])}`);
+      fail(`materialized skill entrypoints staged with wrong modes: ${JSON.stringify([claudeIndex, antigravityIndex])}`);
     }
 
     const claudeBlob = gitRaw(['show', ':.claude/skills/career-ops/SKILL.md']);
-    const opencodeBlob = gitRaw(['show', ':.opencode/skills/career-ops/SKILL.md']);
-    if (claudeBlob === fixtureSkill && opencodeBlob === fixtureSkill) {
+    const antigravityBlob = gitRaw(['show', ':.antigravitycli/skills/career-ops/SKILL.md']);
+    if (claudeBlob === fixtureSkill && antigravityBlob === fixtureSkill) {
       pass('materialized skill blobs contain canonical skill content');
     } else {
       fail('materialized skill blobs do not contain canonical skill content');

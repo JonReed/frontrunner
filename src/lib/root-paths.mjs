@@ -41,8 +41,6 @@ function scannableFiles(root) {
     .filter(Boolean)
     .filter((f) => /\.(mjs|json|md|sh|yml|ts|tsx)$/.test(f))
     .filter((f) => !f.startsWith('node_modules/'))
-    // scaffolder ships standalone and legitimately describes the upstream layout
-    .filter((f) => !f.startsWith('scaffolder/'))
     // The detector and its destructive fixture necessarily contain examples of
     // every forbidden form. Scanning those examples makes the check fail itself.
     .filter((f) => !SELF_REFERENTIAL_FILES.has(f));

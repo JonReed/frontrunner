@@ -14,7 +14,7 @@ test('README documents the executable canonical pipeline and generated benchmark
   assert.equal(pkg.scripts['pipeline:prepare'], 'node src/pipeline/run.mjs --prepare-only');
   assert.match(readme, /npm run pipeline/);
   assert.match(readme, /npm run pipeline:prepare/);
-  assert.match(readme, /benchmarks\/pipeline-benchmark\.json/);
+  assert.match(readme, /src\/benchmark\/corpora\/pipeline-benchmark\.json/);
   assert.match(readme, /105-role leadership calibration/);
   assert.match(readme, /npm run benchmark:prefilter/);
   assert.equal(

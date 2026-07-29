@@ -15,7 +15,7 @@ const rules = {
 
 test('benchmark reports every required efficiency and safety measure', () => {
   const corpus = JSON.parse(readFileSync(
-    new URL('../../benchmarks/pipeline-corpus.json', import.meta.url),
+    new URL('../../src/benchmark/corpora/pipeline-corpus.json', import.meta.url),
     'utf8',
   ));
   const result = runPipelineBenchmark({

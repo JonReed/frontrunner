@@ -33,7 +33,7 @@
   "calibration": {
     "corpus": {
       "roles": 105,
-      "source": "benchmarks/prefilter-scored-corpus.json"
+      "source": "src/benchmark/corpora/prefilter-scored-corpus.json"
     },
     "threshold": 3,
     "highScoreRoles": 17,

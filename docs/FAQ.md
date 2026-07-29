@@ -7,7 +7,7 @@ Common questions from the community, answered in one place. For setup details se
 ## 1. Skills aren't loading on Windows — symlink error on install
 
 Windows does not create symlinks by default, so Git may check out the CLI skill
-entrypoints (`.claude/skills/`, `.opencode/skills/`, etc.) as plain pointer
+entrypoints (`.claude/skills/`, `.antigravitycli/skills/`) as plain pointer
 files instead of real symlinks. Run `npm run update`; Frontrunner's updater
 materializes those entrypoints and only accepts the official Frontrunner
 repository. No manual `mklink` or Developer Mode changes are needed.
