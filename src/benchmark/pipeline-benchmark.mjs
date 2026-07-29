@@ -4,10 +4,11 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { performance } from 'node:perf_hooks';
-import yaml from 'js-yaml';
 
 import { ROOT } from '#paths';
 import { classify } from '../scan/prefilter.mjs';
+import { readPrefilterConfig } from '../scan/prefilter-config.mjs';
+import { runPrefilterCalibration } from './prefilter-calibration.mjs';
 import {
   SCORING_CONTRACT_VERSION,
   buildScoringPrompt,
@@ -41,26 +42,13 @@ function sampleResult(job) {
   };
 }
 
-function benchmarkRules(rawConfig) {
-  const config = yaml.load(rawConfig) ?? {};
-  const compile = (values) => (values ?? []).map((value) => new RegExp(value, 'i'));
-  return {
-    keep: compile(config.keep_signals),
-    ic: compile(config.ic_families),
-    wrong: compile(config.wrong_functions),
-    junior: compile(config.below_level),
-    blockers: (config.hard_blockers ?? [])
-      .filter((blocker) => blocker?.enabled)
-      .map((blocker) => ({
-        id: blocker.id,
-        all: compile(blocker.all),
-        reason: blocker.reason ?? blocker.id,
-      })),
-    comp: { enabled: config.comp?.enabled !== false, margin: Number(config.comp?.clearance_margin ?? 0.8) },
-  };
-}
-
-export function runPipelineBenchmark({ corpus, legacyStaticChars, compactStaticChars, rules }) {
+export function runPipelineBenchmark({
+  corpus,
+  legacyStaticChars,
+  compactStaticChars,
+  rules,
+  calibration,
+}) {
   const started = performance.now();
   const boards = new Set(corpus.jobs.map((job) => `${job.provider}:${job.board}`));
   const profile = { minComp: 0, currency: 'GBP' };
@@ -86,7 +74,7 @@ export function runPipelineBenchmark({ corpus, legacyStaticChars, compactStaticC
   }, 0);
 
   const pctReduction = (before, after) => Math.round((1 - after / before) * 1000) / 10;
-  return {
+  const result = {
     corpus: { roles: corpus.jobs.length, boards: boards.size },
     httpCalls: {
       legacy: corpus.jobs.length,
@@ -116,6 +104,8 @@ export function runPipelineBenchmark({ corpus, legacyStaticChars, compactStaticC
     },
     wallTimeMs: Math.round((performance.now() - started) * 1000) / 1000,
   };
+  if (calibration) result.calibration = calibration;
+  return result;
 }
 
 function stableMetrics(result) {
@@ -135,6 +125,10 @@ The checked-in ${result.corpus.roles}-role, ${result.corpus.boards}-board fixtur
 | Approximate model output tokens | ${number(result.tokens.output.legacy)} | ${number(result.tokens.output.frontrunner)} | −${result.tokens.output.reductionPct}% |
 | Roles reaching the model | ${result.corpus.roles} | ${result.modelPass.roles} | ${result.modelPass.ratePct}% pass rate |
 | False rejects at score ≥${result.falseRejects.threshold}.0 | — | ${result.falseRejects.count} | — |
+
+The separate ${number(result.calibration.corpus.roles)}-role leadership calibration rejects
+${number(result.calibration.lowScoreRejected)} of ${number(result.calibration.lowScoreRoles)} roles scoring
+below ${result.calibration.threshold.toFixed(1)} (${result.calibration.lowScoreCapturePct}%) and rejects **${result.calibration.falseRejects.count} roles scoring ${result.calibration.threshold.toFixed(1)} or above**.
 <!-- pipeline-benchmark:end -->`;
 }
 
@@ -156,6 +150,8 @@ function updateReadmeBenchmark(result, { check = false } = {}) {
 function main() {
   const args = process.argv.slice(2);
   const corpusPath = join(ROOT, 'benchmarks', 'pipeline-corpus.json');
+  const calibrationCorpusPath = join(ROOT, 'benchmarks', 'prefilter-scored-corpus.json');
+  const calibrationConfigPath = join(ROOT, 'benchmarks', 'prefilter-leadership.yml');
   const artifactPath = join(ROOT, 'benchmarks', 'pipeline-benchmark.json');
   const corpus = JSON.parse(readFileSync(corpusPath, 'utf8'));
   const fixtureCv = '# CV\nDirector of Engineering. Led platform teams.';
@@ -171,8 +167,19 @@ function main() {
     profileMode: 'Target senior engineering leadership roles.',
     languageInstruction: 'Write in English.',
   }).length;
-  const rules = benchmarkRules(readFileSync(join(ROOT, 'config', 'prefilter.example.yml'), 'utf8'));
-  const result = runPipelineBenchmark({ corpus, legacyStaticChars, compactStaticChars, rules });
+  const rules = readPrefilterConfig(join(ROOT, 'config', 'prefilter.example.yml'));
+  const calibration = runPrefilterCalibration({
+    corpus: JSON.parse(readFileSync(calibrationCorpusPath, 'utf8')),
+    rules: readPrefilterConfig(calibrationConfigPath),
+    source: 'benchmarks/prefilter-scored-corpus.json',
+  });
+  const result = runPipelineBenchmark({
+    corpus,
+    legacyStaticChars,
+    compactStaticChars,
+    rules,
+    calibration,
+  });
 
   if (args.includes('--check')) {
     if (!existsSync(artifactPath)) throw new Error('benchmark artifact is missing; run npm run benchmark');

@@ -15,6 +15,12 @@ test('README documents the executable canonical pipeline and generated benchmark
   assert.match(readme, /npm run pipeline/);
   assert.match(readme, /npm run pipeline:prepare/);
   assert.match(readme, /benchmarks\/pipeline-benchmark\.json/);
+  assert.match(readme, /105-role leadership calibration/);
+  assert.match(readme, /npm run benchmark:prefilter/);
+  assert.equal(
+    pkg.scripts['benchmark:prefilter'],
+    'node src/benchmark/prefilter-calibration.mjs',
+  );
   assert.match(readme, /provider APIs.*Playwright is a fallback/is);
 });
 

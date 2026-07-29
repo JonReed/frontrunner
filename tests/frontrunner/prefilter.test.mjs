@@ -10,7 +10,7 @@
 // the two things that can actually hurt:
 //
 //   1. PROPERTY — the filter must never reject a role that a real LLM pass
-//      scored well. Run against a checked-in corpus of 89 roles with real
+//      scored well. Run against a checked-in corpus with real
 //      scores. This is the claim the README makes; it must stay true through
 //      every future rule change.
 //   2. REGRESSION — the two false positives found during the first audit,
@@ -19,55 +19,20 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import yaml from 'js-yaml';
 
 import { ROOT } from '#paths';
 import { classify } from '../../src/scan/prefilter.mjs';
-
-const HERE = dirname(fileURLToPath(import.meta.url));
+import { compilePrefilterConfig } from '../../src/scan/prefilter-config.mjs';
 
 /** Compile a rule set the way prefilter.mjs does, from an explicit config. */
 function rulesFrom(cfg) {
-  const compile = (l) => (l ?? []).map((p) => new RegExp(p, 'i'));
-  return {
-    keep: compile(cfg.keep_signals),
-    ic: compile(cfg.ic_families),
-    wrong: compile(cfg.wrong_functions),
-    junior: compile(cfg.below_level),
-    blockers: (cfg.hard_blockers ?? [])
-      .filter((b) => b?.enabled)
-      .map((b) => ({ id: b.id, all: compile(b.all), reason: b.reason ?? b.id })),
-    comp: { enabled: cfg.comp?.enabled !== false, margin: Number(cfg.comp?.clearance_margin ?? 0.8) },
-  };
+  return compilePrefilterConfig(cfg);
 }
 
 const exampleCfg = yaml.load(readFileSync(join(ROOT, 'config/prefilter.example.yml'), 'utf8'));
-
-/** The leadership-targeting configuration, i.e. presets switched on. */
-const leadershipCfg = {
-  ...exampleCfg,
-  ic_families: [
-    '\\b(software|backend|frontend|full[- ]?stack|platform|infrastructure|inference|security|data|ml|machine learning|research|product|systems|solutions?|forward deployed|applied)\\s+engineer\\b',
-    '\\b(engineer|developer|programmer)\\b',
-    '\\b(research|data|machine learning|applied)\\s+scientist\\b',
-    '\\bscientist\\b',
-    '\\bdesigner\\b',
-    '\\banalyst\\b',
-    '\\bconsultant\\b',
-    '\\btechnician\\b',
-    '\\bmember of technical staff\\b',
-  ],
-  wrong_functions: [
-    '\\b(sales|account executive|business development|bdr|sdr)\\b',
-    '\\bmarketing\\b',
-    '\\bbrand\\b',
-    '\\b(finance|accounting|accountant|tax|audit|controller|treasury)\\b',
-    '\\b(legal|counsel|paralegal|compliance officer)\\b',
-    '\\b(clinical|medical|nurse|physician|pharmacovigilance|epidemiolog)',
-  ],
-};
+const leadershipCfg = yaml.load(readFileSync(join(ROOT, 'benchmarks/prefilter-leadership.yml'), 'utf8'));
 
 const leadership = rulesFrom(leadershipCfg);
 const shipped = rulesFrom(exampleCfg);
@@ -77,7 +42,7 @@ const noProfile = { minComp: 0, currency: 'GBP' };
 // 1. PROPERTY — never reject what the model rated highly
 // ---------------------------------------------------------------------------
 
-const corpus = JSON.parse(readFileSync(join(HERE, 'scored-roles.json'), 'utf8'));
+const corpus = JSON.parse(readFileSync(join(ROOT, 'benchmarks/prefilter-scored-corpus.json'), 'utf8'));
 
 test('property: no role scoring >= 4.0 is ever rejected', () => {
   const wrongly = corpus
@@ -216,10 +181,10 @@ test('shipped config ships both hard blockers disabled', () => {
   }
 });
 
-test('shipped config still rejects genuinely junior roles', () => {
-  // Neutral must not mean inert.
+test('shipped config does not assume early-career roles are below the candidate level', () => {
+  assert.deepEqual(exampleCfg.below_level, [], 'below_level must ship empty');
   for (const t of ['Graduate Software Engineer', 'Engineering Intern', 'Apprentice Developer']) {
-    assert.equal(classify(t, '', noProfile, shipped).verdict, 'reject', t);
+    assert.equal(classify(t, '', noProfile, shipped).verdict, 'keep', t);
   }
 });
 
@@ -241,6 +206,18 @@ test('adversarial: malformed and hostile input does not throw', () => {
   for (const t of nasties) {
     assert.doesNotThrow(() => classify(t, 'body', noProfile, leadership), String(t).slice(0, 30));
   }
+});
+
+test('adversarial: title and JD inputs are bounded before regex matching', () => {
+  const titleTail = `${'x'.repeat(500)} Head of Marketing`;
+  const jdTail = `${'x'.repeat(24_000)} Active SC clearance must already be held.`;
+  assert.equal(classify(titleTail, '', noProfile, leadership).verdict, 'keep');
+
+  const cfg = structuredClone(exampleCfg);
+  cfg.hard_blockers = cfg.hard_blockers.map((b) =>
+    b.id === 'active_security_clearance' ? { ...b, enabled: true } : b,
+  );
+  assert.equal(classify('Delivery Director', jdTail, noProfile, rulesFrom(cfg)).verdict, 'keep');
 });
 
 test('adversarial: an empty rule set keeps everything rather than crashing', () => {

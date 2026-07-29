@@ -30,6 +30,7 @@ contains only a few compatibility entry points. Common commands are exposed via
 | `npm run pipeline:prepare` | `src/pipeline/run.mjs` | Run all zero-token pipeline stages without evaluation |
 | `npm run benchmark` | `src/benchmark/pipeline-benchmark.mjs` | Regenerate the efficiency artifact and README benchmark table |
 | `npm run benchmark:check` | `src/benchmark/pipeline-benchmark.mjs` | Fail if the benchmark artifact or README table is stale |
+| `npm run benchmark:prefilter` | `src/benchmark/prefilter-calibration.mjs` | Calibrate active deterministic rules against the scored-role corpus (`-- --check` fails on false rejects) |
 | `npm run scan:full` | `src/scan/scan-ats-full.mjs` | Reverse ATS discovery scanner |
 | `npm run validate:portals` | `src/scan/validate-portals.mjs` | Validate portals.yml shape before scanning |
 | `npm run tracker` | `src/tracker/tracker.mjs` | SQLite derived index over applications.md — sync/query/history/export |

@@ -11,23 +11,46 @@
   "tokens": {
     "input": {
       "legacy": 277006,
-      "frontrunner": 18939,
-      "reductionPct": 93.2
+      "frontrunner": 21441,
+      "reductionPct": 92.3
     },
     "output": {
       "legacy": 17125,
-      "frontrunner": 2729,
-      "reductionPct": 84.1
+      "frontrunner": 3123,
+      "reductionPct": 81.8
     }
   },
   "modelPass": {
-    "roles": 7,
-    "ratePct": 87.5
+    "roles": 8,
+    "ratePct": 100
   },
   "falseRejects": {
     "threshold": 3,
     "count": 0,
     "roles": []
   },
-  "wallTimeMs": 2.146
+  "wallTimeMs": 1.878,
+  "calibration": {
+    "corpus": {
+      "roles": 105,
+      "source": "benchmarks/prefilter-scored-corpus.json"
+    },
+    "threshold": 3,
+    "highScoreRoles": 17,
+    "lowScoreRoles": 88,
+    "rejected": 15,
+    "kept": 90,
+    "falseRejects": {
+      "count": 0,
+      "roles": []
+    },
+    "lowScoreRejected": 15,
+    "lowScoreCapturePct": 17,
+    "rejectionPrecisionPct": 100,
+    "byRule": {
+      "ic_role_family": 7,
+      "wrong_function": 6,
+      "below_level": 2
+    }
+  }
 }
