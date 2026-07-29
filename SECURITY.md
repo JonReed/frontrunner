@@ -4,14 +4,25 @@
 
 **Do NOT open a public issue for security vulnerabilities.**
 
-Instead, please email **hi@santifer.io** with:
+Use GitHub's private vulnerability reporting:
+[**Report a vulnerability**](https://github.com/Furls-Digital/frontrunner/security/advisories/new).
+The report is visible only to the maintainers of this repository until a fix is
+published.
+
+Please include:
 
 1. Description of the vulnerability
 2. Steps to reproduce
 3. Potential impact
 4. Suggested fix (if any)
 
-You will receive a response within 72 hours. We will work with you to understand and address the issue before any public disclosure.
+We aim to respond within 72 hours, and will work with you to understand and
+address the issue before any public disclosure.
+
+Frontrunner is a fork of [career-ops](https://github.com/santifer/career-ops).
+If the issue is in inherited upstream code it may affect both projects, but
+report it here — this repository's maintainers will coordinate upstream.
+Do not send reports about Frontrunner to the upstream author.
 
 ## Scope
 
