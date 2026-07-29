@@ -52,6 +52,10 @@ directory. URLs and model identifiers have explicit syntax and size limits.
   period if the child does not exit.
 - Every operation has a centrally defined timeout and token-cost marker.
 - Presentation callbacks cannot crash or change the backend operation.
+- Persistent jobs use atomic per-role claims, so concurrent UI requests return
+  one running job rather than duplicating model spend.
+- Job state is atomically replaced, logs and result tails are bounded, and an
+  orphaned running job is recoverable after a process crash.
 
 The contract accepts an optional idempotency key and the catalog supplies a
 stable default deduplication key. Persistent job deduplication belongs to the
@@ -61,6 +65,8 @@ silently invent cross-process state.
 ## Migration rule
 
 New local interfaces must use this boundary instead of spawning backend scripts
-directly. Existing UI consumers will be migrated as a separate change so the
-service contract and its destructive tests land independently of presentation
-work. Direct command-line entry points remain supported for people and CI.
+directly. The Frontrunner UI's CV builder is migrated; it launches only the
+fixed, bounded `job-control.mjs` adapter and cannot choose a backend command.
+The inherited `web/` tree remains experimental and its legacy endpoints are not
+the pattern for new work. Direct command-line entry points remain supported for
+people and CI.

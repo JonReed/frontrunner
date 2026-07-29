@@ -27,12 +27,13 @@ merges cannot quietly reintroduce it.
 | UI filesystem traversal | Fixed | strict job IDs plus canonical report/output containment |
 | Generated HTML active content | Fixed | escaped deterministic builder plus sandbox CSP on previews |
 | Provider supply-chain capability audit | Fixed for core adapters; residual reviewed-code trust | regression test forbids direct fetch and child-process imports; `local-parser` remains an explicit operator-configured exception |
-| Local backend operation boundary | Implemented; UI migration is the next pass | versioned exact-key requests, fixed operation catalog, `shell: false`, bounded events/results, cancellation and timeouts in `src/application/` |
+| Local backend operation boundary | Fixed for the new UI; inherited experimental `web/` endpoints remain a separate migration | versioned exact-key requests, fixed operation catalog, `shell: false`, bounded events/results, cancellation, timeouts and atomic paid-job claims in `src/application/` |
 
 The regression suite destructively tests private/metadata targets, private DNS
 answers, redirect revalidation, oversized bodies, hostile JD framing,
 schema-output flooding, zero-tool Claude arguments, loopback binding and raw
-HTML sink removal.
+HTML sink removal. Application-job tests also race simultaneous paid requests,
+inject malformed state and oversized output, and simulate orphan recovery.
 
 ## Scope and assumptions
 
@@ -305,7 +306,8 @@ flowchart LR
    contracts. Model output proposes bounded content; code chooses filenames,
    writes reports/tracker data, renders HTML/PDF and performs state transitions.
 6. **Implemented:** pin the UI to loopback, add Host/Origin checks, use
-   safe React rendering, and validate every URL and filesystem path at use.
+   safe React rendering, validate every URL and filesystem path at use, and
+   route its paid CV action through the fixed application-service job manager.
 7. **Implemented for central boundaries; provider static audit remains:** add destructive tests proving every provider inherits egress/size policy,
    hostile JDs cannot cause tools or writes, unsafe report links never render,
    localhost actions reject foreign origins, and model output cannot select

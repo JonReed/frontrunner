@@ -80,6 +80,7 @@ const requiredSystemPaths = [
   'modes/ua/',
   'batch/README.md',
   'docs/examples/',
+  'src/application/',
   'config/profile.example.yml',
   '.env.example',
   '.claude-plugin/',

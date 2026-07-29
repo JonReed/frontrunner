@@ -59,12 +59,8 @@ const EXCLUDES = [
   'interview-prep/.gitkeep',
 ];
 
-// Trees that live in the repo but deliberately OUTSIDE the updater's world:
-// web/ is the experimental web UI — its own release-please component, never
-// shipped by update-system.mjs, never in the npm package. Excluding it here is
-// part of that isolation contract, not a coverage gap.
-// ui/ is Frontrunner's workflow UI (v2) and sits under the same contract: its
-// own app with its own package.json and build, not something the updater ships.
+// No tracked application tree is exempt from updater coverage. `ui/` and
+// `web/` have their own packages, but SYSTEM_PATHS deliberately ships both.
 const EXCLUDE_PREFIXES = [];
 
 function covered(file) {
@@ -99,12 +95,13 @@ if (process.argv.includes('--self-test')) {
 
   // Test directory prefix matches (which end in '/')
   assert(covered('providers/justjoin.mjs') === true, 'providers/justjoin.mjs must be covered (dir prefix match)');
+  assert(covered('src/application/future-operation.mjs') === true, 'src/application/ must stay covered as a backend service tree');
 
   // Test sibling mismatch (strict prefix match)
   assert(covered('providers-sibling/justjoin.mjs') === false, 'providers-sibling/justjoin.mjs must NOT be covered');
-  assert(covered('web/package.json') === true, 'web/ tree must be covered (isolation-contract prefix exclude)');
+  assert(covered('web/package.json') === true, 'web/ tree must be covered by the updater manifest');
   assert(covered('web-dashboard/index.html') === false, 'web-dashboard/ must NOT ride the web/ prefix exclude');
-  assert(covered('ui/package.json') === true, 'ui/ tree must be covered (isolation-contract prefix exclude)');
+  assert(covered('ui/package.json') === true, 'ui/ tree must be covered by the updater manifest');
   assert(covered('ui-kit/index.ts') === false, 'ui-kit/ must NOT ride the ui/ prefix exclude');
   assert(covered('.npmignore') === true, '.npmignore must be covered (excluded)');
 

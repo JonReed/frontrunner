@@ -231,6 +231,7 @@ const SYSTEM_PATHS = [
   'src/evaluate/save-evaluation.mjs',
   'src/cv/claude-tailor.mjs',
   'src/security/',
+  'src/application/',
   'src/pipeline/run.mjs',
   'src/benchmark/pipeline-benchmark.mjs',
   'benchmarks/',

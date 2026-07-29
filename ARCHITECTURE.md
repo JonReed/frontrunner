@@ -74,7 +74,9 @@ Local interfaces request a versioned operation such as `scan.run`,
 `pipeline.prepare`, `pipeline.run`, or `cv.build`. The service validates bounded
 application data, maps it to a fixed Node entry point, and owns structured
 events, result envelopes, timeouts, and cancellation. Clients cannot supply
-executables, working directories, arbitrary flags, or shell fragments. See
+executables, working directories, arbitrary flags, or shell fragments. A
+persistent job manager adds atomic per-role claims, bounded logs, reload-safe
+state, and crash recovery for the UI. See
 [`docs/APPLICATION_SERVICE.md`](docs/APPLICATION_SERVICE.md).
 
 ### Self-update — `update-system.mjs`
@@ -93,7 +95,9 @@ Each CLI reads its own entry file, all of which point at the canonical `AGENTS.m
 `web/` is the inherited, experimental local web application. `ui/` is
 Frontrunner's workflow-first replacement and is still under development. Both
 read the same canonical user files as the conversational and script workflows;
-neither maintains a separate database or source of truth.
+neither maintains a separate database or source of truth. Paid actions in
+`ui/` use the application-service job manager rather than launching processes
+directly.
 
 ## Data flow (a typical run)
 

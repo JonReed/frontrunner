@@ -191,6 +191,11 @@ test('CV tailoring excludes identity and local paths from model output', () => {
 
 test('UI worker state uses atomic replacement rather than truncating live state', () => {
   const source = readFileSync(join(ROOT, 'ui', 'src', 'lib', 'jobs.ts'), 'utf8');
-  assert.match(source, /renameSync\(temporary,\s*target\)/);
-  assert.match(source, /mode:\s*0o600/);
+  const manager = readFileSync(join(ROOT, 'src', 'application', 'job-manager.mjs'), 'utf8');
+  assert.match(manager, /renameSync\(temporary,\s*target\)/);
+  assert.match(manager, /mode:\s*0o600/);
+  assert.match(source, /src['"],\s*['"]application['"],\s*['"]job-control\.mjs/);
+  assert.match(source, /spawn\(process\.execPath,\s*\[JOB_CONTROL\]/);
+  assert.match(source, /shell:\s*false/);
+  assert.doesNotMatch(source, /claude-tailor|pipeline\/run|scan\/scan/);
 });

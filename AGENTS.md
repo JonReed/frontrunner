@@ -14,7 +14,7 @@ src/tracker/         applications tracker, locking, statuses, follow-ups
 src/cv/              CV + cover letter rendering (HTML and LaTeX) and PDF
 src/analysis/        patterns, upskill, stats, salary, funnel
 src/evaluate/        model-backed evaluation and tailoring
-src/application/     versioned local operations, supervision, cancellation
+src/application/     local operations, persistent jobs, supervision, cancellation
 src/lib/             shared helpers
 src/plugins/         plugin host and registry validation
 tests/               ALL tests (see the two conventions below)

@@ -64,8 +64,11 @@ prefilter before model evaluation.
   prefilter, and evaluation in that order.
 - **One local application boundary:** interfaces request a small versioned
   operation; fixed backend code chooses executables, scripts, paths, flags,
-  timeouts, cancellation, and bounded lifecycle output. This removes ad-hoc
-  command construction from future UI work.
+  timeouts, cancellation, and bounded lifecycle output. The new UI uses this
+  boundary rather than constructing backend commands.
+- **No duplicate AI spend:** UI jobs are persisted across reloads and claimed
+  atomically per role. Simultaneous clicks, requests, or server processes
+  return the same running job instead of launching a second paid model call.
 - **Model only for judgement:** provider APIs and deterministic code handle
   collection, description extraction, freshness, obvious mismatches, report
   rendering, pipeline state, and tracker-safe output. The model receives clean
