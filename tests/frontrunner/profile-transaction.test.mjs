@@ -19,7 +19,7 @@ import {
   recoverProfileSave,
 } from '../../src/application/profile-transaction.mjs';
 
-const REAL_TEMPLATE = new URL('../../config/profile.example.yml', import.meta.url).pathname;
+const REAL_TEMPLATE = fileURLToPath(new URL('../../config/profile.example.yml', import.meta.url));
 const WORKER = fileURLToPath(
   new URL('../fixtures/profile-transaction-worker.mjs', import.meta.url),
 );

@@ -10,6 +10,7 @@ import {
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 
 import { ROOT } from '#paths';
 import {
@@ -19,7 +20,7 @@ import {
 } from '../../src/evaluate/execution-result.mjs';
 import { runPipelineEvaluations } from '../../src/pipeline/run.mjs';
 
-const worker = new URL('../fixtures/evaluation-result-worker.mjs', import.meta.url);
+const worker = fileURLToPath(new URL('../fixtures/evaluation-result-worker.mjs', import.meta.url));
 
 function fixture(t) {
   const dir = mkdtempSync(join(tmpdir(), 'frontrunner-evaluation-accounting-'));
@@ -75,7 +76,7 @@ test('execution result normalizes provider usage without admitting content field
 });
 
 test('fixed descriptor 3 carries one bounded result independently of stdout', () => {
-  const result = spawnSync(process.execPath, [worker.pathname], {
+  const result = spawnSync(process.execPath, [worker], {
     encoding: 'utf8',
     env: {
       ...process.env,

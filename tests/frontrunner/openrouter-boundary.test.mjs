@@ -11,6 +11,7 @@ import {
 import { spawn } from 'node:child_process';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 
 import { ROOT } from '../../src/paths.mjs';
 import {
@@ -24,7 +25,7 @@ import {
   readModelBlacklist,
 } from '../../src/evaluate/model-blacklist.mjs';
 
-const worker = new URL('../fixtures/model-blacklist-worker.mjs', import.meta.url);
+const worker = fileURLToPath(new URL('../fixtures/model-blacklist-worker.mjs', import.meta.url));
 
 function fixture(t, prefix) {
   const dir = mkdtempSync(join(tmpdir(), prefix));
@@ -34,7 +35,7 @@ function fixture(t, prefix) {
 
 function runWorker(file, index) {
   return new Promise(resolve => {
-    const child = spawn(process.execPath, [worker.pathname, file, String(index)], {
+    const child = spawn(process.execPath, [worker, file, String(index)], {
       stdio: ['ignore', 'ignore', 'pipe'],
     });
     let stderr = '';

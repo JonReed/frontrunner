@@ -13,6 +13,7 @@ import {
 import { spawn } from 'node:child_process';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 
 import {
   cacheProviderDescriptions,
@@ -20,11 +21,11 @@ import {
 } from '../../src/scan/jd-cache.mjs';
 import { publishJdCacheEntries } from '../../src/scan/jd-cache-store.mjs';
 
-const worker = new URL('../fixtures/jd-cache-worker.mjs', import.meta.url);
+const worker = fileURLToPath(new URL('../fixtures/jd-cache-worker.mjs', import.meta.url));
 
 function runWorker(outDir, index) {
   return new Promise(resolve => {
-    const child = spawn(process.execPath, [worker.pathname, outDir, String(index)], {
+    const child = spawn(process.execPath, [worker, outDir, String(index)], {
       stdio: ['ignore', 'ignore', 'pipe'],
     });
     let stderr = '';

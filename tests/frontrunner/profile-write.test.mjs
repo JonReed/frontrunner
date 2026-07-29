@@ -10,6 +10,7 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import {
@@ -23,7 +24,7 @@ import {
   cvVersionsDir,
 } from '../../src/application/profile-write.mjs';
 
-const REAL_TEMPLATE = new URL('../../config/profile.example.yml', import.meta.url).pathname;
+const REAL_TEMPLATE = fileURLToPath(new URL('../../config/profile.example.yml', import.meta.url));
 
 function sandbox() {
   const dir = mkdtempSync(join(tmpdir(), 'profile-write-'));

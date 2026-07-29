@@ -11,6 +11,7 @@ import {
 import { spawn } from 'node:child_process';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 
 import { fileLockDirFor } from '../../src/lib/file-lock.mjs';
 import {
@@ -18,12 +19,12 @@ import {
   runCanonicalPipeline,
 } from '../../src/pipeline/run.mjs';
 
-const worker = new URL('../fixtures/pipeline-run-worker.mjs', import.meta.url);
+const worker = fileURLToPath(new URL('../fixtures/pipeline-run-worker.mjs', import.meta.url));
 
 function runWorker(input, batchDir, marker, holdMs = 400) {
   return new Promise(resolve => {
     const child = spawn(process.execPath, [
-      worker.pathname,
+      worker,
       input,
       batchDir,
       marker,

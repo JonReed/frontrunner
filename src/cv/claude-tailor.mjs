@@ -11,6 +11,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { ROOT } from '#paths';
 import { replaceFileAtomic } from '../lib/locked-file.mjs';
@@ -156,7 +157,7 @@ function value(args, flag) {
   return index >= 0 ? args[index + 1] : null;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === new URL(import.meta.url).pathname) {
+if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
   try {
     const args = process.argv.slice(2);
     tailorCv({

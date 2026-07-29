@@ -19,6 +19,7 @@ import {
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { ROOT } from '#paths';
 import { readBodyLimited } from '../../providers/_http.mjs';
@@ -278,6 +279,6 @@ async function main() {
   }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === new URL(import.meta.url).pathname) {
+if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
   await main();
 }

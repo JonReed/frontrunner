@@ -79,7 +79,9 @@ test('run history is bounded, private, and excludes unapproved metadata', async 
   assert.equal(lines.length, 3);
   assert.deepEqual(lines.map(line => JSON.parse(line).runId), ['run-2', 'run-3', 'run-4']);
   assert.doesNotMatch(readFileSync(file, 'utf8'), /jobs\.example|hostile job text|model output/u);
-  assert.equal(lstatSync(file).mode & 0o077, 0);
+  if (process.platform !== 'win32') {
+    assert.equal(lstatSync(file).mode & 0o077, 0);
+  }
 });
 
 test('run history reader is newest-first, filtered, bounded, and fails closed on corruption', async t => {
