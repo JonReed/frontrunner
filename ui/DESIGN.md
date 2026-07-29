@@ -15,8 +15,8 @@ one of them:
 
 **Job hunting is demoralising.** Rejection is the normal outcome, progress is
 invisible for weeks, and people arrive at this screen already discouraged. The
-interface should feel calm and competent — a good assistant, not a dashboard,
-and never a productivity tool congratulating you on your streaks.
+interface should feel calm and competent — never a productivity tool
+congratulating you on your streaks.
 
 **They are handing over their entire employment history.** Trust is not a nice
 -to-have. Say what happens to their data, link the real job advert so they can
@@ -24,9 +24,73 @@ check our work, and never let an AI action spend their allowance unannounced.
 
 ---
 
+## Personality
+
+**The agent who has read everything.**
+
+Not an assistant. An assistant waits to be asked and performs willingness —
+"How can I help you today?", "I'd be happy to help!" — which is both the
+default voice of every AI product and, for someone anxious about work, faintly
+patronising. It is the tell that does not show up in a screenshot.
+
+An agent has already done the work:
+
+> **Assistant:** "How can I help you today? I'd be happy to find you some roles!"
+> **Agent:** "I read 247 of these. Six are worth your time. Start with Accenture."
+
+Think of a good chief of staff, or the useful half of a talent agent. Someone
+who works for you, has read all 247 adverts so you did not have to, tells you
+which six matter, and is straight with you when something is weak. The name
+carries the same idea: Frontrunner is about being ahead, not about being
+helped.
+
+### No persona, no "I"
+
+There is no assistant character here and nothing in the interface says "I".
+
+The moment a product has a named helper saying "I've found some great matches
+for you!", two things happen: people start talking to it instead of using it,
+and every string has to be written in character. The personality should live
+in **what the interface chooses to say and what it refuses to say** — not in a
+mascot.
+
+So: speak plainly about the user's situation, in second person, with no
+narrator. A well-made instrument has a personality without having a character.
+
+### What that sounds like
+
+| Situation | Assistant voice | Frontrunner voice |
+|---|---|---|
+| Empty state | "No results found. Try adjusting your filters!" | "Nothing needs your attention." |
+| Weak match | "This role might not be the best fit 😕" | "Not worth your time — the clearance requirement is a hard stop." |
+| Failure | "Oops! Something went wrong." | "That did not work. The Claude CLI is not signed in." |
+| Success | "🎉 Your CV is ready!" | "Your tailored CV is ready. Read it through, then apply on the company's own site." |
+
+What is absent from the right-hand column matters as much as what is present:
+no apology, no emoji, no exclamation marks, no hedging. And no harshness
+either — this is someone who respects you enough to be direct, not someone
+being blunt for its own sake.
+
+### The five traits
+
+1. **Direct** — lead with the conclusion. "Six worth looking at", then the
+   detail.
+2. **Candid** — say when something is weak. A tool that likes everything is
+   worthless, and this one is judged on the applications you do not waste time
+   on as much as the ones you send.
+3. **Unhurried** — no manufactured urgency. No "Act now", no countdowns, no
+   streaks. Job hunting is long and people are already anxious.
+4. **Unsentimental, not cold** — acknowledge that this is hard when it is
+   relevant, then get on with it. Never dwell, never commiserate.
+5. **Never performs** — no enthusiasm theatre, no congratulation, no
+   encouragement the user did not earn. If something genuinely went well, the
+   fact is the good news.
+
+---
+
 ## Voice
 
-Write like a knowledgeable friend who has read the job advert properly.
+The personality above, applied to individual strings.
 
 **Plain, specific, unhurried.**
 
