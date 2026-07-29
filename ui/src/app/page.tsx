@@ -56,12 +56,21 @@ function ActionButton({ role }: { role: Role }) {
   );
 }
 
+/**
+ * Stacked on a phone, single row on a laptop.
+ *
+ * Not a cosmetic breakpoint: as one row, the title block and the action block
+ * both compete for 375px, and because the title is min-w-0 it loses — the role
+ * collapses to "Engine…" while a button sits beside it. The row has to become
+ * two rows, not a narrower version of itself.
+ */
 function RoleRow({ role }: { role: Role }) {
   return (
-    <li className="flex flex-wrap items-center gap-x-4 gap-y-3 border-b border-[var(--color-line)] px-5 py-4 last:border-0 sm:flex-nowrap">
-      <div className="min-w-0 flex-1">
+    <li className="flex flex-col items-stretch gap-3 border-b border-[var(--color-line)] px-5 py-4 last:border-0 sm:flex-row sm:items-center sm:gap-4">
+      <div className="w-full min-w-0 flex-1 sm:w-auto">
         <div className="truncate text-[15px] font-semibold">{role.company}</div>
-        <div className="truncate text-sm text-[var(--color-ink-soft)]">{role.role}</div>
+        {/* Wraps on a phone, truncates on a laptop where the row is a row. */}
+        <div className="text-sm text-[var(--color-ink-soft)] sm:truncate">{role.role}</div>
         <div className="mt-1.5 flex items-center gap-2">
           <Match score={role.score} />
           {role.hasPdf && (
@@ -78,7 +87,7 @@ function RoleRow({ role }: { role: Role }) {
         an AI's opinion of a job, and should not have to. The real advert is
         always one click away, from every screen that shows a verdict.
       */}
-      <div className="flex shrink-0 items-center gap-3">
+      <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2">
         {role.pdf && <CvLinks pdf={role.pdf} size="sm" />}
         {role.url && (
           <a

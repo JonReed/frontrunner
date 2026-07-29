@@ -31,16 +31,24 @@ const STEPS = [
   'Building the PDF',
 ];
 
+/**
+ * The threshold below which the project's own guidance is "do not apply".
+ * Shared with the CLI's rubric so the two never give opposite advice.
+ */
+const WORTH_APPLYING = 4.0;
+
 export function BuildCv({
   roleNum,
   hasPdf,
   pdf,
   url,
+  score,
 }: {
   roleNum: number;
   hasPdf: boolean;
   pdf?: string | null;
   url?: string | null;
+  score?: number | null;
 }) {
   const [job, setJob] = useState<Job | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -175,6 +183,40 @@ export function BuildCv({
         >
           Try again
         </button>
+      </div>
+    );
+  }
+
+  /*
+    A weak match gets the honest answer, not the same invitation as a good one.
+
+    The assessment above has just explained why this role does not fit. Ending
+    that page with "Want to apply?" and a primary button contradicts it, and
+    quietly asks the user to spend their AI allowance on an application the
+    tool itself scored as not worth sending. Being candid about a bad match is
+    most of what makes the good ones trustworthy.
+
+    Recommend against, do not block: the score is a rubric, the user knows
+    things it does not, and the button is still right there.
+  */
+  if (typeof score === 'number' && score < WORTH_APPLYING) {
+    return (
+      <div>
+        <p className="font-semibold">Not worth an application</p>
+        <p className="mt-0.5 text-sm text-[var(--color-ink-soft)]">
+          This one scored {score.toFixed(1)} out of 5 — the gaps above are the reason. Your
+          time is better spent on a stronger match.
+        </p>
+        <details className="mt-3">
+          <summary className="inline-block cursor-pointer text-sm font-medium text-[var(--color-ink-soft)] underline decoration-[var(--color-line-strong)] underline-offset-2 hover:text-[var(--color-act)]">
+            Apply anyway
+          </summary>
+          <div className="mt-3">
+            <AiButton what="rewrite your CV for this specific job" onClick={start}>
+              Build my CV for this job
+            </AiButton>
+          </div>
+        </details>
       </div>
     );
   }

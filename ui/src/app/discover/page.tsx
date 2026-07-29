@@ -58,11 +58,14 @@ export default async function DiscoverPage() {
           {inbox.slice(0, 60).map((r) => (
             <li
               key={r.url}
-              className="flex items-center gap-4 border-b border-[var(--color-line)] px-5 py-3.5 last:border-0"
+              // Stacked on a phone: side by side, the title loses the space
+              // fight with the button and truncates to nothing useful.
+              className="flex flex-col items-start gap-2 border-b border-[var(--color-line)] px-5 py-3.5 last:border-0 sm:flex-row sm:items-center sm:gap-4"
             >
-              <div className="min-w-0 flex-1">
+              <div className="w-full min-w-0 flex-1 sm:w-auto">
                 <div className="truncate text-sm font-semibold">{r.company}</div>
-                <div className="truncate text-sm text-[var(--color-ink-soft)]">{r.role}</div>
+                {/* Wraps on a phone, truncates on a laptop where the row is a row. */}
+                <div className="text-sm text-[var(--color-ink-soft)] sm:truncate">{r.role}</div>
                 <div className="mt-0.5 truncate text-xs text-[var(--color-ink-faint)]">
                   {r.location}
                   {r.posted && ` · posted ${r.posted}`}

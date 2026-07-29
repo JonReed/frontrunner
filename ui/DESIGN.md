@@ -203,6 +203,40 @@ spends money. "Build my CV" appears only on the role page, at the bottom,
 after the reasons to want it. Asking someone to spend their allowance on a
 role they have not read earns the honest answer: *I don't know enough yet.*
 
+**A weak match is told it is a weak match.** Below 4.0 the role page does not
+say "Want to apply?" — it says the application is not worth sending and why,
+and demotes the build button behind *Apply anyway*. Inviting someone to spend
+their AI allowance on a role the tool has just scored 1.8 contradicts the
+assessment directly above it, and being candid about the bad matches is most
+of what makes the good ones worth trusting.
+
+It recommends against; it never blocks. The score is a rubric and the user
+knows things the rubric does not.
+
+---
+
+## Small screens
+
+People check this on a phone between other things, so the phone layout is a
+first-class layout, not a fallback.
+
+**Rows become rows only when there is room for one.** Each list here pairs a
+title block with an action block. Side by side at 375px the title loses — it
+is `min-w-0`, so it collapses to "Engine…" while a button sits comfortably
+beside it. Every such row is `flex-col` up to `sm:`, and titles wrap on a
+phone rather than truncating.
+
+**Navigation moves to a fixed bottom bar below `sm`.** Four labels plus the
+wordmark do not fit across a phone; the fourth ran off the edge, so a quarter
+of the product was invisible. A hamburger would have hidden all four and cost
+a tap on every move through what is by design a four-step workflow. The bottom
+bar keeps all four visible and in thumb reach. On a laptop, where they fit,
+they stay inline in the header.
+
+**The board stacks, it does not wrap.** At two columns the five stages run
+1 2 / 3 4 / 5, which puts the last stage under the third and destroys the
+progression the layout exists to show. One stage per row keeps the order.
+
 ---
 
 ## Accessibility

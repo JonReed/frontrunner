@@ -53,11 +53,19 @@ export default async function ApplicationsPage() {
       <div className="mb-8">
         <h1 className="text-[28px] font-bold leading-tight tracking-tight">My applications</h1>
         <p className="mt-1 text-[15px] text-[var(--color-ink-soft)]">
-          {live.length} roles in progress. They move left to right as you go.
+          {live.length} roles in progress, in the order things move.
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+      {/*
+        One column per stage on a phone, five across on a laptop.
+
+        Deliberately not a wrapped board: at two columns the stages run
+        1 2 / 3 4 / 5, which puts the last stage under the third and destroys
+        the progression the whole layout exists to show. Stacked, the order is
+        still the order — it just reads downwards.
+      */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {COLUMNS.map((c) => {
           const items = roles.filter((r) => r.stage === c.key);
           return (

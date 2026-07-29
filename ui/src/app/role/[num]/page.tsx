@@ -122,7 +122,7 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
         badged so it is never a surprise.
       */}
       <div className="sticky bottom-4 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-card)] p-5 shadow-md shadow-black/5">
-        <BuildCv roleNum={role.num} hasPdf={role.hasPdf} pdf={role.pdf} url={jobUrl} />
+        <BuildCv roleNum={role.num} hasPdf={role.hasPdf} pdf={role.pdf} url={jobUrl} score={role.score} />
       </div>
     </div>
   );
