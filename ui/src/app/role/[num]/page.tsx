@@ -23,6 +23,7 @@ import { BuildCv } from '@/components/build-cv';
 import { CvLinks } from '@/components/cv-links';
 import { RoleJourney } from '@/components/journey-rail';
 import { Outcome } from '@/components/outcome';
+import { readHealth } from '@/lib/health';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,7 +40,7 @@ function Section({ title, body }: { title: string; body: string }) {
 
 export default async function RolePage({ params }: { params: Promise<{ num: string }> }) {
   const { num } = await params;
-  const roles = await readTracker();
+  const [roles, health] = await Promise.all([readTracker(), readHealth()]);
   const role = roles.find((r) => String(r.num) === num);
   if (!role) notFound();
 
@@ -145,7 +146,7 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
         badged so it is never a surprise.
       */}
       <div className="sticky bottom-4 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-card)] p-5 shadow-md shadow-black/5">
-        <BuildCv roleNum={role.num} hasPdf={role.hasPdf} pdf={role.pdf} url={jobUrl} score={role.score} />
+        <BuildCv roleNum={role.num} hasPdf={role.hasPdf} pdf={role.pdf} url={jobUrl} score={role.score} connected={health.signedIn} />
       </div>
     </div>
   );

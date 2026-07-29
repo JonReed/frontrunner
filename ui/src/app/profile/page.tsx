@@ -16,6 +16,8 @@
 import { readProfile } from '@/lib/profile';
 import { readProfile as readEditableFields } from '@/lib/profile-save';
 import { EditDetails } from '@/components/edit-details';
+import { readHealth } from '@/lib/health';
+import { ConnectionDetail } from '@/components/connection';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,7 +41,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 const NOT_SET = <span className="text-[var(--color-ink-faint)]">Not set</span>;
 
 export default async function ProfilePage() {
-  const [p, editable] = await Promise.all([readProfile(), readEditableFields()]);
+  const [p, editable, health] = await Promise.all([readProfile(), readEditableFields(), readHealth()]);
 
   return (
     <>
@@ -84,6 +86,8 @@ export default async function ProfilePage() {
           <Row label="Walk-away figure" value={p.compMinimum ?? NOT_SET} />
         </dl>
       </section>
+
+      <ConnectionDetail health={health} />
 
       <h2 className="mb-2 text-base font-bold tracking-tight">Your CV</h2>
       <section className="mb-8 rounded-xl border border-[var(--color-line)] bg-[var(--color-card)] px-5 py-2">

@@ -43,12 +43,15 @@ export function BuildCv({
   pdf,
   url,
   score,
+  connected = true,
 }: {
   roleNum: number;
   hasPdf: boolean;
   pdf?: string | null;
   url?: string | null;
   score?: number | null;
+  /** False when the Claude CLI is missing or signed out. */
+  connected?: boolean;
 }) {
   const [job, setJob] = useState<Job | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -183,6 +186,29 @@ export function BuildCv({
         >
           Try again
         </button>
+      </div>
+    );
+  }
+
+  /*
+    Not connected: say so instead of offering a button that cannot work.
+
+    Checking costs nothing — no model call, no allowance — so there is no
+    excuse for letting someone click, wait, and read a failure. This is the
+    same fact the banner on Next up reports; here it replaces the action it
+    would have broken.
+  */
+  if (!connected) {
+    return (
+      <div>
+        <p className="font-semibold">Not connected to Claude Code</p>
+        <p className="mt-0.5 text-sm text-[var(--color-ink-soft)]">
+          Building a CV needs it. See{' '}
+          <a href="/profile" className="font-medium text-[var(--color-act)] underline underline-offset-2">
+            My details
+          </a>{' '}
+          for how to connect, then reload this page.
+        </p>
       </div>
     );
   }
