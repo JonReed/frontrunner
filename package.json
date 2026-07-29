@@ -6,6 +6,9 @@
     "#paths": "./src/paths.mjs"
   },
   "private": true,
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "doctor": "node doctor.mjs",
     "ui": "npm --prefix ui run dev",
