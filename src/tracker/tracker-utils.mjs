@@ -264,123 +264,130 @@ export async function acquireTrackerLock(lockDir, options = {}) {
 
   while (Date.now() - startedAt < timeoutMs) {
     attempts++;
+    let hasRecoverGuard = false;
     try {
-      mkdirSync(lockDir);
-      try {
-        writeFileSync(join(lockDir, 'owner.json'), JSON.stringify({
-          pid: process.pid,
-          token,
-          started_at: new Date().toISOString(),
-          tracker: options.tracker ?? '',
-        }, null, 2));
-      } catch (ownerErr) {
-        // We created the dir but could not record ownership. An empty,
-        // owner-less lock dir would block every future locker until the
-        // staleMs age-out — remove what we just created before rethrowing.
-        // Scoped to the owner write only: the mkdir EEXIST contention path
-        // is still handled by the outer catch.
-        rmSync(lockDir, { recursive: true, force: true });
-        throw ownerErr;
-      }
-
-      let ownerVerified = false;
-      let verifiedDir = null;
-      let released = false;
-      const removeLock = typeof options.removeLock === 'function'
-        ? options.removeLock
-        : path => rmSync(path, { recursive: true, force: true });
-      return {
-        attempts,
-        waitMs: Date.now() - startedAt,
-        staleRecovered,
-        release() {
-          if (released) return;
-          if (ownerVerified) {
-            let currentDir;
-            try {
-              currentDir = statSync(lockDir);
-            } catch (err) {
-              if (err?.code === 'ENOENT') {
-                released = true;
-                return;
-              }
-              throw err;
-            }
-            if (!sameLockDirectory(verifiedDir, currentDir)) {
-              released = true;
-              return;
-            }
-            const owner = readLockOwner(lockDir);
-            if (owner && owner.token !== token) {
-              released = true;
-              return;
-            }
-            if (!owner && existsSync(join(lockDir, 'owner.json'))) {
-              throw new Error(`Cannot verify tracker lock ownership at ${lockDir}`);
-            }
-          } else {
-            let beforeRead;
-            try {
-              beforeRead = statSync(lockDir);
-            } catch (err) {
-              if (err?.code === 'ENOENT') {
-                released = true;
-                return;
-              }
-              throw err;
-            }
-            const owner = readLockOwner(lockDir);
-            if (owner?.token !== token) {
-              if (owner) released = true;
-              else throw new Error(`Cannot verify tracker lock ownership at ${lockDir}`);
-              return;
-            }
-            const afterRead = statSync(lockDir);
-            if (!sameLockDirectory(beforeRead, afterRead)) {
-              released = true;
-              return;
-            }
-            ownerVerified = true;
-            verifiedDir = afterRead;
-          }
-          removeLock(lockDir);
-          released = true;
-        },
-      };
-    } catch (err) {
-      if (err?.code !== 'EEXIST') throw err;
-
-      let hasRecoverGuard = false;
       try {
         mkdirSync(recoverGuardDir);
         hasRecoverGuard = true;
       } catch (guardErr) {
-        if (guardErr?.code !== 'EEXIST') throw guardErr;
+        if (guardErr?.code !== 'EEXIST' && guardErr?.code !== 'EPERM') throw guardErr;
         // A process killed between creating the guard and its cleanup leaves
-        // the guard behind forever, permanently disabling stale-lock recovery
-        // for every future writer. The guard normally lives for milliseconds,
-        // so an old one is judged stale by the same age rule as a
-        // metadata-free lock and removed; the next loop iteration can then
-        // take the guard and run recovery.
-        if (lockCanRecover(recoverGuardDir, staleMs)) {
+        // the guard behind forever. A real guard normally lives for only a
+        // few synchronous filesystem calls, so the ordinary stale threshold
+        // safely distinguishes an orphan from current contention.
+        if (guardErr?.code === 'EEXIST' && lockCanRecover(recoverGuardDir, staleMs)) {
           rmSync(recoverGuardDir, { recursive: true, force: true });
         }
       }
 
       if (hasRecoverGuard) {
         try {
+          mkdirSync(lockDir);
+          try {
+            writeFileSync(join(lockDir, 'owner.json'), JSON.stringify({
+              pid: process.pid,
+              token,
+              started_at: new Date().toISOString(),
+              tracker: options.tracker ?? '',
+            }, null, 2));
+          } catch (ownerErr) {
+            // We created the dir but could not record ownership. An empty,
+            // owner-less lock dir would block every future locker until the
+            // staleMs age-out — remove what we just created before rethrowing.
+            rmSync(lockDir, { recursive: true, force: true });
+            throw ownerErr;
+          }
+
+          let ownerVerified = false;
+          let verifiedDir = null;
+          let released = false;
+          const removeLock = typeof options.removeLock === 'function'
+            ? options.removeLock
+            : path => rmSync(path, { recursive: true, force: true });
+          return {
+            attempts,
+            waitMs: Date.now() - startedAt,
+            staleRecovered,
+            release() {
+              if (released) return;
+              if (ownerVerified) {
+                let currentDir;
+                try {
+                  currentDir = statSync(lockDir);
+                } catch (err) {
+                  if (err?.code === 'ENOENT') {
+                    released = true;
+                    return;
+                  }
+                  throw err;
+                }
+                if (!sameLockDirectory(verifiedDir, currentDir)) {
+                  released = true;
+                  return;
+                }
+                const owner = readLockOwner(lockDir);
+                if (owner && owner.token !== token) {
+                  released = true;
+                  return;
+                }
+                if (!owner && existsSync(join(lockDir, 'owner.json'))) {
+                  throw new Error(`Cannot verify tracker lock ownership at ${lockDir}`);
+                }
+              } else {
+                let beforeRead;
+                try {
+                  beforeRead = statSync(lockDir);
+                } catch (err) {
+                  if (err?.code === 'ENOENT') {
+                    released = true;
+                    return;
+                  }
+                  throw err;
+                }
+                const owner = readLockOwner(lockDir);
+                if (owner?.token !== token) {
+                  if (owner) released = true;
+                  else throw new Error(`Cannot verify tracker lock ownership at ${lockDir}`);
+                  return;
+                }
+                const afterRead = statSync(lockDir);
+                if (!sameLockDirectory(beforeRead, afterRead)) {
+                  released = true;
+                  return;
+                }
+                ownerVerified = true;
+                verifiedDir = afterRead;
+              }
+              removeLock(lockDir);
+              released = true;
+            },
+          };
+        } catch (err) {
+          if (err?.code !== 'EEXIST') throw err;
+          // Every acquisition now holds recoverGuardDir while inspecting or
+          // replacing lockDir. That closes the old TOCTOU window where one
+          // process could decide an old lock was stale, another could acquire
+          // a fresh lock at the same path, and the first could delete it.
           if (lockCanRecover(lockDir, staleMs)) {
             rmSync(lockDir, { recursive: true, force: true });
             staleRecovered = true;
-            continue;
           }
-        } finally {
-          rmSync(recoverGuardDir, { recursive: true, force: true });
         }
       }
-
-      await sleep(retryMs);
+    } finally {
+      if (hasRecoverGuard) {
+        try {
+          rmSync(recoverGuardDir, { recursive: true, force: true });
+        } catch (guardCleanupErr) {
+          // A concurrent Windows filesystem observer can transiently hold a
+          // just-created directory. Leaving the guard is safe: its stale
+          // recovery path will clear it on a later attempt.
+          if (guardCleanupErr?.code !== 'EPERM') throw guardCleanupErr;
+        }
+      }
     }
+
+    await sleep(retryMs);
   }
 
   // Tag the timeout so callers can tell "lock is busy, retry later" apart

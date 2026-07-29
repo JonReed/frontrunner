@@ -35,7 +35,11 @@ test('destructive batch boundary: missing prefilter fails closed before launchin
   writeFileSync(join(fakeBin, 'claude'), `#!/bin/sh\nprintf launched > "${launched}"\n`);
   chmodSync(join(fakeBin, 'claude'), 0o755);
 
-  const result = spawnSync(join(batch, 'batch-runner.sh'), ['--dry-run'], {
+  const command = process.platform === 'win32' ? 'bash' : join(batch, 'batch-runner.sh');
+  const args = process.platform === 'win32'
+    ? ['batch/batch-runner.sh', '--dry-run']
+    : ['--dry-run'];
+  const result = spawnSync(command, args, {
     cwd: dir,
     encoding: 'utf8',
     env: { ...process.env, PATH: `${fakeBin}${delimiter}${process.env.PATH}` },

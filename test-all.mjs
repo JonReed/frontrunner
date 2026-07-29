@@ -7499,11 +7499,21 @@ function writeToollessBatchFixture(root, urls) {
   }
   writeFileSync(join(jdsDir, 'index.tsv'), `${rows.join('\n')}\n`);
   writeFileSync(join(evaluateDir, 'claude-eval.mjs'), [
+    "import { writeFileSync } from 'node:fs';",
     "import { spawnSync } from 'node:child_process';",
     'const args = process.argv.slice(2);',
     "const modelAt = args.indexOf('--model');",
     "const modelArgs = modelAt >= 0 ? ['--model', args[modelAt + 1]] : [];",
-    "const child = spawnSync('claude', ['--strict-mcp-config', '--tools', '', ...modelArgs], { encoding: 'utf8' });",
+    "const claudeArgs = ['--strict-mcp-config', '--tools', '', ...modelArgs];",
+    "if (process.env.BATCH_ARG_FILE) {",
+    "  writeFileSync(process.env.BATCH_ARG_FILE, `${claudeArgs.join('\\n')}\\n`);",
+    "  process.exit(0);",
+    "}",
+    "if (process.env.BATCH_FAKE_SESSION_LIMIT === '1') {",
+    "  console.log(\"You've hit your session limit · resets 12:30pm (Asia/Taipei)\");",
+    "  process.exit(1);",
+    "}",
+    "const child = spawnSync('claude', claudeArgs, { encoding: 'utf8' });",
     "process.stdout.write(child.stdout || '');",
     "process.stderr.write(child.stderr || '');",
     'process.exit(child.status ?? 1);',
@@ -7559,7 +7569,11 @@ try {
     execFileSync('chmod', ['+x', join(fakeBin, 'claude')]);
   }
 
-  const env = { ...process.env, PATH: `${fakeBin}${delimiter}${process.env.PATH}` };
+  const env = {
+    ...process.env,
+    PATH: `${fakeBin}${delimiter}${process.env.PATH}`,
+    BATCH_FAKE_SESSION_LIMIT: '1',
+  };
   const out = run(getBash(), [toBashPath(join(batchDir, 'batch-runner.sh')), '--parallel', '1', '--max-retries', '3', '--rate-limit-sleep', '0'], {
     cwd: tmp,
     env,
