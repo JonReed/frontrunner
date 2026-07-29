@@ -26,9 +26,9 @@ import { fileURLToPath } from 'url';
 import { ROOT } from '#paths';
 const NODE = process.execPath;
 
-// web/ lives deliberately OUTSIDE the auto-updater's world (its own
-// release-please component; see validate-system-paths-coverage.mjs
-// EXCLUDE_PREFIXES), so installs updated via `update-system.mjs apply` have
+// web/ lives deliberately OUTSIDE the auto-updater's world (see
+// validate-system-paths-coverage.mjs EXCLUDE_PREFIXES), so installs updated
+// via `update-system.mjs apply` have
 // the core WITHOUT the web/ tree. The web-reader tests below exercise the
 // real alias chain on fresh clones and CI, and skip cleanly on core-only
 // installs instead of crashing the whole suite with ERR_MODULE_NOT_FOUND.

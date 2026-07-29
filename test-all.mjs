@@ -961,8 +961,8 @@ for (const f of skillEntrypoints) {
 // canonical (Claude Code + Copilot CLI both read it), and .github/plugin/
 // plugin.json exists only because the awesome-copilot marketplace validator
 // accepts just three paths and the Claude-compat one is not among them. Both
-// are bumped by release-please; this assert makes any other divergence fail CI
-// loudly instead of shipping two drifting manifests.
+// must be bumped together; this assert makes any divergence fail CI loudly
+// instead of shipping two drifting manifests.
 {
   const canonManifest = readFile('.claude-plugin/plugin.json');
   const copilotManifest = fileExists('.github/plugin/plugin.json') ? readFile('.github/plugin/plugin.json') : null;
@@ -4136,8 +4136,9 @@ console.log('\n12c. Materialized skill index mode');
 console.log('\n14. Version file');
 
 if (fileExists('VERSION')) {
-  // VERSION may carry a release-please marker, e.g. "1.9.0 # x-release-please-version".
-  // Validate the first whitespace-delimited token, mirroring update-system.mjs parseVersionFile().
+  // Validate the first whitespace-delimited token, mirroring
+  // update-system.mjs parseVersionFile(), which tolerates a trailing comment
+  // in a VERSION restored from an older backup.
   const version = readFile('VERSION').trim().split(/\s+/)[0];
   if (/^\d+\.\d+\.\d+$/.test(version)) {
     pass(`VERSION is valid semver: ${version}`);

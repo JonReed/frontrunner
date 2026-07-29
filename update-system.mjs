@@ -397,8 +397,9 @@ const USER_PATHS = [
 ];
 
 function parseVersionFile(raw) {
-  // VERSION may carry a release-please marker, e.g. "1.6.0 # x-release-please-version".
-  // Take the first whitespace-delimited token so the marker doesn't break semver parsing.
+  // Take the first whitespace-delimited token. VERSION is now a bare semver,
+  // but a rollback restores a backup that may predate that and carry a
+  // trailing comment, so the tolerance stays.
   return raw.trim().split(/\s+/)[0] || '';
 }
 
