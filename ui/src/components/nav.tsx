@@ -13,7 +13,9 @@ import { usePathname } from 'next/navigation';
 export const NAV = [
   { href: '/', label: 'Next up' },
   { href: '/applications', label: 'My applications' },
-  { href: '/discover', label: 'Find roles' },
+  // Not "Find roles": nothing is found here, the scanner already did that.
+  // This is where its results sit, assessed and ruled out alike.
+  { href: '/found', label: 'Everything found' },
   { href: '/profile', label: 'My details' },
 ];
 

@@ -191,8 +191,43 @@ Three questions a job seeker actually asks, in the order they ask them:
 |---|---|
 | What should I do now? | **Next up** — the default |
 | Where does everything stand? | **My applications** |
-| What else is out there? | **Find roles** |
+| What did the scan turn up? | **Everything found** |
 | What does it know about me? | **My details** |
+
+**Not "Find roles".** Nothing is found on that screen — the scanner already
+did that, and naming a screen after a step that happened elsewhere leaves the
+user looking for a search box that does not exist.
+
+It holds both halves of what the scan produced, which is the point:
+
+- **Not assessed yet** — queued; nothing has judged them either way.
+- **Ruled out** — a rule in `config/prefilter.yml` matched and the role was
+  dropped before any model call.
+
+The second half used to be invisible: `batch/prefilter-rejects.tsv` was
+written and never read, so roles vanished silently. That is the wrong default
+when the judgement came from a config file rather than an assessment. Each one
+now shows the rule that fired and the evidence that triggered it — *matched on
+"Software Engineer"* — so the user can see what was decided for them, and
+disagree.
+
+**Every screen shows the whole process.** A role page is an opinion about one
+job; without context it is a document that could have come from anywhere. So
+each screen carries the same six-step rail:
+
+> Found · Deciding · Preparing · Ready · Applied · In process
+
+On a role page it marks that role's position (*Step 3 of 6: Preparing — then
+Ready*). On a list page it carries counts, so the shape of the pipeline is
+visible without leaving the page. The stage names live in one file,
+`lib/journey.ts`, because a board that says "Deciding" while a rail says
+something else makes the whole instrument untrustworthy.
+
+Two deliberate omissions. It is **not a progress bar** — a percentage would
+imply the end is reachable by effort alone, and most roles stop at "Applied".
+And `closed` is **not a seventh step**; it is an exit from any point, and
+drawing it on the spine would tell someone job hunting that rejection is the
+destination.
 
 **Next up is sorted by readiness, then by match.** Not by date, not by score
 alone. The product exists to get applications out, so the top row is always

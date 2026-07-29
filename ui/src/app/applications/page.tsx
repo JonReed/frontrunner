@@ -11,18 +11,13 @@
  */
 
 import Link from 'next/link';
-import { readTracker, type Role, type Stage } from '@/lib/roles';
+import { readTracker, type Role } from '@/lib/roles';
 import { matchOf } from '@/components/match';
+import { BOARD_COLUMNS, pipelineCounts } from '@/lib/journey';
+import { readInbox } from '@/lib/roles';
+import { PipelineOverview } from '@/components/journey-rail';
 
 export const dynamic = 'force-dynamic';
-
-const COLUMNS: { key: Stage; title: string; hint: string }[] = [
-  { key: 'triage', title: 'Deciding', hint: 'Worth a look' },
-  { key: 'prepare', title: 'Preparing', hint: 'Needs a CV' },
-  { key: 'ready', title: 'Ready', hint: 'Go apply' },
-  { key: 'applied', title: 'Applied', hint: 'Waiting' },
-  { key: 'active', title: 'In process', hint: 'They replied' },
-];
 
 function Card({ role }: { role: Role }) {
   const { tone } = matchOf(role.score);
@@ -45,7 +40,7 @@ function Card({ role }: { role: Role }) {
 }
 
 export default async function ApplicationsPage() {
-  const roles = await readTracker();
+  const [roles, inbox] = await Promise.all([readTracker(), readInbox()]);
   const live = roles.filter((r) => r.stage !== 'closed');
 
   return (
@@ -58,6 +53,13 @@ export default async function ApplicationsPage() {
       </div>
 
       {/*
+        The same overview as every other screen, including the step before this
+        one. This board starts at "Deciding", so without it the roles waiting
+        at "Found" look like they belong to a different product.
+      */}
+      <PipelineOverview counts={pipelineCounts(roles, inbox.length)} />
+
+      {/*
         One column per stage on a phone, five across on a laptop.
 
         Deliberately not a wrapped board: at two columns the stages run
@@ -66,13 +68,13 @@ export default async function ApplicationsPage() {
         still the order — it just reads downwards.
       */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {COLUMNS.map((c) => {
+        {BOARD_COLUMNS.map((c) => {
           const items = roles.filter((r) => r.stage === c.key);
           return (
             <div key={c.key} className="rounded-xl bg-[var(--color-line)]/40 p-2.5">
               <div className="mb-2.5 px-1">
                 <h2 className="text-sm font-bold">
-                  {c.title} <span className="tabular font-normal text-[var(--color-ink-faint)]">{items.length}</span>
+                  {c.short} <span className="tabular font-normal text-[var(--color-ink-faint)]">{items.length}</span>
                 </h2>
                 <p className="text-[11px] text-[var(--color-ink-faint)]">{c.hint}</p>
               </div>

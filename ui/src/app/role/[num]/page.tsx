@@ -21,6 +21,7 @@ import { ReportMarkdown } from '@/components/report-markdown';
 import { Match } from '@/components/match';
 import { BuildCv } from '@/components/build-cv';
 import { CvLinks } from '@/components/cv-links';
+import { RoleJourney } from '@/components/journey-rail';
 
 export const dynamic = 'force-dynamic';
 
@@ -82,6 +83,18 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
             </svg>
           </a>
         )}
+        </div>
+
+        {/*
+          Where this role sits in the process.
+
+          Directly under the title because it frames everything below it: the
+          same assessment means something different depending on whether you
+          have not decided yet or the CV is already built and waiting to be
+          sent. Without it, a role page was a document with no context.
+        */}
+        <div className="mt-6 rounded-xl border border-[var(--color-line)] bg-[var(--color-card)] px-5 py-4">
+          <RoleJourney stage={role.stage} status={role.status} />
         </div>
       </header>
 

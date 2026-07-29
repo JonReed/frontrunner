@@ -14,6 +14,8 @@ import Link from 'next/link';
 import { readTracker, summarise, type Role, type Readiness } from '@/lib/roles';
 import { Match } from '@/components/match';
 import { CvLinks } from '@/components/cv-links';
+import { PipelineOverview } from '@/components/journey-rail';
+import { pipelineCounts } from '@/lib/journey';
 
 export const dynamic = 'force-dynamic';
 
@@ -161,14 +163,24 @@ export default async function NextUpPage() {
   const [roles, counts] = await Promise.all([readTracker(), summarise()]);
   const actionable = roles.filter((r) => r.readiness !== 'parked');
 
+  /*
+    The whole process in one row of numbers, above everything else.
+
+    This screen shows what to do next, which is the right default but a narrow
+    view: someone looking at six strong matches could not tell that hundreds of
+    roles sat behind them, or that anything existed after "Applied". The counts
+    make the shape of the pipeline visible without leaving the page.
+  */
+  const stageCounts = pipelineCounts(roles, counts.inbox);
+
   return (
     <>
-      <div className="mb-9">
+      <div className="mb-7">
         <Headline ready={counts.readyToSend} nearly={counts.oneStepAway} />
         {counts.inbox > 0 && (
           <p className="mt-3 text-sm text-[var(--color-ink-faint)]">
             {counts.inbox.toLocaleString()} more roles found and not yet scored —{' '}
-            <Link href="/discover" className="font-medium text-[var(--color-act)] hover:underline">
+            <Link href="/found" className="font-medium text-[var(--color-act)] hover:underline">
               take a look
             </Link>
             .
@@ -176,11 +188,13 @@ export default async function NextUpPage() {
         )}
       </div>
 
+      <PipelineOverview counts={stageCounts} />
+
       {actionable.length === 0 ? (
         <div className="rounded-xl border border-dashed border-[var(--color-line-strong)] bg-[var(--color-card)] p-12 text-center">
           <p className="font-medium">No roles need your attention.</p>
           <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
-            <Link href="/discover" className="text-[var(--color-act)] hover:underline">
+            <Link href="/found" className="text-[var(--color-act)] hover:underline">
               Find some roles
             </Link>{' '}
             to get started.
