@@ -8,7 +8,7 @@
  * modes (apply Step 9, followup, batch) call this instead of editing the table.
  *
  * Usage:
- *   node src/tracker/set-status.mjs <report#|company> <state> [--note "..."] [--role "..."] [--force] [--dry-run] [--json]
+ *   node src/tracker/set-status.mjs <report#|company> <state> [--note "..."] [--role "..."] [--expect-revision <sha256>] [--force] [--dry-run] [--json]
  *
  * Row resolution:
  *   - numeric argument → exact match on the # column; if the tracker has a
@@ -33,11 +33,13 @@
  * Exit codes: 0 success (including no-op re-runs) · 1 usage error,
  * non-canonical state, unreadable states.yml, or non-retryable lock/write failure ·
  * 2 row not found or unreadable tracker · 3 ambiguous company match ·
- * 4 tracker lock timeout (busy — retry later).
+ * 4 tracker lock timeout (busy — retry later) · 5 optimistic-concurrency
+ * conflict (the selected row changed after the caller read it).
  *
  * When the new status is Applied, the JSON output carries
- * `"followupSeedCandidate": true` — the hook point for seeding
- * data/follow-ups.md with the default cadence (#1430, not implemented here).
+ * `"followupSeedCandidate": true` — the UI workflow controller consumes this
+ * transition deterministically by seeding data/follow-ups.md with the default
+ * cadence. Direct CLI callers may still invoke followup-seed.mjs explicitly.
  *
  * Every real status change also appends one line to the transition ledger
  * (status-log.tsv, sibling of the tracker file):
@@ -52,6 +54,7 @@
  */
 
 import { readFileSync, existsSync } from 'fs';
+import { createHash } from 'node:crypto';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { extractTrackerReportNumbers, resolveColumns, parseTrackerRow } from './tracker-parse.mjs';
@@ -71,7 +74,7 @@ const EXIT_NOT_FOUND = 2;
 const EXIT_AMBIGUOUS = 3;
 const EXIT_LOCK_TIMEOUT = 4;
 
-const USAGE = `Usage: node src/tracker/set-status.mjs <report#|company> <state> [--note "..."] [--role "..."] [--on YYYY-MM-DD] [--force] [--dry-run] [--json]
+const USAGE = `Usage: node src/tracker/set-status.mjs <report#|company> <state> [--note "..."] [--role "..."] [--on YYYY-MM-DD] [--expect-revision <sha256>] [--force] [--dry-run] [--json]
 
   <report#|company>  Row selector: tracker # (exact) or company name (normalized match)
   <state>            Canonical state from templates/states.yml (aliases accepted)
@@ -79,6 +82,7 @@ const USAGE = `Usage: node src/tracker/set-status.mjs <report#|company> <state> 
   --role "..."       Disambiguate when several rows share the company (fuzzy match)
   --on YYYY-MM-DD    Real event date for the status-log entry (defaults to today —
                      pass it when the transition happened earlier than it's recorded)
+  --expect-revision  Refuse the write unless the selected row still has this SHA-256 revision
   --force            Allow a numeric selector when the row's report link carries a different ID
   --dry-run          Resolve and validate, but write nothing
   --json             Machine-readable output on stdout (errors included)`;
@@ -87,8 +91,21 @@ const USAGE = `Usage: node src/tracker/set-status.mjs <report#|company> <state> 
 
 const rawArgs = process.argv.slice(2);
 const positional = [];
-const flags = { note: null, role: null, on: null, force: false, dryRun: false, json: false };
-const VALUE_FLAGS = { '--note': 'note', '--role': 'role', '--on': 'on' };
+const flags = {
+  note: null,
+  role: null,
+  on: null,
+  expectRevision: null,
+  force: false,
+  dryRun: false,
+  json: false,
+};
+const VALUE_FLAGS = {
+  '--note': 'note',
+  '--role': 'role',
+  '--on': 'on',
+  '--expect-revision': 'expectRevision',
+};
 
 for (let i = 0; i < rawArgs.length; i++) {
   const a = rawArgs[i];
@@ -121,6 +138,9 @@ if (flags.on !== null) {
   const roundTrips = d && !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === flags.on;
   if (!roundTrips) failUsage(`--on expects a real date as YYYY-MM-DD, got "${flags.on}"`);
   if (flags.on > new Date().toISOString().slice(0, 10)) failUsage(`--on date is in the future: "${flags.on}"`);
+}
+if (flags.expectRevision !== null && !/^[a-f0-9]{64}$/u.test(flags.expectRevision)) {
+  failUsage('--expect-revision expects a lowercase SHA-256 row revision');
 }
 
 const [selector, stateInput] = positional;
@@ -293,6 +313,15 @@ if (rows.length === 0) {
 }
 
 const target = resolveRow(rows);
+const previousRevision = createHash('sha256').update(target.raw).digest('hex');
+if (flags.expectRevision !== null && flags.expectRevision !== previousRevision) {
+  failWith(
+    5,
+    'stale-revision',
+    `Tracker #${target.num} changed after it was displayed. Reload before changing it.`,
+    { expectedRevision: flags.expectRevision, actualRevision: previousRevision },
+  );
+}
 
 // A numeric selector is often copied from a report filename. If tracker drift
 // has made the row ID disagree with its local report link, silently updating
@@ -380,9 +409,11 @@ if (note) {
 }
 
 const changed = statusChanged || noteChanged;
+const replacementLine = changed ? rebuildRow(parts) : lines[target.lineIdx];
+const revision = createHash('sha256').update(replacementLine).digest('hex');
 
 if (changed && !flags.dryRun) {
-  lines[target.lineIdx] = rebuildRow(parts);
+  lines[target.lineIdx] = replacementLine;
   try {
     writeFileAtomic(APPS_FILE, lines.join('\n'));
   } catch (err) {
@@ -427,6 +458,8 @@ const result = {
   role: target.role,
   oldStatus,
   newStatus,
+  previousRevision,
+  revision,
   ...(note != null ? { note } : {}),
   ...(flags.dryRun ? { dryRun: true } : {}),
   // Fire the #1430 hook only on an actual transition INTO Applied — an

@@ -16,6 +16,7 @@
 
 import { readFile, readdir, open } from 'node:fs/promises';
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { join, resolve, sep } from 'node:path';
 import { safeExternalUrl } from './urls';
 
@@ -51,6 +52,8 @@ export interface NextAction {
 
 export interface Role {
   num: number;
+  /** Optimistic-concurrency token for the exact tracker row that was read. */
+  revision: string;
   date: string;
   company: string;
   role: string;
@@ -112,6 +115,7 @@ export async function readTracker(): Promise<Role[]> {
       pdf: null as string | null,
       html: null as string | null,
       num: Number(numRaw),
+      revision: createHash('sha256').update(line).digest('hex'),
       date,
       company,
       role,

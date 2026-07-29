@@ -289,7 +289,10 @@ By routing the heaviest step (Evaluation) to a cheap OpenAI-compatible endpoint,
 
 ## 8. Zero-Cost Paths (No Claude / Paid CLI Required)
 
-Career-ops ships a full pipeline that runs **entirely on free models** — no Claude Code, no Anthropic API key, no paid CLI subscription. Everything below works out of the box after a one-time `.env` setup.
+Frontrunner ships a full pipeline that can run on free/local model paths — no
+Claude Code, Anthropic API key or paid CLI subscription is inherently required.
+Provider availability and free-tier limits can change, so verify the selected
+provider's current terms before relying on it.
 
 ### Path A: OpenRouter Free Models (`or:*` scripts)
 

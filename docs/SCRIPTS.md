@@ -514,7 +514,11 @@ node src/tracker/tracker.mjs export --out repaired.md # write to a file (existin
 
 `sync` detects and reports the corruption classes markdown accumulates — mojibake placeholder cells, scores stranded in the status column, non-canonical statuses (resolved via `templates/states.yml` aliases), missing/duplicate ids, stray pipes — and normalizes them **in the index only**; the markdown is never modified. Fix at the source with `src/tracker/normalize-statuses.mjs` / `src/tracker/dedup-tracker.mjs`, then re-sync. Status changes between syncs accumulate in a `status_events` table, which gives `src/analysis/analyze-patterns.mjs` a real funnel instead of only the current snapshot.
 
-`export` is the inverse of `sync` (round-trip `md → db → md` is lossless for clean input — enforced by `test-all.mjs`). It writes to stdout by default and never touches `applications.md` unless you explicitly pass it as `--out`. Phase 2 of #918 (DB becomes source of truth, markdown becomes a rendered view) is a separate, explicit per-user opt-in — not part of this script yet.
+`export` is the inverse of `sync` (round-trip `md → db → md` is lossless for
+clean input — enforced by `test-all.mjs`). It writes to stdout by default and
+never touches `applications.md` unless you explicitly pass it as `--out`.
+Markdown remains the permanent source of truth; SQLite is a disposable derived
+index and is not a future primary-store mode.
 
 **Exit codes:** `0` success, `1` validation error, missing prerequisites (Node < 22.5, no `applications.md` to index), or corruption found by `sync --check`.
 
@@ -541,7 +545,13 @@ Multiple matches print as a table; zero matches print a clean message.
 
 ## paste-reply
 
-Manual, no-Gmail input path into `src/tracker/reply-watch.mjs`'s classification pipeline (#1802). `src/tracker/reply-watch.mjs` already classifies employer replies and matches them to tracker rows, but its only input is `data/reply-candidates.json`, and the only planned way to populate that file is a Gmail scanner (#1583, unbuilt, requires OAuth inbox-read access). `src/tracker/paste-reply.mjs` normalizes a pasted (or file-provided) email's subject/from/body into the exact bounded candidate shape `src/tracker/reply-watch.mjs` expects and appends it under a shared lock — concurrent writers cannot overwrite one another, and interrupted replacements preserve the prior JSON. It does not classify the reply itself (that stays `src/tracker/reply-watch.mjs`'s job) and never runs `src/tracker/reply-watch.mjs` or touches `data/applications.md`.
+Manual input path into `src/tracker/reply-watch.mjs`'s classification pipeline.
+`src/tracker/paste-reply.mjs` normalizes a pasted or file-provided email's
+subject/from/body into the exact bounded candidate shape
+`src/tracker/reply-watch.mjs` expects and appends it under a shared lock.
+Concurrent writers cannot overwrite one another, and interrupted replacements
+preserve the prior JSON. It does not classify the reply itself and never runs
+`src/tracker/reply-watch.mjs` or touches `data/applications.md`.
 
 ```bash
 npm run paste-reply                    # interactive: prompts for subject, from, body

@@ -28,8 +28,9 @@ exactly the people it exists for.
 
 The modes underneath are CLI-agnostic and read `AGENTS.md`, so OpenCode, Qwen,
 Copilot CLI, Kimi, Grok Build CLI, Cursor and others will very likely work. They
-are simply not tested here, and a support question about one of them will not
-get a useful answer.
+are compatibility paths rather than supported configurations: they are not
+tested here, and a support question about one of them may not get a useful
+answer.
 
 `GEMINI.md` remains in the repository root. It is a deliberate no-op that stops
 Antigravity CLI loading the full project instructions twice. The `OPENCODE.md`

@@ -16,6 +16,7 @@
 import { readProfile } from '@/lib/profile';
 import { readProfile as readEditableFields } from '@/lib/profile-save';
 import { EditDetails } from '@/components/edit-details';
+import { ReplaceCv } from '@/components/replace-cv';
 import { readHealth } from '@/lib/health';
 import { ConnectionDetail } from '@/components/connection';
 
@@ -43,6 +44,8 @@ const NOT_SET = <span className="text-[var(--color-ink-faint)]">Not set</span>;
 
 export default async function ProfilePage() {
   const [p, editable, health] = await Promise.all([readProfile(), readEditableFields(), readHealth()]);
+  const text = (path: string) => typeof editable[path] === 'string' ? editable[path] as string : '';
+  const searchArea = [text('location.city'), text('location.country')].filter(Boolean).join(', ');
 
   return (
     <>
@@ -85,6 +88,11 @@ export default async function ProfilePage() {
           />
           <Row label="Target pay" value={p.compTarget ?? NOT_SET} />
           <Row label="Walk-away figure" value={p.compMinimum ?? NOT_SET} />
+          <Row label="Salary currency" value={text('compensation.currency') || NOT_SET} />
+          <Row label="Working pattern" value={text('compensation.location_flexibility') || NOT_SET} />
+          <Row label="Search area" value={searchArea || NOT_SET} />
+          <Row label="Timezone" value={text('location.timezone') || NOT_SET} />
+          <Row label="Work authorisation" value={text('location.visa_status') || NOT_SET} />
         </dl>
       </section>
 
@@ -108,6 +116,7 @@ export default async function ProfilePage() {
             }
           />
         </dl>
+        <ReplaceCv currentWords={p.cvWords} hasCv={p.hasCv} />
       </section>
 
       {/*

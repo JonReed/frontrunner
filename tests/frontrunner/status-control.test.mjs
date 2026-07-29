@@ -14,24 +14,50 @@ import {
   canonicalStates,
 } from '../../src/application/status-control.mjs';
 
-const ok = (over = {}) => ({ version: '1', action: 'set', roleNum: 42, state: 'Applied', ...over });
+const REVISION = 'a'.repeat(64);
+const TOKEN = '12345678-1234-1234-1234-123456789abc';
+const ok = (over = {}) => ({
+  version: '1',
+  action: 'set',
+  roleNum: 42,
+  state: 'Applied',
+  note: `[frontrunner-before:${TOKEN}:Evaluated:ready:Applied]`,
+  expectedRevision: REVISION,
+  undoToken: TOKEN,
+  ...over,
+});
 
-test('accepts the five states represented by user-observed UI actions', () => {
-  for (const state of ['Evaluated', 'Applied', 'Responded', 'Discarded', 'SKIP']) {
-    assert.equal(validateStatusRequest(ok({ state })).state, state);
+const UI_STATES = [
+  'Evaluated',
+  'Applied',
+  'Responded',
+  'Interview',
+  'Offer',
+  'Hired',
+  'Rejected',
+  'Discarded',
+  'SKIP',
+];
+
+test('accepts only states represented by explicit user-observed UI actions', () => {
+  for (const state of UI_STATES) {
+    assert.equal(validateStatusRequest(ok({
+      state,
+      note: `[frontrunner-before:${TOKEN}:Evaluated:ready:${state}]`,
+    })).state, state);
   }
 });
 
-test('refuses states no button can observe', () => {
-  // Offer, Interview and Hired depend on what an employer did.
-  for (const state of ['Hired', 'Offer', 'Interview']) {
-    assert.throws(() => validateStatusRequest(ok({ state })), /must be one of/, state);
-  }
+test('refuses a state no explicit outcome control can record', () => {
+  assert.throws(
+    () => validateStatusRequest(ok({ state: 'Invented' })),
+    /must be one of/,
+  );
 });
 
 test('the UI allowlist is a subset of templates/states.yml', () => {
   const canonical = canonicalStates();
-  for (const state of ['Evaluated', 'Applied', 'Responded', 'Discarded', 'SKIP']) {
+  for (const state of UI_STATES) {
     assert.ok(canonical.has(state), `${state} must exist in templates/states.yml`);
   }
 });
@@ -51,8 +77,20 @@ test('rejects unknown fields rather than ignoring them', () => {
 
 test('accepts bounded restore and rejects every other action', () => {
   assert.deepEqual(
-    validateStatusRequest({ version: '1', action: 'restore', roleNum: 42 }),
-    { version: '1', action: 'restore', roleNum: 42 },
+    validateStatusRequest({
+      version: '1',
+      action: 'restore',
+      roleNum: 42,
+      expectedRevision: REVISION,
+      undoToken: TOKEN,
+    }),
+    {
+      version: '1',
+      action: 'restore',
+      roleNum: 42,
+      expectedRevision: REVISION,
+      undoToken: TOKEN,
+    },
   );
   assert.throws(
     () => validateStatusRequest({
@@ -60,8 +98,10 @@ test('accepts bounded restore and rejects every other action', () => {
       action: 'restore',
       roleNum: 42,
       state: 'Hired',
+      expectedRevision: REVISION,
+      undoToken: TOKEN,
     }),
-    /restore accepts only/,
+    /restore does not accept/,
   );
   assert.throws(() => validateStatusRequest(ok({ action: 'delete' })), /unsupported/);
   assert.throws(() => validateStatusRequest(ok({ version: '2' })), /unsupported/);
@@ -79,7 +119,11 @@ test('a note cannot break the tracker row or carry control characters', () => {
   assert.throws(() => validateStatusRequest(ok({ note: 'a\u0000b' })), /not allowed/);
   assert.throws(() => validateStatusRequest(ok({ note: 'x'.repeat(301) })), /too long/);
   assert.throws(() => validateStatusRequest(ok({ note: 42 })), /must be a string/);
-  assert.equal(validateStatusRequest(ok({ note: ' fine ' })).note, 'fine');
+  const padded = `  [frontrunner-before:${TOKEN}:Evaluated:ready:Applied]  `;
+  assert.equal(
+    validateStatusRequest(ok({ note: padded })).note,
+    padded.trim(),
+  );
 });
 
 test('a prototype-polluting payload is rejected, not merged', () => {
@@ -91,17 +135,44 @@ test('a prototype-polluting payload is rejected, not merged', () => {
 });
 
 test('argv is fixed — nothing from the request becomes a flag', () => {
-  const args = buildSetStatusArgs(validateStatusRequest(ok({ note: 'sent today' })));
+  const note = `[frontrunner-before:${TOKEN}:Evaluated:ready:Applied]; sent today`;
+  const args = buildSetStatusArgs(validateStatusRequest(ok({ note })));
   assert.ok(args[0].endsWith('set-status.mjs'));
-  assert.deepEqual(args.slice(1), ['42', 'Applied', '--json', '--note', 'sent today']);
+  assert.deepEqual(args.slice(1), [
+    '42',
+    'Applied',
+    '--json',
+    '--expect-revision',
+    REVISION,
+    '--note',
+    note,
+  ]);
 
   // A note that looks like a flag stays a note: it is passed as the value
   // after --note, never as an argument of its own.
-  const sneaky = buildSetStatusArgs(validateStatusRequest(ok({ note: '--force' })));
-  assert.deepEqual(sneaky.slice(1), ['42', 'Applied', '--json', '--note', '--force']);
-  assert.equal(sneaky.filter((a) => a === '--force').length, 1);
+  const sneakyNote = `[frontrunner-before:${TOKEN}:Evaluated:ready:Applied]; --force`;
+  const sneaky = buildSetStatusArgs(validateStatusRequest(ok({ note: sneakyNote })));
+  assert.deepEqual(sneaky.slice(1), [
+    '42',
+    'Applied',
+    '--json',
+    '--expect-revision',
+    REVISION,
+    '--note',
+    sneakyNote,
+  ]);
+  assert.equal(sneaky.filter((a) => a === '--force').length, 0);
 });
 
-test('omitting a note omits the flag entirely', () => {
-  assert.deepEqual(buildSetStatusArgs(validateStatusRequest(ok())).slice(1), ['42', 'Applied', '--json']);
+test('omitting the durable workflow marker is rejected', () => {
+  assert.throws(
+    () => validateStatusRequest(ok({ note: undefined })),
+    /workflow undo marker/,
+  );
+  assert.throws(
+    () => validateStatusRequest(ok({
+      note: `[frontrunner-before:${TOKEN}:Evaluated:ready:Discarded]`,
+    })),
+    /does not match/,
+  );
 });

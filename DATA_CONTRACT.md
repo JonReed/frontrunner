@@ -32,6 +32,7 @@ boundary.
 | `data/applications.md` | Your application tracker (source of truth) |
 | `data/applications.db` | Derived query index over `applications.md` (SQLite, rebuilt by `node src/tracker/tracker.mjs sync` — safe to delete) |
 | `data/pipeline.md` | Your URL inbox |
+| `data/prefilter-overrides.tsv` | Your explicit one-role exceptions to deterministic prefilter decisions: `{recorded_at}\t{url}\t{company}\t{title}\t{rule}\t{evidence}`. Written only after an “Assess anyway” confirmation; an exception matches the exact normalized URL and exact rule, so it cannot disable filtering broadly. |
 | `data/scan-history.tsv` | Your scan history (tab-separated, append-only trailing columns; col 8: local SimHash JD fingerprint for cross-listing detection, col 9: posting date, cols 10-11: trust score/flags, col 12: normalized company key for repost/name matching). Older rows may have fewer columns — readers index by position and tolerate the absence. |
 | `data/scan-runs.tsv` | Your per-run scan counters (appended by `src/scan/scan.mjs`, read by `src/analysis/stats.mjs`) |
 | `data/portal-health.tsv` | Consecutive reachability status for scanned portals (appended by `src/scan/scan.mjs`; statuses: `reachable`, `empty`, `slug_gone`, `network`, `auth`, `server`, `unknown` — the last three joined the vocabulary later, so older files carry only the first four) |

@@ -11,21 +11,29 @@
 import { spawn } from 'node:child_process';
 import { join } from 'node:path';
 import { ROOT } from './roles';
+import { runningCvJobForRole } from './job-selection.mjs';
 
 const JOB_CONTROL = join(ROOT, 'src', 'application', 'job-control.mjs');
 const RESPONSE_LIMIT = 64 * 1024;
 const RESPONSE_TIMEOUT_MS = 12_000;
 
 export type JobStatus = 'running' | 'done' | 'failed';
+export type ApplicationOperation =
+  | 'cv.build'
+  | 'pipeline.run'
+  | 'pipeline.prepare'
+  | 'scan.run';
 
 export interface Job {
   id: string;
-  roleNum: number;
-  kind: 'build-cv';
+  operation?: ApplicationOperation;
+  roleNum?: number;
+  kind: 'build-cv' | 'pipeline' | 'prepare-pipeline' | 'scan';
   status: JobStatus;
   startedAt: number;
   finishedAt?: number;
   exitCode?: number;
+  costsTokens?: boolean;
   /** Last few lines of output — enough to explain a failure without a log viewer. */
   tail?: string;
   stage?: string;
@@ -35,17 +43,36 @@ export interface Job {
 function isJob(value: unknown): value is Job {
   if (!value || typeof value !== 'object') return false;
   const job = value as Partial<Job>;
+  const operation = job.operation ?? (job.kind === 'build-cv' ? 'cv.build' : undefined);
+  const shape = {
+    'cv.build': { id: /^cv-\d+-[a-z0-9]+$/, kind: 'build-cv' },
+    'pipeline.run': { id: /^job-pipeline-[a-z0-9]+$/, kind: 'pipeline' },
+    'pipeline.prepare': { id: /^job-prepare-[a-z0-9]+$/, kind: 'prepare-pipeline' },
+    'scan.run': { id: /^job-scan-[a-z0-9]+$/, kind: 'scan' },
+  }[String(operation)] as { id: RegExp; kind: Job['kind'] } | undefined;
   return (
-    typeof job.id === 'string'
-    && /^cv-\d+-[a-z0-9]+$/.test(job.id)
-    && Number.isSafeInteger(job.roleNum)
-    && Number(job.roleNum) > 0
-    && Number(job.roleNum) <= 999_999
-    && job.id.startsWith(`cv-${String(job.roleNum)}-`)
-    && job.kind === 'build-cv'
+    Boolean(shape)
+    && typeof job.id === 'string'
+    && shape!.id.test(job.id)
+    && job.kind === shape!.kind
+    && (
+      operation === 'cv.build'
+        ? (
+          Number.isSafeInteger(job.roleNum)
+          && Number(job.roleNum) > 0
+          && Number(job.roleNum) <= 999_999
+          && job.id.startsWith(`cv-${String(job.roleNum)}-`)
+        )
+        : job.roleNum === undefined
+    )
     && ['running', 'done', 'failed'].includes(String(job.status))
     && Number.isSafeInteger(job.startedAt)
     && Number(job.startedAt) >= 0
+    && (job.finishedAt === undefined || (
+      Number.isSafeInteger(job.finishedAt)
+      && Number(job.finishedAt) >= Number(job.startedAt)
+    ))
+    && (job.costsTokens === undefined || typeof job.costsTokens === 'boolean')
     && (job.tail === undefined || (typeof job.tail === 'string' && job.tail.length <= 16 * 1024))
     && (job.stage === undefined || (typeof job.stage === 'string' && job.stage.length <= 120))
     && (job.error === undefined || (typeof job.error === 'string' && job.error.length <= 1_000))
@@ -131,6 +158,51 @@ export async function readJob(id: string): Promise<Job | null> {
   return isJob(value) ? value : null;
 }
 
+export function isPipelineJob(
+  job: Job | null,
+): job is Job & { operation: 'pipeline.run' | 'pipeline.prepare' | 'scan.run' } {
+  return Boolean(
+    job
+    && (
+      job.operation === 'pipeline.run'
+      || job.operation === 'pipeline.prepare'
+      || job.operation === 'scan.run'
+    ),
+  );
+}
+
+export async function readRunningPipelineJob(): Promise<Job | null> {
+  let value;
+  try {
+    value = await invokeJobControl({
+      version: '1',
+      action: 'list',
+      status: 'running',
+      limit: 20,
+    });
+  } catch {
+    return null;
+  }
+  if (
+    !value
+    || typeof value !== 'object'
+    || !Array.isArray((value as { jobs?: unknown }).jobs)
+  ) {
+    return null;
+  }
+  for (const item of (value as { jobs: unknown[] }).jobs) {
+    if (isJob(item) && isPipelineJob(item)) return item;
+  }
+  return null;
+}
+
+export async function cancelPipelineJob(id: string): Promise<Job | null> {
+  const current = await readJob(id);
+  if (!isPipelineJob(current)) return null;
+  const value = await invokeJobControl({ version: '1', action: 'cancel', id });
+  return isJob(value) && isPipelineJob(value) ? value : null;
+}
+
 export async function listRunningCvRoleNums(): Promise<Set<number>> {
   let value;
   try {
@@ -164,6 +236,32 @@ export async function listRunningCvRoleNums(): Promise<Set<number>> {
   return roles;
 }
 
+/** Reattach one role page to the durable CV job that already owns its spend. */
+export async function readRunningCvJob(roleNum: number): Promise<Job | null> {
+  if (!Number.isSafeInteger(roleNum) || roleNum < 1 || roleNum > 999_999) return null;
+  let value;
+  try {
+    value = await invokeJobControl({
+      version: '1',
+      action: 'list',
+      operation: 'cv.build',
+      status: 'running',
+      limit: 50,
+    });
+  } catch {
+    return null;
+  }
+  if (
+    !value
+    || typeof value !== 'object'
+    || !Array.isArray((value as { jobs?: unknown }).jobs)
+  ) {
+    return null;
+  }
+  const jobs = (value as { jobs: unknown[] }).jobs.filter(isJob);
+  return runningCvJobForRole(jobs, roleNum) as Job | null;
+}
+
 /**
  * Start a tailored-CV build.
  *
@@ -187,4 +285,41 @@ export async function startCvBuild(
   });
   if (!isJob(value)) throw new Error('The secure backend returned an invalid job.');
   return value;
+}
+
+async function startFixedPipelineOperation(
+  operation: 'scan.run' | 'pipeline.run',
+  input: Record<string, unknown>,
+): Promise<Job> {
+  const value = await invokeJobControl({
+    version: '1',
+    action: 'start',
+    request: {
+      version: '1',
+      operation,
+      input,
+    },
+  });
+  if (!isJob(value) || !isPipelineJob(value) || value.operation !== operation) {
+    throw new Error('The secure backend returned an invalid pipeline job.');
+  }
+  return value;
+}
+
+/** Scan configured portals without invoking a model. */
+export function startScanRun(): Promise<Job> {
+  return startFixedPipelineOperation('scan.run', {});
+}
+
+/**
+ * Run the canonical scan → cache → liveness → prefilter → evaluation pipeline.
+ *
+ * The engine and input are fixed here rather than accepted from the browser.
+ */
+export function startPipelineRun(scan: boolean): Promise<Job> {
+  return startFixedPipelineOperation('pipeline.run', {
+    engine: 'claude',
+    scan,
+    input: 'data/pipeline.md',
+  });
 }

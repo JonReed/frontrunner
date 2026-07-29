@@ -11,10 +11,13 @@ to keep true than two.
 
 ## Principles
 
-Career-ops is built on three commitments that every design decision serves:
+Frontrunner is built on three commitments that every design decision serves:
 
 - **Local-first.** Everything runs on your machine against your files. No account required, no server in the loop for the core tool.
-- **AI-agnostic.** The logic lives in Markdown prompt files under `modes/`, executed by whatever AI coding CLI you use (Claude Code, Codex, OpenCode, Gemini, Qwen, Grok, Antigravity) or by standalone Node scripts. No single model is hardcoded.
+- **Model-agnostic backend.** Scoring and tailoring use versioned contracts
+  across supported model transports. Claude Code, Codex and Antigravity CLI are
+  the tested agent hosts; other CLIs may consume the same mode files but are
+  compatibility paths rather than supported configurations.
 - **Human-in-the-loop.** The tool prepares and evaluates; the human reviews and clicks. It never submits applications on your behalf.
 
 ## The two layers (the data contract)
@@ -527,16 +530,3 @@ Scripts maintain data consistency:
 | `src/tracker/dedup-tracker.mjs` | Removes duplicate entries by company+role |
 | `src/tracker/normalize-statuses.mjs` | Maps status aliases to canonical values |
 | `src/cv/cv-sync-check.mjs` | Validates setup consistency |
-
-## User Interface
-
-`ui/` is Frontrunner's workflow-first interface and is still under development.
-It is a local view over the same files used by the scripts and AI workflow; it
-does not own a separate data store. Application state remains in `data/`,
-`reports/`, and the generated output directories.
-
-The inherited `web/` source is archived for upstream reference only. Its normal
-start commands are disabled and a request-wide proxy returns `410 Gone` if
-someone starts Next.js directly. This keeps its legacy tool-capable agents,
-browser automation and direct process endpoints outside the reachable product
-surface.

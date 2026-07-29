@@ -51,7 +51,17 @@ export async function readRejects(): Promise<RejectedRole[]> {
   const file = join(ROOT, 'batch', 'prefilter-rejects.tsv');
   if (!existsSync(file)) return [];
 
-  const raw = await readFile(file, 'utf8');
+  const [raw, overrideRaw] = await Promise.all([
+    readFile(file, 'utf8'),
+    readFile(join(ROOT, 'data', 'prefilter-overrides.tsv'), 'utf8').catch(() => ''),
+  ]);
+  const overrides = new Set<string>();
+  for (const line of overrideRaw.split(/\r?\n/u)) {
+    if (!line.trim() || line.startsWith('recorded_at\t')) continue;
+    const [, rawUrl, , , rule] = line.split('\t');
+    const safe = safeExternalUrl(rawUrl);
+    if (safe && rule) overrides.add(`${safe}\t${rule}`);
+  }
   const out: RejectedRole[] = [];
 
   for (const line of raw.split('\n')) {
@@ -60,6 +70,7 @@ export async function readRejects(): Promise<RejectedRole[]> {
     if (!url || url === 'url') continue;          // header
     const safe = safeExternalUrl(url);
     if (!safe) continue;
+    if (overrides.has(`${safe}\t${(rule ?? '').trim()}`)) continue;
     out.push({
       url: safe,
       company: (company ?? '').trim(),

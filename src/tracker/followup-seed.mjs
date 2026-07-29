@@ -74,6 +74,7 @@ export const FOLLOWUPS_HEADER = [
 ].join('\n');
 
 const FOLLOWUPS_LOCK_PREFIX = 'frontrunner-followups-';
+const WORKFLOW_TOKEN_RE = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/u;
 
 /** Structured error carrying an exit-code-mapping `code`. */
 export class SeedError extends Error {
@@ -144,6 +145,13 @@ export function resolveAppliedDate(row, explicitDate) {
  */
 export function formatPinLine(appNum, nextDate, setDate) {
   return `- next #${appNum} ${nextDate} (set ${setDate})`;
+}
+
+export function formatWorkflowMarker(appNum, token) {
+  if (!Number.isSafeInteger(appNum) || appNum <= 0 || !WORKFLOW_TOKEN_RE.test(token)) {
+    throw new SeedError('USAGE', 'Invalid workflow follow-up marker');
+  }
+  return `<!-- frontrunner-workflow:${token}:${appNum} -->`;
 }
 
 // --- Path resolution (env override → option override → default) -----------
@@ -261,6 +269,7 @@ function appendPins(existingContent, pinLines) {
  * @param {number} [options.lockRetryMs]
  * @param {number} [options.lockStaleMs]
  * @param {object} [options.writeOptions] - Atomic publisher hooks (tests only).
+ * @param {string} [options.workflowToken] - Opaque UI move token owning a newly-created pin.
  * @returns {Promise<object>}
  */
 export async function seedFollowup(appNum, options = {}) {
@@ -270,6 +279,9 @@ export async function seedFollowup(appNum, options = {}) {
   if (options.date != null && !isValidCalendarDate(options.date)) {
     throw new SeedError('INVALID_DATE', `--date must be a real calendar date in YYYY-MM-DD form: ${options.date}`);
   }
+  const workflowMarker = options.workflowToken == null
+    ? null
+    : formatWorkflowMarker(appNum, options.workflowToken);
 
   const trackerPath = resolveTrackerPath(options.trackerPath);
   const followupsPath = resolveFollowupsPath(options.followupsPath);
@@ -311,8 +323,56 @@ export async function seedFollowup(appNum, options = {}) {
     }
 
     return {
-      content: appendPins(existingContent, [pin]),
-      value: { seeded: true, appNum, pin, nextDate, appliedDate, setDate },
+      content: appendPins(existingContent, workflowMarker ? [pin, workflowMarker] : [pin]),
+      value: {
+        seeded: true,
+        appNum,
+        pin,
+        nextDate,
+        appliedDate,
+        setDate,
+        ...(workflowMarker ? { workflowToken: options.workflowToken } : {}),
+      },
+    };
+  }, {
+    lockOptions: {
+      lockDir,
+      timeoutMs: options.lockTimeoutMs ?? envInt('FRONTRUNNER_FOLLOWUPS_LOCK_TIMEOUT_MS', 60_000),
+      retryMs: options.lockRetryMs ?? envInt('FRONTRUNNER_FOLLOWUPS_LOCK_RETRY_MS', 75),
+      staleMs: options.lockStaleMs ?? envInt('FRONTRUNNER_FOLLOWUPS_LOCK_STALE_MS', 10 * 60_000),
+      createTimeoutError: dir => new SeedError('LOCK_TIMEOUT', `Timed out waiting for follow-ups lock at ${dir}`),
+    },
+    writeOptions: options.writeOptions,
+  });
+}
+
+/**
+ * Remove only a follow-up pin created by one workflow move.
+ *
+ * The opaque marker must immediately follow a matching pin. Hand-written pins,
+ * pins created by another move, and real follow-up table rows are untouched.
+ */
+export async function removeWorkflowSeed(appNum, token, options = {}) {
+  const marker = formatWorkflowMarker(appNum, token);
+  const followupsPath = resolveFollowupsPath(options.followupsPath);
+  const lockDir = resolveLockDir(options.lockDir, followupsPath);
+  return transactFollowups(followupsPath, existingContent => {
+    if (existingContent == null) {
+      return { value: { removed: false, appNum, reason: 'missing-file' } };
+    }
+    const lines = existingContent.split('\n');
+    const markerIndex = lines.indexOf(marker);
+    if (markerIndex <= 0) {
+      return { value: { removed: false, appNum, reason: 'not-owned' } };
+    }
+    const pinPattern = new RegExp(`^-\\s+next\\s+#${appNum}\\s+\\d{4}-\\d{2}-\\d{2}(?:\\s+\\(set\\s+\\d{4}-\\d{2}-\\d{2}\\))?\\s*$`, 'iu');
+    if (!pinPattern.test(lines[markerIndex - 1])) {
+      return { value: { removed: false, appNum, reason: 'marker-detached' } };
+    }
+    lines.splice(markerIndex - 1, 2);
+    return {
+      content: lines.join('\n'),
+      value: { removed: true, appNum, workflowToken: token },
     };
   }, {
     lockOptions: {

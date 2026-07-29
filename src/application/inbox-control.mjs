@@ -59,6 +59,8 @@ export function validateInboxRequest(value) {
 
 export async function setPendingUrlDismissed(filePath, url, dismissed) {
   let changed = false;
+  let found = false;
+  let matched = 0;
   await mutateFileLocked(filePath, current => {
     const lines = current.split('\n').map(line => {
       const match = line.match(/^-\s*\[([ xX])\]\s*(\S+)/u);
@@ -70,6 +72,8 @@ export async function setPendingUrlDismissed(filePath, url, dismissed) {
         return line;
       }
       if (candidate !== url) return line;
+      found = true;
+      matched += 1;
       const isDismissed = match[1].toLowerCase() === 'x';
       if (isDismissed === dismissed) return line;
       changed = true;
@@ -77,7 +81,12 @@ export async function setPendingUrlDismissed(filePath, url, dismissed) {
     });
     return lines.join('\n');
   });
-  return changed;
+  return Object.freeze({
+    changed,
+    found,
+    matched,
+    state: dismissed ? 'dismissed' : 'pending',
+  });
 }
 
 export async function main({
@@ -87,13 +96,13 @@ export async function main({
 } = {}) {
   try {
     const request = validateInboxRequest(await readBoundedRequest(input));
-    const changed = await setPendingUrlDismissed(
+    const result = await setPendingUrlDismissed(
       PIPELINE,
       request.url,
       request.action === 'remove',
     );
-    output.write(`${JSON.stringify({ version: APPLICATION_API_VERSION, changed })}\n`);
-    return { changed };
+    output.write(`${JSON.stringify({ version: APPLICATION_API_VERSION, ...result })}\n`);
+    return result;
   } catch (error) {
     errorOutput.write(`${JSON.stringify({
       version: APPLICATION_API_VERSION,

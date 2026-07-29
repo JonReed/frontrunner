@@ -44,6 +44,7 @@ export function BuildCv({
   url,
   score,
   connected = true,
+  initialJob = null,
 }: {
   roleNum: number;
   hasPdf: boolean;
@@ -52,8 +53,10 @@ export function BuildCv({
   score?: number | null;
   /** False when the Claude CLI is missing or signed out. */
   connected?: boolean;
+  /** Durable running job discovered by the server when this page was opened. */
+  initialJob?: Job | null;
 }) {
-  const [job, setJob] = useState<Job | null>(null);
+  const [job, setJob] = useState<Job | null>(initialJob);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [step, setStep] = useState(0);

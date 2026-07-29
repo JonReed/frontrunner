@@ -194,6 +194,13 @@ prefilter before model evaluation.
   Status-transition observations use their own validated locked atomic
   publisher as well, retaining every concurrent event without exposing partial
   TSV rows; audit failure still cannot roll back a successful tracker change.
+  UI workflow moves additionally use optimistic row revisions, so a stale tab
+  cannot overwrite a newer tracker edit. Undo is an opaque, single-use handle
+  tied to the exact post-move row revision. Recording Applied creates an
+  idempotent follow-up pin automatically; durable move markers repair an
+  interrupted pin write, transitions out of Applied retire that automatic
+  date, and Undo restores it when appropriate. Cleanup removes only the pin
+  owned by that move.
   Generated PDF bookkeeping uses a locked atomic merge: concurrent renders
   retain every `data/pdf-index.tsv` entry while interrupted index publication
   leaves the previous manifest readable. CV PDFs, image conversions and archived
@@ -272,8 +279,9 @@ reject.
 
 - Node.js 22.5 or later
 - Git
-- An AI coding assistant that can work inside a local repository, such as
-  Codex, Claude Code, OpenCode, Qwen, Antigravity, Grok, Kimi, or Copilot
+- A tested agent host: Claude Code, Codex or Antigravity CLI. Other assistants
+  that consume `AGENTS.md` are compatibility paths rather than supported
+  configurations; standalone model evaluators are also available.
 - Chromium through Playwright for PDF generation and fallback access to job
   boards without a usable structured endpoint
 

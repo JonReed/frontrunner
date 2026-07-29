@@ -20,6 +20,8 @@ import { Match } from '@/components/match';
 import { CvLinks } from '@/components/cv-links';
 import { PipelineOverview } from '@/components/journey-rail';
 import { pipelineCounts } from '@/lib/journey';
+import { readFollowups, type Followup } from '@/lib/followups';
+import { FollowupStatus } from '@/components/followup-status';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,7 +74,7 @@ function ActionButton({ role }: { role: Role }) {
  * collapses to "Engine…" while a button sits beside it. The row has to become
  * two rows, not a narrower version of itself.
  */
-function RoleRow({ role }: { role: Role }) {
+function RoleRow({ role, followup }: { role: Role; followup?: Followup }) {
   return (
     <li className="flex flex-col items-stretch gap-3 border-b border-[var(--color-line)] px-5 py-4 transition last:border-0 hover:bg-[var(--color-paper)] sm:flex-row sm:items-center sm:gap-4 sm:px-6">
       <div className="w-full min-w-0 flex-1 sm:w-auto">
@@ -84,6 +86,7 @@ function RoleRow({ role }: { role: Role }) {
           {role.hasPdf && (
             <span className="text-xs font-medium text-[var(--color-ready)]">CV ready</span>
           )}
+          {followup && <FollowupStatus followup={followup} />}
         </div>
       </div>
 
@@ -113,7 +116,17 @@ function RoleRow({ role }: { role: Role }) {
   );
 }
 
-function Band({ title, blurb, roles }: { title: string; blurb: string; roles: Role[] }) {
+function Band({
+  title,
+  blurb,
+  roles,
+  followups,
+}: {
+  title: string;
+  blurb: string;
+  roles: Role[];
+  followups: Map<number, Followup>;
+}) {
   if (roles.length === 0) return null;
   return (
     <section className="mb-11">
@@ -123,14 +136,26 @@ function Band({ title, blurb, roles }: { title: string; blurb: string; roles: Ro
       <p className="mb-3 mt-0.5 text-sm text-[var(--color-ink-soft)]">{blurb}</p>
       <ul className="overflow-hidden rounded-2xl border border-[var(--color-line)] bg-[var(--color-card)] shadow-[0_1px_2px_rgb(26_25_23/0.035)]">
         {roles.map((r) => (
-          <RoleRow key={r.num} role={r} />
+          <RoleRow key={r.num} role={r} followup={followups.get(r.num)} />
         ))}
       </ul>
     </section>
   );
 }
 
-function Headline({ ready, nearly }: { ready: number; nearly: number }) {
+function Headline({ due, ready, nearly }: { due: number; ready: number; nearly: number }) {
+  if (due > 0) {
+    return (
+      <>
+        <h1 className="text-[30px] font-bold leading-tight tracking-[-0.025em] sm:text-[34px]">
+          {due} {due === 1 ? 'follow-up needs' : 'follow-ups need'} your attention
+        </h1>
+        <p className="mt-1 text-[15px] text-[var(--color-ink-soft)]">
+          Keep live applications moving before starting something new.
+        </p>
+      </>
+    );
+  }
   if (ready > 0) {
     return (
       <>
@@ -171,8 +196,20 @@ export default async function NextUpPage() {
   // completely baffling.
   if (readSetup().needed) redirect('/welcome');
 
-  const [roles, counts, health] = await Promise.all([readTracker(), summarise(), readHealth()]);
-  const actionable = roles.filter((r) => r.readiness !== 'parked');
+  const [roles, counts, health, followupEntries] = await Promise.all([
+    readTracker(),
+    summarise(),
+    readHealth(),
+    readFollowups(),
+  ]);
+  const followups = new Map(followupEntries.map((entry) => [entry.num, entry]));
+  const dueRoleNums = new Set(
+    followupEntries
+      .filter((entry) => entry.urgency === 'urgent' || entry.urgency === 'overdue')
+      .map((entry) => entry.num),
+  );
+  const dueRoles = roles.filter((role) => dueRoleNums.has(role.num));
+  const actionable = roles.filter((r) => r.readiness !== 'parked' && !dueRoleNums.has(r.num));
 
   /*
     The whole process in one row of numbers, above everything else.
@@ -196,12 +233,12 @@ export default async function NextUpPage() {
         action is sitting further down the page.
       */}
       <div className="mb-9">
-        <Headline ready={counts.readyToSend} nearly={counts.oneStepAway} />
+        <Headline due={dueRoles.length} ready={counts.readyToSend} nearly={counts.oneStepAway} />
       </div>
 
       <ConnectionBanner health={health} />
 
-      {actionable.length === 0 ? (
+      {actionable.length === 0 && dueRoles.length === 0 ? (
         /*
           Two genuinely different empty states.
 
@@ -222,14 +259,34 @@ export default async function NextUpPage() {
                 .
               </>
             ) : (
-              'Run a search to look for openings that match your profile.'
+              <>
+                Search your configured sources for openings that match your profile.{' '}
+                <Link href="/found" className="text-[var(--color-act)] hover:underline">
+                  Find roles
+                </Link>
+                .
+              </>
             )}
           </p>
         </div>
       ) : (
-        BANDS.map((b) => (
-          <Band key={b.key} title={b.title} blurb={b.blurb} roles={actionable.filter((r) => r.readiness === b.key)} />
-        ))
+        <>
+          <Band
+            title="Follow-ups due"
+            blurb="These applications need a reply, check-in or interview thank-you."
+            roles={dueRoles}
+            followups={followups}
+          />
+          {BANDS.map((b) => (
+            <Band
+              key={b.key}
+              title={b.title}
+              blurb={b.blurb}
+              roles={actionable.filter((r) => r.readiness === b.key)}
+              followups={followups}
+            />
+          ))}
+        </>
       )}
     </>
   );

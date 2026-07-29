@@ -23,6 +23,7 @@
  */
 
 import { spawn as nodeSpawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -34,12 +35,24 @@ import { APPLICATION_API_VERSION } from './contract.mjs';
 import { resolveTrackerPath } from '../tracker/tracker-utils.mjs';
 import { parseTrackerRow, resolveColumns } from '../tracker/tracker-parse.mjs';
 import {
+  removeWorkflowSeed,
+  seedFollowup,
+} from '../tracker/followup-seed.mjs';
+import {
   shouldDetachProcessTree,
   signalProcessTree,
 } from './process-tree.mjs';
 import { readBoundedRequest } from './run.mjs';
 
-const CONTROL_KEYS = new Set(['version', 'action', 'roleNum', 'state', 'note']);
+const CONTROL_KEYS = new Set([
+  'version',
+  'action',
+  'roleNum',
+  'state',
+  'note',
+  'expectedRevision',
+  'undoToken',
+]);
 const MAX_NOTE = 300;
 const MAX_ROLE_NUM = 999_999;
 const SET_STATUS = join(ROOT, 'src', 'tracker', 'set-status.mjs');
@@ -47,16 +60,27 @@ const TIMEOUT_MS = 20_000;
 const TERMINATION_GRACE_MS = 2_000;
 const STDOUT_LIMIT = 64 * 1024;
 const STDERR_LIMIT = 4 * 1024;
+const REVISION_RE = /^[a-f0-9]{64}$/u;
+const UNDO_TOKEN_RE = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/u;
 
 /**
  * States the UI may set, as a subset of the canonical list.
  *
- * Deliberately not every state in templates/states.yml. The interface offers
- * user-observed workflow decisions, and an allowlist that mirrored the whole
- * file would let a browser request move a role to `Hired` or `Offer`, which
- * nothing in the UI can honestly know.
+ * The interface offers only user-observed workflow decisions. Interview,
+ * Offer, Hired and Rejected are allowed because their controls name the exact
+ * event the user is recording; none is inferred from a generic stage move.
  */
-const UI_STATES = new Set(['Evaluated', 'Applied', 'Responded', 'Discarded', 'SKIP']);
+const UI_STATES = new Set([
+  'Evaluated',
+  'Applied',
+  'Responded',
+  'Interview',
+  'Offer',
+  'Hired',
+  'Rejected',
+  'Discarded',
+  'SKIP',
+]);
 
 function controlError(message, code = 'INVALID_STATUS_REQUEST') {
   const error = new Error(message);
@@ -91,14 +115,22 @@ export function validateStatusRequest(value, allowed = canonicalStates()) {
   if (!Number.isSafeInteger(value.roleNum) || value.roleNum <= 0 || value.roleNum > MAX_ROLE_NUM) {
     throw controlError('roleNum must be a positive integer');
   }
+  if (typeof value.expectedRevision !== 'string' || !REVISION_RE.test(value.expectedRevision)) {
+    throw controlError('expectedRevision must be a lowercase SHA-256 row revision');
+  }
+  if (typeof value.undoToken !== 'string' || !UNDO_TOKEN_RE.test(value.undoToken)) {
+    throw controlError('undoToken must be an opaque workflow token');
+  }
   if (value.action === 'restore') {
     if (value.state !== undefined || value.note !== undefined) {
-      throw controlError('restore accepts only version, action and roleNum');
+      throw controlError('restore does not accept state or note');
     }
     return Object.freeze({
       version: APPLICATION_API_VERSION,
       action: 'restore',
       roleNum: value.roleNum,
+      expectedRevision: value.expectedRevision,
+      undoToken: value.undoToken,
     });
   }
   if (typeof value.state !== 'string' || !UI_STATES.has(value.state)) {
@@ -121,6 +153,17 @@ export function validateStatusRequest(value, allowed = canonicalStates()) {
       throw controlError('note contains characters that are not allowed in a tracker cell');
     }
   }
+  const markerMatch = typeof value.note === 'string'
+    ? value.note.match(
+      new RegExp(`\\[frontrunner-before:${value.undoToken}:([A-Za-z]+):(triage|prepare|ready|applied|active|closed):([A-Za-z]+)\\]`, 'u'),
+    )
+    : null;
+  if (!markerMatch) {
+    throw controlError('set note must carry its workflow undo marker');
+  }
+  if (!allowed.has(markerMatch[1]) || markerMatch[3] !== value.state) {
+    throw controlError('workflow undo marker does not match the requested transition');
+  }
 
   return Object.freeze({
     version: APPLICATION_API_VERSION,
@@ -128,12 +171,21 @@ export function validateStatusRequest(value, allowed = canonicalStates()) {
     roleNum: value.roleNum,
     state: value.state,
     note: value.note?.trim() || undefined,
+    expectedRevision: value.expectedRevision,
+    undoToken: value.undoToken,
   });
 }
 
 /** Fixed argv. Nothing from the request becomes a flag. */
 export function buildSetStatusArgs(request) {
-  const args = [SET_STATUS, String(request.roleNum), request.state, '--json'];
+  const args = [
+    SET_STATUS,
+    String(request.roleNum),
+    request.state,
+    '--json',
+    '--expect-revision',
+    request.expectedRevision,
+  ];
   if (request.note) args.push('--note', request.note);
   return args;
 }
@@ -142,7 +194,12 @@ export function buildSetStatusArgs(request) {
  * Resolve Undo from the tracker's own bounded history marker. The browser
  * cannot name the state to restore.
  */
-export function buildRestoreStatusArgs(roleNum, allowed = canonicalStates()) {
+export function buildRestoreStatusArgs(
+  roleNum,
+  undoToken,
+  expectedRevision,
+  allowed = canonicalStates(),
+) {
   const tracker = resolveTrackerPath(ROOT);
   const lines = readFileSync(tracker, 'utf8').split('\n');
   const columns = resolveColumns(lines);
@@ -157,19 +214,46 @@ export function buildRestoreStatusArgs(roleNum, allowed = canonicalStates()) {
       'STATUS_RESTORE_UNAVAILABLE',
     );
   }
+  const actualRevision = createHash('sha256').update(matches[0].raw).digest('hex');
+  if (actualRevision !== expectedRevision) {
+    throw controlError(
+      'This role changed after the move. Reload before trying another action.',
+      'STATUS_STALE',
+    );
+  }
+  if (matches[0].notes.includes(`[frontrunner-undone:${undoToken}]`)) {
+    throw controlError('This move has already been undone', 'STATUS_RESTORE_USED');
+  }
   const markers = [...matches[0].notes.matchAll(
-    /\[frontrunner-before:([A-Za-z]+):(triage|prepare|ready|applied|active|closed)(?::\d+)?\]/gu,
+    /\[frontrunner-before:([a-f0-9-]+):([A-Za-z]+):(triage|prepare|ready|applied|active|closed):([A-Za-z]+)\]/gu,
   )];
-  const marker = markers.at(-1);
-  const state = marker?.[1];
-  const stage = marker?.[2];
+  const marker = markers.findLast(match => match[1] === undoToken);
+  const state = marker?.[2];
+  const stage = marker?.[3];
+  const movedTo = marker?.[4];
   if (!state || !allowed.has(state)) {
     throw controlError('No previous state is available for this role', 'STATUS_RESTORE_UNAVAILABLE');
   }
-  const args = [SET_STATUS, String(roleNum), state, '--json'];
-  if (stage === 'triage' || stage === 'prepare') {
-    args.push('--note', `[frontrunner-stage:${stage}]`);
+  if (matches[0].status !== movedTo) {
+    throw controlError(
+      'This role no longer has the status created by that move',
+      'STATUS_STALE',
+    );
   }
+  const notes = [`[frontrunner-undone:${undoToken}]`];
+  if (stage === 'triage' || stage === 'prepare' || stage === 'ready') {
+    notes.push(`[frontrunner-stage:${stage}]`);
+  }
+  const args = [
+    SET_STATUS,
+    String(roleNum),
+    state,
+    '--json',
+    '--expect-revision',
+    expectedRevision,
+    '--note',
+    notes.join('; '),
+  ];
   return args;
 }
 
@@ -277,11 +361,81 @@ export function runSetStatus(args, options = {}) {
   });
 }
 
+function parseWriterResult(stdout) {
+  let value;
+  try {
+    value = JSON.parse(stdout);
+  } catch {
+    throw controlError('the tracker returned an invalid response', 'STATUS_INVALID_RESPONSE');
+  }
+  if (
+    value === null
+    || typeof value !== 'object'
+    || !REVISION_RE.test(value.revision ?? '')
+  ) {
+    throw controlError('the tracker returned an incomplete response', 'STATUS_INVALID_RESPONSE');
+  }
+  return value;
+}
+
+/**
+ * Reconcile the idempotent follow-up side effects recorded in tracker notes.
+ *
+ * The tracker transition is the durable source of truth. If a process dies
+ * after that atomic write but before follow-ups.md is replaced, the next
+ * workflow request repairs the missing pin (or removes a pin owned by an
+ * already-undone move) without replaying the status transition.
+ */
+export async function reconcileWorkflowFollowups(options = {}) {
+  const tracker = options.trackerPath ?? resolveTrackerPath(ROOT);
+  const lines = readFileSync(tracker, 'utf8').split('\n');
+  const columns = resolveColumns(lines);
+  const work = [];
+  for (const line of lines) {
+    const row = parseTrackerRow(line, columns);
+    if (!row) continue;
+    if (options.roleNum != null && row.num !== options.roleNum) continue;
+    const undone = new Set(
+      [...row.notes.matchAll(/\[frontrunner-undone:([a-f0-9-]+)\]/gu)]
+        .map(match => match[1]),
+    );
+    for (const marker of row.notes.matchAll(
+      /\[frontrunner-before:([a-f0-9-]+):([A-Za-z]+):(triage|prepare|ready|applied|active|closed):([A-Za-z]+)\]/gu,
+    )) {
+      const token = marker[1];
+      if (!UNDO_TOKEN_RE.test(token)) continue;
+      if (marker[4] === 'Applied') {
+        if (!undone.has(token) && row.status === 'Applied') {
+          work.push(() => seedFollowup(row.num, { ...options, workflowToken: token }));
+        } else {
+          // Once the role leaves Applied, its workflow-owned date must stop
+          // overriding Responded/Interview cadence. Undoing back to Applied
+          // re-seeds the still-live earlier marker below.
+          work.push(() => removeWorkflowSeed(row.num, token, options));
+        }
+      }
+      if (work.length >= 500) break;
+    }
+    if (work.length >= 500) break;
+  }
+  const repaired = [];
+  const failed = [];
+  for (const operation of work) {
+    try {
+      repaired.push(await operation());
+    } catch (error) {
+      failed.push(String(error?.message ?? error).slice(0, 300));
+    }
+  }
+  return { repaired, failed, truncated: work.length >= 500 };
+}
+
 export async function main({
   input = process.stdin,
   output = process.stdout,
   errorOutput = process.stderr,
   runStatus = runSetStatus,
+  repairSideEffects = reconcileWorkflowFollowups,
 } = {}) {
   const controller = new AbortController();
   const cancel = () => controller.abort();
@@ -289,15 +443,43 @@ export async function main({
   process.once('SIGTERM', cancel);
   try {
     const request = validateStatusRequest(await readBoundedRequest(input));
+    await repairSideEffects();
     const args = request.action === 'restore'
-      ? buildRestoreStatusArgs(request.roleNum)
+      ? buildRestoreStatusArgs(
+        request.roleNum,
+        request.undoToken,
+        request.expectedRevision,
+      )
       : buildSetStatusArgs(request);
-    await runStatus(args, { signal: controller.signal });
+    const writerResult = parseWriterResult(
+      await runStatus(args, { signal: controller.signal }),
+    );
+    let followup = null;
+    try {
+      const recovery = await repairSideEffects({ roleNum: request.roleNum });
+      if (recovery?.failed?.length) {
+        throw new Error(recovery.failed.join('; '));
+      }
+      if (recovery?.repaired?.length) {
+        followup = { reconciled: recovery.repaired.length };
+      }
+    } catch (error) {
+      // The tracker move is already durable. Its workflow marker is a recovery
+      // journal: a later reconciliation can safely retry this idempotent side
+      // effect without replaying the status transition.
+      followup = {
+        pending: true,
+        error: String(error?.message ?? error).replace(/[\0\r\n]+/gu, ' ').slice(0, 300),
+      };
+    }
     const result = {
       version: APPLICATION_API_VERSION,
       roleNum: request.roleNum,
       action: request.action,
       ...(request.state ? { state: request.state } : {}),
+      revision: writerResult.revision,
+      undoToken: request.undoToken,
+      ...(followup ? { followup } : {}),
     };
     output.write(`${JSON.stringify(result)}\n`);
     return result;

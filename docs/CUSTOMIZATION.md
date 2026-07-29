@@ -52,7 +52,9 @@ The negotiation section provides frameworks for salary discussions. Replace the 
 
 ## Hooks (Optional)
 
-Career-ops can integrate with external systems via Claude Code hooks. Example hooks:
+Frontrunner can run local workflow helpers through Claude Code hooks. Hooks are
+operator-controlled local automation and must not send candidate data to an
+unreviewed external service. Example:
 
 ```json
 {
@@ -60,7 +62,7 @@ Career-ops can integrate with external systems via Claude Code hooks. Example ho
     "SessionStart": [{
       "hooks": [{
         "type": "command",
-        "command": "echo 'Career-ops session started'"
+        "command": "echo 'Frontrunner session started'"
       }]
     }]
   }

@@ -12,6 +12,7 @@ import { JOURNEY, pipelineCounts, type SpineStage } from '@/lib/journey';
 import { PipelineOverview } from '@/components/journey-rail';
 import { ApplicationRoleRow } from '@/components/application-role-row';
 import { listRunningCvRoleNums } from '@/lib/jobs';
+import { readFollowups, type Followup } from '@/lib/followups';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'My applications' };
@@ -30,7 +31,7 @@ const STAGE_COPY: Record<TrackedStage, string> = {
   active: 'The employer has replied. Interviews, decisions and offers live here.',
 };
 
-const CLOSED_COPY = 'Roles outside the live process, including ones you removed. Nothing here was deleted.';
+const CLOSED_COPY = 'Roles outside the live process. Employer rejections and roles you chose not to pursue remain distinct; nothing was deleted.';
 
 function StageList({
   stage,
@@ -38,12 +39,14 @@ function StageList({
   roles,
   filtered,
   runningCvRoles,
+  followups,
 }: {
   stage: PageStage;
   title: string;
   roles: Role[];
   filtered: boolean;
   runningCvRoles: Set<number>;
+  followups: Map<number, Followup>;
 }) {
   return (
     <section className="mb-11">
@@ -63,12 +66,13 @@ function StageList({
           </p>
         </div>
       ) : (
-        <ul className="overflow-hidden rounded-2xl border border-[var(--color-line)] bg-[var(--color-card)] shadow-[0_1px_2px_rgb(26_25_23/0.035)]">
+        <ul className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-card)] shadow-[0_1px_2px_rgb(26_25_23/0.035)]">
           {roles.map((role) => (
             <ApplicationRoleRow
               key={role.num}
               role={role}
               building={runningCvRoles.has(role.num)}
+              followup={followups.get(role.num)}
             />
           ))}
         </ul>
@@ -82,12 +86,14 @@ export default async function ApplicationsPage({
 }: {
   searchParams: Promise<{ stage?: string }>;
 }) {
-  const [{ stage: requestedStage }, roles, inbox, runningCvRoles] = await Promise.all([
+  const [{ stage: requestedStage }, roles, inbox, runningCvRoles, followupEntries] = await Promise.all([
     searchParams,
     readTracker(),
     readInbox(),
     listRunningCvRoleNums(),
+    readFollowups(),
   ]);
+  const followups = new Map(followupEntries.map((entry) => [entry.num, entry]));
   const selected = requestedStage && VALID_STAGE.has(requestedStage)
     ? requestedStage as PageStage
     : null;
@@ -142,6 +148,7 @@ export default async function ApplicationsPage({
           roles={roles.filter((role) => role.stage === step.key)}
           filtered={selected !== null}
           runningCvRoles={runningCvRoles}
+          followups={followups}
         />
       ))}
     </>

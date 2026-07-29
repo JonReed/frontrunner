@@ -230,7 +230,13 @@ If yes → `node update-system.mjs apply`. If no → `node update-system.mjs dis
 
 ## What is frontrunner
 
-AI-powered, CLI-agnostic job search automation: pipeline tracking, offer evaluation, CV generation, portal scanning, batch processing. Runs on any AI coding CLI following the [open agent skill standard](https://agentskills.io) (Claude Code, Cursor, Codex, OpenCode, Qwen, Copilot, Kimi, Antigravity CLI, Grok Build CLI). Legacy Gemini API evaluation remains via `src/evaluate/gemini-eval.mjs`.
+AI-powered job search automation: pipeline tracking, offer evaluation, CV
+generation, portal scanning and batch processing. Claude Code, Codex and
+Antigravity CLI are the tested agent hosts. Other CLIs following the
+[open agent skill standard](https://agentskills.io) may work through the same
+mode files, but they are compatibility paths rather than supported
+configurations. Standalone API evaluators remain available for Gemini,
+OpenAI-compatible endpoints, OpenRouter and local Ollama.
 
 ### Codex invocation
 
@@ -520,7 +526,9 @@ and each of them is easy to erode one convenience at a time.
 
 ## Headless / Batch Mode
 
-Headless worker command per CLI:
+Headless invocation examples follow. Claude Code, Codex and Antigravity CLI are
+the tested hosts; the remaining commands are best-effort compatibility
+examples, not support commitments.
 
 | CLI | Command |
 |-----|---------|

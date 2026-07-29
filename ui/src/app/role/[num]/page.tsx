@@ -24,6 +24,9 @@ import { CvLinks } from '@/components/cv-links';
 import { RoleJourney } from '@/components/journey-rail';
 import { RoleActions } from '@/components/role-actions';
 import { readHealth } from '@/lib/health';
+import { readFollowups } from '@/lib/followups';
+import { FollowupStatus } from '@/components/followup-status';
+import { readRunningCvJob } from '@/lib/jobs';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,9 +43,15 @@ function Section({ title, body }: { title: string; body: string }) {
 
 export default async function RolePage({ params }: { params: Promise<{ num: string }> }) {
   const { num } = await params;
-  const [roles, health] = await Promise.all([readTracker(), readHealth()]);
+  const [roles, health, followups] = await Promise.all([
+    readTracker(),
+    readHealth(),
+    readFollowups(),
+  ]);
   const role = roles.find((r) => String(r.num) === num);
   if (!role) notFound();
+  const followup = followups.find((entry) => entry.num === role.num);
+  const runningCvJob = await readRunningCvJob(role.num);
 
   const markdown = role.reportPath ? await readReport(role.reportPath) : null;
   const report = markdown ? parseReport(markdown) : null;
@@ -79,6 +88,7 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
           {role.hasPdf && (
             <span className="text-sm font-medium text-[var(--color-ready)]">Tailored CV ready</span>
           )}
+          {followup && <FollowupStatus followup={followup} detail />}
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
         {role.pdf && <CvLinks pdf={role.pdf} />}
@@ -139,7 +149,12 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
         <p className="mb-4 mt-0.5 text-sm text-[var(--color-ink-soft)]">
           Update where it sits, or remove it from the live lists. Its assessment and CV are kept.
         </p>
-        <RoleActions roleNum={role.num} stage={role.stage} />
+        <RoleActions
+          roleNum={role.num}
+          stage={role.stage}
+          status={role.status}
+          hasPdf={role.hasPdf}
+        />
       </section>
 
       {/*
@@ -147,7 +162,15 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
         badged so it is never a surprise.
       */}
       <div className="rounded-2xl border border-[var(--color-line-strong)] bg-[color:var(--color-paper-translucent)] p-5 shadow-[0_12px_32px_rgb(26_25_23/0.12)] backdrop-blur-md sm:sticky sm:bottom-4">
-        <BuildCv roleNum={role.num} hasPdf={role.hasPdf} pdf={role.pdf} url={jobUrl} score={role.score} connected={health.signedIn} />
+        <BuildCv
+          roleNum={role.num}
+          hasPdf={role.hasPdf}
+          pdf={role.pdf}
+          url={jobUrl}
+          score={role.score}
+          connected={health.signedIn}
+          initialJob={runningCvJob}
+        />
       </div>
     </div>
   );

@@ -126,6 +126,23 @@ export function parseAppliedDate(notes) {
   return m ? m[1] : null;
 }
 
+/**
+ * Cadence after a reply or interview begins on the day that event happened,
+ * not on the original application/evaluation date.
+ *
+ * UI workflow moves append these observed dates to Notes. Older trackers
+ * remain compatible: callers fall back to the applied date when no event date
+ * has been recorded.
+ */
+export function parseStatusDate(notes, status) {
+  if (!notes || !['responded', 'interview'].includes(status)) return null;
+  const label = status === 'responded' ? 'responded' : 'interview';
+  const matches = [...String(notes).matchAll(
+    new RegExp(`\\b${label}\\s+(\\d{4}-\\d{2}-\\d{2})`, 'giu'),
+  )];
+  return matches.at(-1)?.[1] ?? null;
+}
+
 export function daysBetween(d1, d2) {
   return Math.floor((d2 - d1) / (1000 * 60 * 60 * 24));
 }
@@ -313,7 +330,8 @@ function analyze() {
 
     // Prefer the "Applied YYYY-MM-DD" date from notes; fall back to the column.
     const appliedDate = parseAppliedDate(app.notes) || app.date;
-    const appDate = parseDate(appliedDate);
+    const cadenceDate = parseStatusDate(app.notes, normalized) || appliedDate;
+    const appDate = parseDate(cadenceDate);
     if (!appDate) continue;
 
     const daysSinceApp = daysBetween(appDate, now);
@@ -352,6 +370,7 @@ function analyze() {
       num: app.num,
       date: app.date,
       appliedDate,
+      cadenceDate,
       company: app.company,
       // Intermediary channel (#1596): agency name when the application went
       // through an intermediary, null for a direct application (the tracker's

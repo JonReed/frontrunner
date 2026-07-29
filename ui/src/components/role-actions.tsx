@@ -9,6 +9,13 @@ import {
   type WorkflowDestination,
 } from '@/app/actions';
 import type { Stage } from '@/lib/roles';
+import type { WorkflowHandle } from '@/lib/status';
+import { preparingPrimaryAction } from '@/lib/workflow-actions.mjs';
+import {
+  canRecordEmployerRejection,
+  previousOutcomeAction,
+  primaryOutcomeAction,
+} from '@/lib/outcome-actions.mjs';
 
 type Move = {
   label: string;
@@ -70,21 +77,32 @@ const PRIMARY_BUTTON =
 export function RoleActions({
   roleNum,
   stage,
+  status,
+  hasPdf = false,
   compact = false,
   onSaved,
 }: {
   roleNum: number;
   stage: Stage;
+  status: string;
+  hasPdf?: boolean;
   compact?: boolean;
-  onSaved?: (message: string) => void;
+  onSaved?: (message: string, undo: WorkflowHandle) => void;
 }) {
   const router = useRouter();
-  const [confirmingClose, setConfirmingClose] = useState(false);
+  const [confirming, setConfirming] = useState<'withdraw' | 'rejected' | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [undoHandle, setUndoHandle] = useState<WorkflowHandle | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const primary = PRIMARY[stage];
-  const back = BACK[stage];
+  const primary = stage === 'active'
+    ? primaryOutcomeAction(status) as Move | null
+    : PRIMARY[stage];
+  const back = stage === 'active'
+    ? previousOutcomeAction(status) as Move | null
+    : BACK[stage];
+  const prepare = stage === 'prepare' ? preparingPrimaryAction(hasPdf) : null;
+  const recordRejection = canRecordEmployerRejection(stage, status);
 
   useEffect(() => {
     if (!notice || onSaved) return;
@@ -98,23 +116,29 @@ export function RoleActions({
       const result = await moveRole(roleNum, move.destination);
       if ('error' in result) {
         setError(result.error);
-        setConfirmingClose(false);
+        setConfirming(null);
         return;
       }
-      if (onSaved) onSaved(move.message);
-      else setNotice(move.message);
+      setUndoHandle(result.undo);
+      if (onSaved) onSaved(result.warning ?? move.message, result.undo);
+      else setNotice(result.warning ?? move.message);
     });
   };
 
   const undo = () => {
     setError(null);
     startTransition(async () => {
-      const result = await undoRoleMove(roleNum);
+      if (!undoHandle) {
+        setError('That move can no longer be undone. Reload the role.');
+        return;
+      }
+      const result = await undoRoleMove(roleNum, undoHandle);
       if ('error' in result) {
         setError(result.error);
         return;
       }
       setNotice(null);
+      setUndoHandle(null);
       router.refresh();
     });
   };
@@ -141,14 +165,28 @@ export function RoleActions({
     destination: 'closed',
     message: 'Moved to Closed.',
   };
+  const rejected: Move = {
+    label: 'Record rejection',
+    destination: 'rejected',
+    message: 'Employer rejection recorded.',
+  };
 
   return (
     <div className={compact ? 'flex flex-wrap items-center justify-start gap-2 sm:justify-end' : ''}>
       <div className="flex flex-wrap items-center gap-2">
-        {stage === 'prepare' ? (
+        {prepare?.kind === 'open' ? (
           <Link href={`/role/${roleNum}`} className={PRIMARY_BUTTON}>
-            Prepare application
+            {prepare.label}
           </Link>
+        ) : prepare?.kind === 'move' ? (
+          <button
+            type="button"
+            className={PRIMARY_BUTTON}
+            disabled={pending}
+            onClick={() => runMove(prepare)}
+          >
+            {pending ? 'Saving…' : prepare.label}
+          </button>
         ) : primary ? (
           <button
             type="button"
@@ -179,22 +217,28 @@ export function RoleActions({
                   {back.label}
                 </button>
               )}
-              {confirmingClose ? (
+              {confirming ? (
                 <div className="p-2">
-                  <p className="text-sm text-[var(--color-ink-soft)]">Remove from the live lists?</p>
+                  <p className="text-sm text-[var(--color-ink-soft)]">
+                    {confirming === 'rejected'
+                      ? 'Record that the employer rejected this application?'
+                      : 'Remove from the live lists?'}
+                  </p>
                   <div className="mt-2 flex gap-2">
                     <button
                       type="button"
                       disabled={pending}
-                      onClick={() => runMove(remove)}
+                      onClick={() => runMove(confirming === 'rejected' ? rejected : remove)}
                       className="min-h-[40px] cursor-pointer rounded-md border border-[var(--color-line-strong)] px-3 text-sm font-medium hover:border-[var(--color-act)] hover:text-[var(--color-act)]"
                     >
-                      {pending ? 'Removing…' : 'Remove'}
+                      {pending
+                        ? 'Saving…'
+                        : confirming === 'rejected' ? 'Record rejection' : 'Remove'}
                     </button>
                     <button
                       type="button"
                       disabled={pending}
-                      onClick={() => setConfirmingClose(false)}
+                      onClick={() => setConfirming(null)}
                       className="min-h-[40px] cursor-pointer px-2 text-sm text-[var(--color-ink-faint)]"
                     >
                       Keep
@@ -202,14 +246,26 @@ export function RoleActions({
                   </div>
                 </div>
               ) : (
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => setConfirmingClose(true)}
-                  className="block min-h-[40px] w-full cursor-pointer rounded-md px-3 text-left text-sm text-[var(--color-ink-soft)] hover:bg-[var(--color-paper)] disabled:opacity-50"
-                >
-                  Not for me
-                </button>
+                <>
+                  {recordRejection && (
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => setConfirming('rejected')}
+                      className="block min-h-[40px] w-full cursor-pointer rounded-md px-3 text-left text-sm text-[var(--color-ink-soft)] hover:bg-[var(--color-paper)] disabled:opacity-50"
+                    >
+                      They rejected me
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => setConfirming('withdraw')}
+                    className="block min-h-[40px] w-full cursor-pointer rounded-md px-3 text-left text-sm text-[var(--color-ink-soft)] hover:bg-[var(--color-paper)] disabled:opacity-50"
+                  >
+                    Not for me
+                  </button>
+                </>
               )}
             </div>
           </details>

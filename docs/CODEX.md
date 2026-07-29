@@ -1,6 +1,7 @@
 # Codex Guide
 
-Career-ops supports Codex through the same shared router used by the other CLI integrations.
+Frontrunner supports Codex through the same shared router used by the other
+tested agent hosts.
 
 ## How Codex maps to frontrunner
 

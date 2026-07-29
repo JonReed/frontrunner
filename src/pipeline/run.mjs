@@ -21,6 +21,10 @@ import { cacheProviderDescriptions, readJdManifest } from '../scan/jd-cache.mjs'
 import { createLivenessChecker } from '../scan/liveness-service.mjs';
 import { runPrefilter } from '../scan/prefilter.mjs';
 import {
+  PREFILTER_OVERRIDE_URL_ENV,
+  readPrefilterOverrides,
+} from '../scan/prefilter-overrides.mjs';
+import {
   EVALUATION_RESULT_FD_ENV,
   parseEvaluationExecutionResult,
 } from '../evaluate/execution-result.mjs';
@@ -149,9 +153,11 @@ async function defaultRun(command, args, options = {}) {
     maxStdoutBytes: 2 * 1024 * 1024,
     maxStderrBytes: 2 * 1024 * 1024,
     extraPipes: resultChannel ? 1 : 0,
-    env: resultChannel
-      ? { ...process.env, [EVALUATION_RESULT_FD_ENV]: '3' }
-      : process.env,
+    env: {
+      ...process.env,
+      ...(options.env ?? {}),
+      ...(resultChannel ? { [EVALUATION_RESULT_FD_ENV]: '3' } : {}),
+    },
     onStdout: options.capture ? undefined : chunk => process.stdout.write(chunk),
     onStderr: options.capture ? undefined : chunk => process.stderr.write(chunk),
   });
@@ -189,24 +195,30 @@ export async function runPipelineEvaluations({ engine, kept, jdsDir, run = defau
     }
     try {
       let processResult;
+      const evaluatorOptions = {
+        resultChannel: true,
+        ...(role.overrideRule ? {
+          env: { [PREFILTER_OVERRIDE_URL_ENV]: role.url },
+        } : {}),
+      };
       if (engine === 'claude' || engine === 'batch') {
         processResult = await run(
           process.execPath,
           [join(ROOT, 'src/evaluate/claude-eval.mjs'), '--file', file, '--url', role.url],
-          { resultChannel: true },
+          evaluatorOptions,
         );
       } else if (engine === 'openrouter') {
         processResult = await run(
           process.execPath,
           [join(ROOT, 'src/evaluate/openrouter-runner.mjs'), 'evaluate', '--file', file],
-          { resultChannel: true },
+          evaluatorOptions,
         );
       } else {
         const evaluator = engine === 'gemini' ? 'gemini-eval.mjs' : 'openai-eval.mjs';
         processResult = await run(
           process.execPath,
           [join(ROOT, 'src/evaluate', evaluator), '--file', file],
-          { resultChannel: true },
+          evaluatorOptions,
         );
       }
       const execution = parseEvaluationExecutionResult(
@@ -400,6 +412,7 @@ export async function runCanonicalPipeline({
       jdsDir,
       out: batchInput,
       rejects,
+      overrides: readPrefilterOverrides(),
     });
     if (livenessRejected.length) {
       const existing = readFileSync(rejects, 'utf8').trimEnd();

@@ -6,15 +6,21 @@ const INBOX_CONTROL = join(ROOT, 'src', 'application', 'inbox-control.mjs');
 const RESPONSE_LIMIT = 8 * 1024;
 const RESPONSE_TIMEOUT_MS = 20_000;
 
-export function removeInboxUrl(url: string): Promise<void> {
+export type InboxChange = {
+  changed: boolean;
+  found: boolean;
+  state: 'dismissed' | 'pending';
+};
+
+export function removeInboxUrl(url: string): Promise<InboxChange> {
   return changeInboxUrl('remove', url);
 }
 
-export function restoreInboxUrl(url: string): Promise<void> {
+export function restoreInboxUrl(url: string): Promise<InboxChange> {
   return changeInboxUrl('restore', url);
 }
 
-function changeInboxUrl(action: 'remove' | 'restore', url: string): Promise<void> {
+function changeInboxUrl(action: 'remove' | 'restore', url: string): Promise<InboxChange> {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [INBOX_CONTROL], {
       cwd: ROOT,
@@ -48,7 +54,22 @@ function changeInboxUrl(action: 'remove' | 'restore', url: string): Promise<void
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      if (code === 0) resolve();
+      if (code === 0) {
+        try {
+          const value = JSON.parse(stdout.trim()) as Partial<InboxChange>;
+          if (
+            typeof value.changed !== 'boolean'
+            || typeof value.found !== 'boolean'
+            || !['dismissed', 'pending'].includes(String(value.state))
+          ) {
+            reject(new Error('The pending-role list returned an incomplete result.'));
+            return;
+          }
+          resolve(value as InboxChange);
+        } catch {
+          reject(new Error('The pending-role list returned an invalid result.'));
+        }
+      }
       else {
         try {
           const parsed = JSON.parse(stderr.trim()) as { error?: string };

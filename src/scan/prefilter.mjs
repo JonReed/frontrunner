@@ -51,6 +51,10 @@ import { ROOT } from '#paths';
 import { MAX_JOB_DOCUMENT_CHARS } from '../security/job-document.mjs';
 import { assertTestUserDataWriteAllowed } from '../lib/test-user-data-policy.mjs';
 import { loadPrefilterRules } from './prefilter-config.mjs';
+import {
+  matchingPrefilterOverride,
+  readPrefilterOverrides,
+} from './prefilter-overrides.mjs';
 const argv = process.argv.slice(2);
 const hasFlag = (f) => argv.includes(f);
 const argVal = (f, d) => {
@@ -285,7 +289,15 @@ export function sanitizeTsvField(value, maxChars = 4_096) {
  * Keeping this callable lets tests exercise the same filesystem behavior as the
  * CLI without touching a user's pipeline, cache, or audit log.
  */
-export function runPrefilter({ input, jdsDir, out = '', rejects, profile = PROFILE, rules }) {
+export function runPrefilter({
+  input,
+  jdsDir,
+  out = '',
+  rejects,
+  profile = PROFILE,
+  rules,
+  overrides = new Map(),
+}) {
   if (!existsSync(input)) throw new Error(`prefilter: input not found: ${input}`);
   const pathRoles = [
     ['input', resolve(input)],
@@ -319,8 +331,19 @@ export function runPrefilter({ input, jdsDir, out = '', rejects, profile = PROFI
       }
     }
     const res = classify(r.title, jd, profile, activeRules);
-    if (res.verdict === 'reject') rejected.push({ ...r, ...res });
-    else kept.push({ ...r, ...res });
+    const override = res.verdict === 'reject'
+      ? matchingPrefilterOverride(r.url, res.rule, overrides)
+      : null;
+    if (res.verdict === 'reject' && !override) rejected.push({ ...r, ...res });
+    else if (override) {
+      kept.push({
+        ...r,
+        verdict: 'keep',
+        rule: 'user_override',
+        evidence: res.evidence,
+        overrideRule: res.rule,
+      });
+    } else kept.push({ ...r, ...res });
   }
 
   const writes = [{
@@ -413,7 +436,13 @@ Usage:
   const out = outArg ? resolve(ROOT, outArg) : '';
   const rejects = resolve(ROOT, argVal('--rejects', 'batch/prefilter-rejects.tsv'));
   const summary = hasFlag('--summary');
-  const { result, kept, rejected } = runPrefilter({ input, jdsDir, out, rejects });
+  const { result, kept, rejected } = runPrefilter({
+    input,
+    jdsDir,
+    out,
+    rejects,
+    overrides: readPrefilterOverrides(),
+  });
 
   if (summary) {
     console.log('\n=== prefilter ===');

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import {
   existsSync,
   mkdtempSync,
@@ -21,6 +22,21 @@ import {
   validateStatusRequest,
 } from '../../src/application/status-control.mjs';
 
+const REVISION = 'a'.repeat(64);
+const TOKEN = '12345678-1234-1234-1234-123456789abc';
+const NOTE = `[frontrunner-before:${TOKEN}:Evaluated:ready:Applied]; sent via referral`;
+const UI_STATES = [
+  'Evaluated',
+  'Applied',
+  'Responded',
+  'Interview',
+  'Offer',
+  'Hired',
+  'Rejected',
+  'Discarded',
+  'SKIP',
+];
+
 function outputSink() {
   let body = '';
   const stream = new Writable({
@@ -38,24 +54,31 @@ test('status control accepts only an honest bounded tracker decision', () => {
     action: 'set',
     roleNum: 42,
     state: 'Applied',
-    note: 'sent via referral',
-  }, new Set(['Evaluated', 'Applied', 'Responded', 'Discarded', 'SKIP']));
+    note: NOTE,
+    expectedRevision: REVISION,
+    undoToken: TOKEN,
+  }, new Set(UI_STATES));
   assert.deepEqual(request, {
     version: '1',
     action: 'set',
     roleNum: 42,
     state: 'Applied',
-    note: 'sent via referral',
+    note: NOTE,
+    expectedRevision: REVISION,
+    undoToken: TOKEN,
   });
   assert.equal(Object.isFrozen(request), true);
 
-  for (const state of ['Evaluated', 'Responded']) {
+  for (const state of ['Evaluated', 'Responded', 'Interview', 'Offer', 'Hired', 'Rejected']) {
     assert.equal(validateStatusRequest({
       version: '1',
       action: 'set',
       roleNum: 42,
       state,
-    }, new Set(['Evaluated', 'Responded'])).state, state);
+      note: `[frontrunner-before:${TOKEN}:Evaluated:ready:${state}]`,
+      expectedRevision: REVISION,
+      undoToken: TOKEN,
+    }, new Set(UI_STATES)).state, state);
   }
 
   for (const hostile of [
@@ -63,14 +86,14 @@ test('status control accepts only an honest bounded tracker decision', () => {
     [],
     { ...request, command: '/bin/sh' },
     { ...request, roleNum: '../data/applications.md' },
-    { ...request, state: 'Hired' },
+    { ...request, state: 'Invented' },
     { ...request, note: 'break | the row' },
     { ...request, note: 'line one\nline two' },
     { ...request, note: 'x'.repeat(301) },
   ]) {
     assert.throws(() => validateStatusRequest(
       hostile,
-      new Set(['Evaluated', 'Applied', 'Responded', 'Discarded', 'SKIP']),
+      new Set(UI_STATES),
     ));
   }
 });
@@ -79,15 +102,18 @@ test('status control builds one fixed canonical writer invocation', () => {
   const args = buildSetStatusArgs({
     roleNum: 42,
     state: 'Applied',
-    note: 'sent via referral',
+    note: NOTE,
+    expectedRevision: REVISION,
   });
   assert.deepEqual(args, [
     join(ROOT, 'src', 'tracker', 'set-status.mjs'),
     '42',
     'Applied',
     '--json',
+    '--expect-revision',
+    REVISION,
     '--note',
-    'sent via referral',
+    NOTE,
   ]);
 });
 
@@ -95,26 +121,44 @@ test('status restore derives the prior state from the tracker, not the request',
   const fixture = mkdtempSync(join(tmpdir(), 'frontrunner-status-restore-'));
   t.after(() => rmSync(fixture, { recursive: true, force: true }));
   const tracker = join(fixture, 'applications.md');
+  const rowLine = `| 42 | 2026-07-29 | Acme | Director | 4.2/5 | Discarded | ❌ | — | [frontrunner-before:${TOKEN}:Interview:active:Discarded] |`;
   writeFileSync(tracker, `# Applications Tracker
 
 | # | Date | Company | Role | Score | Status | PDF | Report | Notes |
 |---|------|---------|------|-------|--------|-----|--------|-------|
-| 42 | 2026-07-29 | Acme | Director | 4.2/5 | Discarded | ❌ | — | [frontrunner-before:Interview:active] |
+${rowLine}
 `);
+  const revision = createHash('sha256').update(rowLine).digest('hex');
   const previous = process.env.FRONTRUNNER_TRACKER;
   process.env.FRONTRUNNER_TRACKER = tracker;
   try {
     assert.deepEqual(
-      validateStatusRequest({ version: '1', action: 'restore', roleNum: 42 }),
-      { version: '1', action: 'restore', roleNum: 42 },
+      validateStatusRequest({
+        version: '1',
+        action: 'restore',
+        roleNum: 42,
+        expectedRevision: revision,
+        undoToken: TOKEN,
+      }),
+      {
+        version: '1',
+        action: 'restore',
+        roleNum: 42,
+        expectedRevision: revision,
+        undoToken: TOKEN,
+      },
     );
     assert.deepEqual(
-      buildRestoreStatusArgs(42, new Set(['Interview'])),
+      buildRestoreStatusArgs(42, TOKEN, revision, new Set(['Interview'])),
       [
         join(ROOT, 'src', 'tracker', 'set-status.mjs'),
         '42',
         'Interview',
         '--json',
+        '--expect-revision',
+        revision,
+        '--note',
+        `[frontrunner-undone:${TOKEN}]`,
       ],
     );
   } finally {
@@ -227,9 +271,13 @@ test('status-control emits a stable operational error and no success on timeout'
         action: 'set',
         roleNum: 42,
         state: 'Applied',
+        note: NOTE,
+        expectedRevision: REVISION,
+        undoToken: TOKEN,
       })]),
       output: output.stream,
       errorOutput: errorOutput.stream,
+      async repairSideEffects() {},
       async runStatus(_args, options) {
         assert.equal(options.signal.aborted, false);
         const error = new Error('the tracker did not respond in time');

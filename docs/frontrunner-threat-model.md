@@ -219,7 +219,11 @@ flowchart LR
   browser, parser, model-agent, UI, or path-validation boundary.
 - Model API responses alone cannot run tools in the API evaluator paths.
 
-## Entry points and attack surfaces
+## Inherited entry points and attack surfaces (historical)
+
+The following table records the pre-hardening state used to derive the
+mitigations. It is not an inventory of current gaps. Current implementation
+status and residual risks are stated at the top of this document.
 
 | Surface | How reached | Trust boundary | Notes | Evidence (repo path / symbol) |
 |---|---|---|---|---|
@@ -268,7 +272,12 @@ flowchart LR
    causing the local UI to read and render an unintended local file if its
    content happens to match the expected format.
 
-## Threat model table
+## Inherited threat table (historical)
+
+This table is deliberately frozen as the unsafe baseline. Its “Existing
+controls”, “Gaps” and recommendations describe the parent implementation at the
+time of the review, not current Frontrunner. The implementation-status table
+above is authoritative for current behavior.
 
 | Threat ID | Threat source | Prerequisites | Threat action | Impact | Impacted assets | Existing controls (evidence) | Gaps | Recommended mitigations | Detection ideas | Likelihood | Impact severity | Priority |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|

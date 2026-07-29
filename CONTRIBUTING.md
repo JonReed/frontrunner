@@ -1,71 +1,58 @@
 # Contributing to Frontrunner
 
-Thanks for your interest in contributing! Frontrunner is built with Claude Code, and you can use it for development too.
+Thanks for helping improve Frontrunner. The project is maintained by Furls
+Digital Ltd and accepts focused fixes, documentation, provider adapters,
+translations and backend improvements.
 
-## Why contribute here
+Frontrunner is a fork of
+[career-ops](https://github.com/santifer/career-ops), but it has its own
+architecture, security boundaries, issue tracker and release process. Do not
+send Frontrunner support requests or patches to the upstream project.
 
-Frontrunner is a great place to make your **first open-source contribution** — and a great line on your résumé.
+## Before submitting a PR
 
-- **You already get it.** This is a job-search tool. If you're job-hunting, you understand the problem better than most — which makes you a better contributor.
-- **A real merged PR, on something people use.** 55K+ stars, shipping most weeks. Your name in the history of a real project, not a toy repo.
-- **We answer fast.** Open an issue or PR and you'll hear back, usually within a day or two. No black holes.
-- **Tiny on-ramps.** Browse [`good first issue`](https://github.com/Furls-Digital/frontrunner/contribute) — each is scoped small, with a time estimate, the pattern to copy, and a clear "done", so your first PR is a win, not a maze.
-- **Your human work gets a real review.** We read every PR. We don't drown contributors in bot noise, and we don't merge AI-slop — put thought in, get thought back.
-- **A path forward.** Consistent, high-quality contributors get credited publicly and invited into bigger roles (reviewer, then maintainer).
+Open an issue before a new feature, mode, command or architecture change. A
+prior issue is not required for:
 
-New to all this? That's the point. Claim an issue with a comment, ask anything in [Discord](https://discord.gg/8pRpHETxa4), and we'll help you land it.
+- bug fixes;
+- anonymous, zero-auth scanner providers;
+- documentation;
+- tests; or
+- translations.
 
-## Before Submitting a PR
+Keep a PR focused. Explain the user-visible behavior, the root cause for a fix,
+and the checks you ran. Link the issue when one exists. The sole maintainer
+makes merge and release decisions; there is no contributor ladder, voting
+process, response-time promise or implied path to repository access.
 
-**For a new feature, a new mode or command, or an architecture change, please open an issue first.** It saves you from investing time in something we'd have to redirect, and lets us align on direction before you write code.
+### What makes a reviewable PR
 
-**Going straight to a PR is welcome — no issue needed — for:** bug fixes, new zero-auth scanner providers, docs, and translations. Don't let process slow these down; these are the contributions we most want.
+- It changes one coherent behavior.
+- It includes regression coverage for behavior changes.
+- It preserves the system/user boundary in `DATA_CONTRACT.md`.
+- It keeps hostile remote content away from local authority.
+- It updates user-facing documentation when commands or guarantees change.
+- It passes the relevant focused checks and the complete `test-all.mjs` suite.
 
-A large *feature* PR that skipped this step may be asked to start with an issue if it doesn't fit the architecture or roadmap — that's a scope conversation, never a judgment on your work.
+## Development workflow
 
-The review process you'll experience here is documented end-to-end in [Agentic maintenance: how this repo is run](https://santifer.io/ai-agent-fleet): why a first-timer's CI waits for human approval, why review comments arrive with test evidence, and what happens between your push and the merge.
-
-### What makes a good PR
-- Fixes a bug listed in Issues
-- Addresses a feature request that was discussed and approved
-- Includes a clear description of what changed and why
-- Follows the existing code style and project philosophy (simple, minimal, quality over quantity)
-
-## Quick Start
-
-1. Open an issue to discuss your idea
-2. Fork the repo
-3. Create a branch (`git checkout -b feature/my-feature`)
-4. Make your changes
-5. Test with a fresh clone (see [docs/SETUP.md](docs/SETUP.md))
-6. Commit and push
-7. Open a Pull Request referencing the issue
+1. Fork and clone the repository.
+2. Install the Node version declared in `package.json` and run `npm install`.
+3. Create a focused branch.
+4. Make the change with tests.
+5. Run the checks below.
+6. Open a PR against `Furls-Digital/frontrunner`.
 
 ## What to Contribute
 
-**Good first contributions:**
-- Add companies to `templates/portals.example.yml`
-- Translate modes to other languages
-- Improve documentation
-- Add example CVs for different roles (in `docs/examples/`)
-- Report bugs via [Issues](https://github.com/Furls-Digital/frontrunner/issues)
+- New anonymous providers under `providers/`, including parser fixtures.
+- Deterministic backend behavior and destructive tests.
+- Documentation corrections and examples using fictional data.
+- Market modes and translations.
+- Improvements to the active `ui/` interface.
 
-**Bigger contributions:**
-- New evaluation dimensions or scoring logic
-- Web interface improvements in `web/` or `ui/`
-- New skill modes (in `modes/`)
-- Script improvements (`.mjs` utilities)
-
-## The contribution ladder
-
-There's a clear path here — we promote people who show up:
-
-1. **First-time contributor** — you landed a PR. Welcome aboard.
-2. **Trusted contributor** — a few solid merges; we fast-track your PRs and tag you on related work.
-3. **Reviewer** — you help triage and review others' PRs. We invite you.
-4. **Maintainer** — you help steer the project.
-
-We credit contributors publicly and invite high-signal folks up the ladder. Want to help more? Just say so in an issue.
+The inherited `web/` tree is archived reference source. Its launch paths fail
+closed, so do not build new features there.
 
 ## Scope: the core vs. the shared layer
 
@@ -75,9 +62,10 @@ Rule of thumb before you build: **provider modules, languages, CLI support, mode
 
 ## Guidelines
 
-- Keep modes language-agnostic when possible (Claude handles both EN and ES)
+- Keep base modes language-agnostic; market-specific rules belong in their
+  market directory.
 - Scripts should handle missing files gracefully (check `existsSync` before `readFileSync`)
-- Interface changes must pass their package's typecheck and build, and should be tested with representative local data
+- Interface changes must pass the `ui` package's typecheck and build, and should be tested with representative fictional data
 - Don't commit personal data (cv.md, profile.yml, applications.md, reports/)
 
 ### Dependency policy
@@ -119,8 +107,8 @@ node src/tracker/verify-pipeline.mjs     # Health check
 node src/cv/cv-sync-check.mjs        # Config check
 
 # Interfaces
-npm -C web run typecheck
 npm -C ui run typecheck
+npm -C ui run build
 
 # Tests
 node test-all.mjs             # Full suite — run before pushing/opening a PR
@@ -161,6 +149,6 @@ project and is not ours to license.
 
 ## Need Help?
 
-- [Join the Discord](https://discord.gg/8pRpHETxa4) — fastest way to get answers and connect with other contributors
 - [Open an issue](https://github.com/Furls-Digital/frontrunner/issues)
+- [Read the support policy](SUPPORT.md)
 - [Read the architecture docs](docs/ARCHITECTURE.md)

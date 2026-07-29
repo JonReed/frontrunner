@@ -44,12 +44,45 @@ test('removing a pending role preserves the rest of pipeline.md', async (t) => {
       + '- [ ] https://example.com/two | Two | Designer\n',
   );
 
-  assert.equal(await setPendingUrlDismissed(pipeline, 'https://example.com/one', true), true);
+  assert.deepEqual(
+    await setPendingUrlDismissed(pipeline, 'https://example.com/one', true),
+    { changed: true, found: true, matched: 1, state: 'dismissed' },
+  );
   assert.equal(
     readFileSync(pipeline, 'utf8'),
     '# Pending\n\n- [x] https://example.com/one | One | Engineer\n'
       + '- [ ] https://example.com/two | Two | Designer\n',
   );
-  assert.equal(await setPendingUrlDismissed(pipeline, 'https://example.com/one', false), true);
-  assert.equal(await setPendingUrlDismissed(pipeline, 'https://example.com/missing', true), false);
+  assert.equal(
+    (await setPendingUrlDismissed(pipeline, 'https://example.com/one', false)).changed,
+    true,
+  );
+  assert.deepEqual(
+    await setPendingUrlDismissed(pipeline, 'https://example.com/missing', true),
+    { changed: false, found: false, matched: 0, state: 'dismissed' },
+  );
+  assert.deepEqual(
+    await setPendingUrlDismissed(pipeline, 'https://example.com/two', false),
+    { changed: false, found: true, matched: 1, state: 'pending' },
+  );
+});
+
+test('concurrent inbox removals report one real change and one stale no-op', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'frontrunner-inbox-race-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const pipeline = join(dir, 'pipeline.md');
+  writeFileSync(pipeline, '- [ ] https://example.com/one | One | Engineer\n');
+
+  const results = await Promise.all([
+    setPendingUrlDismissed(pipeline, 'https://example.com/one', true),
+    setPendingUrlDismissed(pipeline, 'https://example.com/one', true),
+  ]);
+  assert.deepEqual(
+    results.map(result => result.changed).sort(),
+    [false, true],
+  );
+  assert.equal(
+    readFileSync(pipeline, 'utf8'),
+    '- [x] https://example.com/one | One | Engineer\n',
+  );
 });

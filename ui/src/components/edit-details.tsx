@@ -16,16 +16,10 @@
 
 import { useState, useTransition } from 'react';
 import { saveDetails } from '@/app/actions';
-
-const FIELDS = [
-  { path: 'candidate.full_name', label: 'Full name', placeholder: 'Jane Smith' },
-  { path: 'candidate.email', label: 'Email', placeholder: 'jane@example.com' },
-  { path: 'candidate.phone', label: 'Phone', placeholder: 'Optional' },
-  { path: 'candidate.location', label: 'Where you are', placeholder: 'Manchester, UK' },
-  { path: 'candidate.linkedin', label: 'LinkedIn', placeholder: 'Optional' },
-  { path: 'compensation.target_range', label: 'Salary target', placeholder: 'Optional' },
-  { path: 'compensation.minimum', label: 'Walk-away number', placeholder: 'Optional' },
-] as const;
+import {
+  PROFILE_DETAIL_FIELDS,
+  PROFILE_DETAIL_SECTIONS,
+} from '@/lib/profile-maintenance.mjs';
 
 const FIELD =
   'w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-card)] px-3.5 py-2.5 text-[15px] outline-none transition placeholder:text-[var(--color-ink-faint)] focus:border-[var(--color-act)]';
@@ -34,7 +28,9 @@ export function EditDetails({ initial }: { initial: Record<string, string | stri
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState<Record<string, string>>(() => {
     const seed: Record<string, string> = {};
-    for (const f of FIELDS) seed[f.path] = typeof initial[f.path] === 'string' ? (initial[f.path] as string) : '';
+    for (const f of PROFILE_DETAIL_FIELDS) {
+      seed[f.path] = typeof initial[f.path] === 'string' ? (initial[f.path] as string) : '';
+    }
     const roles = initial['target_roles.primary'];
     seed.roles = Array.isArray(roles) ? roles.join('\n') : '';
     return seed;
@@ -61,7 +57,7 @@ export function EditDetails({ initial }: { initial: Record<string, string | stri
     const fields: Record<string, string | string[]> = {};
     // Empty strings are sent deliberately here, unlike in setup: on an edit
     // form, clearing a box is a request to remove that value.
-    for (const f of FIELDS) fields[f.path] = values[f.path] ?? '';
+    for (const f of PROFILE_DETAIL_FIELDS) fields[f.path] = values[f.path] ?? '';
     fields['target_roles.primary'] = values.roles.split('\n').map((r) => r.trim()).filter(Boolean);
 
     startTransition(async () => {
@@ -77,28 +73,39 @@ export function EditDetails({ initial }: { initial: Record<string, string | stri
 
   return (
     <div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[0_1px_2px_rgb(26_25_23/0.03)]">
-      {FIELDS.map((f) => (
-        <label key={f.path} className="mb-4 block">
-          <span className="mb-1 block text-sm font-semibold">{f.label}</span>
-          <input
-            className={FIELD}
-            value={values[f.path]}
-            placeholder={f.placeholder}
-            onChange={(e) => setValues((v) => ({ ...v, [f.path]: e.target.value }))}
-          />
-        </label>
-      ))}
+      {PROFILE_DETAIL_SECTIONS.map((section, index) => (
+        <fieldset
+          key={section.title}
+          className={index === 0 ? '' : 'mt-6 border-t border-[var(--color-line)] pt-6'}
+        >
+          <legend className="mb-4 text-[17px] font-bold tracking-tight">{section.title}</legend>
 
-      <label className="mb-5 block">
-        <span className="mb-1 block text-sm font-semibold">Job titles you would take</span>
-        <span className="mb-2 block text-sm text-[var(--color-ink-soft)]">One per line.</span>
-        <textarea
-          className={`${FIELD} resize-y`}
-          rows={4}
-          value={values.roles}
-          onChange={(e) => setValues((v) => ({ ...v, roles: e.target.value }))}
-        />
-      </label>
+          {section.fields.map((f) => (
+            <label key={f.path} className="mb-4 block">
+              <span className="mb-1 block text-sm font-semibold">{f.label}</span>
+              <input
+                className={FIELD}
+                value={values[f.path]}
+                placeholder={f.placeholder}
+                onChange={(e) => setValues((v) => ({ ...v, [f.path]: e.target.value }))}
+              />
+            </label>
+          ))}
+
+          {index === 1 && (
+            <label className="mb-5 block">
+              <span className="mb-1 block text-sm font-semibold">Job titles you would take</span>
+              <span className="mb-2 block text-sm text-[var(--color-ink-soft)]">One per line.</span>
+              <textarea
+                className={`${FIELD} resize-y`}
+                rows={4}
+                value={values.roles}
+                onChange={(e) => setValues((v) => ({ ...v, roles: e.target.value }))}
+              />
+            </label>
+          )}
+        </fieldset>
+      ))}
 
       {error && (
         <div className="mb-4 rounded-lg border border-[var(--color-attention)] bg-[var(--color-attention-wash)] p-4">

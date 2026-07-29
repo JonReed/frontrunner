@@ -281,13 +281,26 @@ honest without making a reversible decision feel destructive.
 **Status words describe observable events.** Applied means the application was
 sent and is waiting for an employer response. In process begins only when the
 employer has replied; the row then keeps the more specific tracker status such
-as Responded, Interview or Offer.
+as Responded, Interview, Offer or Hired. Each of those outcomes is recorded by
+a control that names the event the user observed; the interface never infers an
+offer or hire from a generic stage move. Employer rejection is also separate
+from *Not for me*: one records what the employer decided, the other records the
+candidate's decision.
+
+**Applied creates a real follow-up, not a reminder to remember.** The tracker
+move seeds the canonical cadence transaction. Due and overdue dates appear on
+application rows and role pages, and urgent follow-ups rise to the top of Next
+up. Reply and interview cadence begins on the recorded event date rather than
+the older evaluation date. A failed side-effect remains recoverable from the
+durable workflow marker instead of silently losing the schedule.
 
 **One next action per row.** The visible control says what the person is
 deciding — *I want to pursue this* — rather than describing an internal state
 transition. Backwards moves and *Not for me* sit in a small secondary menu.
 Preparing rows say what remains: CV needed, CV building, or job advert
-unavailable.
+unavailable. Once a completed CV exists, the primary action becomes
+*Application ready* and advances the role to Ready; the interface must never
+show both *CV ready* and *CV needed*.
 
 **Changes leave a short undo window.** A successful move replaces the row with
 the result and an Undo action before the list refreshes. Found-stage removals
@@ -372,6 +385,41 @@ The button never claims a success it has not observed: "connected" appears only
 after the CLI itself reports it. After ninety seconds it stops implying
 progress and offers the command as a fallback, because a spinner that never
 resolves is worse than an honest dead end.
+
+---
+
+## Profile maintenance
+
+My details is the user-facing source of truth, not a one-time onboarding
+receipt. Search city and country, working pattern, timezone, work
+authorisation, salary currency and target roles remain editable after setup.
+Working pattern stays free text: “remote preferred; hybrid in London” is useful
+matching evidence, while forcing it into one of three buttons would discard the
+part that matters.
+
+Replacing the canonical CV is separate from ordinary field editing. The
+replacement is parsed locally, shown back as editable text, and requires an
+explicit second confirmation because it changes the evidence used by every
+future assessment. The interface says what is and is not affected: existing
+reports and generated PDFs remain unchanged. PDF import is intentionally not
+offered; extracting a two-column PDF can silently scramble career history, so
+the user is asked for the original Word file or pasted text instead.
+
+---
+
+## Exceptions and resumable work
+
+A deterministic rule is a default, not an irreversible verdict. Ruled-out
+roles expose “Assess anyway” beside the rule and matched evidence. The action
+requires confirmation because a later assessment may spend model allowance,
+then records an exception scoped to that exact posting URL and exact rule. A
+different role—or the same role matching a different hard limit—still fails
+closed.
+
+Long-running work belongs to the application, not the page that launched it.
+Returning to a role while its CV is building must reattach to the durable job
+and resume the same progress state. It must never show a fresh build button
+while another process already owns that role’s model spend.
 
 ---
 

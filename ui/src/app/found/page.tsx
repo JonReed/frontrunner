@@ -16,10 +16,9 @@
  * that triggered it, so the user can see exactly what was decided on their
  * behalf.
  *
- * Neither half offers an AI action yet: assessing a role costs the user's
- * allowance and that path is not built. Showing the pile honestly comes first;
- * an interface that hides its own filtering has not earned the right to spend
- * anything.
+ * Search and assessment are launched through the persistent application job
+ * controller. The page can be reloaded or left while a run continues, and
+ * scanning remains visibly separate because it costs no model tokens.
  */
 
 import { readInbox, readTracker } from '@/lib/roles';
@@ -27,6 +26,10 @@ import { readRejects, groupByRule } from '@/lib/rejects';
 import { PipelineOverview } from '@/components/journey-rail';
 import { pipelineCounts } from '@/lib/journey';
 import { InboxAction } from '@/components/inbox-action';
+import { PipelineControl } from '@/components/pipeline-control';
+import { OverrideRejection } from '@/components/override-rejection';
+import { readRunningPipelineJob } from '@/lib/jobs';
+import { readHealth } from '@/lib/health';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -44,7 +47,13 @@ export default async function FoundPage({
   searchParams: Promise<{ q?: string; company?: string; location?: string }>;
 }) {
   const filters = await searchParams;
-  const [inbox, rejects, roles] = await Promise.all([readInbox(), readRejects(), readTracker()]);
+  const [inbox, rejects, roles, runningJob, health] = await Promise.all([
+    readInbox(),
+    readRejects(),
+    readTracker(),
+    readRunningPipelineJob(),
+    readHealth(),
+  ]);
   const q = (filters.q ?? '').trim().toLowerCase();
   const company = (filters.company ?? '').trim();
   const location = (filters.location ?? '').trim().toLowerCase();
@@ -76,6 +85,12 @@ export default async function FoundPage({
           Unassessed roles and the ones your filters ruled out.
         </p>
       </div>
+
+      <PipelineControl
+        inboxCount={inbox.length}
+        connected={health.signedIn}
+        initialJob={runningJob}
+      />
 
       <form
         method="get"
@@ -147,9 +162,9 @@ export default async function FoundPage({
       )}
 
       <section className="mb-10">
-        <h2 className="text-base font-bold tracking-tight">
-          Not assessed yet{' '}
-          <span className="tabular font-normal text-[var(--color-ink-faint)]">{inbox.length}</span>
+        <h2 className="flex items-baseline gap-2 text-[17px] font-bold tracking-tight">
+          Not assessed yet
+          <span className="tabular rounded-full bg-[var(--color-paper-deep)] px-2 py-0.5 text-xs font-semibold text-[var(--color-ink-soft)]">{inbox.length}</span>
         </h2>
         <p className="mb-3 mt-0.5 text-sm text-[var(--color-ink-soft)]">
           {filtering
@@ -195,9 +210,9 @@ export default async function FoundPage({
 
       {filteredRejects.length > 0 && (
         <section className="mb-10">
-          <h2 className="text-base font-bold tracking-tight">
-            Ruled out{' '}
-            <span className="tabular font-normal text-[var(--color-ink-faint)]">
+          <h2 className="flex items-baseline gap-2 text-[17px] font-bold tracking-tight">
+            Ruled out
+            <span className="tabular rounded-full bg-[var(--color-paper-deep)] px-2 py-0.5 text-xs font-semibold text-[var(--color-ink-soft)]">
               {filteredRejects.length}
             </span>
           </h2>
@@ -244,9 +259,18 @@ export default async function FoundPage({
                           </div>
                         )}
                       </div>
-                      <a href={r.url} target="_blank" rel="noreferrer" className={POSTING_LINK}>
-                        View posting
-                      </a>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <a href={r.url} target="_blank" rel="noreferrer" className={POSTING_LINK}>
+                          View posting
+                        </a>
+                        {r.rule !== 'posting_expired' && (
+                          <OverrideRejection
+                            url={r.url}
+                            rule={r.rule}
+                            runActive={Boolean(runningJob)}
+                          />
+                        )}
+                      </div>
                     </li>
                   ))}
                 </ul>

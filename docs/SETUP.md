@@ -16,8 +16,12 @@ Clone the official Frontrunner repository and install its dependencies:
 git clone https://github.com/Furls-Digital/frontrunner.git
 cd frontrunner
 npm install
-claude   # or codex / qwen / opencode / agy / grok
+claude   # or codex / agy
 ```
+
+Claude Code, Codex and Antigravity CLI are the tested hosts. Other agent CLIs
+may work through the shared `AGENTS.md` contract as compatibility paths but are
+not supported configurations; see [Supported CLIs](SUPPORTED_CLIS.md).
 
 **On first launch, Frontrunner walks you through setup by chatting** — it asks
 for your CV, your details (name, target roles, salary), and sets up the job

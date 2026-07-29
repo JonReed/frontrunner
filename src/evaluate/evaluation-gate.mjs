@@ -6,6 +6,11 @@
  */
 
 import { classify } from '../scan/prefilter.mjs';
+import {
+  PREFILTER_OVERRIDE_URL_ENV,
+  matchingPrefilterOverride,
+  readPrefilterOverrides,
+} from '../scan/prefilter-overrides.mjs';
 
 export function extractEvaluationMetadata(jdText, fallback = {}) {
   const text = String(jdText ?? '');
@@ -27,15 +32,30 @@ export function evaluateDeterministicGate({
   company = '',
   profile,
   rules,
+  sourceUrl = process.env[PREFILTER_OVERRIDE_URL_ENV] ?? '',
+  overrides,
 } = {}) {
   const metadata = extractEvaluationMetadata(jdText, { title, company });
   const decision = classify(metadata.title, String(jdText ?? ''), profile, rules);
+  const override = decision.verdict === 'reject' && sourceUrl
+    ? matchingPrefilterOverride(
+      sourceUrl,
+      decision.rule,
+      overrides ?? readPrefilterOverrides(),
+    )
+    : null;
   return {
     gate: 'deterministic-prefilter',
-    allowed: decision.verdict === 'keep',
+    allowed: decision.verdict === 'keep' || Boolean(override),
     title: metadata.title,
     company: metadata.company,
     ...decision,
+    ...(override ? {
+      verdict: 'keep',
+      rule: 'user_override',
+      overriddenRule: decision.rule,
+      overrideRecordedAt: override.recordedAt,
+    } : {}),
   };
 }
 

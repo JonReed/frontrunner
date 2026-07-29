@@ -94,6 +94,29 @@ malformed storage fails closed instead of returning a partial view.
   canonical writer. Timeout, controller cancellation, or an output flood
   terminates the complete writer tree before returning a stable `STATUS_*`
   error, so a change cannot land after the interface reports failure.
+- Workflow status changes are compare-and-set against the SHA-256 revision of
+  the exact tracker row read by the server action. A concurrent/manual edit
+  therefore produces a stale-state error instead of a last-writer-wins
+  overwrite. Successful moves return an opaque Undo token plus the new row
+  revision; Undo requires both, records consumption atomically in the tracker,
+  and cannot be replayed after any intervening edit.
+- Moving to Applied seeds the normal follow-up cadence through the canonical
+  follow-up transaction. The tracker move marker is also the crash-recovery
+  record: a later workflow request repairs a missing workflow-owned pin after
+  interruption. Leaving Applied retires that automatic date so it cannot
+  override the cadence for Responded or a later state; Undo back to Applied
+  restores it. Cleanup removes only the pin carrying its matching ownership
+  marker, leaving hand-written pins and actual follow-up history untouched.
+- Pending-role dismissal returns a closed result distinguishing a real change,
+  an already-dismissed/restored entry, and a URL no longer present. Concurrent
+  clicks serialize under the pipeline file lock; exactly one reports a change.
+- A ruled-out-role override is accepted only for the exact normalized URL and
+  exact rule still present in the canonical prefilter audit. The controller
+  derives company, title and evidence itself, records the decision in the user
+  layer, and restores the pipeline row while holding the canonical run lease.
+  Evaluators independently re-check that same record before allowing a rejected
+  role past the zero-token gate; a different URL or newly firing rule remains
+  blocked.
 - The anonymous read-only health controller accepts only `{"version":"1",
   "action":"read"}` and invokes one fixed `claude auth status --json` command.
   Its stdout is byte-bounded, stderr is discarded, and cancellation, timeout
@@ -117,6 +140,9 @@ malformed storage fails closed instead of returning a partial view.
   private atomic sidecar, so progress survives a controller or UI reload.
   Out-of-order stage regressions are ignored. Human log regexes remain only as
   fallback for older/non-pipeline workers and cannot override structured state.
+- Role pages discover their exact running `cv.build` job through the bounded
+  list protocol and resume polling it after navigation or reload. Reattachment
+  never starts another operation and retains the existing per-role spend claim.
 - Each stored job carries the catalog operation, token-cost marker and its
   operation-specific stale deadline. A full pipeline therefore retains its
   30-minute allowance instead of being reaped using the CV builder's five-minute

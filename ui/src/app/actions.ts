@@ -7,12 +7,26 @@
  * supervision lives in lib/jobs.ts.
  */
 
+import { randomUUID } from 'node:crypto';
 import { readTracker } from '@/lib/roles';
-import { startCvBuild, type Job } from '@/lib/jobs';
+import {
+  cancelPipelineJob as cancelPipelineJobRequest,
+  readRunningPipelineJob,
+  startCvBuild,
+  startPipelineRun,
+  startScanRun,
+  type Job,
+} from '@/lib/jobs';
 import { saveProfile, type ProfileSave } from '@/lib/profile-save';
-import { restoreRoleStatus, setRoleStatus, type UiState } from '@/lib/status';
+import {
+  restoreRoleStatus,
+  setRoleStatus,
+  type UiState,
+  type WorkflowHandle,
+} from '@/lib/status';
 import { startConnect, invalidateHealth, readHealth } from '@/lib/health';
 import { removeInboxUrl, restoreInboxUrl } from '@/lib/inbox';
+import { allowPrefilteredRole } from '@/lib/prefilter-overrides';
 import { revalidatePath } from 'next/cache';
 
 /**
@@ -42,6 +56,26 @@ export async function saveDetails(save: ProfileSave): Promise<{ written: string[
   }
 }
 
+export async function overridePrefilterRejection(
+  url: string,
+  rule: string,
+): Promise<{ changed: boolean } | { error: string }> {
+  try {
+    const result = await allowPrefilteredRole(url, rule);
+    revalidatePath('/found');
+    return { changed: result.changed };
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : '';
+    if (/lock timeout|already active|busy/iu.test(detail)) {
+      return { error: 'A search or assessment is running. Wait for it to finish, then try again.' };
+    }
+    if (/no longer present|no longer in|missing/iu.test(detail)) {
+      return { error: 'That role has changed since this page loaded. Reload Everything found.' };
+    }
+    return { error: detail || 'That role could not be restored. Nothing was changed.' };
+  }
+}
+
 export async function buildCv(roleNum: number): Promise<Job | { error: string }> {
   const role = (await readTracker()).find((r) => r.num === roleNum);
   if (!role) return { error: 'That role is no longer in your tracker.' };
@@ -61,33 +95,106 @@ export async function buildCv(roleNum: number): Promise<Job | { error: string }>
   }
 }
 
+type PipelineActionResult = Promise<Job | { error: string }>;
+
+async function startPipelineAction(
+  start: () => Promise<Job>,
+): PipelineActionResult {
+  try {
+    return await start();
+  } catch (error) {
+    // The backend serialises every pipeline operation against the same
+    // resource. If another tab won the race, rejoin its durable job instead
+    // of presenting that healthy state as a failure.
+    const running = await readRunningPipelineJob();
+    if (running) return running;
+
+    const detail = error instanceof Error ? error.message : '';
+    if (/not signed in|not logged in|\/login/iu.test(detail)) {
+      return { error: 'Connect your AI subscription before assessing roles.' };
+    }
+    if (/lock timeout|busy|cannot start while/iu.test(detail)) {
+      return { error: 'A search or assessment is already running. Wait a moment, then try again.' };
+    }
+    return { error: 'Frontrunner could not start that run. Wait a moment, then try again.' };
+  }
+}
+
+/** Search configured sources without invoking a model. */
+export async function scanForRoles(): PipelineActionResult {
+  return startPipelineAction(startScanRun);
+}
+
+/** Assess the roles already waiting in data/pipeline.md. */
+export async function assessWaitingRoles(): PipelineActionResult {
+  return startPipelineAction(() => startPipelineRun(false));
+}
+
+/** Run the complete canonical search and assessment pipeline. */
+export async function findAndAssessRoles(): PipelineActionResult {
+  return startPipelineAction(() => startPipelineRun(true));
+}
+
+export async function stopPipelineJob(id: string): PipelineActionResult {
+  try {
+    const job = await cancelPipelineJobRequest(id);
+    return job ?? { error: 'That run is no longer active.' };
+  } catch {
+    return { error: 'Frontrunner could not stop that run. Wait a moment, then try again.' };
+  }
+}
+
 /**
  * Record what happened to a role.
  *
  * These are bounded user-observed changes: deciding to prepare, sending an
  * application, seeing that the employer replied, or deciding not to continue.
- * Offer and Hired remain unavailable because a generic stage control cannot
- * honestly infer either outcome.
+ * Interview, Offer, Hired and Rejected are exposed only through controls that
+ * name the exact event the user observed.
  *
  * Without this the workflow had no ending: Frontrunner built a CV, sent the
  * user to the company's site, and never learned the outcome, so a sent
  * application sat in "Ready to send" forever.
  */
-export type WorkflowDestination = 'triage' | 'prepare' | 'ready' | 'applied' | 'active' | 'closed';
+export type WorkflowDestination =
+  | 'triage'
+  | 'prepare'
+  | 'ready'
+  | 'applied'
+  | 'active'
+  | 'interview'
+  | 'offer'
+  | 'hired'
+  | 'rejected'
+  | 'closed';
 
-const DESTINATION: Record<WorkflowDestination, { state: UiState; note?: string }> = {
+function observedToday(label: string): string {
+  const now = new Date();
+  const date = [
+    String(now.getFullYear()).padStart(4, '0'),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
+  ].join('-');
+  return `${label} ${date} — recorded in Frontrunner`;
+}
+
+const DESTINATION: Record<WorkflowDestination, { state: UiState; note?: string | (() => string) }> = {
   triage: { state: 'Evaluated', note: '[frontrunner-stage:triage]' },
   prepare: { state: 'Evaluated', note: '[frontrunner-stage:prepare]' },
   ready: { state: 'Evaluated', note: '[frontrunner-stage:ready]' },
-  applied: { state: 'Applied', note: 'Applied — recorded in Frontrunner' },
-  active: { state: 'Responded', note: 'Employer replied — recorded in Frontrunner' },
+  applied: { state: 'Applied', note: () => observedToday('Applied') },
+  active: { state: 'Responded', note: () => observedToday('Responded') },
+  interview: { state: 'Interview', note: () => observedToday('Interview') },
+  offer: { state: 'Offer', note: () => observedToday('Offer') },
+  hired: { state: 'Hired', note: () => observedToday('Hired') },
+  rejected: { state: 'Rejected', note: () => observedToday('Rejected') },
   closed: { state: 'Discarded', note: 'Not pursuing' },
 };
 
 export async function moveRole(
   roleNum: number,
   destination: WorkflowDestination,
-): Promise<{ ok: true } | { error: string }> {
+): Promise<{ ok: true; undo: WorkflowHandle; warning?: string } | { error: string }> {
   try {
     if (!Number.isSafeInteger(roleNum) || roleNum <= 0 || !Object.hasOwn(DESTINATION, destination)) {
       return { error: 'That is not a valid role move.' };
@@ -95,17 +202,31 @@ export async function moveRole(
     const role = (await readTracker()).find((candidate) => candidate.num === roleNum);
     if (!role) return { error: 'That role is no longer in your tracker.' };
     const move = DESTINATION[destination];
-    // A unique marker makes a real move repeatable after Undo. set-status is
-    // intentionally idempotent for identical notes, so a timeless marker
-    // would otherwise leave an older stage marker as the last one.
-    const before = `[frontrunner-before:${role.status}:${role.stage}:${Date.now()}]`;
-    const note = move.note ? `${before}; ${move.note}` : before;
-    await setRoleStatus(roleNum, move.state, note);
+    const moveNote = typeof move.note === 'function' ? move.note() : move.note;
+    const undoToken = randomUUID();
+    // The marker is the durable recovery record for this exact move. Undo also
+    // carries the post-write row revision, so any intervening edit makes the
+    // handle stale instead of overwriting newer tracker state.
+    const before = `[frontrunner-before:${undoToken}:${role.status}:${role.stage}:${move.state}]`;
+    const note = moveNote ? `${before}; ${moveNote}` : before;
+    const undo = await setRoleStatus(
+      roleNum,
+      move.state,
+      note,
+      role.revision,
+      undoToken,
+    );
     // Every screen reads the tracker, so all of them are now stale.
     for (const path of ['/', '/applications', '/found', `/role/${roleNum}`]) {
       revalidatePath(path);
     }
-    return { ok: true };
+    return {
+      ok: true,
+      undo,
+      ...(undo.followupPending
+        ? { warning: 'The tracker was updated, but follow-up scheduling is waiting to retry.' }
+        : {}),
+    };
   } catch (error) {
     const detail = error instanceof Error ? error.message : '';
     if (/ambiguous|candidate/iu.test(detail)) {
@@ -123,16 +244,22 @@ export async function moveRole(
 
 export async function undoRoleMove(
   roleNum: number,
-): Promise<{ ok: true } | { error: string }> {
+  handle: WorkflowHandle,
+): Promise<{ ok: true; warning?: string } | { error: string }> {
   try {
     if (!Number.isSafeInteger(roleNum) || roleNum <= 0) {
       return { error: 'That is not a valid role.' };
     }
-    await restoreRoleStatus(roleNum);
+    const result = await restoreRoleStatus(roleNum, handle);
     for (const path of ['/', '/applications', '/found', `/role/${roleNum}`]) {
       revalidatePath(path);
     }
-    return { ok: true };
+    return {
+      ok: true,
+      ...(result.followupPending
+        ? { warning: 'The role was restored, but follow-up cleanup is waiting to retry.' }
+        : {}),
+    };
   } catch (error) {
     const detail = error instanceof Error ? error.message : '';
     return { error: detail || 'That change could not be undone.' };
@@ -143,7 +270,9 @@ export async function removePendingRole(
   url: string,
 ): Promise<{ ok: true } | { error: string }> {
   try {
-    await removeInboxUrl(url);
+    const result = await removeInboxUrl(url);
+    if (!result.found) return { error: 'That role is no longer in the Found list.' };
+    if (!result.changed) return { error: 'That role was already removed.' };
     revalidatePath('/');
     revalidatePath('/found');
     revalidatePath('/applications');
@@ -161,7 +290,9 @@ export async function undoPendingRole(
   url: string,
 ): Promise<{ ok: true } | { error: string }> {
   try {
-    await restoreInboxUrl(url);
+    const result = await restoreInboxUrl(url);
+    if (!result.found) return { error: 'That role is no longer in the Found list.' };
+    if (!result.changed) return { error: 'That role is already back in the Found list.' };
     revalidatePath('/');
     revalidatePath('/found');
     revalidatePath('/applications');
