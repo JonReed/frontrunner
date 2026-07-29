@@ -86,7 +86,7 @@ export function BuildCv({
         <div>
           <p className="font-semibold">Your tailored CV is ready</p>
           <p className="mt-0.5 text-sm text-[var(--color-ink-soft)]">
-            Read it through, then apply on the company's own site.
+            Read it through, then apply on their site.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -125,7 +125,7 @@ export function BuildCv({
         <div className="min-w-0">
           <p className="font-semibold text-[var(--color-ai)]">{job?.stage ?? STEPS[step]}…</p>
           <p className="mt-0.5 text-sm text-[var(--color-ink-soft)]">
-            This usually takes under a minute. You can leave this page — it keeps going.
+            Under a minute. You can leave this page.
           </p>
         </div>
       </div>
@@ -184,7 +184,7 @@ export function BuildCv({
       <div>
         <p className="font-semibold">Want to apply?</p>
         <p className="mt-0.5 text-sm text-[var(--color-ink-soft)]">
-          Builds a CV tailored to this role, using the gaps above. Takes about a minute.
+          Rewrites your CV for this role, using the gaps above.
         </p>
       </div>
       <AiButton what="rewrite your CV for this specific job" onClick={start}>

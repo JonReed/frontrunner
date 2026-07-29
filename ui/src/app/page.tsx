@@ -21,22 +21,22 @@ const BANDS: { key: Readiness; title: string; blurb: string }[] = [
   {
     key: 'ready-to-send',
     title: 'Ready to send',
-    blurb: 'Your tailored CV is built. All that is left is to apply.',
+    blurb: 'CV built. Apply on the company site.',
   },
   {
     key: 'one-step-away',
     title: 'Strong matches',
-    blurb: 'Read why each one fits. If you agree, build a tailored CV from there.',
+    blurb: 'Read why each fits, then build a CV if you agree.',
   },
   {
     key: 'needs-decision',
     title: 'Worth a look',
-    blurb: 'Decent matches worth a few minutes of your judgement.',
+    blurb: 'Worth a few minutes of your judgement.',
   },
   {
     key: 'in-flight',
     title: 'Already applied',
-    blurb: 'Sent and waiting. Nothing to do unless it goes quiet.',
+    blurb: 'Sent. Nothing to do unless it goes quiet.',
   },
 ];
 
@@ -133,7 +133,7 @@ function Headline({ ready, nearly }: { ready: number; nearly: number }) {
           {nearly} strong {nearly === 1 ? 'match' : 'matches'} to look at
         </h1>
         <p className="mt-1 text-[15px] text-[var(--color-ink-soft)]">
-          Each one has already been assessed against your CV.
+          Already assessed against your CV.
         </p>
       </>
     );

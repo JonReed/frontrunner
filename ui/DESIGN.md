@@ -71,6 +71,32 @@ no apology, no emoji, no exclamation marks, no hedging. And no harshness
 either — this is someone who respects you enough to be direct, not someone
 being blunt for its own sake.
 
+### This is a workflow, not a reading experience
+
+The single most useful test for any string here.
+
+People are not reading this interface, they are moving through it: find,
+filter, decide, prepare, apply. Every word sitting between someone and their
+next action is friction, and explanatory prose belongs in documentation rather
+than on a screen someone crosses forty times a week.
+
+So each string earns its place or goes:
+
+| Before | After |
+|---|---|
+| "Your tailored CV is built. All that is left is to apply." | "CV built. Apply on the company site." |
+| "Read why each one fits. If you agree, build a tailored CV from there." | "Read why each fits, then build a CV if you agree." |
+| "Each one has already been assessed against your CV." | "Already assessed against your CV." |
+| "This usually takes under a minute. You can leave this page — it keeps going." | "Under a minute. You can leave this page." |
+| "Builds a CV tailored to this role, using the gaps above. Takes about a minute." | "Rewrites your CV for this role, using the gaps above." |
+
+Nothing in the right-hand column is colder. It is the same information with
+the padding removed — and that terseness is itself part of the personality: an
+agent who has read everything does not pad.
+
+The one place to spend words is a **failure**, where the user is stuck and
+needs a cause and a fix. Everywhere else, cut.
+
 ### The five traits
 
 1. **Direct** — lead with the conclusion. "Six worth looking at", then the
