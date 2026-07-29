@@ -104,6 +104,20 @@ body { background: var(--color-paper); }
   border-radius: 4px;
 }
 
+/* A file input cannot be styled, so the real one is visually hidden and a
+   label stands in for it. Hidden means 1x1px, which is where the rule above
+   would draw the ring — invisibly. This moves it to the label, which is the
+   part actually on screen.
+
+   Here rather than in a utility class because focus is a convention in this
+   interface, not a per-component decision, and it belongs beside the rule it
+   is compensating for. */
+.focus-ring-within:focus-within {
+  outline: 2px solid var(--color-act);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 /* Someone with vestibular sensitivity should not be punished for waiting on a
    slow job. The spinner is the only motion in the product; when motion is
    unwelcome it becomes a static ring and the wording carries the progress. */

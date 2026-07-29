@@ -231,8 +231,14 @@ function FilePicker({
   // that is a visible pause, and an unlabelled pause after choosing a file
   // reads as nothing happened.
   const [busy, setBusy] = useState(false);
+
+  // The focus ring lives on the label, not the input. A file input cannot be
+  // styled, so the real one is visually hidden — and hidden means 1×1px, which
+  // is where the global :focus-visible ring would land. A keyboard user
+  // tabbing here would see nothing at all. focus-within puts the ring on the
+  // thing that is actually on screen.
   return (
-    <label className="inline-flex min-h-[40px] cursor-pointer items-center text-sm font-medium text-[var(--color-ink-soft)] underline decoration-[var(--color-line-strong)] underline-offset-2 transition hover:text-[var(--color-act)] sm:min-h-0">
+    <label className="inline-flex min-h-[40px] cursor-pointer items-center rounded text-sm font-medium text-[var(--color-ink-soft)] underline decoration-[var(--color-line-strong)] underline-offset-2 transition-[color] hover:text-[var(--color-act)] focus-ring-within sm:min-h-0">
       {busy ? 'Reading…' : 'or choose a Word file'}
       <input
         type="file"
