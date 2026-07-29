@@ -88,13 +88,12 @@ node src/cv/cv-sync-check.mjs      # Check configuration
 node src/tracker/verify-pipeline.mjs     # Check pipeline integrity
 ```
 
-## Experimental Web Interfaces
+## Local Interface
 
-The supported workflow remains conversation-first. Two local web interfaces
-also exist for development and evaluation:
+The supported workflow remains conversation-first. `ui/` is the incomplete
+workflow-first Frontrunner interface and the only web runtime under active
+development. It is not yet a one-click consumer installation.
 
-- `web/` is the inherited career-ops web application.
-- `ui/` is the incomplete workflow-first Frontrunner interface.
-
-See each directory's package scripts before running it. Neither is currently a
-one-click consumer installation.
+Do not run `web/`. That directory preserves inherited source for upstream
+reference only. Its `dev` and `start` commands deliberately fail, and its
+runtime returns `410 Gone` if Next.js is launched directly.

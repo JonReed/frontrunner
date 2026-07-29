@@ -27,19 +27,25 @@ merges cannot quietly reintroduce it.
 | UI filesystem traversal | Fixed | strict job IDs plus canonical report/output containment |
 | Generated HTML active content | Fixed | escaped deterministic builder plus sandbox CSP on previews |
 | Provider supply-chain capability audit | Fixed for core adapters; residual reviewed-code trust | regression test forbids direct fetch and child-process imports; `local-parser` remains an explicit operator-configured exception |
-| Local backend operation boundary | Fixed for the new UI; inherited experimental `web/` endpoints remain a separate migration | versioned exact-key requests, fixed operation catalog, `shell: false`, bounded events/results, cancellation, timeouts and atomic paid-job claims in `src/application/` |
+| Local backend operation boundary | Fixed | versioned exact-key requests, fixed operation catalog, `shell: false`, bounded events/results, cancellation, timeouts and atomic paid-job claims in `src/application/` |
+| Inherited privileged web runtime | Removed from reachable product surface | `web` package start commands fail closed; request-wide proxy returns `410 Gone` even when Next.js is launched directly |
 
 The regression suite destructively tests private/metadata targets, private DNS
 answers, redirect revalidation, oversized bodies, hostile JD framing,
 schema-output flooding, zero-tool Claude arguments, loopback binding and raw
 HTML sink removal. Application-job tests also race simultaneous paid requests,
 inject malformed state and oversized output, and simulate orphan recovery.
+Legacy-web tests inventory the retained privileged surfaces and prove both the
+supported launch path and a direct Next.js bypass remain unavailable.
 
 ## Scope and assumptions
 
 - In scope: job discovery, provider HTTP access, browser extraction, JD caching,
   deterministic filtering, model-backed evaluation and tailoring, reports,
-  tracker writes, and the local Next.js UI.
+  tracker writes, and the supported local Next.js UI.
+- The archived inherited `web/` source is retained for upstream comparison but
+  is not a runtime. Its fail-closed boundary remains in scope for regression
+  testing.
 - Runtime paths are assessed separately from provider/developer code, CI,
   tests, update tooling, and upstream merges.
 - The UI is intended for one user and must remain bound to the local machine.

@@ -179,7 +179,9 @@ Two layers — full list in `DATA_CONTRACT.md`:
 - **System Layer (auto-updatable; DON'T put user data here):** `modes/_shared.md` and all other modes, `AGENTS.md`, `CLAUDE.md`, `CODEX.md`, `OPENCODE.md`, `KIMI.md`, `GEMINI.md`, `*.mjs` scripts, `templates/*`, `batch/*`
 - **Application trees:** `web/*` and `ui/*` are versioned interface code,
   contain no user data, and are updated from the official Frontrunner
-  repository with the rest of the system layer.
+  repository with the rest of the system layer. `ui/` is the only supported
+  web runtime; `web/` is archived source whose start commands and request path
+  deliberately fail closed.
 
 **THE RULE: When the user asks to customize facts or targeting (archetypes, narrative, negotiation scripts, proof points, location policy, comp targets), ALWAYS write to `modes/_profile.md` or `config/profile.yml`. When they ask for procedural house rules, custom workflows, output preferences, or automations, write to `modes/_custom.md` (copy it from `modes/_custom.template.md` if missing). NEVER edit `modes/_shared.md` for user-specific content.** This ensures system updates don't overwrite their customizations.
 

@@ -92,12 +92,17 @@ Each CLI reads its own entry file, all of which point at the canonical `AGENTS.m
 
 ### User interfaces
 
-`web/` is the inherited, experimental local web application. `ui/` is
-Frontrunner's workflow-first replacement and is still under development. Both
-read the same canonical user files as the conversational and script workflows;
-neither maintains a separate database or source of truth. Paid actions in
-`ui/` use the application-service job manager rather than launching processes
-directly.
+`ui/` is Frontrunner's only web runtime. It is a workflow-first interface and
+is still under development. It reads the same canonical user files as the
+conversational and script workflows and does not maintain a separate database
+or source of truth. Paid actions use the application-service job manager rather
+than launching processes directly.
+
+The inherited `web/` source remains versioned for upstream reference, but is
+archived fail-closed: package start commands exit unsuccessfully and a
+request-wide proxy returns `410 Gone` even when Next.js is started directly.
+Its privileged agent, browser and process endpoints are not part of the
+Frontrunner runtime.
 
 ## Data flow (a typical run)
 

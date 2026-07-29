@@ -67,6 +67,7 @@ silently invent cross-process state.
 New local interfaces must use this boundary instead of spawning backend scripts
 directly. The Frontrunner UI's CV builder is migrated; it launches only the
 fixed, bounded `job-control.mjs` adapter and cannot choose a backend command.
-The inherited `web/` tree remains experimental and its legacy endpoints are not
-the pattern for new work. Direct command-line entry points remain supported for
-people and CI.
+The inherited `web/` tree is archived fail-closed: package start commands are
+disabled and all runtime requests receive `410 Gone`. Its legacy endpoints are
+not an alternate application boundary. Direct command-line entry points remain
+supported for people and CI.

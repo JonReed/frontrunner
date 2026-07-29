@@ -190,18 +190,21 @@ codex exec "Run the Frontrunner scan workflow and summarise the new matches."
 
 ## Current interfaces
 
-Frontrunner currently has three surfaces:
+Frontrunner has two supported surfaces:
 
 - **Conversation** — the main supported workflow. Ask your AI coding assistant
   to scan, evaluate, prepare, or track an application in plain language.
-- **`web/`** — the inherited career-ops web application. It has not adopted
-  Frontrunner's full hostile-content UI boundary and should be treated as
-  deprecated rather than exposed or relied upon.
 - **`ui/`** — the new Frontrunner interface. It is organised around the next
   useful action rather than implementation commands, but is still incomplete.
 
-Neither web interface should yet be presented as a finished non-technical
-installation experience.
+The inherited `web/` source is retained only as an upstream reference. Its
+`dev` and `start` commands fail closed, and its runtime returns `410 Gone` for
+every route even if Next.js is launched directly. This removes the legacy
+tool-capable agents, browser-driving application flow and direct process
+endpoints from the reachable product surface.
+
+The new UI should not yet be presented as a finished non-technical installation
+experience.
 
 ## Run the pipeline
 

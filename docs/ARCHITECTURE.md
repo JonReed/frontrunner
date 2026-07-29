@@ -140,14 +140,15 @@ Scripts maintain data consistency:
 | `src/tracker/normalize-statuses.mjs` | Maps status aliases to canonical values |
 | `src/cv/cv-sync-check.mjs` | Validates setup consistency |
 
-## User Interfaces
+## User Interface
 
-The interfaces are local views over the same files used by the scripts and AI
-workflow:
+`ui/` is Frontrunner's workflow-first interface and is still under development.
+It is a local view over the same files used by the scripts and AI workflow; it
+does not own a separate data store. Application state remains in `data/`,
+`reports/`, and the generated output directories.
 
-- `web/` is the inherited experimental web application.
-- `ui/` is Frontrunner's workflow-first interface and is still under
-  development.
-
-Neither interface owns a separate data store. Application state remains in
-`data/`, `reports/`, and the generated output directories.
+The inherited `web/` source is archived for upstream reference only. Its normal
+start commands are disabled and a request-wide proxy returns `410 Gone` if
+someone starts Next.js directly. This keeps its legacy tool-capable agents,
+browser automation and direct process endpoints outside the reachable product
+surface.
