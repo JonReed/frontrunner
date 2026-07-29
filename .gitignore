@@ -24,6 +24,8 @@ batch/logs/*
 !batch/logs/.gitkeep
 batch/batch-state.tsv
 batch/batch-input.tsv
+batch/.pipeline-run.lock/
+batch/.pipeline-run.lock.recover/
 batch/tracker-additions/**/*.tsv
 !batch/tracker-additions/.gitkeep
 jds/*
@@ -51,6 +53,12 @@ interview-prep/sessions/*
 # Writing samples (user's personal files — never committed)
 writing-samples/*
 !writing-samples/README.md
+
+# Additional CV versions (user's personal files — never committed).
+# Same trust level as writing-samples: the user's own words, kept as reference
+# material for tailoring, never a source of fact on their own.
+cv-versions/*
+!cv-versions/README.md
 
 # User config and customization (never auto-updated)
 config/profile.yml
