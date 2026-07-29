@@ -43,14 +43,14 @@ The files below are the **ONLY** sources for user-facing content (CV, cover lett
 | CLI | economy | standard | premium | Extended thinking |
 |-----|---------|----------|---------|--------------------|
 | Claude Code | Haiku 4.5 | Sonnet 5 | Opus 5 | off / off / adaptive |
-| OpenCode | your CLI's cheapest/fastest available model | balanced model | most capable model | off / off / adaptive |
-| Gemini CLI | your CLI's cheapest/fastest available model | balanced model | most capable model | off / off / adaptive |
-| Copilot CLI | your CLI's cheapest/fastest available model | balanced model | most capable model | off / off / adaptive |
 | Codex | your CLI's cheapest/fastest available model | balanced model | most capable model | off / off / adaptive |
-| Qwen | your CLI's cheapest/fastest available model | balanced model | most capable model | off / off / adaptive |
 | Antigravity CLI | your CLI's cheapest/fastest available model | balanced model | most capable model | off / off / adaptive |
 
-The Claude Code row uses concrete model names because that lineup is well-established. The other rows intentionally avoid naming specific models -- nobody on this project can verify current model lineups for those CLIs with confidence, and a wrong specific guess routes users to a model that doesn't exist. If you actively use one of these CLIs and know its current cheapest/balanced/most-capable models, a follow-up PR filling in concrete names for that row is welcome.
+The Claude Code row uses concrete model names because that lineup is well-established. The other two intentionally avoid naming specific models -- nobody on this project can verify their current lineups with confidence, and a wrong specific guess routes users to a model that doesn't exist.
+
+**Frontrunner supports Claude Code and Codex.** Antigravity CLI keeps its row because it is the free-tier path (see `docs/FREE_TIER.md`): the people this tool is for are frequently out of work, and requiring a paid subscription would exclude exactly them.
+
+Rows for OpenCode, Gemini CLI, Copilot CLI, Qwen and Kimi were removed. They were never tested here, and a table claiming support that nobody verifies is worse than a shorter one that is true. The underlying modes are still CLI-agnostic, so an untested CLI will very likely work -- it is simply not a promise this project makes.
 
 Every other reference to tier elsewhere in the modes (batch.md, pipeline.md, etc.) MUST refer to it only as "the economy/standard/premium tier" or "the tier's model" -- never repeat a hardcoded model/provider name outside this table. This keeps the routing logic model-agnostic: if any CLI's mapping changes, only that row in this table needs to change.
 

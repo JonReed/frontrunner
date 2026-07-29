@@ -16,7 +16,7 @@ career-ops is an open source project maintained in limited time. Here's how to g
 
 1. Search existing issues — someone may have reported it already
 2. Run `npm run doctor` — it catches most setup problems
-3. Include your OS, Node.js version, and the CLI you're using (Claude Code, OpenCode, etc.)
+3. Include your OS, Node.js version, and the CLI you're using (Claude Code or Codex — those are the supported ones)
 
 ## What NOT to use GitHub Issues for
 

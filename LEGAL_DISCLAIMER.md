@@ -11,7 +11,7 @@ Users download the code, run it on their own machines, and connect it to their o
 The maintainers do not act as a Data Controller or Data Processor under GDPR or any other data protection regulation.
 
 - All Personal Identifiable Information (PII) you input — CVs, contact details, career history — is processed locally on your machine.
-- When you use an AI CLI tool (Claude Code, Codex, OpenCode), your data is sent directly to the AI provider you chose. Review their privacy policies.
+- When you use an AI CLI tool (Claude Code, Codex, or any other you point at this project), your data is sent directly to the AI provider you chose. Review their privacy policies.
 - We do not collect analytics, telemetry, or usage data of any kind.
 - API keys, credentials, and personal files are gitignored by default. Never commit them to a public fork.
 

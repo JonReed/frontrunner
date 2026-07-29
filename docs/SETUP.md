@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- An AI coding CLI — [Claude Code](https://claude.ai/code), Gemini CLI, Codex, Qwen Code, OpenCode, GitHub Copilot CLI, Antigravity CLI, or Grok Build CLI (see [Supported CLIs](SUPPORTED_CLIS.md))
+- An AI coding CLI — [Claude Code](https://claude.ai/code) or Codex, or Antigravity CLI if you want the free tier (see [Supported CLIs](SUPPORTED_CLIS.md))
 - [Node.js](https://nodejs.org) 22.5+ and Git. Node 22.5 is the minimum
   because the tracker index uses the built-in `node:sqlite` module.
 
