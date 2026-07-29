@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * update-system.mjs — Safe auto-updater for career-ops
+ * update-system.mjs — Safe auto-updater for Frontrunner
  *
  * Updates ONLY system layer files (modes, scripts, templates, and docs).
  * NEVER touches user data (cv.md, profile.yml, _profile.md, data/, reports/).
@@ -15,7 +15,7 @@
  * See DATA_CONTRACT.md for the full system/user layer definitions.
  */
 
-import { execFile, execFileSync, execSync } from 'child_process';
+import { execFile, execFileSync } from 'child_process';
 import { readFileSync, writeFileSync, existsSync, unlinkSync, rmSync, statSync, mkdirSync, renameSync } from 'fs';
 import { join, dirname, posix as pathPosix } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
@@ -34,9 +34,48 @@ import { randomUUID } from 'crypto';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = __dirname;
 
-const CANONICAL_REPO = 'https://github.com/santifer/career-ops.git';
-const RAW_VERSION_URL = 'https://raw.githubusercontent.com/santifer/career-ops/main/VERSION';
-const RELEASES_API = 'https://api.github.com/repos/santifer/career-ops/releases/latest';
+export const FRONTRUNNER_REPO_SLUG = 'Furls-Digital/frontrunner';
+export const CANONICAL_REPO = `https://github.com/${FRONTRUNNER_REPO_SLUG}.git`;
+const RAW_VERSION_URL = `https://raw.githubusercontent.com/${FRONTRUNNER_REPO_SLUG}/main/VERSION`;
+const RELEASES_API = `https://api.github.com/repos/${FRONTRUNNER_REPO_SLUG}/releases/latest`;
+
+/**
+ * Refuse to update from anything except Frontrunner's official repository.
+ *
+ * This is deliberately stricter than accepting an arbitrary Git remote. The
+ * inherited updater used to fetch the parent career-ops repository and could
+ * overwrite Frontrunner's pipeline and security controls. Upstream remains a
+ * maintainer-only merge source; it is never an application update source.
+ */
+export function assertOfficialUpdateSource(repositoryUrl) {
+  let parsed;
+  try {
+    parsed = new URL(repositoryUrl);
+  } catch {
+    const error = new Error('Refusing update: canonical source is not a valid HTTPS URL.');
+    error.code = 'UNTRUSTED_UPDATE_SOURCE';
+    throw error;
+  }
+
+  const expectedPath = `/${FRONTRUNNER_REPO_SLUG.toLowerCase()}.git`;
+  if (
+    parsed.protocol !== 'https:' ||
+    parsed.hostname.toLowerCase() !== 'github.com' ||
+    parsed.pathname.toLowerCase() !== expectedPath ||
+    parsed.username ||
+    parsed.password ||
+    parsed.port ||
+    parsed.search ||
+    parsed.hash
+  ) {
+    const error = new Error(
+      `Refusing update from untrusted source. Expected https://github.com/${FRONTRUNNER_REPO_SLUG}.git`,
+    );
+    error.code = 'UNTRUSTED_UPDATE_SOURCE';
+    throw error;
+  }
+  return parsed.href;
+}
 
 // Matches a semver, with or without a leading `v` and an optional
 // Release Please component prefix (e.g. `career-ops-v1.9.0` → `1.9.0`).
@@ -289,6 +328,8 @@ const SYSTEM_PATHS = [
   '.github/',
   'package.json',
   'package-lock.json',
+  'ui/',
+  'web/',
   'src/cv/build-cv-latex.mjs',
   'src/cv/build-cv-html.mjs',
   'src/cv/cv-sections-core.mjs',
@@ -736,6 +777,48 @@ function addPaths(paths) {
   git('add', '--', ...paths);
 }
 
+/**
+ * Install locked dependencies for the root and each shipped application tree.
+ *
+ * The runner is injectable so failure and argument behavior can be tested
+ * without network access or altering the real checkout.
+ */
+export function installUpdatedDependencies(root = ROOT, options = {}) {
+  const run = options.run ?? execFileSync;
+  const timeout = options.timeout ?? NPM_INSTALL_TIMEOUT_MS;
+  const installRoots = [root, join(root, 'ui'), join(root, 'web')]
+    .filter(dir => existsSync(join(dir, 'package.json')));
+  const installed = [];
+  const failures = [];
+
+  for (const installRoot of installRoots) {
+    const relativeRoot = installRoot === root ? '.' : installRoot.slice(root.length + 1);
+    if (!existsSync(join(installRoot, 'package-lock.json'))) {
+      failures.push(`${relativeRoot}: package-lock.json is missing`);
+      continue;
+    }
+    const installArgs = ['ci', '--ignore-scripts', '--silent'];
+    try {
+      run('npm', installArgs, {
+        cwd: installRoot,
+        timeout,
+        stdio: 'ignore',
+      });
+      installed.push(relativeRoot);
+    } catch (error) {
+      failures.push(`${relativeRoot}: ${error.message.split('\n')[0]}`);
+    }
+  }
+
+  if (failures.length > 0) {
+    const error = new Error(`Dependency installation failed:\n${failures.join('\n')}`);
+    error.code = 'DEPENDENCY_INSTALL_FAILED';
+    error.failures = failures;
+    throw error;
+  }
+  return installed;
+}
+
 function processIsAlive(pid) {
   if (!Number.isInteger(pid) || pid <= 0) return false;
   try {
@@ -894,6 +977,8 @@ function curlGet(url, extraArgs = []) {
 }
 
 async function check() {
+  assertOfficialUpdateSource(CANONICAL_REPO);
+
   // Respect dismiss flag
   if (existsSync(join(ROOT, '.update-dismissed'))) {
     console.log(JSON.stringify({ status: 'dismissed' }));
@@ -912,7 +997,7 @@ async function check() {
     curlGet(RAW_VERSION_URL),
     curlGet(RELEASES_API, [
       '--header', 'Accept: application/vnd.github.v3+json',
-      '--header', 'User-Agent: career-ops-update-checker',
+      '--header', 'User-Agent: frontrunner-update-checker',
     ]),
   ]);
 
@@ -974,6 +1059,8 @@ async function check() {
 // ── APPLY ───────────────────────────────────────────────────────
 
 async function apply() {
+  assertOfficialUpdateSource(CANONICAL_REPO);
+
   const local = localVersion();
   const initialStatusPaths = new Set(gitStatusEntries().map(entry => entry.path));
   const isReexec = process.env.CAREER_OPS_UPDATE_REEXEC === '1';
@@ -1013,7 +1100,7 @@ async function apply() {
     }
 
     // 2. Fetch from canonical repo
-    console.log('Fetching latest from upstream...');
+    console.log('Fetching latest Frontrunner release...');
     git('fetch', CANONICAL_REPO, 'main');
 
     if (!isReexec) {
@@ -1216,16 +1303,28 @@ async function apply() {
       throw violation;
     }
 
-    // 5. Install any new dependencies
+    // 5. Install dependencies for every shipped application tree. Updating
+    // only the root package used to leave the local UI running old or missing
+    // dependencies even though the updater reported success.
     try {
-      execSync('npm install --silent', { cwd: ROOT, timeout: NPM_INSTALL_TIMEOUT_MS });
-    } catch {
-      console.log('npm install skipped (may need manual run)');
+      installUpdatedDependencies(ROOT);
+    } catch (error) {
+      console.error('Dependency installation failed; rolling back checked-out system files:');
+      for (const failure of error.failures ?? [error.message]) console.error(`  ${failure}`);
+      revertPaths(updated, initialStatusPaths);
+      throw new Error(
+        'Update aborted because dependencies could not be installed. Run npm install in the reported directory before retrying.',
+        { cause: error },
+      );
     }
 
     // 5b. Ensure Playwright browser binary is up to date after npm install
     try {
-      execSync('npx playwright install chromium', { cwd: ROOT, timeout: PLAYWRIGHT_INSTALL_TIMEOUT_MS, stdio: 'ignore' });
+      execFileSync('npx', ['playwright', 'install', 'chromium'], {
+        cwd: ROOT,
+        timeout: PLAYWRIGHT_INSTALL_TIMEOUT_MS,
+        stdio: 'ignore',
+      });
     } catch {
       console.log('playwright install skipped (run manually: npx playwright install chromium)');
     }

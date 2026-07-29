@@ -138,6 +138,19 @@ npm install
 npx playwright install chromium
 ```
 
+### Updating Frontrunner
+
+```bash
+npm run update:check
+npm run update
+```
+
+The updater only accepts the official
+`https://github.com/Furls-Digital/frontrunner.git` source. It refuses the
+parent career-ops repository and preserves the user-data paths in
+[DATA_CONTRACT.md](DATA_CONTRACT.md). `npm run rollback` restores the most
+recent pre-update system snapshot.
+
 Open your AI coding assistant in the `frontrunner` directory and say:
 
 ```text
@@ -320,8 +333,9 @@ node src/lib/root-paths.mjs --fix
 node test-all.mjs
 ```
 
-Use Git for upstream merges. Do not use `node update-system.mjs apply` to update
-Frontrunner: the inherited updater can overwrite fork-specific batch wiring.
+Upstream is only a maintainer input. Ordinary users update from Frontrunner
+with `npm run update`; the updater is pinned to the Frontrunner repository and
+will not fetch the parent.
 
 ## Language support
 

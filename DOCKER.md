@@ -93,7 +93,8 @@ Nothing important is stored inside the container. `./cops down` is safe.
 
 ## Updating
 
-Career-ops updates work the same as native:
+Frontrunner updates work the same as native and only use the official
+Frontrunner repository:
 
 ```bash
 ./cops update:check

@@ -15,7 +15,9 @@ Career-ops is built on three commitments that every design decision serves:
 The single most important architectural rule: **system files** and **user files** are strictly separated.
 
 - **System layer** — the updateable core: `modes/`, scripts (`*.mjs`), and templates. These are versioned and updated by `update-system.mjs`. Listed in `SYSTEM_PATHS`.
-- **Application trees** — `web/` and `ui/` are versioned interfaces with their own packages and release lifecycle. They contain no user data and sit outside `update-system.mjs`.
+- **Application trees** — `web/` and `ui/` are versioned interfaces with their
+  own locked packages. They contain no user data and are updated by
+  `update-system.mjs` with the rest of the system layer.
 - **User layer** — your data: `cv.md`, `config/profile.yml`, `modes/_profile.md`, `data/`, `reports/`, `jds/`, etc. The updater **never** touches these. Listed in `USER_PATHS`.
 
 `DATA_CONTRACT.md` is the source of truth for this boundary, and `updater-migration-tests.mjs` enforces that no system path ever overlaps a user path.
@@ -62,7 +64,12 @@ Every evaluated offer is registered. `data/applications.md` is the canonical tra
 `src/scan/check-liveness.mjs` / `liveness-*.mjs` verify a posting is still open (zero-token) before it costs evaluation time.
 
 ### Self-update — `update-system.mjs`
-Safely pulls new system files from upstream without touching user data. It backs up, fetches, re-execs the target updater (resolving its import closure so a new import can't break the upgrade), then checks out only `SYSTEM_PATHS`. `BOOTSTRAP_PATHS` covers very old installs.
+Safely pulls new system files from the official Frontrunner repository without
+touching user data. The source is pinned to
+`Furls-Digital/frontrunner`; the parent repository is only used by maintainers
+performing an explicit upstream merge. The updater backs up, fetches, re-execs
+the target updater, then checks out only `SYSTEM_PATHS`.
+`BOOTSTRAP_PATHS` covers very old installs.
 
 ### Multi-CLI entry files
 Each CLI reads its own entry file, all of which point at the canonical `AGENTS.md`: `CLAUDE.md` (full), and thin `@AGENTS.md` redirect wrappers `OPENCODE.md`, `CODEX.md`, `GEMINI.md`, plus the `.agents/skills/` skill entrypoints. This is the [open agent skill standard](https://agentskills.io).

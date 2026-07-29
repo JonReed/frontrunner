@@ -20,8 +20,8 @@ contains only a few compatibility entry points. Common commands are exposed via
 | `npm run patterns` | `src/analysis/analyze-patterns.mjs` | Analyze tracker outcomes and report patterns |
 | `npm run upskill` | `src/analysis/upskill.mjs` | Aggregate skill-gap map from tracked reports (or `--url-text <url\|file>` for a single-JD targeted gap analysis) |
 | `npm run add` | `src/tracker/add-entry.mjs` | Dedup + insert a `/career-ops add` entry into cv.md / article-digest.md |
-| `npm run update:check` | `update-system.mjs check` | Check for upstream updates |
-| `npm run update` | `update-system.mjs apply` | Apply upstream update |
+| `npm run update:check` | `update-system.mjs check` | Check for official Frontrunner updates |
+| `npm run update` | `update-system.mjs apply` | Apply an official Frontrunner update |
 | `npm run rollback` | `update-system.mjs rollback` | Rollback last update |
 | `npm run liveness` | `src/scan/check-liveness.mjs` | Test if job URLs are still active |
 | `npm run extract` | `src/scan/browser-extract.mjs` | Headless read-only page extractor (opt-in `scan.extractor: cli`) — compact JSON for scan/JD |
@@ -324,7 +324,8 @@ Default silence window: `templates/benchmarks.yml` `days_first_response.range_da
 
 ## update:check
 
-Checks whether a newer version of career-ops is available upstream. Outputs JSON to stdout:
+Checks whether a newer official Frontrunner version is available. Outputs JSON
+to stdout:
 
 ```bash
 npm run update:check
@@ -345,7 +346,13 @@ Possible JSON responses:
 
 ## update
 
-Applies the upstream update. Creates a timestamped backup branch (`backup-pre-update-<version>-<YYYYMMDDTHHMMSSZ>`), fetches from the canonical repo, checks out only system-layer files, runs `npm install`, and commits. The timestamp is derived from UTC ISO time with separators and milliseconds removed (for example, `backup-pre-update-1.8.1-20260608T071302Z`). User-layer files (`cv.md`, `config/profile.yml`, `data/`, etc.) are never touched.
+Applies an update from the official
+`https://github.com/Furls-Digital/frontrunner.git` repository. The command
+refuses every other source, including the parent career-ops repository. It
+creates a timestamped backup branch
+(`backup-pre-update-<version>-<YYYYMMDDTHHMMSSZ>`), checks out only
+system-layer files, installs dependencies, and commits. User-layer files
+(`cv.md`, `config/profile.yml`, `data/`, etc.) are never touched.
 
 ```bash
 npm run update

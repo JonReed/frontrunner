@@ -1,4 +1,4 @@
-# Mode: update — Interactive System Update
+# Mode: update — Interactive Frontrunner Update
 
 When the user runs `/career-ops update`, execute this interactive update flow.
 
@@ -6,7 +6,7 @@ When the user runs `/career-ops update`, execute this interactive update flow.
 
 Run `node update-system.mjs check` and parse the JSON output.
 
-- If `up-to-date`: Tell the user "career-ops is up to date (v{version})." and stop.
+- If `up-to-date`: Tell the user "Frontrunner is up to date (v{version})." and stop.
 - If `offline`: Tell the user "Cannot reach GitHub to check for updates. Try again later." and stop.
 - If `dismissed`: Tell the user "Update check was previously dismissed. Clearing the dismissal and re-checking now." Remove `.update-dismissed`, then re-run `node update-system.mjs check` and branch on the new status.
 - If `update-available`: Continue to Step 2.
@@ -16,7 +16,7 @@ Run `node update-system.mjs check` and parse the JSON output.
 Show the user what will change. Run:
 
 ```bash
-git fetch https://github.com/santifer/career-ops.git main || {
+git fetch https://github.com/Furls-Digital/frontrunner.git main || {
   echo "Failed to fetch latest changes. Cannot generate an accurate diff preview."
   exit 1
 }
@@ -45,6 +45,9 @@ Present to the user as a clear summary:
 > {changelog from update-system.mjs check output}
 >
 > Your personal files (CV, profile, tracker, reports) will NOT be touched.
+
+The parent career-ops repository is never a valid source for this flow. It is
+only merged explicitly by Frontrunner maintainers.
 
 If the user wants details on specific files, show the actual diff for those files using `git diff HEAD..FETCH_HEAD -- {path}`.
 

@@ -130,14 +130,16 @@ These files contain system logic, scripts, templates, and instructions that impr
 | `DATA_CONTRACT.md` | This file |
 | `writing-samples/README.md` | System-owned onboarding documentation for the writing-samples directory |
 
-## Isolated Application Trees
+## Application Trees
 
 `web/` and `ui/` are versioned application code, never user data. They have
-their own packages and are deliberately excluded from `update-system.mjs`;
-updating the core must not partially replace either application.
+their own packages and are included as complete directory entries in
+`update-system.mjs`; an update must not partially replace either application.
 
 ## The Rule
 
 **If a file is in the User Layer, no update process may read, modify, or delete it.**
 
-**If a file is in the System Layer, it can be safely replaced with the latest version from the upstream repo.**
+**If a file is in the System Layer, it can be safely replaced with the latest
+version from the official Frontrunner repository.** The parent career-ops
+repository is not an application update source.

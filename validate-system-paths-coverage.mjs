@@ -65,7 +65,7 @@ const EXCLUDES = [
 // part of that isolation contract, not a coverage gap.
 // ui/ is Frontrunner's workflow UI (v2) and sits under the same contract: its
 // own app with its own package.json and build, not something the updater ships.
-const EXCLUDE_PREFIXES = ['web/', 'ui/'];
+const EXCLUDE_PREFIXES = [];
 
 function covered(file) {
   // If explicitly excluded, it is covered
