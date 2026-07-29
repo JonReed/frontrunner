@@ -44,6 +44,10 @@ import {
   renderEvaluationReport,
 } from './scoring-contract.mjs';
 import { saveEvaluation } from './save-evaluation.mjs';
+import {
+  emitEvaluationExecutionResult,
+  evaluationExecutionResult,
+} from './execution-result.mjs';
 
 // ---------------------------------------------------------------------------
 // Bootstrap: load .env before anything else
@@ -184,6 +188,7 @@ const gate = evaluateDeterministicGate({
 if (!gate.allowed) {
   console.log(`\n⏭️  ${formatGateRejection(gate)}`);
   console.log(JSON.stringify(gate, null, 2));
+  emitEvaluationExecutionResult(evaluationExecutionResult({ status: 'skipped' }));
   process.exit(0);
 }
 
@@ -221,6 +226,7 @@ const model = genAI.getGenerativeModel({
 
 let evaluationText;
 let scoringResult;
+let evaluationUsage;
 try {
   const result = await model.generateContent(jobDocument.prompt);
   scoringResult = parseScoringResponse(result.response.text());
@@ -231,6 +237,7 @@ try {
     total_tokens: result.response.usageMetadata?.totalTokenCount ?? 0,
     cached_tokens: result.response.usageMetadata?.cachedContentTokenCount ?? 0
   };
+  evaluationUsage = usage;
   tracker.record('evaluation', usage);
 } catch (err) {
   const sanitizedMsg = (err.message || '').split(apiKey).join('[REDACTED]');
@@ -278,3 +285,7 @@ console.log(`  Score: ${score}/5  |  Archetype: ${archetype}  |  Legitimacy: ${l
 console.log('─'.repeat(66) + '\n');
 
 console.log(formatBreakdown(tracker, modelName, 'gemini'));
+emitEvaluationExecutionResult(evaluationExecutionResult({
+  status: 'succeeded',
+  usage: evaluationUsage,
+}));

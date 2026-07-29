@@ -136,8 +136,9 @@ application data, maps it to a fixed Node entry point, and owns structured
 events, result envelopes, timeouts, and cancellation. Clients cannot supply
 executables, working directories, arbitrary flags, or shell fragments. A
 persistent job manager covers every catalog operation with canonical
-cross-process claims (per tracker role for CVs and per operation for scan or
-pipeline work), per-job transactional state, bounded crash-safe logs,
+cross-process claims (per tracker role for CVs and one shared resource for
+scan, preparation and full pipeline work), per-job transactional state,
+bounded crash-safe logs,
 operation-specific stale deadlines, reload-safe state, durable cancellation
 requests, and crash recovery. Caller idempotency labels cannot override those
 claims. Supervised operations are isolated into a process group/tree, so
@@ -145,10 +146,69 @@ cancellation and timeout terminate model, browser and renderer descendants
 before the job becomes terminal. See
 [`APPLICATION_SERVICE.md`](APPLICATION_SERVICE.md).
 
+The controller does not directly own the privileged backend process. A fixed
+wrapper validates the catalog request again, owns a separate backend
+process-group/tree, and watches a kernel ownership pipe held by the controller.
+An ordinary signal follows the normal cancellation path; an uncatchable
+controller death closes the pipe and triggers forced descendant termination.
+No PID is persisted or trusted later during recovery.
+
+Tracker status changes cross a separate narrow controller because they are
+synchronous mutations rather than persistent jobs. It accepts only a tracker
+number, `Applied`/`Discarded`/`SKIP`, and a bounded table-safe note, then invokes
+the canonical locked writer with fixed arguments. That child is also a
+supervised process-group/tree: timeout, cancellation and output overflow force
+termination before the controller returns an error, preventing late writes.
+
+The connection-health controller is narrower still: one anonymous read action
+maps to the fixed, zero-token `claude auth status --json` probe and returns only
+installed/sign-in state plus bounded account, plan and method labels. It has no
+login action. The probe uses the shared process-tree supervisor, so timeout,
+controller cancellation or output flooding cannot leave CLI descendants
+running after a disconnected result is returned.
+
+Profile edits cross another narrow controller. A single save may span `cv.md`,
+`cv-versions/` and `config/profile.yml`, so individual atomic replacements are
+not sufficient. The backend preflights the complete request, acquires one
+transaction claim plus deterministically ordered target locks, then persists a
+private write-ahead journal before replacement. A later read/save recovers an
+interruption idempotently. Each entry records the prior content hash; recovery
+fails closed if another process changed a target after the crash.
+
+Pipeline progress does not depend on console wording. The child publishes a
+closed sequence of scan/cache/liveness/prefilter/evaluation events over fixed
+descriptor 3; the application service validates, bounds and timestamps them,
+then the job manager atomically retains the latest stage across reloads.
+Malformed progress produces one advisory warning and has no execution
+authority. Log-pattern stage detection exists only as a compatibility fallback.
+
+The same controller provides the read side for local interfaces. `list`
+returns bounded job summaries rather than logs or request data; `history`
+returns at most 50 newest-first records after revalidating the complete history
+file. Operation and status filters are closed enums. Interfaces therefore do
+not need direct access to the private job directory or run-history file.
+
+The private job directory is a transient supervision store, not a second
+permanent history database. Before starts and list reads, the manager removes
+terminal artifacts older than 30 days or beyond the newest 200, serialized by
+the affected job lock; running jobs are never retention candidates. Reads
+reject symlinks, oversized files, malformed state, and terminal timestamps that
+predate their start. Invalid or incomplete job families left by a hard crash
+are removed only after a 24-hour age gate, under that same lock, when every
+artifact is a regular file and no valid state exists. Strict old atomic-write
+debris is removed separately; symlinks, directories, young files and lookalike
+names survive. Durable aggregate evidence remains separately bounded in
+`data/run-history.ndjson`.
+
 Both direct application requests and persistent jobs publish one terminal run
-record. A supervised pipeline child suppresses its own standalone record so the
-parent job remains the single lifecycle authority; direct CLI pipeline runs
-record themselves.
+record. A supervised pipeline child publishes detailed counts and provider
+usage under the parent run ID; the parent then idempotently merges its
+full-process timing into that record. Terminal outcomes merge fail-closed, so a
+generic successful parent exit cannot erase a detailed pipeline failure. The
+inherited run ID crosses only one
+fixed environment field and must satisfy the closed history grammar, otherwise
+the pipeline replaces it with a locally generated value. Direct CLI pipeline
+runs use the same contract with their own generated run ID.
 
 The canonical pipeline additionally owns a cross-process run lease for its
 entire scan → cache → liveness → prefilter → evaluation transaction. This
@@ -156,6 +216,20 @@ covers direct CLI calls as well as application-service children, prevents
 shared `jds/` and `batch/` artifacts from interleaving, and stops a second
 process before it can duplicate model spend. Dead owners are recovered through
 the shared owner-verified lock implementation.
+
+Each evaluator also has a data-only execution-result boundary on fixed file
+descriptor 3. The versioned 2 KiB schema permits only terminal status, model
+request count and normalized input/output/cached token totals. This keeps
+accounting independent of human console wording and prevents job content,
+scores, reports or model output entering run history. Missing provider usage is
+preserved as missing rather than silently converted to zero.
+
+The pipeline records each canonical stage's terminal status and elapsed time in
+its local run-history record. An exception closes the currently active stage as
+failed before the run fails, making cache, liveness, filtering and model
+failures distinguishable without storing their hostile inputs. The later
+supervisor update preserves these child stage metrics, so a controller and
+pipeline failure still produce one evidence-rich logical record.
 
 ### Self-update — `update-system.mjs`
 Safely pulls new system files from the official Frontrunner repository without
@@ -184,7 +258,12 @@ Frontrunner runtime.
 
 ## Quality gates
 
-- `test-all.mjs` — the full suite (500+ checks across scoring, scan, tracker, PDF, security, updater).
+- `test-all.mjs` — the full suite (500+ checks across scoring, scan, tracker,
+  PDF, security, updater). It executes the exact current system source in a
+  disposable git repository with ignored user files omitted. A filesystem
+  barrier inherited by Node children rejects any attempted write back to the
+  original checkout's user layer, so destructive tests cannot mutate a real
+  CV, profile, tracker, report, JD or output artifact.
 - `updater-migration-tests.mjs` — enforces the system/user boundary and safe cross-version upgrades.
 - CI: `test` + CodeQL are required; CodeRabbit reviews every PR; Renovate keeps deps current.
 
@@ -318,6 +397,8 @@ and treats reports and generated HTML as untrusted output.
 
 - Persistent application jobs serialize canonical deduplication claims, reads,
   operation-specific stale recovery, cancellation and terminal transitions.
+  Scan, preparation and evaluation claim the same pipeline-state resource;
+  conflicting operation names receive a structured busy result before launch.
   Cancellation is a contained durable marker observed by the owning controller,
   never a request to signal a stored PID.
 - The canonical pipeline holds one owner-verified cross-process lease across

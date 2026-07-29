@@ -4,7 +4,28 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
-import { runCanonicalPipeline } from '../../src/pipeline/run.mjs';
+import {
+  resolvePipelineRunId,
+  runCanonicalPipeline,
+} from '../../src/pipeline/run.mjs';
+
+test('pipeline reuses a valid application-service run id and rejects hostile inherited values', () => {
+  let generated = 0;
+  const runIdFactory = () => {
+    generated += 1;
+    return 'direct-pipeline-run';
+  };
+  assert.equal(resolvePipelineRunId({
+    applicationRunId: 'job-pipeline-shared123',
+    runIdFactory,
+  }), 'job-pipeline-shared123');
+  assert.equal(generated, 0);
+  assert.equal(resolvePipelineRunId({
+    applicationRunId: '../../hostile\nvalue',
+    runIdFactory,
+  }), 'direct-pipeline-run');
+  assert.equal(generated, 1);
+});
 
 test('destructive pipeline: expired roles never reach prefilter or evaluation; uncertain roles do', async (t) => {
   const dir = mkdtempSync(join(tmpdir(), 'frontrunner-pipeline-'));
@@ -29,6 +50,8 @@ test('destructive pipeline: expired roles never reach prefilter or evaluation; u
   };
   let closed = false;
   let evaluated = [];
+  const stageEvents = [];
+  let clock = 1_000;
   const result = await runCanonicalPipeline({
     input,
     jdsDir,
@@ -38,6 +61,8 @@ test('destructive pipeline: expired roles never reach prefilter or evaluation; u
     livenessResults: join(batchDir, 'liveness.tsv'),
     engine: 'none',
     scan: false,
+    now: () => clock++,
+    onStage: event => stageEvents.push(event),
     fetchJds: async () => ({ urls: 3, requests: 0, available: 0 }),
     checker: {
       check: async (url) => decisions[url],
@@ -77,6 +102,31 @@ test('destructive pipeline: expired roles never reach prefilter or evaluation; u
   const updatedPipeline = readFileSync(input, 'utf8');
   assert.match(updatedPipeline, /\[x\].*expired.*result: posting expired/);
   assert.match(updatedPipeline, /\[ \].*active/);
+  assert.deepEqual(stageEvents.map(event => `${event.stage}:${event.state}`), [
+    'cache:started',
+    'cache:completed',
+    'liveness:started',
+    'liveness:completed',
+    'prefilter:started',
+    'prefilter:completed',
+    'evaluation:started',
+    'evaluation:completed',
+  ]);
+  assert.deepEqual(result.stageMetrics.map(stage => stage.stage), [
+    'cache',
+    'liveness',
+    'prefilter',
+    'evaluation',
+  ]);
+  assert.equal(result.stageMetrics.every(stage => stage.durationMs === 1), true);
+  assert.deepEqual(result.stageMetrics.at(-1).counts, {
+    attempted: 2,
+    completed: 0,
+    failed: 0,
+    modelRequests: 0,
+    usageReported: 0,
+    usageMissing: 0,
+  });
 });
 
 test('destructive pipeline: checker teardown runs when a liveness check throws', async (t) => {
@@ -85,9 +135,11 @@ test('destructive pipeline: checker teardown runs when a liveness check throws',
   const input = join(dir, 'pipeline.md');
   writeFileSync(input, '- [ ] https://jobs.example/fail | Acme | Director Engineering |\n');
   let closed = false;
+  const stageEvents = [];
 
-  await assert.rejects(
-    runCanonicalPipeline({
+  let failure;
+  try {
+    await runCanonicalPipeline({
       input,
       jdsDir: join(dir, 'jds'),
       activeInput: join(dir, 'active.tsv'),
@@ -95,15 +147,32 @@ test('destructive pipeline: checker teardown runs when a liveness check throws',
       rejects: join(dir, 'rejects.tsv'),
       livenessResults: join(dir, 'live.tsv'),
       scan: false,
+      onStage: event => stageEvents.push(event),
       fetchJds: async () => ({ urls: 1 }),
       checker: {
         check: async () => { throw new Error('browser crashed'); },
         close: async () => { closed = true; },
       },
-    }),
-    /browser crashed/,
-  );
+    });
+    assert.fail('pipeline unexpectedly succeeded');
+  } catch (error) {
+    failure = error;
+  }
+  assert.match(failure.message, /browser crashed/u);
   assert.equal(closed, true);
+  assert.deepEqual(stageEvents.map(event => `${event.stage}:${event.state}`), [
+    'cache:started',
+    'cache:completed',
+    'liveness:started',
+    'liveness:failed',
+  ]);
+  assert.deepEqual(failure.pipelineStageMetrics.map(stage => [
+    stage.stage,
+    stage.status,
+  ]), [
+    ['cache', 'succeeded'],
+    ['liveness', 'failed'],
+  ]);
 });
 
 test('canonical pipeline keeps bare inbox URLs and persists browser fallback text before filtering', async (t) => {

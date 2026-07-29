@@ -38,6 +38,10 @@ import {
   renderEvaluationReport,
 } from './scoring-contract.mjs';
 import { saveEvaluation } from './save-evaluation.mjs';
+import {
+  emitEvaluationExecutionResult,
+  evaluationExecutionResult,
+} from './execution-result.mjs';
 
 const tracker = new TokenAccumulator();
 tracker.recordZeroToken('scan');
@@ -233,6 +237,7 @@ const gate = evaluateDeterministicGate({
 if (!gate.allowed) {
   console.log(`\n⏭️  ${formatGateRejection(gate)}`);
   console.log(JSON.stringify(gate, null, 2));
+  emitEvaluationExecutionResult(evaluationExecutionResult({ status: 'skipped' }));
   process.exit(0);
 }
 
@@ -281,6 +286,7 @@ if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
 
 let evaluationText;
 let scoring;
+let evaluationUsage;
 try {
   const res = await fetch(endpoint, {
     method: 'POST',
@@ -312,6 +318,7 @@ try {
   const data = await res.json();
   const rawResponse = data.choices?.[0]?.message?.content?.trim();
   const usage = normalizeOpenAIUsage(data.usage);
+  evaluationUsage = usage;
   tracker.record('evaluation', usage);
   if (!rawResponse) {
     console.error('❌  The endpoint returned an empty response.');
@@ -364,3 +371,7 @@ console.log(`  Score: ${score}/5  |  Archetype: ${archetype}  |  Legitimacy: ${l
 console.log('─'.repeat(66) + '\n');
 
 console.log(formatBreakdown(tracker, modelName, 'openai'));
+emitEvaluationExecutionResult(evaluationExecutionResult({
+  status: 'succeeded',
+  usage: evaluationUsage,
+}));

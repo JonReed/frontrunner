@@ -54,7 +54,8 @@ export function profileBase() {
 }
 
 export const profilePath = () => join(profileBase(), 'config', 'profile.yml');
-export const profileTemplatePath = () => join(profileBase(), 'config', 'profile.example.yml');
+export const profileTemplatePath = (base = profileBase()) =>
+  join(base, 'config', 'profile.example.yml');
 export const cvPath = () => join(profileBase(), 'cv.md');
 /**
  * Additional CV versions. Same trust level as writing-samples/ — the user's own
@@ -147,10 +148,29 @@ export function validateProfilePatch(patch) {
  * as one created by hand. Falling back to a bare skeleton would quietly give
  * UI-created installs a worse file than CLI-created ones.
  */
-function seedProfile() {
-  const template = profileTemplatePath();
+function seedProfile(base = profileBase()) {
+  const template = profileTemplatePath(base);
   if (existsSync(template)) return readFileSync(template, 'utf8');
   return 'candidate:\ncompensation:\nlocation:\ntarget_roles:\nspend_tier: standard\n';
+}
+
+export function renderProfilePatch(current, patch, options = {}) {
+  const clean = validateProfilePatch(patch);
+  const doc = parseDocument(
+    current && current.trim() ? current : seedProfile(options.base),
+  );
+  if (doc.errors?.length) {
+    throw fail(
+      `config/profile.yml could not be parsed, so it was left untouched: ${doc.errors[0].message}`,
+      'PROFILE_UNPARSEABLE',
+    );
+  }
+  for (const [path, value] of Object.entries(clean)) {
+    const key = path.split('.');
+    if (value === '' || (Array.isArray(value) && value.length === 0)) doc.deleteIn(key);
+    else doc.setIn(key, value);
+  }
+  return String(doc);
 }
 
 /**
@@ -166,23 +186,7 @@ export async function updateProfile(patch) {
 
   await mutateFileLocked(
     profilePath(),
-    current => {
-      const doc = parseDocument(current && current.trim() ? current : seedProfile());
-      if (doc.errors?.length) {
-        throw fail(
-          `config/profile.yml could not be parsed, so it was left untouched: ${doc.errors[0].message}`,
-          'PROFILE_UNPARSEABLE',
-        );
-      }
-      for (const [path, value] of Object.entries(clean)) {
-        const key = path.split('.');
-        // An empty string clears a field rather than writing "" into it, so a
-        // user can remove a phone number they no longer want on a CV.
-        if (value === '' || (Array.isArray(value) && value.length === 0)) doc.deleteIn(key);
-        else doc.setIn(key, value);
-      }
-      return String(doc);
-    },
+    current => renderProfilePatch(current, clean),
     { initial: seedProfile() },
   );
 
@@ -205,7 +209,7 @@ export function readProfileFields() {
   return out;
 }
 
-function assertCvText(markdown, label = 'CV') {
+export function normalizeCvText(markdown, label = 'CV') {
   if (typeof markdown !== 'string') throw fail(`${label} must be text.`);
   const text = markdown.trim();
   if (!text) throw fail(`${label} is empty.`);
@@ -222,10 +226,22 @@ function assertCvText(markdown, label = 'CV') {
  * their CV.
  */
 export async function writeCv(markdown) {
-  const text = assertCvText(markdown);
+  const text = normalizeCvText(markdown);
   const file = cvPath();
   await mutateFileLocked(file, () => text);
   return file;
+}
+
+export function cvVersionFilename(label, index = 0) {
+  if (!Number.isSafeInteger(index) || index < 0 || index >= 20) {
+    throw fail('CV version index is outside the supported range.');
+  }
+  const slug = String(label ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+  return `${String(index + 1).padStart(2, '0')}-${slug || 'version'}.md`;
 }
 
 /**
@@ -237,13 +253,8 @@ export async function writeCv(markdown) {
  * directory or collide with a dotfile.
  */
 export async function writeCvVersion(label, markdown, index = 0) {
-  const text = assertCvText(markdown, 'CV version');
-  const slug = String(label ?? '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 60);
-  const name = `${String(index + 1).padStart(2, '0')}-${slug || 'version'}.md`;
+  const text = normalizeCvText(markdown, 'CV version');
+  const name = cvVersionFilename(label, index);
 
   const dir = cvVersionsDir();
   mkdirSync(dir, { recursive: true });

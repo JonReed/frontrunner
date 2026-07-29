@@ -13,6 +13,8 @@ The maintainers do not act as a Data Controller or Data Processor under GDPR or 
 - All Personal Identifiable Information (PII) you input — CVs, contact details, career history — is processed locally on your machine.
 - When you use an AI CLI tool (Claude Code, Codex, or any other you point at this project), your data is sent directly to the AI provider you chose. Review their privacy policies.
 - We do not collect analytics, telemetry, or usage data of any kind.
+- Bounded operational history written to `data/run-history.ndjson` remains
+  solely in the user's local checkout; it is not transmitted to the project.
 - API keys, credentials, and personal files are gitignored by default. Never commit them to a public fork.
 
 ## 3. AI Model Behavior

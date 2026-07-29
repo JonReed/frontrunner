@@ -45,6 +45,10 @@ import {
   readModelBlacklist,
 } from './model-blacklist.mjs';
 import { saveEvaluation } from './save-evaluation.mjs';
+import {
+  emitEvaluationExecutionResult,
+  evaluationExecutionResult,
+} from './execution-result.mjs';
 
 import { ROOT as __dirname } from '#paths';
 const tracker = new TokenAccumulator();
@@ -222,7 +226,11 @@ async function callOpenRouter(systemPrompt, userMessage) {
       timeoutMs: MODEL_TIMEOUT_MS,
     });
     console.log('OK');
-    return { content: result.content, usage: normalizeOpenAIUsage(result.usage) };
+    return {
+      content: result.content,
+      usage: normalizeOpenAIUsage(result.usage),
+      requestCount: 1,
+    };
   }
 
   const models = await loadFreeModels();
@@ -254,7 +262,11 @@ async function callOpenRouter(systemPrompt, userMessage) {
 
       modelIndex = (modelIndex + attempt + 1) % active.length;
       console.log('OK');
-      return { content: data.content, usage: normalizeOpenAIUsage(data.usage) };
+      return {
+        content: data.content,
+        usage: normalizeOpenAIUsage(data.usage),
+        requestCount: attempt + 1,
+      };
 
     } catch (e) {
       lastError = e;
@@ -411,7 +423,7 @@ async function cmdEvaluate(input, ctx) {
     }
     if (live.result === 'expired') {
       console.log(`⏭️  Evaluation stopped before the model call: posting is expired (${live.reason}).`);
-      return 'skipped:expired';
+      return { status: 'skipped' };
     }
     if (live.result === 'uncertain') {
       console.warn(`⚠️  Liveness uncertain (${live.reason}); keeping the role to avoid a false reject.`);
@@ -453,7 +465,7 @@ async function cmdEvaluate(input, ctx) {
   const gate = evaluateDeterministicGate({ jdText });
   if (!gate.allowed) {
     console.log(`\n⏭️  ${formatGateRejection(gate)}`);
-    return `skipped:${gate.rule}`;
+    return { status: 'skipped' };
   }
 
   console.log('\nEvaluating...');
@@ -501,7 +513,11 @@ async function cmdEvaluate(input, ctx) {
     console.log(result);
     console.log('\n─────────────────────────────────────────────────────\n');
 
-    return relPath;
+    return {
+      status: 'succeeded',
+      usage: resultObj.usage,
+      requestCount: resultObj.requestCount,
+    };
   } catch (e) {
     console.error(`Could not publish evaluation: ${e.message}`);
     console.error('Any pending publication journal will be recovered on the next evaluation.');
@@ -588,6 +604,7 @@ const invokedDirectly = process.argv[1] &&
   path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 const [,, command, ...args] = invokedDirectly ? process.argv : [];
 const ctx = invokedDirectly ? loadContext() : null;
+let evaluationExecution = null;
 
 // Load free models list before running any AI command (skip when a model is pinned)
 if (invokedDirectly && ['evaluate', 'eval', 'apply', 'models'].includes(command) && !process.env.FRONTRUNNER_MODEL) {
@@ -614,7 +631,8 @@ if (invokedDirectly) switch (command) {
         break;
       }
     }
-    await cmdEvaluate(input, ctx);
+    evaluationExecution = await cmdEvaluate(input, ctx);
+    if (!evaluationExecution) process.exitCode = 1;
     break;
   }
 
@@ -660,4 +678,7 @@ MODEL SELECTION:
 if (invokedDirectly && ['scan', 'evaluate', 'eval', 'pipeline', 'apply'].includes(command)) {
   const modelName = process.env.FRONTRUNNER_MODEL || activeModel || 'free-rotation';
   console.log('\n' + formatBreakdown(tracker, modelName, 'openrouter'));
+}
+if (invokedDirectly && ['evaluate', 'eval'].includes(command) && evaluationExecution) {
+  emitEvaluationExecutionResult(evaluationExecutionResult(evaluationExecution));
 }

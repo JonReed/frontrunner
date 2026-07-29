@@ -66,6 +66,10 @@ prefilter before model evaluation.
   operation; fixed backend code chooses executables, scripts, paths, flags,
   timeouts, cancellation, and bounded lifecycle output. The new UI uses this
   boundary rather than constructing backend commands.
+- **Structured progress, not log guessing:** canonical pipeline stages publish
+  closed progress events over a bounded local process channel. Persistent jobs
+  retain the latest validated stage across controller/UI reloads, while human
+  stdout remains diagnostic only and cannot spoof progress.
 - **Cancellation stops the whole job:** supervised operations run in a
   dedicated process group on POSIX and a fixed `taskkill /T` tree on Windows.
   Timeout or cancellation terminates descendant model and browser processes
@@ -73,10 +77,23 @@ prefilter before model evaluation.
   in the background. The persistent backend accepts a validated job ID and
   writes a contained cancellation request; the owning controller observes it
   and aborts the operation without signalling an unverified or recycled PID.
+  Tracker-status writes use the same tree supervision: timeout, controller
+  shutdown, or oversized output terminates the fixed writer and descendants
+  before reporting failure, preventing a late status change after the UI says
+  the operation stopped. The read-only Claude authentication probe is equally
+  bounded: cancellation, timeout, or an output flood terminates its complete
+  process tree before the interface receives a disconnected result.
+  Backend jobs additionally run behind a fixed ownership wrapper. The
+  controller keeps a kernel pipe open for its lifetime; even an uncatchable
+  controller crash closes that pipe and makes the wrapper terminate the backend
+  tree, without persisting or later trusting a process ID.
 - **No duplicate AI spend:** persistent local jobs cover CV builds, scans,
   zero-token preparation and full pipeline runs. Catalog-owned deduplication
   keys prevent even inconsistent caller idempotency labels from splitting one
-  operation into duplicate work. Reads, operation-specific stale recovery,
+  operation into duplicate work. Scan, preparation and full evaluation also
+  share one exclusive pipeline-state claim, so different operation names
+  cannot race the same pending roles and audit files; clients receive a stable
+  busy response naming the active job. Reads, operation-specific stale recovery,
   cancellation, and terminal completion are serialized per job, so a late
   process result cannot resurrect or overwrite a job already made terminal.
   Direct CLI and application-service pipeline runs also share one
@@ -85,10 +102,32 @@ prefilter before model evaluation.
   before scanning or spending tokens, and a crashed owner is recovered.
 - **Crash-safe local run history:** completed backend operations append a
   bounded record to `data/run-history.ndjson` with status, duration, token-cost
-  classification, safe pipeline counts and provider-reported token usage when
-  available. Concurrent processes cannot lose records, interrupted replacement
-  preserves the prior file, and the history never stores job URLs,
-  descriptions, prompts, model output or environment data.
+  classification, per-stage status/timing, safe pipeline counts and
+  provider-reported token usage when available. Concurrent processes cannot
+  lose records, interrupted replacement preserves the prior file, and the
+  history never stores job URLs, descriptions, prompts, model output or
+  environment data. A supervised pipeline and its controller share one
+  validated run identity, so detailed child accounting and the controller's
+  terminal status merge into one logical record instead of creating duplicate
+  runs. A generic successful process exit cannot erase a detailed child
+  failure. Mid-stage crashes retain the exact failed stage and all previously
+  completed stage timings. Local interfaces can query bounded recent job
+  summaries and history through the same validated backend contract instead of
+  reading private state files. Detailed terminal job state and logs are
+  transient—kept for at most 30 days and the newest 200 jobs—while the smaller
+  aggregate history remains available independently. Strict, age-gated cleanup
+  also removes old crash-orphaned state, sidecars and atomic-write debris
+  without following symlinks or touching young, live or lookalike files.
+- **Measured model accounting:** Claude, OpenAI, Gemini and OpenRouter
+  evaluators return token usage and request counts through a closed 2 KiB
+  process-result channel, separate from human output. The pipeline aggregates
+  reported usage, explicitly counts evaluations whose provider omitted it, and
+  never estimates missing live-run tokens from prose.
+- **Transactional profile saves:** a UI save spanning the canonical CV,
+  additional CV versions and profile fields is preflighted as one decision,
+  serialized across processes and protected by a private write-ahead journal.
+  Interrupted saves replay idempotently; recovery refuses to overwrite a
+  target changed later by an agent or CLI.
 - **Model only for judgement:** provider APIs and deterministic code handle
   collection, description extraction, freshness, obvious mismatches, report
   rendering, pipeline state, and tracker-safe output. The model receives clean
@@ -143,7 +182,11 @@ prefilter before model evaluation.
 - **Regression evidence:** destructive crash/interruption tests, the scored-role
   false-reject corpus, and a generated efficiency benchmark run in CI. The
   aggregate runner also supervises framework tests so a failing destructive
-  suite cannot be hidden behind a green summary.
+  suite cannot be hidden behind a green summary. The complete suite executes
+  in a disposable repository containing the current system source but no
+  ignored user files; a process-wide write barrier additionally prevents test
+  children from reaching the original CV, profile, tracker, reports, JDs or
+  generated output.
 - **Upstream-compatible data:** the CV, profile, reports, tracker, provider
   ecosystem, and scoring scale remain compatible with career-ops.
 

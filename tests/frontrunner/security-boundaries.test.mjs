@@ -144,7 +144,14 @@ test('Claude evaluation and CV tailoring launch with zero tools and no permissio
       received = { args, input: options.input };
       return {
         status: 0,
-        stdout: JSON.stringify({ structured_output: scoring() }),
+        stdout: JSON.stringify({
+          structured_output: scoring(),
+          usage: {
+            input_tokens: 120,
+            output_tokens: 20,
+            cache_read_input_tokens: 30,
+          },
+        }),
         stderr: '',
       };
     },
@@ -152,6 +159,12 @@ test('Claude evaluation and CV tailoring launch with zero tools and no permissio
   assert.equal(output.security.tools, false);
   assert.match(received.input, /BEGIN_UNTRUSTED_JOB_ADVERTISEMENT/);
   assert.equal(received.args[received.args.indexOf('--tools') + 1], '');
+  assert.deepEqual(output.usage, {
+    promptTokens: 120,
+    completionTokens: 20,
+    totalTokens: 140,
+    cachedTokens: 30,
+  });
 });
 
 test('repository regression: executable paths contain no permission bypass or raw report HTML sink', () => {

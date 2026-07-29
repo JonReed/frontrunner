@@ -13,8 +13,10 @@ import test from 'node:test';
 import { ROOT } from '#paths';
 import {
   main,
+  summarizeApplicationJob,
   validateJobControlRequest,
 } from '../../src/application/job-control.mjs';
+import { ApplicationOperationBusyError } from '../../src/application/job-manager.mjs';
 
 function cvRequest(overrides = {}) {
   return {
@@ -53,11 +55,24 @@ function deferred() {
   return { promise, resolve };
 }
 
-test('job-control accepts only versioned CV starts and contained job reads/cancellations', () => {
+test('job-control accepts every versioned catalog operation and contained job reads/cancellations', () => {
   const start = validateJobControlRequest(cvRequest());
   assert.equal(start.action, 'start');
   assert.equal(start.request.operation, 'cv.build');
   assert.equal(Object.isFrozen(start), true);
+
+  for (const operation of [
+    { operation: 'scan.run', input: {} },
+    { operation: 'pipeline.prepare', input: { scan: true, input: 'data/pipeline.md' } },
+    { operation: 'pipeline.run', input: { engine: 'claude', scan: true, input: 'data/pipeline.md' } },
+  ]) {
+    const generic = validateJobControlRequest({
+      version: '1',
+      action: 'start',
+      request: { version: '1', ...operation },
+    });
+    assert.equal(generic.request.operation, operation.operation);
+  }
 
   const read = validateJobControlRequest({
     version: '1',
@@ -73,6 +88,36 @@ test('job-control accepts only versioned CV starts and contained job reads/cance
   });
   assert.equal(cancel.action, 'cancel');
   assert.equal(cancel.id, 'cv-12-abc123');
+  assert.equal(validateJobControlRequest({
+    version: '1',
+    action: 'read',
+    id: 'job-pipeline-abc123',
+  }).id, 'job-pipeline-abc123');
+
+  assert.deepEqual(validateJobControlRequest({
+    version: '1',
+    action: 'list',
+    limit: 10,
+    operation: 'pipeline.run',
+    status: 'running',
+  }), {
+    version: '1',
+    action: 'list',
+    limit: 10,
+    operation: 'pipeline.run',
+    status: 'running',
+  });
+  assert.deepEqual(validateJobControlRequest({
+    version: '1',
+    action: 'history',
+    status: 'timed_out',
+  }), {
+    version: '1',
+    action: 'history',
+    limit: 20,
+    operation: null,
+    status: 'timed_out',
+  });
 
   for (const invalid of [
     { ...cvRequest(), command: '/bin/sh' },
@@ -83,11 +128,110 @@ test('job-control accepts only versioned CV starts and contained job reads/cance
     {
       version: '1',
       action: 'start',
-      request: { version: '1', operation: 'scan.run', input: {} },
+      request: { version: '1', operation: 'scan.run', input: { command: '/bin/sh' } },
     },
+    { version: '1', action: 'read', id: 'job-unknown-abc123' },
+    { version: '1', action: 'list', limit: 51 },
+    { version: '1', action: 'list', status: 'succeeded' },
+    { version: '1', action: 'history', status: 'running' },
+    { version: '1', action: 'history', operation: 'unknown.run' },
+    { ...cvRequest(), limit: 5 },
   ]) {
     assert.throws(() => validateJobControlRequest(invalid));
   }
+});
+
+test('job-control list returns bounded summaries without logs or internal claims', async () => {
+  const output = outputSink();
+  let pruned = 0;
+  const jobs = [
+    {
+      id: 'job-pipeline-newest',
+      operation: 'pipeline.run',
+      kind: 'pipeline',
+      status: 'running',
+      stage: 'Evaluating the shortlist',
+      startedAt: 30,
+      costsTokens: true,
+      tail: 'hostile model output',
+      dedupeKey: 'pipeline.run',
+    },
+    {
+      id: 'job-scan-older',
+      operation: 'scan.run',
+      kind: 'scan',
+      status: 'done',
+      startedAt: 20,
+      finishedAt: 25,
+      costsTokens: false,
+    },
+  ];
+  const response = await main({
+    input: Readable.from([JSON.stringify({
+      version: '1',
+      action: 'list',
+      operation: 'pipeline.run',
+      limit: 1,
+    })]),
+    output: output.stream,
+    errorOutput: outputSink().stream,
+    managerFactory() {
+      return {
+        async pruneJobsSafely() { pruned += 1; },
+        async listJobs() { return jobs; },
+      };
+    },
+  });
+
+  assert.equal(response.jobs.length, 1);
+  assert.equal(pruned, 1);
+  assert.equal(response.jobs[0].id, 'job-pipeline-newest');
+  assert.equal(response.jobs[0].stage, 'Evaluating the shortlist');
+  assert.equal(response.jobs[0].costsTokens, true);
+  assert.doesNotMatch(JSON.stringify(response), /hostile model output|dedupeKey/u);
+  assert.deepEqual(JSON.parse(output.body()), response);
+  assert.equal(Object.isFrozen(summarizeApplicationJob(jobs[0])), true);
+});
+
+test('job-control history delegates only validated bounded filters', async () => {
+  const output = outputSink();
+  let received;
+  const record = {
+    version: '1',
+    runId: 'job-pipeline-history',
+    operation: 'pipeline.run',
+    status: 'failed',
+    startedAt: 10,
+    finishedAt: 20,
+    durationMs: 10,
+    costsTokens: true,
+  };
+  const response = await main({
+    input: Readable.from([JSON.stringify({
+      version: '1',
+      action: 'history',
+      operation: 'pipeline.run',
+      status: 'failed',
+      limit: 7,
+    })]),
+    output: output.stream,
+    errorOutput: outputSink().stream,
+    managerFactory() {
+      return {};
+    },
+    historyReader(options) {
+      received = options;
+      return Object.freeze([Object.freeze(record)]);
+    },
+  });
+
+  assert.deepEqual(received, {
+    limit: 7,
+    operation: 'pipeline.run',
+    status: 'failed',
+  });
+  assert.deepEqual(response.records, [record]);
+  assert.deepEqual(JSON.parse(output.body()), response);
 });
 
 test('job-control cancellation delegates only a validated opaque job id', async () => {
@@ -163,7 +307,8 @@ test('job-control responds with the job immediately but stays alive for supervis
     errorOutput: outputSink().stream,
     managerFactory(options) {
       return {
-        async startCvBuild() {
+        async start(request) {
+          assert.equal(request.operation, 'cv.build');
           options.onOperation(completion.promise);
           return {
             id: 'cv-12-supervised',
@@ -185,6 +330,61 @@ test('job-control responds with the job immediately but stays alive for supervis
   completion.resolve();
   await run;
   assert.equal(finished, true);
+});
+
+test('job-control exposes a stable bounded busy response for conflicting operations', async () => {
+  const output = outputSink();
+  const errorOutput = outputSink();
+  const previousExitCode = process.exitCode;
+  try {
+    process.exitCode = undefined;
+    const result = await main({
+      input: Readable.from([JSON.stringify({
+        version: '1',
+        action: 'start',
+        request: {
+          version: '1',
+          operation: 'pipeline.run',
+          input: { engine: 'claude', scan: true, input: 'data/pipeline.md' },
+        },
+      })]),
+      output: output.stream,
+      errorOutput: errorOutput.stream,
+      managerFactory() {
+        return {
+          async start() {
+            throw new ApplicationOperationBusyError('pipeline.run', {
+              id: 'job-scan-active123',
+              operation: 'scan.run',
+              kind: 'scan',
+              status: 'running',
+              startedAt: 123,
+              costsTokens: false,
+            });
+          },
+        };
+      },
+    });
+
+    assert.equal(result, null);
+    assert.equal(output.body(), '');
+    assert.equal(process.exitCode, 1);
+    assert.deepEqual(JSON.parse(errorOutput.body()), {
+      version: '1',
+      type: 'operation_busy',
+      error: 'pipeline.run cannot start while scan.run is running as job-scan-active123',
+      code: 'APPLICATION_OPERATION_BUSY',
+      requestedOperation: 'pipeline.run',
+      activeJob: {
+        id: 'job-scan-active123',
+        operation: 'scan.run',
+        startedAt: 123,
+        costsTokens: false,
+      },
+    });
+  } finally {
+    process.exitCode = previousExitCode;
+  }
 });
 
 test('destructive job-control probe cannot turn request data into shell execution', () => {

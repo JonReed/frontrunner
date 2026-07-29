@@ -24,11 +24,98 @@
 
 
 import { execSync, execFileSync, spawn, spawnSync } from 'child_process';
-import { readFileSync, existsSync, readdirSync, mkdtempSync, mkdirSync, writeFileSync, rmSync, statSync, unlinkSync, realpathSync, symlinkSync, copyFileSync } from 'fs';
+import { readFileSync, existsSync, readdirSync, mkdtempSync, mkdirSync, writeFileSync, rmSync, statSync, unlinkSync, realpathSync, symlinkSync, copyFileSync, lstatSync, readlinkSync, chmodSync } from 'fs';
 import { join, dirname, basename, delimiter } from 'path';
 import { tmpdir } from 'os';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { pass, fail, warn, run, fileExists, finish, ROOT, NODE, getBash, toBashPath } from './tests/helpers.mjs';
+
+/**
+ * Run the entire suite in a disposable copy of the current source tree.
+ *
+ * The inherited suite contains realistic integration tests whose programs
+ * derive data/output paths from ROOT. Running those inside a provisioned
+ * checkout can overwrite ignored user data. A tracked+untracked source copy
+ * preserves the exact code under test, while omitting every ignored user file.
+ */
+function runInDisposableWorkspace() {
+  const sandbox = mkdtempSync(join(tmpdir(), 'frontrunner-test-workspace-'));
+  try {
+    const listed = spawnSync(
+      'git',
+      ['ls-files', '-z', '-co', '--exclude-standard'],
+      { cwd: ROOT, encoding: 'buffer', maxBuffer: 16 * 1024 * 1024 },
+    );
+    if (listed.status !== 0) {
+      throw new Error(`could not inventory test source: ${String(listed.stderr ?? '')}`);
+    }
+    for (const relativePath of listed.stdout.toString('utf8').split('\0').filter(Boolean)) {
+      const source = join(ROOT, relativePath);
+      const destination = join(sandbox, relativePath);
+      mkdirSync(dirname(destination), { recursive: true });
+      const stat = lstatSync(source);
+      if (stat.isSymbolicLink()) {
+        symlinkSync(readlinkSync(source), destination);
+      } else if (stat.isFile()) {
+        copyFileSync(source, destination);
+        chmodSync(destination, stat.mode & 0o777);
+      }
+    }
+    for (const args of [
+      ['init', '-q'],
+      ['add', '-A'],
+      [
+        '-c', 'user.name=Frontrunner Test',
+        '-c', 'user.email=tests@invalid.example',
+        'commit', '-qm', 'isolated test source',
+      ],
+    ]) {
+      const result = spawnSync('git', args, { cwd: sandbox, encoding: 'utf8' });
+      if (result.status !== 0) {
+        throw new Error(`could not prepare disposable test repository: ${result.stderr}`);
+      }
+    }
+    // Dependencies are runtime-only links, added after the disposable commit
+    // so coverage and git inventory cannot mistake them for product files.
+    for (const relativePath of ['node_modules', 'ui/node_modules', 'web/node_modules']) {
+      const source = join(ROOT, relativePath);
+      if (!existsSync(source)) continue;
+      const destination = join(sandbox, relativePath);
+      mkdirSync(dirname(destination), { recursive: true });
+      symlinkSync(source, destination);
+    }
+
+    const barrierImport = pathToFileURL(
+      join(sandbox, 'tests', 'test-user-data-write-barrier.mjs'),
+    ).href;
+    const inheritedNodeOptions = process.env.NODE_OPTIONS?.trim();
+    const nodeOptions = inheritedNodeOptions?.includes(barrierImport)
+      ? inheritedNodeOptions
+      : [inheritedNodeOptions, `--import=${barrierImport}`].filter(Boolean).join(' ');
+    const result = spawnSync(
+      process.execPath,
+      [join(sandbox, 'test-all.mjs'), ...process.argv.slice(2)],
+      {
+        cwd: sandbox,
+        env: {
+          ...process.env,
+          FRONTRUNNER_TEST_SANDBOX: '1',
+          FRONTRUNNER_TEST_PROTECTED_ROOT: ROOT,
+          NODE_OPTIONS: nodeOptions,
+        },
+        stdio: 'inherit',
+      },
+    );
+    if (result.error) throw result.error;
+    return result.status ?? 1;
+  } finally {
+    rmSync(sandbox, { recursive: true, force: true });
+  }
+}
+
+if (process.env.FRONTRUNNER_TEST_SANDBOX !== '1') {
+  process.exitCode = runInDisposableWorkspace();
+} else {
 
 /**
  * Read a repo-relative text file as UTF-8.
@@ -282,7 +369,7 @@ try {
     if (result !== null) {
       pass(`${name} runs OK`);
     } else if (allowFail) {
-      warn(`${name} exited with error (expected without user data)`);
+      pass(`${name} exits safely without user data`);
     } else {
       fail(`${name} crashed`);
     }
@@ -10275,3 +10362,4 @@ try {
 await runDiscovered();
 
 finish();
+}

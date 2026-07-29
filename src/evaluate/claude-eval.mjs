@@ -22,6 +22,11 @@ import {
   parseScoringResponse,
 } from './scoring-contract.mjs';
 import { saveEvaluation } from './save-evaluation.mjs';
+import {
+  emitEvaluationExecutionResult,
+  evaluationExecutionResult,
+  normalizeEvaluatorUsage,
+} from './execution-result.mjs';
 
 function readOptional(file, fallback) {
   return existsSync(file) ? readFileSync(file, 'utf8').trim() : fallback;
@@ -35,7 +40,10 @@ function parseClaudeEnvelope(stdout) {
     throw new Error('Claude CLI did not return valid JSON');
   }
   const candidate = envelope.structured_output ?? envelope.result ?? envelope;
-  return typeof candidate === 'string' ? candidate : JSON.stringify(candidate);
+  return {
+    candidate: typeof candidate === 'string' ? candidate : JSON.stringify(candidate),
+    usage: normalizeEvaluatorUsage(envelope.usage),
+  };
 }
 
 export function buildClaudeArgs({ systemPrompt, model = '' }) {
@@ -91,7 +99,8 @@ export async function runClaudeEvaluation({
     throw new Error(`Claude evaluator exited ${child.status}${detail ? `: ${detail}` : ''}`);
   }
 
-  const result = parseScoringResponse(parseClaudeEnvelope(child.stdout));
+  const envelope = parseClaudeEnvelope(child.stdout);
+  const result = parseScoringResponse(envelope.candidate);
   const artifact = save
     ? await saveEvaluation(result, {
       tool: `Claude tool-less evaluator${model ? ` (${model})` : ''}`,
@@ -102,6 +111,7 @@ export async function runClaudeEvaluation({
   return {
     skipped: false,
     result,
+    usage: envelope.usage,
     artifact,
     security: {
       tools: false,
@@ -141,6 +151,7 @@ The model has zero tools. Code validates JSON and writes the report/tracker.`);
   });
   if (output.skipped) {
     console.log(formatGateRejection(output.gate));
+    emitEvaluationExecutionResult(evaluationExecutionResult({ status: 'skipped' }));
     return;
   }
   console.log(JSON.stringify({
@@ -149,6 +160,10 @@ The model has zero tools. Code validates JSON and writes the report/tracker.`);
     role: output.result.role,
     report: output.artifact?.filename ?? null,
     security: output.security,
+  }));
+  emitEvaluationExecutionResult(evaluationExecutionResult({
+    status: 'succeeded',
+    usage: output.usage,
   }));
 }
 

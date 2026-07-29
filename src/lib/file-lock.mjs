@@ -47,6 +47,25 @@ function sameLockDirectory(left, right) {
     && (left.ino !== 0 || left.birthtimeMs === right.birthtimeMs);
 }
 
+function currentLockIdentity(lockDir) {
+  try {
+    return statSync(lockDir);
+  } catch {
+    return null;
+  }
+}
+
+function removeUnchangedLock(lockDir, identity, ownerToken) {
+  const current = currentLockIdentity(lockDir);
+  if (!current || !sameLockDirectory(identity, current)) return false;
+  const owner = readLockOwner(lockDir);
+  if ((owner?.token ?? null) !== ownerToken) return false;
+  const finalIdentity = currentLockIdentity(lockDir);
+  if (!finalIdentity || !sameLockDirectory(identity, finalIdentity)) return false;
+  rmSync(lockDir, { recursive: true, force: true });
+  return true;
+}
+
 function processIsAlive(pid) {
   if (!Number.isInteger(pid) || pid <= 0) return false;
   try {
@@ -87,9 +106,30 @@ export async function acquireFileLock(filePath, options = {}) {
   mkdirSync(dirname(lockDir), { recursive: true });
 
   for (;;) {
+    let createdIdentity;
+    let createdDirectory = false;
     try {
       mkdirSync(lockDir);
+      createdDirectory = true;
+      createdIdentity = statSync(lockDir);
+      if (typeof options.afterMkdir === 'function') {
+        try {
+          await options.afterMkdir(lockDir);
+        } catch (hookError) {
+          removeUnchangedLock(lockDir, createdIdentity, null);
+          throw hookError;
+        }
+      }
     } catch (error) {
+      if (createdDirectory && ['ENOENT', 'EINVAL'].includes(error?.code)) {
+        if (Date.now() >= deadline) {
+          const createTimeoutError = options.createTimeoutError
+            ?? ((dir, timeout) => new FileLockTimeoutError(dir, timeout));
+          throw createTimeoutError(lockDir, timeoutMs);
+        }
+        await sleep(retryMs);
+        continue;
+      }
       if (error?.code !== 'EEXIST') throw error;
 
       let hasRecoverGuard = false;
@@ -105,8 +145,13 @@ export async function acquireFileLock(filePath, options = {}) {
 
       if (hasRecoverGuard) {
         try {
-          if (lockCanRecover(lockDir, staleMs)) {
-            rmSync(lockDir, { recursive: true, force: true });
+          const staleIdentity = currentLockIdentity(lockDir);
+          const staleOwner = readLockOwner(lockDir);
+          if (
+            staleIdentity
+            && lockCanRecover(lockDir, staleMs)
+            && removeUnchangedLock(lockDir, staleIdentity, staleOwner?.token ?? null)
+          ) {
             continue;
           }
         } finally {
@@ -125,15 +170,39 @@ export async function acquireFileLock(filePath, options = {}) {
 
     try {
       writeFileSync(join(lockDir, 'owner.json'), JSON.stringify({
+        ...(options.ownerFields ?? {}),
         pid: process.pid,
         token,
         started_at: new Date().toISOString(),
         file: filePath,
-        ...(options.ownerFields ?? {}),
-      }, null, 2));
+      }, null, 2), { flag: 'wx' });
     } catch (ownerError) {
-      rmSync(lockDir, { recursive: true, force: true });
+      removeUnchangedLock(lockDir, createdIdentity, null);
+      if (['EEXIST', 'ENOENT', 'EINVAL'].includes(ownerError?.code)) {
+        if (Date.now() >= deadline) {
+          const createTimeoutError = options.createTimeoutError
+            ?? ((dir, timeout) => new FileLockTimeoutError(dir, timeout));
+          throw createTimeoutError(lockDir, timeoutMs);
+        }
+        await sleep(retryMs);
+        continue;
+      }
       throw ownerError;
+    }
+
+    const acquiredIdentity = currentLockIdentity(lockDir);
+    if (
+      !acquiredIdentity
+      || !sameLockDirectory(createdIdentity, acquiredIdentity)
+      || readLockOwner(lockDir)?.token !== token
+    ) {
+      if (Date.now() >= deadline) {
+        const createTimeoutError = options.createTimeoutError
+          ?? ((dir, timeout) => new FileLockTimeoutError(dir, timeout));
+        throw createTimeoutError(lockDir, timeoutMs);
+      }
+      await sleep(retryMs);
+      continue;
     }
 
     let released = false;

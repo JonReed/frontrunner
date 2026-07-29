@@ -83,6 +83,42 @@ test('dead-owner file locks recover while live owners are never stolen', async (
   }
 });
 
+test('lock acquisition survives replacement between mkdir and owner publication', async t => {
+  const dir = mkdtempSync(join(tmpdir(), 'frontrunner-lock-publish-race-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const target = join(dir, 'state.json');
+  const lockDir = `${target}.lock`;
+  let injected = false;
+
+  const lock = await acquireFileLock(target, {
+    timeoutMs: 1_000,
+    retryMs: 1,
+    staleMs: 0,
+    afterMkdir(created) {
+      if (injected) return;
+      injected = true;
+      rmSync(created, { recursive: true, force: true });
+      mkdirSync(created);
+      writeFileSync(join(created, 'owner.json'), JSON.stringify({
+        pid: 999_999_999,
+        token: 'replacement-owner',
+      }));
+    },
+    ownerFields: {
+      pid: 999_999_999,
+      token: 'caller-must-not-override',
+    },
+  });
+
+  assert.equal(injected, true);
+  const owner = JSON.parse(readFileSync(join(lockDir, 'owner.json'), 'utf8'));
+  assert.equal(owner.pid, process.pid);
+  assert.notEqual(owner.token, 'replacement-owner');
+  assert.notEqual(owner.token, 'caller-must-not-override');
+  lock.release();
+  assert.equal(existsSync(lockDir), false);
+});
+
 test('a delayed file-lock release cannot delete a replacement owner', async () => {
   const fixture = mkdtempSync(join(tmpdir(), 'frontrunner-lock-token-'));
   const target = join(fixture, 'state.tsv');

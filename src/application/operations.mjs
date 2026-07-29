@@ -28,6 +28,7 @@ const DEFINITIONS = Object.freeze({
     },
   }),
   'pipeline.run': Object.freeze({
+    resourceKey: 'pipeline-state',
     timeoutMs: 30 * 60_000,
     costsTokens(input) {
       return input.engine !== 'none';
@@ -46,6 +47,7 @@ const DEFINITIONS = Object.freeze({
     },
   }),
   'pipeline.prepare': Object.freeze({
+    resourceKey: 'pipeline-state',
     timeoutMs: 20 * 60_000,
     costsTokens() {
       return false;
@@ -64,6 +66,7 @@ const DEFINITIONS = Object.freeze({
     },
   }),
   'scan.run': Object.freeze({
+    resourceKey: 'pipeline-state',
     timeoutMs: 15 * 60_000,
     costsTokens() {
       return false;
@@ -76,6 +79,10 @@ const DEFINITIONS = Object.freeze({
     },
   }),
 });
+
+export function applicationOperationResourceKey(operation, dedupeKey) {
+  return DEFINITIONS[operation]?.resourceKey ?? dedupeKey;
+}
 
 export function resolveApplicationOperation(request) {
   const normalized = validateApplicationRequest(request);
@@ -91,5 +98,9 @@ export function resolveApplicationOperation(request) {
       ? definition.costsTokens(normalized.input)
       : definition.costsTokens,
     dedupeKey: normalized.idempotencyKey ?? definition.dedupe(normalized.input),
+    resourceKey: applicationOperationResourceKey(
+      normalized.operation,
+      definition.dedupe(normalized.input),
+    ),
   });
 }

@@ -18,8 +18,10 @@ import { randomUUID } from 'node:crypto';
 import { basename, dirname, join } from 'node:path';
 
 import { withFileLock } from './file-lock.mjs';
+import { assertTestUserDataWriteAllowed } from './test-user-data-policy.mjs';
 
 export function replaceFileAtomic(filePath, content, options = {}) {
+  assertTestUserDataWriteAllowed(filePath);
   const parent = dirname(filePath);
   const temporary = join(
     parent,

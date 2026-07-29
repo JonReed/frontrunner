@@ -127,6 +127,13 @@ node test-all.mjs             # Full suite — run before pushing/opening a PR
 node test-all.mjs --only providers/themuse   # Run just one provider's test(s)
 ```
 
+`test-all.mjs` copies the current tracked and untracked system source into a
+disposable git repository before executing any test. Ignored user data is never
+copied. Every Node child also inherits a filesystem barrier that rejects writes
+back to the original checkout's user layer. Tests should still use temporary
+fixtures explicitly; the outer isolation is the final safety boundary when a
+fixture override is missing or stale.
+
 **Adding a test for a new scanner provider:** add one file at
 `tests/providers/{name}.test.mjs` — it's auto-discovered (`tests/**/*.test.mjs`),
 no registration needed. Do not add a section to `test-all.mjs` for this.

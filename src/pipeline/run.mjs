@@ -15,6 +15,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { dirname, join, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -24,10 +25,25 @@ import { cacheProviderDescriptions, readJdManifest } from '../scan/jd-cache.mjs'
 import { createLivenessChecker } from '../scan/liveness-service.mjs';
 import { runPrefilter } from '../scan/prefilter.mjs';
 import {
+  EVALUATION_RESULT_FD_ENV,
+  parseEvaluationExecutionResult,
+} from '../evaluate/execution-result.mjs';
+import {
   FileLockTimeoutError,
   acquireFileLock,
 } from '../lib/file-lock.mjs';
 import { withPipelineLock } from '../tracker/pipeline-lock.mjs';
+import {
+  APPLICATION_RUN_ID_ENV,
+  pipelineRunHistoryRecord,
+  resolveRunHistoryRunId,
+  writeRunHistory,
+  writeRunHistorySafely,
+} from '../application/run-history.mjs';
+import {
+  applicationProgress,
+  emitApplicationProgress,
+} from '../application/progress.mjs';
 
 function atomicWrite(file, contents) {
   mkdirSync(dirname(file), { recursive: true });
@@ -131,10 +147,16 @@ function readLocalDescription(url) {
 }
 
 function defaultRun(command, args, options = {}) {
+  const resultChannel = options.resultChannel === true;
   const result = spawnSync(command, args, {
     cwd: ROOT,
     encoding: 'utf8',
-    stdio: options.capture ? 'pipe' : 'inherit',
+    env: resultChannel
+      ? { ...process.env, [EVALUATION_RESULT_FD_ENV]: '3' }
+      : process.env,
+    stdio: resultChannel
+      ? ['inherit', 'inherit', 'inherit', 'pipe']
+      : options.capture ? 'pipe' : 'inherit',
   });
   if (result.error) throw result.error;
   if (result.status !== 0) {
@@ -143,7 +165,7 @@ function defaultRun(command, args, options = {}) {
   return result;
 }
 
-async function defaultEvaluationRunner({ engine, kept, jdsDir, run = defaultRun }) {
+export async function runPipelineEvaluations({ engine, kept, jdsDir, run = defaultRun }) {
   if (engine === 'none' || kept.length === 0) return { attempted: 0, completed: [], failed: [] };
   const index = new Map();
   const indexFile = join(jdsDir, 'index.tsv');
@@ -155,6 +177,14 @@ async function defaultEvaluationRunner({ engine, kept, jdsDir, run = defaultRun 
   }
   const completed = [];
   const failed = [];
+  const usage = {
+    promptTokens: 0,
+    completionTokens: 0,
+    totalTokens: 0,
+    cachedTokens: 0,
+  };
+  let usageReported = 0;
+  let modelRequests = 0;
   for (const role of kept) {
     const file = index.get(role.url);
     if (!file) {
@@ -162,20 +192,56 @@ async function defaultEvaluationRunner({ engine, kept, jdsDir, run = defaultRun 
       continue;
     }
     try {
+      let processResult;
       if (engine === 'claude' || engine === 'batch') {
-        run(process.execPath, [join(ROOT, 'src/evaluate/claude-eval.mjs'), '--file', file, '--url', role.url]);
+        processResult = run(
+          process.execPath,
+          [join(ROOT, 'src/evaluate/claude-eval.mjs'), '--file', file, '--url', role.url],
+          { resultChannel: true },
+        );
       } else if (engine === 'openrouter') {
-        run(process.execPath, [join(ROOT, 'src/evaluate/openrouter-runner.mjs'), 'evaluate', '--file', file]);
+        processResult = run(
+          process.execPath,
+          [join(ROOT, 'src/evaluate/openrouter-runner.mjs'), 'evaluate', '--file', file],
+          { resultChannel: true },
+        );
       } else {
         const evaluator = engine === 'gemini' ? 'gemini-eval.mjs' : 'openai-eval.mjs';
-        run(process.execPath, [join(ROOT, 'src/evaluate', evaluator), '--file', file]);
+        processResult = run(
+          process.execPath,
+          [join(ROOT, 'src/evaluate', evaluator), '--file', file],
+          { resultChannel: true },
+        );
+      }
+      const execution = parseEvaluationExecutionResult(
+        processResult?.output?.[3] ?? processResult?.evaluationResult,
+      );
+      if (execution.status === 'skipped') {
+        throw new Error(`${engine}: evaluator gate rejected a role retained by the pipeline`);
+      }
+      modelRequests += execution.requestCount;
+      if (execution.usage) {
+        usageReported++;
+        for (const key of Object.keys(usage)) {
+          const next = usage[key] + execution.usage[key];
+          if (!Number.isSafeInteger(next)) throw new Error('aggregate evaluator usage overflow');
+          usage[key] = next;
+        }
       }
       completed.push(role.url);
     } catch (error) {
       failed.push({ url: role.url, error: error.message });
     }
   }
-  return { attempted: kept.length, completed, failed };
+  return {
+    attempted: kept.length,
+    completed,
+    failed,
+    modelRequests,
+    usageReported,
+    usageMissing: completed.length - usageReported,
+    ...(usageReported ? { usage } : {}),
+  };
 }
 
 export async function runCanonicalPipeline({
@@ -191,9 +257,11 @@ export async function runCanonicalPipeline({
   fetchJds = runFetchJds,
   checker = null,
   prefilter = runPrefilter,
-  evaluationRunner = defaultEvaluationRunner,
+  evaluationRunner = runPipelineEvaluations,
   runLock = pipelineRunLockTarget(activeInput),
   runLockOptions = {},
+  onStage = () => {},
+  now = () => Date.now(),
 } = {}) {
   const lease = await acquireFileLock(runLock, {
     timeoutMs: 0,
@@ -207,17 +275,59 @@ export async function runCanonicalPipeline({
       new PipelineRunBusyError(lockDir, timeoutMs),
   });
 
+  const stageMetrics = [];
+  let activeStage = null;
+  const publishStage = (stage, state, counts) => {
+    const at = now();
+    if (state === 'started') {
+      activeStage = { stage, startedAt: at };
+    } else if (activeStage?.stage === stage) {
+      stageMetrics.push(Object.freeze({
+        stage,
+        status: state === 'completed' ? 'succeeded' : 'failed',
+        startedAt: activeStage.startedAt,
+        finishedAt: at,
+        durationMs: Math.max(0, at - activeStage.startedAt),
+        ...(counts ? { counts: Object.freeze({ ...counts }) } : {}),
+      }));
+      activeStage = null;
+    }
+    try {
+      onStage(Object.freeze({
+        stage,
+        state,
+        at,
+        ...(counts ? { counts: Object.freeze({ ...counts }) } : {}),
+      }));
+    } catch {
+      // Progress has no authority over pipeline execution.
+    }
+  };
+  const finishStage = (stage, counts) => publishStage(stage, 'completed', counts);
+
   try {
-    if (scan) await scanRunner();
+    if (scan) {
+      publishStage('scan', 'started');
+      await scanRunner();
+      finishStage('scan');
+    }
     if (!existsSync(input)) throw new Error(`pipeline input not found: ${input}`);
 
     const roles = readPipelineRoles(input);
     const activeChecker = checker ?? createLivenessChecker();
     let cache;
     let manifest;
+    publishStage('cache', 'started');
     try {
       cache = await fetchJds({ input, outDir: jdsDir });
       manifest = readJdManifest(jdsDir);
+      finishStage('cache', {
+        urls: cache.urls ?? roles.length,
+        requests: cache.requests ?? 0,
+        available: cache.available ?? 0,
+        written: cache.written ?? 0,
+        cached: cache.cached ?? 0,
+      });
     } catch (error) {
       await activeChecker.close();
       throw error;
@@ -227,6 +337,7 @@ export async function runCanonicalPipeline({
     const livenessRows = [];
     const fallbackDescriptions = [];
 
+    publishStage('liveness', 'started');
     try {
       for (const role of roles) {
         const local = readLocalDescription(role.url);
@@ -278,7 +389,16 @@ export async function runCanonicalPipeline({
           .join('\t'))
         .join('\n')}\n`,
     );
+    finishStage('liveness', {
+      active: livenessRows.filter((r) => r.result === 'active').length,
+      uncertain: livenessRows.filter((r) => r.result === 'uncertain').length,
+      expired: livenessRejected.length,
+      api: livenessRows.filter((r) => r.source === 'api').length,
+      browser: livenessRows.filter((r) => r.source === 'browser').length,
+      fallbackCached: fallbackCache.cached,
+    });
 
+    publishStage('prefilter', 'started');
     const filtered = prefilter({
       input: activeInput,
       jdsDir,
@@ -298,7 +418,12 @@ export async function runCanonicalPipeline({
       ...livenessRejected.map((role) => [role.url, 'posting expired']),
       ...filtered.rejected.map((role) => [role.url, `prefilter rejected (${role.rule})`]),
     ]));
+    finishStage('prefilter', {
+      kept: filtered.result.kept,
+      rejected: filtered.result.rejected,
+    });
 
+    publishStage('evaluation', 'started');
     const evaluation = await evaluationRunner({
       engine,
       kept: filtered.kept,
@@ -310,6 +435,14 @@ export async function runCanonicalPipeline({
         new Map(evaluation.completed.map((url) => [url, 'evaluated'])),
       );
     }
+    finishStage('evaluation', {
+      attempted: evaluation.attempted ?? 0,
+      completed: evaluation.completed?.length ?? 0,
+      failed: evaluation.failed?.length ?? 0,
+      modelRequests: evaluation.modelRequests ?? 0,
+      usageReported: evaluation.usageReported ?? 0,
+      usageMissing: evaluation.usageMissing ?? 0,
+    });
 
     return {
       stages: [...(scan ? ['scan'] : []), 'cache', 'liveness', 'prefilter', 'evaluation'],
@@ -324,7 +457,20 @@ export async function runCanonicalPipeline({
       },
       prefilter: filtered.result,
       evaluation,
+      stageMetrics,
     };
+  } catch (error) {
+    if (activeStage) publishStage(activeStage.stage, 'failed');
+    try {
+      Object.defineProperty(error, 'pipelineStageMetrics', {
+        configurable: true,
+        value: Object.freeze([...stageMetrics]),
+      });
+    } catch {
+      // Preserve the original exception even if a non-extensible value was
+      // thrown. Failed-stage accounting is operational evidence, not authority.
+    }
+    throw error;
   } finally {
     lease.release();
   }
@@ -335,7 +481,19 @@ function argValue(args, name, fallback) {
   return index >= 0 && args[index + 1] ? args[index + 1] : fallback;
 }
 
-async function main() {
+export function resolvePipelineRunId({
+  applicationRunId = process.env[APPLICATION_RUN_ID_ENV],
+  runIdFactory = randomUUID,
+} = {}) {
+  return resolveRunHistoryRunId(applicationRunId, runIdFactory);
+}
+
+export async function main({
+  auditWriter = null,
+  now = () => Date.now(),
+  runIdFactory = randomUUID,
+  applicationRunId = process.env[APPLICATION_RUN_ID_ENV],
+} = {}) {
   const args = process.argv.slice(2);
   if (args.includes('--help') || args.includes('-h')) {
     console.log(`frontrunner pipeline — scan -> cache -> liveness -> prefilter -> evaluation
@@ -360,11 +518,49 @@ Options:
   if (engine === 'batch') {
     console.warn('Warning: --engine batch is deprecated; using the tool-less Claude evaluator.');
   }
-  const result = await runCanonicalPipeline({
-    input: resolve(ROOT, argValue(args, '--input', 'data/pipeline.md')),
-    engine,
-    scan: !args.includes('--skip-scan'),
-  });
+  const startedAt = now();
+  const runId = resolvePipelineRunId({ applicationRunId, runIdFactory });
+  let result;
+  try {
+    result = await runCanonicalPipeline({
+      input: resolve(ROOT, argValue(args, '--input', 'data/pipeline.md')),
+      engine,
+      scan: !args.includes('--skip-scan'),
+      now,
+      onStage(event) {
+        emitApplicationProgress(applicationProgress(event));
+      },
+    });
+  } catch (error) {
+    await writeRunHistorySafely(
+      auditWriter,
+      pipelineRunHistoryRecord({
+        stageMetrics: error?.pipelineStageMetrics,
+      }, {
+        runId,
+        operation: engine === 'none' ? 'pipeline.prepare' : 'pipeline.run',
+        status: 'failed',
+        startedAt,
+        finishedAt: now(),
+        engine,
+        costsTokens: engine !== 'none',
+        error: error?.message,
+      }),
+      auditError => console.warn(`run history warning: ${auditError.message}`),
+    );
+    throw error;
+  }
+  await writeRunHistorySafely(
+    auditWriter,
+    pipelineRunHistoryRecord(result, {
+      runId,
+      operation: engine === 'none' ? 'pipeline.prepare' : 'pipeline.run',
+      startedAt,
+      finishedAt: now(),
+      engine,
+    }),
+    error => console.warn(`run history warning: ${error.message}`),
+  );
   if (args.includes('--json')) console.log(JSON.stringify(result, null, 2));
   else {
     console.log('\n=== Frontrunner pipeline complete ===');
@@ -372,6 +568,19 @@ Options:
     console.log(`liveness: ${result.liveness.active} active, ${result.liveness.uncertain} uncertain, ${result.liveness.expired} expired`);
     console.log(`prefilter: ${result.prefilter.kept} kept, ${result.prefilter.rejected} rejected`);
     console.log(`model evaluations attempted: ${result.evaluation.attempted}`);
+    if (result.evaluation.attempted > 0) {
+      console.log(`model API requests: ${result.evaluation.modelRequests}`);
+      if (result.evaluation.usage) {
+        console.log(
+          `model usage: ${result.evaluation.usage.promptTokens} input, `
+          + `${result.evaluation.usage.completionTokens} output, `
+          + `${result.evaluation.usage.cachedTokens} cached `
+          + `(${result.evaluation.usageReported}/${result.evaluation.completed.length} evaluations reported usage)`,
+        );
+      } else {
+        console.log(`model usage: unavailable (0/${result.evaluation.completed.length} evaluations reported usage)`);
+      }
+    }
     if (result.evaluation.failed?.length) {
       console.error(`model evaluations failed: ${result.evaluation.failed.length}`);
       for (const failure of result.evaluation.failed) {
@@ -384,7 +593,7 @@ Options:
 
 const isDirect = process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
 if (isDirect) {
-  main().catch((error) => {
+  main({ auditWriter: writeRunHistory }).catch((error) => {
     console.error(`pipeline failed: ${error.message}`);
     process.exitCode = 1;
   });

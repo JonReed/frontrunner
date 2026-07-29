@@ -8,7 +8,9 @@
 
 import { spawn as nodeSpawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { join } from 'node:path';
 
+import { ROOT } from '#paths';
 import {
   APPLICATION_API_VERSION,
   APPLICATION_RESULT_STATUSES,
@@ -18,11 +20,17 @@ import {
   shouldDetachProcessTree,
   signalProcessTree,
 } from './process-tree.mjs';
+import {
+  APPLICATION_PROGRESS_FD_ENV,
+  createApplicationProgressDecoder,
+} from './progress.mjs';
+import { APPLICATION_RUN_ID_ENV } from './run-history.mjs';
 
 const RESULT_STATUSES = new Set(APPLICATION_RESULT_STATUSES);
 const OUTPUT_TAIL_LIMIT = 16 * 1024;
 const EVENT_TEXT_LIMIT = 4 * 1024;
 const TERMINATION_GRACE_MS = 2_000;
+const OPERATION_WORKER = join(ROOT, 'src', 'application', 'operation-worker.mjs');
 
 function appendTail(current, value) {
   const combined = `${current}${value}`;
@@ -47,6 +55,7 @@ export async function executeApplicationOperation(request, options = {}) {
   const onEvent = typeof options.onEvent === 'function' ? options.onEvent : () => {};
   const abortSignal = options.signal;
   const spec = resolveOperation(request);
+  const useWorker = options.useWorker ?? options.resolveOperation === undefined;
   let sequence = 0;
   let outputTail = '';
 
@@ -160,20 +169,40 @@ export async function executeApplicationOperation(request, options = {}) {
     const abort = () => requestStop('cancelled', 'Operation cancelled.');
 
     try {
-      child = spawn(spec.command, spec.args, {
-        cwd: spec.cwd,
-        env: options.env ?? process.env,
-        shell: false,
-        windowsHide: true,
-        detached: shouldDetachProcessTree(options.platform),
-        stdio: ['ignore', 'pipe', 'pipe'],
-      });
+      const childEnvironment = {
+        ...(options.env ?? process.env),
+        [APPLICATION_RUN_ID_ENV]: runId,
+        [APPLICATION_PROGRESS_FD_ENV]: '3',
+      };
+      child = spawn(
+        useWorker ? process.execPath : spec.command,
+        useWorker ? [options.workerPath ?? OPERATION_WORKER] : spec.args,
+        {
+          cwd: useWorker ? ROOT : spec.cwd,
+          env: childEnvironment,
+          shell: false,
+          windowsHide: true,
+          detached: shouldDetachProcessTree(options.platform),
+          stdio: [useWorker ? 'pipe' : 'ignore', 'pipe', 'pipe', 'pipe'],
+        },
+      );
     } catch (error) {
       finish({ status: 'failed', error });
       return;
     }
 
     emit('started', { pid: Number.isSafeInteger(child.pid) ? child.pid : null });
+    if (useWorker) {
+      child.stdin?.once?.('error', (error) => {
+        finish({ status: 'failed', error });
+      });
+      try {
+        child.stdin.write(`${JSON.stringify(spec.request)}\n`);
+      } catch (error) {
+        finish({ status: 'failed', error });
+        return;
+      }
+    }
 
     const capture = (stream) => (chunk) => {
       const text = String(chunk ?? '');
@@ -186,6 +215,21 @@ export async function executeApplicationOperation(request, options = {}) {
     };
     child.stdout?.on('data', capture('stdout'));
     child.stderr?.on('data', capture('stderr'));
+    const progress = createApplicationProgressDecoder({
+      onEvent(event) {
+        emit('progress', {
+          stage: event.stage,
+          state: event.state,
+          ...(event.counts ? { counts: event.counts } : {}),
+        });
+      },
+      onWarning(error) {
+        emit('progress_warning', { error: publicError(error) });
+      },
+    });
+    const progressStream = child.stdio?.[3] ?? child.progress;
+    progressStream?.on('data', chunk => progress.push(chunk));
+    progressStream?.once('end', () => progress.end());
     child.once('error', (error) => {
       if (stopStatus) {
         stopMessage = `${stopMessage} ${publicError(error)}`.trim();

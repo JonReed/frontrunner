@@ -19,12 +19,13 @@ import { pathToFileURL } from 'node:url';
 import { APPLICATION_API_VERSION } from './contract.mjs';
 import { readBoundedRequest } from './run.mjs';
 import {
-  updateProfile,
   readProfileFields,
-  writeCv,
-  writeCvVersion,
   WRITABLE_FIELDS,
 } from './profile-write.mjs';
+import {
+  publishProfileSave,
+  recoverProfileSave,
+} from './profile-transaction.mjs';
 
 const CONTROL_KEYS = new Set(['version', 'action', 'fields', 'cv', 'versions']);
 const ACTIONS = new Set(['read', 'save']);
@@ -109,31 +110,18 @@ export async function main({ input = process.stdin, output = process.stdout, err
     const control = validateProfileControlRequest(await readBoundedRequest(input));
 
     if (control.action === 'read') {
+      await recoverProfileSave();
       const result = { version: APPLICATION_API_VERSION, fields: readProfileFields() };
       output.write(`${JSON.stringify(result)}\n`);
       return result;
     }
 
-    /*
-      Order matters on a save.
-
-      The CV is written first because it is the file the user cannot recreate
-      from memory — if the run dies halfway, having their CV on disk and their
-      targets missing is recoverable, and the reverse is not.
-    */
-    const written = [];
-    if (typeof control.cv === 'string') {
-      await writeCv(control.cv);
-      written.push('cv.md');
-    }
-    for (const [index, version] of control.versions.entries()) {
-      await writeCvVersion(version.label ?? '', version.text, index);
-      written.push(`cv-versions/${index + 1}`);
-    }
-    if (Object.keys(control.fields).length > 0) {
-      const paths = await updateProfile(control.fields);
-      written.push(...paths);
-    }
+    await publishProfileSave(control);
+    const written = [
+      ...(typeof control.cv === 'string' ? ['cv.md'] : []),
+      ...control.versions.map((_version, index) => `cv-versions/${index + 1}`),
+      ...Object.keys(control.fields),
+    ];
 
     const result = { version: APPLICATION_API_VERSION, written };
     output.write(`${JSON.stringify(result)}\n`);

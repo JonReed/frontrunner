@@ -12,6 +12,11 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { executeApplicationOperation } from './service.mjs';
+import {
+  applicationRunHistoryRecord,
+  writeRunHistory,
+  writeRunHistorySafely,
+} from './run-history.mjs';
 
 const MAX_REQUEST_BYTES = 64 * 1024;
 
@@ -32,6 +37,8 @@ export async function main({
   input = process.stdin,
   output = process.stdout,
   errorOutput = process.stderr,
+  auditWriter = null,
+  execute = executeApplicationOperation,
 } = {}) {
   const abortController = new AbortController();
   const cancel = () => abortController.abort();
@@ -39,12 +46,23 @@ export async function main({
   process.once('SIGTERM', cancel);
   try {
     const request = await readBoundedRequest(input);
-    const result = await executeApplicationOperation(request, {
+    let costsTokens = false;
+    const result = await execute(request, {
       signal: abortController.signal,
       onEvent(event) {
+        if (event.type === 'accepted') costsTokens = event.costsTokens;
         output.write(`${JSON.stringify(event)}\n`);
       },
     });
+    await writeRunHistorySafely(
+      auditWriter,
+      applicationRunHistoryRecord(result, { costsTokens }),
+      error => errorOutput.write(`${JSON.stringify({
+        version: '1',
+        type: 'audit_warning',
+        error: String(error?.message ?? error).replace(/[\0\r\n]+/gu, ' ').slice(0, 500),
+      })}\n`),
+    );
     if (result.status !== 'succeeded') process.exitCode = 1;
     return result;
   } catch (error) {
@@ -64,4 +82,4 @@ export async function main({
 
 const direct = process.argv[1]
   && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
-if (direct) await main();
+if (direct) await main({ auditWriter: writeRunHistory });

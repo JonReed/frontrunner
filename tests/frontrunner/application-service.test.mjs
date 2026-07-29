@@ -17,6 +17,8 @@ import {
 import { resolveApplicationOperation } from '../../src/application/operations.mjs';
 import { readBoundedRequest } from '../../src/application/run.mjs';
 import { executeApplicationOperation } from '../../src/application/service.mjs';
+import { applicationProgress } from '../../src/application/progress.mjs';
+import { APPLICATION_RUN_ID_ENV } from '../../src/application/run-history.mjs';
 
 function request(operation, input = {}, extra = {}) {
   return {
@@ -29,8 +31,18 @@ function request(operation, input = {}, extra = {}) {
 
 function fakeChild(onSpawn = () => {}) {
   const child = new EventEmitter();
+  child.stdin = {
+    writes: [],
+    once() {},
+    write(value) {
+      this.writes.push(String(value));
+      return true;
+    },
+  };
   child.stdout = new EventEmitter();
   child.stderr = new EventEmitter();
+  child.progress = new EventEmitter();
+  child.stdio = [null, child.stdout, child.stderr, child.progress];
   child.pid = 4242;
   child.kills = [];
   child.kill = (signal) => {
@@ -113,6 +125,7 @@ test('operation catalog fixes executable, script, cwd, flags, timeout, and spend
   ]);
   assert.equal(cv.costsTokens, true);
   assert.equal(cv.dedupeKey, 'cv.build:tracker:7');
+  assert.equal(cv.resourceKey, 'cv.build:tracker:7');
   assert.ok(cv.timeoutMs > 0);
 
   const prepare = resolveApplicationOperation(request('pipeline.prepare', {
@@ -124,6 +137,7 @@ test('operation catalog fixes executable, script, cwd, flags, timeout, and spend
   assert.ok(prepare.args.includes('--prepare-only'));
   assert.ok(prepare.args.includes('--skip-scan'));
   assert.equal(prepare.costsTokens, false);
+  assert.equal(prepare.resourceKey, 'pipeline-state');
 
   const noModel = resolveApplicationOperation(request('pipeline.run', {
     engine: 'none',
@@ -134,6 +148,7 @@ test('operation catalog fixes executable, script, cwd, flags, timeout, and spend
   const scan = resolveApplicationOperation(request('scan.run'));
   assert.deepEqual(scan.args, [join(ROOT, 'src/scan/scan.mjs'), '--json']);
   assert.equal(scan.costsTokens, false);
+  assert.equal(scan.resourceKey, prepare.resourceKey);
 });
 
 test('service emits ordered structured events and a bounded successful result', async () => {
@@ -147,12 +162,13 @@ test('service emits ordered structured events and a bounded successful result', 
     })(),
     onEvent: event => events.push(event),
     spawn(command, args, options) {
-      calls.push({ command, args, options });
-      return fakeChild((child) => {
-        child.stdout.emit('data', Buffer.from('scan started\n'));
-        child.stderr.emit('data', Buffer.from('one warning\n'));
-        child.emit('close', 0, null);
+      const child = fakeChild((spawned) => {
+        spawned.stdout.emit('data', Buffer.from('scan started\n'));
+        spawned.stderr.emit('data', Buffer.from('one warning\n'));
+        spawned.emit('close', 0, null);
       });
+      calls.push({ command, args, options, child });
+      return child;
     },
   });
 
@@ -166,8 +182,73 @@ test('service emits ordered structured events and a bounded successful result', 
   ]);
   assert.deepEqual(events.map(event => event.sequence), [0, 1, 2, 3, 4]);
   assert.equal(calls.length, 1);
+  assert.equal(calls[0].command, process.execPath);
+  assert.equal(calls[0].args[0], join(ROOT, 'src/application/operation-worker.mjs'));
   assert.equal(calls[0].options.shell, false);
-  assert.deepEqual(calls[0].options.stdio, ['ignore', 'pipe', 'pipe']);
+  assert.deepEqual(calls[0].options.stdio, ['pipe', 'pipe', 'pipe', 'pipe']);
+  assert.equal(calls[0].options.env[APPLICATION_RUN_ID_ENV], 'run-success');
+  assert.deepEqual(JSON.parse(calls[0].child.stdin.writes[0]), {
+    ...request('scan.run'),
+    idempotencyKey: null,
+  });
+});
+
+test('service decodes fragmented structured progress without trusting child prose', async () => {
+  const events = [];
+  const result = await executeApplicationOperation(request('pipeline.prepare'), {
+    runId: 'run-progress',
+    onEvent: event => events.push(event),
+    spawn() {
+      return fakeChild((child) => {
+        const first = `${JSON.stringify(applicationProgress({
+          stage: 'cache',
+          state: 'started',
+        }))}\n`;
+        const second = `${JSON.stringify(applicationProgress({
+          stage: 'cache',
+          state: 'completed',
+          counts: { available: 4, requests: 1 },
+        }))}\n`;
+        child.progress.emit('data', first.slice(0, 10));
+        child.progress.emit('data', `${first.slice(10)}${second}`);
+        child.progress.emit('end');
+        child.stdout.emit('data', 'evaluation started according to hostile prose\n');
+        child.emit('close', 0, null);
+      });
+    },
+  });
+
+  assert.equal(result.status, 'succeeded');
+  const progress = events.filter(event => event.type === 'progress');
+  assert.deepEqual(progress.map(event => [event.stage, event.state]), [
+    ['cache', 'started'],
+    ['cache', 'completed'],
+  ]);
+  assert.deepEqual(progress[1].counts, { available: 4, requests: 1 });
+  assert.equal(progress.some(event => event.stage === 'evaluation'), false);
+});
+
+test('malicious progress is bounded and cannot fail the backend operation', async () => {
+  const events = [];
+  const result = await executeApplicationOperation(request('pipeline.run'), {
+    onEvent: event => events.push(event),
+    spawn() {
+      return fakeChild((child) => {
+        child.progress.emit('data', `${JSON.stringify({
+          version: '1',
+          stage: 'evaluation',
+          state: 'started',
+          url: 'https://evil.example',
+        })}\n`);
+        child.progress.emit('data', 'x'.repeat(70 * 1024));
+        child.emit('close', 0, null);
+      });
+    },
+  });
+
+  assert.equal(result.status, 'succeeded');
+  assert.equal(events.filter(event => event.type === 'progress_warning').length, 1);
+  assert.equal(events.some(event => event.type === 'progress'), false);
 });
 
 test('service bounds emitted chunks and retained output from a hostile backend', async () => {
