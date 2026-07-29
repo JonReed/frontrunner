@@ -55,9 +55,11 @@ plugins/<id>/
 | `notify` | `(payload, ctx) → void` | Send an outbound notification. |
 
 Producers (`provider`/`ingest`/`search`) **return** `Job[]`
-(`{title, url, company, location}`); the engine — never the plugin — writes them
-to `data/pipeline.md` through the canonical writer, so a plugin can't break the
-data formats the web reads. Non-provider hooks run explicitly:
+(`{title, url, company, location}`); the host applies the same closed, bounded
+job-source contract as core providers, then the engine — never the plugin —
+writes them to `data/pipeline.md` through the canonical writer. A plugin cannot
+add arbitrary fields or break the data formats the UI reads. Non-provider hooks
+run explicitly:
 
 ```bash
 node src/plugins/plugins.mjs list

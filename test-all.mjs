@@ -3595,7 +3595,10 @@ try {
         // The probe MUST bound pagination — a provider is never asked to walk a
         // whole board for a health check.
         if (ctx.maxPages !== 1) throw new Error('probe did not pass maxPages=1');
-        if (e.careers_url.includes('/full')) return [{ title: 'A' }, { title: 'B' }];
+        if (e.careers_url.includes('/full')) return [
+          { title: 'A', url: 'https://fakeats.io/jobs/a', company: e.name, location: '' },
+          { title: 'B', url: 'https://fakeats.io/jobs/b', company: e.name, location: '' },
+        ];
         if (e.careers_url.includes('/empty')) return [];
         const err = new Error('HTTP 404'); err.status = 404; throw err;
       },
@@ -5530,14 +5533,15 @@ try {
   const evaluatorSources = ['src\/evaluate\/ollama-eval.mjs', 'src\/evaluate\/openai-eval.mjs', 'src\/evaluate\/gemini-eval.mjs', 'src\/evaluate\/openrouter-runner.mjs']
     .map(name => [name, readFile(name)]);
   const unmigratedEvaluators = evaluatorSources
-    .filter(([, source]) => !/reservedNumbers\s*=\s*await\s+reserveReportNumbers\s*\(/.test(source)
-      || !/await\s+releaseReportNumbers\s*\(\s*reservedNumbers\b/.test(source)
+    .filter(([, source]) => !/saveEvaluation\s*\(/.test(source)
+      || /reserveReportNumbers\s*\(/.test(source)
+      || /writeFileSync\s*\([^)]*report/i.test(source)
       || /function\s+nextReport(?:Number|Num)\s*\(/.test(source))
     .map(([name]) => name);
   if (unmigratedEvaluators.length === 0) {
-    pass('all headless evaluators use the shared atomic report allocator');
+    pass('all headless evaluators use the shared transactional publisher');
   } else {
-    fail(`headless evaluators still carry private max+1 allocators: ${unmigratedEvaluators.join(', ')}`);
+    fail(`headless evaluators bypass the shared transactional publisher: ${unmigratedEvaluators.join(', ')}`);
   }
 
   // --count N: contiguous range from an empty dir.
@@ -10038,8 +10042,8 @@ try {
     filteredContent: 6, filteredCooldown: 1, dupes: 38, newAdded: 8, errors: 0,
     filteredBlacklist: 4, filteredVisa: 7, filteredPostedDate: 2,
   };
-  appendScanRunSummary(counters, runsFile);
-  appendScanRunSummary({ ...counters, timestamp: '2026-07-04T09:00:00Z' }, runsFile);
+  await appendScanRunSummary(counters, runsFile);
+  await appendScanRunSummary({ ...counters, timestamp: '2026-07-04T09:00:00Z' }, runsFile);
   const runRows = readFileSync(runsFile, 'utf-8').trim().split('\n');
   if (runRows[0] === SCAN_RUNS_HEADER.trim() && runRows.length === 3
       && runRows[1].startsWith('2026-07-03T14:02:11Z\tcompleted\t45\t3\t120\t')

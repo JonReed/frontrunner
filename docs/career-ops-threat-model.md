@@ -27,14 +27,27 @@ merges cannot quietly reintroduce it.
 | UI filesystem traversal | Fixed | strict job IDs plus canonical report/output containment |
 | Generated HTML active content | Fixed | escaped deterministic builder plus sandbox CSP on previews |
 | Provider supply-chain capability audit | Fixed for core adapters; residual reviewed-code trust | regression test forbids direct fetch and child-process imports; `local-parser` remains an explicit operator-configured exception |
-| Local backend operation boundary | Fixed | versioned exact-key requests, fixed operation catalog, `shell: false`, bounded events/results, cancellation, timeouts and atomic paid-job claims in `src/application/` |
+| Job-source result integrity | Fixed | `providers/_contract.mjs` enforces one closed, bounded Job schema after every core/plugin provider fetch and plugin `ingest`/`search` result; every scanner, probe and job-producing plugin path is inventory-tested against bypass |
+| Local backend operation boundary | Fixed | versioned exact-key requests, fixed operation catalog, `shell: false`, bounded events/results, whole-process-tree cancellation/timeouts and atomic paid-job claims in `src/application/` |
+| Durable local user state | Fixed for tracker, scanner audit, pipeline, application jobs and agent inbox | owner-verified cross-process file locks, durable temporary writes and atomic same-directory replacement in `src/lib/file-lock.mjs` and `src/lib/locked-file.mjs` |
+| Evaluation publication integrity | Fixed | every evaluator uses a bounded, path-derived write-ahead journal; report and tracker publication replay idempotently after crash or merge failure |
 | Inherited privileged web runtime | Removed from reachable product surface | `web` package start commands fail closed; request-wide proxy returns `410 Gone` even when Next.js is launched directly |
 
 The regression suite destructively tests private/metadata targets, private DNS
 answers, redirect revalidation, oversized bodies, hostile JD framing,
 schema-output flooding, zero-tool Claude arguments, loopback binding and raw
 HTML sink removal. Application-job tests also race simultaneous paid requests,
-inject malformed state and oversized output, and simulate orphan recovery.
+inject malformed state and oversized output, simulate orphan recovery, and
+prove a cancelled parent cannot leave a descendant alive to mutate state.
+Durable-state tests race independent scanner and inbox processes, inject a
+pre-rename failure, and assert that every row survives without torn files,
+duplicate headers, abandoned locks or temporary files.
+Evaluation-publication tests inject tracker failure, terminate a process after
+its report write, race concurrent recovery, and prove a corrupted journal
+cannot redirect writes outside fixed report/tracker paths.
+Provider-contract tests inject malformed arrays, unsafe URLs, throwing record
+accessors, oversized fields, description floods and result floods, and assert
+that every consumer uses the same boundary.
 Legacy-web tests inventory the retained privileged surfaces and prove both the
 supported launch path and a direct Next.js bypass remain unavailable.
 
@@ -314,7 +327,7 @@ flowchart LR
 6. **Implemented:** pin the UI to loopback, add Host/Origin checks, use
    safe React rendering, validate every URL and filesystem path at use, and
    route its paid CV action through the fixed application-service job manager.
-7. **Implemented for central boundaries; provider static audit remains:** add destructive tests proving every provider inherits egress/size policy,
+7. **Implemented:** add destructive tests proving every provider inherits egress/size and result-schema policy,
    hostile JDs cannot cause tools or writes, unsafe report links never render,
    localhost actions reject foreign origins, and model output cannot select
    paths or commands.

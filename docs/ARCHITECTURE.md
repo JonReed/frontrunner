@@ -52,9 +52,13 @@ src/pipeline/run.mjs
    The renderer also emits a Risk Summary and compatibility `Machine Summary`
    YAML consumed by the deterministic analysis commands.
 6. **Score**: validated 1–5 dimensions and global score
-7. **Report**: save as `reports/{num}-{company}-{date}.md`
-8. **Track**: new entries via TSV in `batch/tracker-additions/` merged by
-   `src/tracker/merge-tracker.mjs`; status updates to existing rows via `src/tracker/set-status.mjs`
+7. **Publish**: `src/evaluate/evaluation-publication.mjs` first writes a
+   bounded `reports/{num}-PUBLISHING.json` journal, then atomically publishes
+   `reports/{num}-{company}-{date}.md` and its tracker TSV
+8. **Track**: `src/tracker/merge-tracker.mjs` merges the TSV; only after the
+   tracker contains the exact report identity is the journal removed. A later
+   evaluation replays any interrupted journal idempotently. Status updates to
+   existing rows use `src/tracker/set-status.mjs`.
 
 CV tailoring is a separate, explicit action after evaluation. A tool-less model
 returns a bounded render payload to `src/cv/claude-tailor.mjs`; fixed code then
@@ -95,21 +99,35 @@ the validated address, limits time and bytes, and defaults to rejecting
 redirects. Browser subrequests use the same policy, with Chromium's own final
 DNS connection documented as a residual in the threat model.
 
+After each adapter returns, `providers/_contract.mjs` treats its result as
+hostile again. Every scanner and probe receives only the closed Job schema:
+HTTP(S) URLs without credentials, bounded strings and descriptions, plausible
+dates and salary values, a per-fetch job cap, an aggregate description budget,
+and exact-URL deduplication. Invalid records are dropped with reason counts;
+non-array provider results fail closed rather than looking like an empty board.
+Plugin `provider`, `ingest`, and `search` results cross this same boundary.
+
 Every description crosses `src/security/job-document.mjs` before a model. It is
 bounded, fingerprinted, marked as hostile data, and never grants model tools.
-`src/evaluate/save-evaluation.mjs` and the CV renderers own all filesystem
-effects. The local UI is loopback-only and treats reports and generated HTML as
-untrusted output.
+`src/evaluate/save-evaluation.mjs` routes every evaluator through the same
+bounded, path-derived publication journal; model fields never choose paths.
+The CV renderers own their filesystem effects. The local UI is loopback-only
+and treats reports and generated HTML as untrusted output.
 
 ## Failure and Concurrency Boundaries
 
 - Tracker mutations use shared locking and atomic replacement.
 - Report numbers are reserved with atomic sentinels before parallel work.
+- Evaluation report/tracker publication is write-ahead journaled and
+  idempotently recovered after interruption or merge failure.
 - The updater stages replacements and rolls back injected failures rather than
   leaving mixed versions.
 - The reverse ATS scanner checkpoints its lowest unfinished index and resumes
   safely after interruption.
 - Liveness uncertainty is never silently converted into an expired result.
+- Job-source records cannot bypass the central result schema through a new
+  scan, portal-probe, or job-producing plugin entry point; a regression test
+  inventories every consumer.
 
 ## Data Flow
 

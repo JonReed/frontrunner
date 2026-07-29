@@ -14,6 +14,10 @@ import {
   APPLICATION_RESULT_STATUSES,
 } from './contract.mjs';
 import { resolveApplicationOperation } from './operations.mjs';
+import {
+  shouldDetachProcessTree,
+  signalProcessTree,
+} from './process-tree.mjs';
 
 const RESULT_STATUSES = new Set(APPLICATION_RESULT_STATUSES);
 const OUTPUT_TAIL_LIMIT = 16 * 1024;
@@ -93,6 +97,8 @@ export async function executeApplicationOperation(request, options = {}) {
     let forceTimer;
     let stopStatus = null;
     let stopMessage = '';
+    let stopExitCode = null;
+    let stopSignal = null;
 
     const finish = ({
       status,
@@ -127,19 +133,27 @@ export async function executeApplicationOperation(request, options = {}) {
       stopStatus = status;
       stopMessage = message;
       emit(status === 'timed_out' ? 'timed_out' : 'cancelling');
-      try {
-        child?.kill('SIGTERM');
-      } catch {
+      const signalled = signalProcessTree(child, 'SIGTERM', {
+        platform: options.platform,
+        processKill: options.processKill,
+        windowsTreeKill: options.windowsTreeKill,
+      });
+      if (!signalled) {
         finish({ status, error: message });
         return;
       }
       forceTimer = setTimeout(() => {
-        try {
-          child?.kill('SIGKILL');
-        } catch {
-          // The close/error handler or forced terminal result below wins.
-        }
-        finish({ status, signal: 'SIGKILL', error: message });
+        const forced = signalProcessTree(child, 'SIGKILL', {
+          platform: options.platform,
+          processKill: options.processKill,
+          windowsTreeKill: options.windowsTreeKill,
+        });
+        finish({
+          status,
+          exitCode: stopExitCode,
+          signal: forced ? 'SIGKILL' : stopSignal,
+          error: message,
+        });
       }, options.terminationGraceMs ?? TERMINATION_GRACE_MS);
     };
 
@@ -151,6 +165,7 @@ export async function executeApplicationOperation(request, options = {}) {
         env: options.env ?? process.env,
         shell: false,
         windowsHide: true,
+        detached: shouldDetachProcessTree(options.platform),
         stdio: ['ignore', 'pipe', 'pipe'],
       });
     } catch (error) {
@@ -171,15 +186,20 @@ export async function executeApplicationOperation(request, options = {}) {
     };
     child.stdout?.on('data', capture('stdout'));
     child.stderr?.on('data', capture('stderr'));
-    child.once('error', error => finish({ status: 'failed', error }));
+    child.once('error', (error) => {
+      if (stopStatus) {
+        stopMessage = `${stopMessage} ${publicError(error)}`.trim();
+        return;
+      }
+      finish({ status: 'failed', error });
+    });
     child.once('close', (exitCode, signal) => {
       if (stopStatus) {
-        finish({
-          status: stopStatus,
-          exitCode: Number.isInteger(exitCode) ? exitCode : null,
-          signal: signal ?? null,
-          error: stopMessage,
-        });
+        // The supervised parent can exit while a model/browser descendant is
+        // still alive. Keep the grace timer armed so SIGKILL is sent to the
+        // original process group/tree before returning a terminal result.
+        stopExitCode = Number.isInteger(exitCode) ? exitCode : null;
+        stopSignal = signal ?? null;
       } else {
         finish({
           status: exitCode === 0 ? 'succeeded' : 'failed',

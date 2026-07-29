@@ -37,6 +37,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import yaml from 'js-yaml';
 
 import { makeHttpCtx } from '../../providers/_http.mjs';
+import { fetchProviderJobs } from '../../providers/_contract.mjs';
 import greenhouse from '../../providers/greenhouse.mjs';
 import ashby from '../../providers/ashby.mjs';
 import lever from '../../providers/lever.mjs';
@@ -424,7 +425,7 @@ export async function probeVendor(company, candidate, ctx) {
     return { status: 'error', jobCount: 0, error: 'no API URL derivable' };
   }
   try {
-    const jobs = await cfg.provider.fetch(entry, ctx);
+    const jobs = await fetchProviderJobs(cfg.provider, entry, ctx);
     const jobCount = Array.isArray(jobs) ? jobs.length : 0;
     return { status: jobCount > 0 ? 'match' : 'empty', jobCount };
   } catch (err) {
@@ -453,7 +454,7 @@ export async function resolveWorkday(company, coords, ctx) {
     const entry = { name: company.name, careers_url: candidate.careers_url };
     if (!workday.detect(entry)) { lastError = 'no CXS endpoint derivable'; continue; }
     try {
-      const jobs = await workday.fetch(entry, probeCtx);
+      const jobs = await fetchProviderJobs(workday, entry, probeCtx);
       const jobCount = Array.isArray(jobs) ? jobs.length : 0;
       if (jobCount > 0) {
         return {

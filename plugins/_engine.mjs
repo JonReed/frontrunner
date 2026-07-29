@@ -609,12 +609,18 @@ export async function loadDotenvOnce() {
  *
  * @param {string} kind
  * @param {*} payload   For provider this is unused; for ingest none; search a query; export a snapshot; notify a payload.
- * @param {{ root: string, dryRun?: boolean, timeoutMs?: number }} opts
+ * @param {{ root: string, dryRun?: boolean, timeoutMs?: number, pluginId?: string }} opts
  * @returns {Promise<Array<{ id: string, ok: boolean, result?: any, error?: string }>>}
  */
-export async function runHook(kind, payload, { root, dryRun = false, timeoutMs = DEFAULT_HOOK_TIMEOUT_MS }) {
+export async function runHook(kind, payload, {
+  root,
+  dryRun = false,
+  timeoutMs = DEFAULT_HOOK_TIMEOUT_MS,
+  pluginId,
+}) {
   await loadDotenvOnce();
-  const loaded = await loadPlugins(kind, { root, dryRun });
+  const loaded = (await loadPlugins(kind, { root, dryRun }))
+    .filter(plugin => pluginId === undefined || plugin.id === pluginId);
   const results = [];
   for (const { id, hook, ctx } of loaded) {
     const invoke = kind === 'search'

@@ -194,6 +194,7 @@ test('cancellation and timeout terminate the child and have distinct results', a
   let cancelledChild;
   const cancelledPromise = executeApplicationOperation(request('scan.run'), {
     signal: controller.signal,
+    terminationGraceMs: 5,
     spawn() {
       cancelledChild = fakeChild();
       queueMicrotask(() => controller.abort());
@@ -202,7 +203,7 @@ test('cancellation and timeout terminate the child and have distinct results', a
   });
   const cancelled = await cancelledPromise;
   assert.equal(cancelled.status, 'cancelled');
-  assert.deepEqual(cancelledChild.kills, ['SIGTERM']);
+  assert.deepEqual(cancelledChild.kills, ['SIGTERM', 'SIGKILL']);
 
   let timedChild;
   const timed = await executeApplicationOperation(request('scan.run'), {
@@ -214,7 +215,7 @@ test('cancellation and timeout terminate the child and have distinct results', a
     },
   });
   assert.equal(timed.status, 'timed_out');
-  assert.deepEqual(timedChild.kills, ['SIGTERM']);
+  assert.deepEqual(timedChild.kills, ['SIGTERM', 'SIGKILL']);
 });
 
 test('an already-cancelled request never launches a backend process', async () => {

@@ -118,6 +118,13 @@ npm run merge -- --verify     # merge then run verify-pipeline
 
 Processed TSVs are moved to `batch/tracker-additions/merged/`.
 
+All supported evaluators reach this merge through
+`src/evaluate/evaluation-publication.mjs`. A bounded
+`reports/{NNN}-PUBLISHING.json` write-ahead journal makes the report, tracker
+fragment, and merge one recoverable publication. Pending journals are replayed
+automatically before the next evaluation; path and content validation fail
+closed, and successful replay removes the journal.
+
 **Exit codes:** `0` success, `1` verification errors (with `--verify`).
 
 ---
@@ -681,7 +688,7 @@ These have no `npm run` binding — modes and agents call them with
 | `node src/tracker/reply-watch.mjs` | Classify employer replies from `data/reply-candidates.json`, match to tracker rows, print a review digest |
 | `node src/analysis/process-quality.mjs [--summary]` | Aggregate `[process-friction]` tags from `data/active-interviews.md` per company |
 | `node src/tracker/reserve-report-num.mjs [--count N]` | Atomically reserve report numbers for parallel workers (fixes the #749 race) |
-| `node src/tracker/agent-inbox.mjs add "..."` | Append a request to the queue the agent drains at the next session start |
+| `node src/tracker/agent-inbox.mjs add "..."` | Atomically append a request to the queue the agent drains at the next session start; concurrent local clients are serialized |
 | `node src/cv/generate-latex.mjs <input.tex> [output.pdf]` | Validate and compile a generated `.tex` CV via tectonic or pdflatex |
 | `node src/analysis/classify-tier.mjs` | Classify a job title into intern / entry / mid / senior |
 | `node src/plugins/plugins.mjs list\|run <id> [hook]` | CLI host for non-provider plugin hooks (see [PLUGINS.md](PLUGINS.md)) |

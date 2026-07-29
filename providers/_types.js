@@ -5,7 +5,8 @@
 // reference these types via `/** @typedef {import('./_types.js').Provider} Provider */`
 // at the top of a `// @ts-check`-enabled file to get IDE hints. The runtime
 // contract is enforced by scan.mjs (id presence, fetch is a function, fetch
-// returns an array), not by these annotations.
+// returns an array), then bounded and normalized for every core consumer by
+// providers/_contract.mjs.
 //
 // Files prefixed with _ are never loaded as providers by scan.mjs.
 
@@ -35,6 +36,10 @@
  *                                   'invalid_url', 'suspicious_domain').
  * @property {'high'|'medium'|'low'} [trustLevel] Classification derived from
  *                                                 trustScore.
+ *
+ * Runtime note: unknown fields are discarded by `_contract.mjs`; strings,
+ * descriptions, record counts, URLs, dates and salary values are bounded
+ * centrally after every provider fetch.
  */
 
 /**

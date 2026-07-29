@@ -37,6 +37,7 @@ import path from 'path';
 import yaml from 'js-yaml';
 
 import { makeHttpCtx, fetchJson } from '../../providers/_http.mjs';
+import { fetchProviderJobs } from '../../providers/_contract.mjs';
 import greenhouse from '../../providers/greenhouse.mjs';
 import lever from '../../providers/lever.mjs';
 import ashby from '../../providers/ashby.mjs';
@@ -491,7 +492,7 @@ export async function runSeedScan(seedId, opts, ctx, seenUrls, label) {
 
     let jobs;
     try {
-      jobs = await provider.fetch(entry, ctx);
+      jobs = await fetchProviderJobs(provider, entry, ctx);
     } catch (err) {
       errors++;
       if (opts.verbose) console.error(`  ✗ ${seedId}/${entry.name}: ${err.message}`);
@@ -796,7 +797,7 @@ async function main() {
         // per-job detail-page requests via provider.enrichDate) — runs inside
         // one watchdog, so enrichment latency can't blow past COMPANY_TIMEOUT_MS.
         await withTimeout((async () => {
-          const jobs = await source.provider.fetch(entry, ctx);
+          const jobs = await fetchProviderJobs(source.provider, entry, ctx);
           if (jobs.workdayTruncated) truncated.push(entry);
           if (jobs.icimsTruncated) {
             cappedBoards++;
@@ -841,7 +842,7 @@ async function main() {
       for (const entry of truncated) {
         try {
           await withTimeout((async () => {
-            const jobs = await source.provider.fetch(entry, ctx);
+            const jobs = await fetchProviderJobs(source.provider, entry, ctx);
             await processJobs(jobs, name, source.provider);
             if (jobs.workdayTruncated) {
               errors++; // still truncated on a quiet line — genuine board problem, move on
@@ -920,13 +921,10 @@ async function main() {
   // Persist (unless dry-run, or nothing to save).
   let saved = false;
   if (offers.length && !opts.dryRun) {
-    // appendToPipeline assumes the file exists (onboarding creates it) — cover fresh setups.
-    if (!existsSync(PIPELINE_PATH)) {
-      mkdirSync(path.dirname(PIPELINE_PATH), { recursive: true });
-      writeFileSync(PIPELINE_PATH, '# Pipeline\n\n## Pendientes\n', 'utf-8');
-    }
+    // appendToPipeline owns fresh-file creation inside its locked atomic
+    // transaction; pre-creating here would reopen a crash/race window.
     await appendToPipeline(offers);
-    appendToScanHistory(offers, date);
+    await appendToScanHistory(offers, date);
     saved = true;
     log(`\nResults saved to ${PIPELINE_PATH} and data/scan-history.tsv`);
 

@@ -5,8 +5,7 @@
  * this module alone creates the report and tracker row.
  */
 
-import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { ROOT } from '#paths';
@@ -15,6 +14,10 @@ import {
   releaseReportNumbers,
   reserveReportNumbers,
 } from '../tracker/reserve-report-num.mjs';
+import {
+  publishEvaluationArtifacts,
+  recoverEvaluationPublications,
+} from './evaluation-publication.mjs';
 import { renderEvaluationReport } from './scoring-contract.mjs';
 
 const safeField = (value) => String(value ?? '').replace(/[\t\r\n]+/g, ' ').trim();
@@ -31,8 +34,10 @@ export async function saveEvaluation(result, {
   const additionsDir = join(rootDir, 'batch', 'tracker-additions');
   mkdirSync(reportsDir, { recursive: true });
   mkdirSync(additionsDir, { recursive: true });
+  await recoverEvaluationPublications({ rootDir });
 
   let ownedReservation = [];
+  let pendingJournalPath = null;
   try {
     const number = reportNumber == null
       ? (ownedReservation = await reserveReportNumbers(1, { rootDir, reportsDir }))[0]
@@ -49,7 +54,7 @@ export async function saveEvaluation(result, {
 
     const sourceLine = sourceUrl ? `**URL:** ${safeField(sourceUrl)}\n` : '';
     const report = renderEvaluationReport(result);
-    writeFileSync(reportPath, `# Evaluation: ${result.company} — ${result.role}
+    const reportContent = `# Evaluation: ${result.company} — ${result.role}
 
 **Date:** ${today}
 **Archetype:** ${result.archetype}
@@ -61,10 +66,10 @@ ${sourceLine}**Legitimacy:** ${result.legitimacy.tier}
 ---
 
 ${report.replace(/---SCORE_SUMMARY---[\s\S]*?---END_SUMMARY---/, '').trim()}
-`, { encoding: 'utf8', mode: 0o600 });
+`;
 
     const trackerPath = join(additionsDir, `${num}-${slug}.tsv`);
-    writeFileSync(trackerPath, [
+    const trackerContent = [
       String(number),
       today,
       safeField(result.company),
@@ -74,18 +79,20 @@ ${report.replace(/---SCORE_SUMMARY---[\s\S]*?---END_SUMMARY---/, '').trim()}
       '❌',
       `[${num}](reports/${filename})`,
       `${safeField(tool)}; hostile-content boundary enforced`,
-    ].join('\t') + '\n', { encoding: 'utf8', mode: 0o600 });
-
-    if (mergeTracker) {
-      execFileSync(process.execPath, [join(rootDir, 'src', 'tracker', 'merge-tracker.mjs')], {
-        cwd: rootDir,
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'pipe'],
-      });
-    }
+    ].join('\t') + '\n';
+    pendingJournalPath = join(reportsDir, `${num}-PUBLISHING.json`);
+    await publishEvaluationArtifacts({
+      number,
+      slug,
+      date: today,
+      report: reportContent,
+      tracker: trackerContent,
+      mergeTracker,
+      rootDir,
+    });
     return { number, num, reportPath, trackerPath, filename };
   } finally {
-    if (ownedReservation.length) {
+    if (ownedReservation.length && (!pendingJournalPath || !existsSync(pendingJournalPath))) {
       await releaseReportNumbers(ownedReservation, { rootDir, reportsDir });
     }
   }

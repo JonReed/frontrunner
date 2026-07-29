@@ -31,18 +31,23 @@
  *   node src/scan/scan.mjs --include-blacklisted        # let data/blacklist.md matches through (annotated)
  */
 
-import { readFileSync, writeFileSync, appendFileSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { pathToFileURL, fileURLToPath } from 'url';
 import path from 'path';
 import yaml from 'js-yaml';
 
 import { makeHttpCtx } from '../../providers/_http.mjs';
+import { fetchProviderJobs } from '../../providers/_contract.mjs';
 import { buildTrustValidator } from '../../providers/_trust-validator.mjs';
 import { loadProviders, resolveProvider } from '../../providers/_registry.mjs';
 import { mergeProviderPlugins } from '../../plugins/_engine.mjs';
 import { classifyFetchError } from './verify-portals.mjs';
 import { cacheProviderDescriptions } from './jd-cache.mjs';
 import { fingerprintText, findCrossListings } from '../lib/fingerprint-core.mjs';
+import {
+  appendFileLocked,
+  replaceFileAtomic,
+} from '../lib/locked-file.mjs';
 import { resolveColumns, parseTrackerRow } from '../tracker/tracker-parse.mjs';
 import { normalizeCompany } from '../tracker/tracker-utils.mjs';
 import { normalizeCompanyName } from '../tracker/invite-match.mjs';
@@ -1384,12 +1389,9 @@ export async function appendToPipeline(offers) {
   if (offers.length === 0) return;
 
   await withPipelineLock(PIPELINE_PATH, async () => {
-    // Auto-create with standard skeleton if missing (fresh-install guard).
-    if (!existsSync(PIPELINE_PATH)) {
-      writeFileSync(PIPELINE_PATH, PIPELINE_SKELETON, 'utf-8');
-    }
-
-    let text = readFileSync(PIPELINE_PATH, 'utf-8');
+    let text = existsSync(PIPELINE_PATH)
+      ? readFileSync(PIPELINE_PATH, 'utf-8')
+      : PIPELINE_SKELETON;
 
     const marker = PENDING_MARKERS.find(m => text.includes(m)) ?? null;
     const idx = marker !== null ? text.indexOf(marker) : -1;
@@ -1413,11 +1415,17 @@ export async function appendToPipeline(offers) {
       text = text.slice(0, insertAt) + block + text.slice(insertAt);
     }
 
-    writeFileSync(PIPELINE_PATH, text, 'utf-8');
+    replaceFileAtomic(PIPELINE_PATH, text);
   });
 }
 
-export function appendToScanHistory(offers, date, status = 'added') {
+export async function appendToScanHistory(
+  offers,
+  date,
+  status = 'added',
+  filePath = SCAN_HISTORY_PATH,
+) {
+  if (offers.length === 0) return;
   // Ensure file + header exist. The header names every column the row writer
   // (formatScanHistoryRow) emits, in the same order: the original 7 positional
   // cols (url…location) plus the append-only trailing cols added since —
@@ -1428,14 +1436,10 @@ export function appendToScanHistory(offers, date, status = 'added') {
   // by its `url\t` prefix, or skip non-URL col-0 rows, so widening it stays
   // backward-compatible. `status` is parameterized so callers can record verify
   // outcomes (`skipped_expired`, etc.) without the legacy `(expired)` suffix.
-  if (!existsSync(SCAN_HISTORY_PATH)) {
-    mkdirSync(path.dirname(SCAN_HISTORY_PATH), { recursive: true });
-    writeFileSync(SCAN_HISTORY_PATH, 'url\tfirst_seen\tportal\ttitle\tcompany\tstatus\tlocation\tfingerprint\tposted_at\ttrust_score\ttrust_flags\tnormalized_company\n', 'utf-8');
-  }
-
   const lines = offers.map(o => formatScanHistoryRow(o, date, status)).join('\n') + '\n';
-
-  appendFileSync(SCAN_HISTORY_PATH, lines, 'utf-8');
+  await appendFileLocked(filePath, lines, {
+    header: 'url\tfirst_seen\tportal\ttitle\tcompany\tstatus\tlocation\tfingerprint\tposted_at\ttrust_score\ttrust_flags\tnormalized_company\n',
+  });
 }
 
 // ── Company blacklist (#1742) ───────────────────────────────────────
@@ -1499,8 +1503,7 @@ const SCAN_RUNS_PATH = 'data/scan-runs.tsv';
 // position — columns may be appended in later versions.
 export const SCAN_RUNS_HEADER = 'timestamp\tstatus\tcompanies\tboards\tfound\tfiltered_title\tfiltered_tier\tfiltered_location\tfiltered_posting_age\tfiltered_salary\tfiltered_content\tfiltered_cooldown\tdupes\tnew_added\terrors\tfiltered_blacklist\tfiltered_visa\tfiltered_posted_date\n';
 
-export function appendScanRunSummary(c, filePath = SCAN_RUNS_PATH) {
-  if (!existsSync(filePath)) writeFileSync(filePath, SCAN_RUNS_HEADER, 'utf-8');
+export async function appendScanRunSummary(c, filePath = SCAN_RUNS_PATH) {
   const row = [
     c.timestamp, c.status ?? 'completed', c.companies, c.boards, c.found,
     c.filteredTitle, c.filteredTier, c.filteredLocation, c.filteredPostingAge,
@@ -1514,7 +1517,7 @@ export function appendScanRunSummary(c, filePath = SCAN_RUNS_PATH) {
     // filtered_posted_date appended at the END for the same reason.
     c.filteredPostedDate ?? 0,
   ].join('\t') + '\n';
-  appendFileSync(filePath, row, 'utf-8');
+  await appendFileLocked(filePath, row, { header: SCAN_RUNS_HEADER });
 }
 
 // ── Portal health persistence (#1744) ───────────────────────────────
@@ -1522,14 +1525,12 @@ export function appendScanRunSummary(c, filePath = SCAN_RUNS_PATH) {
 const PORTAL_HEALTH_PATH = path.join(DATA_DIR, 'portal-health.tsv');
 export const PORTAL_HEALTH_HEADER = 'timestamp\tcompany\tstatus\n';
 
-export function appendPortalHealth(healthRecords, filePath = PORTAL_HEALTH_PATH) {
-  mkdirSync(path.dirname(filePath), { recursive: true });
-  if (!existsSync(filePath)) writeFileSync(filePath, PORTAL_HEALTH_HEADER, 'utf-8');
+export async function appendPortalHealth(healthRecords, filePath = PORTAL_HEALTH_PATH) {
   let lines = '';
   for (const r of healthRecords) {
     lines += [r.timestamp, r.company, r.status].join('\t') + '\n';
   }
-  if (lines) appendFileSync(filePath, lines, 'utf-8');
+  if (lines) await appendFileLocked(filePath, lines, { header: PORTAL_HEALTH_HEADER });
 }
 
 export function loadPortalHealth(filePath = PORTAL_HEALTH_PATH) {
@@ -1892,14 +1893,14 @@ async function main() {
     try {
       let jobs;
       try {
-        jobs = await provider.fetch(company, ctx);
+        jobs = await fetchProviderJobs(provider, company, ctx);
       } catch (parserErr) {
         if (provider.id !== 'local-parser') throw parserErr;
         const fallback = resolveProvider(company, providers, { skipIds: ['local-parser'] });
         if (!fallback || fallback.error) throw parserErr;
         provider = fallback.provider;
         sourceName = `${provider.id}-api`;
-        jobs = await provider.fetch(company, ctx);
+        jobs = await fetchProviderJobs(provider, company, ctx);
         errors.push({
           company: company.name,
           error: `local parser failed, used API fallback: ${parserErr.message}`,
@@ -2059,7 +2060,7 @@ async function main() {
       // fetch-jds stage remains available as a recovery path.
       console.warn(`JD cache write skipped: ${error.message}`);
     }
-    appendToScanHistory(verifiedOffers, date);
+    await appendToScanHistory(verifiedOffers, date);
   }
   if (!dryRun && cooldownOffers.length > 0) {
     const cooldownGroups = {};
@@ -2070,7 +2071,7 @@ async function main() {
       cooldownGroups[item.status].push(item.job);
     }
     for (const [status, group] of Object.entries(cooldownGroups)) {
-      appendToScanHistory(group, date, status);
+      await appendToScanHistory(group, date, status);
     }
   }
   // Expired postings — plus the old URLs of migrated offers — are recorded as
@@ -2080,12 +2081,12 @@ async function main() {
     ...migratedOffers.map(o => ({ ...o, url: o.previousUrl })),
   ];
   if (!dryRun && expiredForHistory.length > 0) {
-    appendToScanHistory(expiredForHistory, date, 'skipped_expired');
+    await appendToScanHistory(expiredForHistory, date, 'skipped_expired');
   }
   // Pages that loaded but had no Apply control: record so we don't re-verify
   // them next scan, but never let them reach pipeline.md.
   if (!dryRun && droppedOffers.length > 0) {
-    appendToScanHistory(droppedOffers, date, 'skipped_no_apply_control');
+    await appendToScanHistory(droppedOffers, date, 'skipped_no_apply_control');
   }
   // Guard-rejected URLs (invalid / unsupported protocol / blocked host) are
   // recorded with a precise status so subsequent scans dedup-skip them via
@@ -2099,7 +2100,7 @@ async function main() {
       byStatus.get(status).push(o);
     }
     for (const [status, group] of byStatus) {
-      appendToScanHistory(group, date, status);
+      await appendToScanHistory(group, date, status);
     }
   }
 
@@ -2291,8 +2292,8 @@ async function main() {
   // Persist this run's counters (#1604) — guarded exactly like the other
   // writes; a --dry-run must leave no trace.
   if (!dryRun) {
-    appendPortalHealth(healthRecords);
-    appendScanRunSummary({
+    await appendPortalHealth(healthRecords);
+    await appendScanRunSummary({
       timestamp: new Date().toISOString(), status: 'completed',
       companies: summaryCompanies, boards: summaryBoards, found: totalFound,
       filteredTitle: totalFilteredTitle, filteredTier: totalFilteredTier,

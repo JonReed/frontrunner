@@ -28,6 +28,7 @@ import {
 import { loadRegistry, findInRegistry, classifySource, sourceBadge, successorFor } from '../../plugins/_registry.mjs';
 import { readLock, writeLockEntry, removeLockEntry, hashPluginTree, consentSurface } from '../../plugins/_lock.mjs';
 import { installFromRepo, scaffoldNew, parseRepoArg } from './plugin-install.mjs';
+import { enforceProviderResult } from '../../providers/_contract.mjs';
 import { appendToPipeline } from '../scan/scan.mjs';
 
 import { ROOT } from '#paths';
@@ -41,17 +42,20 @@ process.on('unhandledRejection', (reason) => {
   console.error(`⚠️  unhandled rejection from a plugin: ${reason instanceof Error ? reason.message : reason}`);
 });
 
-/** Keep only the canonical Job fields — drop any extra keys a plugin returns. */
-function sanitizeJob(job) {
-  if (!job || typeof job !== 'object') return null;
-  const title = typeof job.title === 'string' ? job.title.trim() : '';
-  const url = typeof job.url === 'string' ? job.url.trim() : '';
-  if (!title || !/^https?:\/\//i.test(url)) return null;
-  const out = { title, url };
-  if (typeof job.company === 'string') out.company = job.company.trim();
-  if (typeof job.location === 'string') out.location = job.location.trim();
-  if (job.salary !== undefined) out.salary = job.salary;
-  return out;
+/** Apply the same hostile-job boundary used by core and plugin providers. */
+function contractPluginJobs(results) {
+  const jobs = [];
+  for (const result of results) {
+    if (!result.ok) continue;
+    try {
+      jobs.push(...enforceProviderResult(`plugin:${result.id}`, result.result, {
+        name: result.id,
+      }));
+    } catch (error) {
+      console.warn(`⚠️  ${result.id}: ${error.message}`);
+    }
+  }
+  return jobs;
 }
 
 /** Generic markdown-table parser → rows keyed by lowercased header. READ-ONLY. */
@@ -154,8 +158,12 @@ async function cmdRun(args) {
   if (hook === 'ingest' || hook === 'search') {
     const payload = hook === 'search' ? positional.slice(hookArgStart).join(' ') : undefined;
     if (hook === 'search' && !payload) { console.error(`search needs a query: node src/plugins/plugins.mjs run ${id} search "<query>"`); process.exit(1); }
-    const results = await runHook(hook, payload, { root: ROOT, dryRun });
-    const found = results.filter(r => r.ok && Array.isArray(r.result)).flatMap(r => r.result).map(sanitizeJob).filter(Boolean);
+    const results = await runHook(hook, payload, {
+      root: ROOT,
+      dryRun,
+      pluginId: id,
+    });
+    const found = contractPluginJobs(results);
     // Additive de-dup: never re-add a URL already in the pipeline.
     const known = existingPipelineUrls();
     const seen = new Set();
@@ -168,7 +176,11 @@ async function cmdRun(args) {
 
   if (hook === 'export') {
     const snapshot = buildSnapshot();
-    const results = await runHook('export', snapshot, { root: ROOT, dryRun });
+    const results = await runHook('export', snapshot, {
+      root: ROOT,
+      dryRun,
+      pluginId: id,
+    });
     for (const r of results) {
       if (r.ok) console.log(`${r.id} export: pushed ${r.result?.pushed ?? 0} record(s).`);
       else console.log(`${r.id} export: failed — ${r.error}`);
@@ -178,7 +190,11 @@ async function cmdRun(args) {
 
   if (hook === 'notify') {
     const message = positional.slice(hookArgStart).join(' ') || '(career-ops notification)';
-    const results = await runHook('notify', { message }, { root: ROOT, dryRun });
+    const results = await runHook('notify', { message }, {
+      root: ROOT,
+      dryRun,
+      pluginId: id,
+    });
     for (const r of results) console.log(r.ok ? `${r.id} notify: sent.` : `${r.id} notify: failed — ${r.error}`);
     return;
   }

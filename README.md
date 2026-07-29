@@ -66,6 +66,11 @@ prefilter before model evaluation.
   operation; fixed backend code chooses executables, scripts, paths, flags,
   timeouts, cancellation, and bounded lifecycle output. The new UI uses this
   boundary rather than constructing backend commands.
+- **Cancellation stops the whole job:** supervised operations run in a
+  dedicated process group on POSIX and a fixed `taskkill /T` tree on Windows.
+  Timeout or cancellation terminates descendant model and browser processes
+  too, so a reported stop cannot leave token spend or file mutations running
+  in the background.
 - **No duplicate AI spend:** UI jobs are persisted across reloads and claimed
   atomically per role. Simultaneous clicks, requests, or server processes
   return the same running job instead of launching a second paid model call.
@@ -81,13 +86,26 @@ prefilter before model evaluation.
   before a browser. Playwright is reserved for providers that cannot answer
   through a structured endpoint, and fallback text is cached rather than
   fetched again by the evaluator.
+- **One job-source result contract:** all built-in sources plus plugin
+  `provider`, `ingest`, and `search` hooks cross the same runtime boundary after
+  fetching. It rejects unsafe URLs and malformed records, removes unknown
+  fields, bounds job counts and every retained field, caps aggregate
+  description data, deduplicates URLs, and reports anything dropped. Adding
+  another source does not add another place to remember these controls.
 - **Mandatory conservative filtering:** every model-backed entry point runs the
   deterministic gate. Rejections retain the exact rule and matching evidence;
   uncertain roles pass through rather than being silently discarded.
 - **Fail-closed state changes:** tracker writes are locked and atomic, report
   numbers are reserved safely, interrupted scans checkpoint, and updater
-  failures roll back without leaving a half-installed system. Concurrent batch
-  runs cannot renumber or overwrite each other's role identities.
+  failures roll back without leaving a half-installed system. Scanner history,
+  run metrics, portal health, the pending-role pipeline, and the agent inbox use
+  the same crash-safe locked replacement boundary, so concurrent scans or local
+  clients cannot silently drop each other's state.
+- **Transactional evaluation publication:** every model provider uses one
+  journaled report-to-tracker publisher. If the process, machine, or tracker
+  merge fails after model tokens have already been spent, the next evaluation
+  resumes the same publication idempotently instead of losing the result,
+  duplicating the tracker row, or reusing its report number.
 - **Regression evidence:** destructive crash/interruption tests, the scored-role
   false-reject corpus, and a generated efficiency benchmark run in CI. The
   aggregate runner also supervises framework tests so a failing destructive
@@ -286,6 +304,11 @@ not prompt wording that each provider has to remember.
   endpoints. A future authenticated source must be an isolated plugin with
   explicit credentials and capabilities; credentials are never attached to
   arbitrary job URLs.
+- **Bounded job-source output:** every core provider and every job-producing
+  plugin hook is reduced to one closed Job schema before filtering or
+  persistence. Malformed, credentialed or non-HTTP(S) URLs are dropped; result
+  counts, descriptions, strings, dates and salary values have central limits;
+  truncation and rejected records are emitted as audit telemetry.
 - **Hostile-document quarantine:** JD text is normalized, capped at 24,000
   characters, fingerprinted, inspected for instruction-like signals, and
   enclosed in an explicit untrusted-data block. Detection is telemetry—not a
@@ -328,7 +351,8 @@ It is not a thin theme or a drop-in package wrapper:
 - standalone API evaluator responses use a versioned scoring contract that
   code renders into reports; and
 - Frontrunner-specific destructive tests protect filtering, tracker recovery,
-  updater rollback, scanner resume, and repository layout.
+  evaluation publication, updater rollback, scanner resume, and repository
+  layout.
 
 The user-data contract remains compatible, but internal paths and maintainer
 workflows can differ.

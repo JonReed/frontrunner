@@ -13,9 +13,10 @@ supported sources lives in
 
 ## Module contract
 
-The authoritative contract is the JSDoc type catalog in
-[`_types.js`](_types.js). Every provider is the **default export** of its
-file:
+The authoring contract is the JSDoc type catalog in
+[`_types.js`](_types.js); the authoritative runtime boundary is
+[`_contract.mjs`](_contract.mjs). Every provider is the **default export** of
+its file:
 
 ```js
 /** @typedef {import('./_types.js').Provider} Provider */
@@ -47,6 +48,21 @@ export default {
   for free (no extra per-job request — the scanner is zero-token).
 - `postedAt` — optional epoch ms; omit when the source has no usable date.
 
+Provider code should return the cleanest data it can, but callers do not trust
+that normalization. Every core scanner and probe invokes
+`fetchProviderJobs()`, which applies one closed schema after `fetch()`:
+
+- at most 5,000 jobs and 2,000,000 description characters per invocation;
+- bounded title, URL, company, location, note and 24,000-character description;
+- absolute HTTP(S) job URLs without embedded credentials;
+- bounded finite salary values, three-letter currencies and plausible dates;
+- duplicate URL removal and unknown-field removal; and
+- reason-count telemetry for rejected or truncated provider output.
+
+A non-array result fails the source loudly. Individual malformed records are
+dropped so one bad posting cannot discard every valid posting on the board.
+These rules also apply to enabled provider plugins.
+
 ### Context (`ctx`)
 
 `fetch` receives an HTTP context built by [`_http.mjs`](_http.mjs):
@@ -69,7 +85,8 @@ There is no index file — discovery is filesystem-convention-based
    non-null hit wins.
 
 Underscore-prefixed files are shared helpers, never loaded as providers:
-`_types.js` (contract typedefs), `_registry.mjs` (loader/router),
+`_types.js` (contract typedefs), `_contract.mjs` (runtime output boundary),
+`_registry.mjs` (loader/router),
 `_http.mjs` (HTTP transport), `_html-entities.mjs`, `_trust-validator.mjs`.
 
 ## Security conventions

@@ -31,6 +31,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import yaml from 'js-yaml';
 
 import { fetchJson as defaultFetchJson, makeHttpCtx } from '../../providers/_http.mjs';
+import { fetchProviderJobs } from '../../providers/_contract.mjs';
 import { loadProviders, resolveProvider } from '../../providers/_registry.mjs';
 
 const DEFAULT_PORTALS_PATH = process.env.CAREER_OPS_PORTALS || 'portals.yml';
@@ -315,7 +316,7 @@ function boundedProbeCtx(base) {
 export async function probeProvider(entry, provider, baseCtx) {
   const { ctx, wasTripped } = boundedProbeCtx(baseCtx);
   try {
-    const jobs = await provider.fetch(entry, ctx);
+    const jobs = await fetchProviderJobs(provider, entry, ctx);
     const count = Array.isArray(jobs) ? jobs.length : 0;
     if (count > 0) {
       const result = { provider: provider.id, status: 'live', jobCount: count };

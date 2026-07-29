@@ -48,8 +48,12 @@ directory. URLs and model identifiers have explicit syntax and size limits.
 - Results distinguish `succeeded`, `failed`, `cancelled`, and `timed_out`.
 - Standard output and error are streamed as bounded events; only a bounded tail
   is retained in the result.
-- Cancellation sends `SIGTERM`, followed by `SIGKILL` after a fixed grace
-  period if the child does not exit.
+- Operations are launched into a dedicated POSIX process group; Windows uses
+  the fixed system `taskkill.exe /T` command with no shell.
+- Cancellation and timeout signal the entire process tree, not only the
+  immediate Node child. A forced tree kill runs after the fixed grace period
+  even if the parent exits first, preventing model/browser descendants from
+  outliving a terminal job result.
 - Every operation has a centrally defined timeout and token-cost marker.
 - Presentation callbacks cannot crash or change the backend operation.
 - Persistent jobs use atomic per-role claims, so concurrent UI requests return

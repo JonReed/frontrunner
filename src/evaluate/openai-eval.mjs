@@ -26,14 +26,9 @@
  * --url at http://localhost:... (or use ollama-eval.mjs).
  */
 
-import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { execFileSync } from 'child_process';
+import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
 import { outputLanguageInstruction, parseOutputLanguage } from '../lib/profile-language.mjs';
-import {
-  formatReportNumber, releaseReportNumbers, reserveReportNumbers,
-} from '../tracker/reserve-report-num.mjs';
 import { TokenAccumulator, formatBreakdown, normalizeOpenAIUsage } from '../lib/token-tracker.mjs';
 import { evaluateDeterministicGate, formatGateRejection } from './evaluation-gate.mjs';
 import { frameUntrustedJobText } from '../security/job-document.mjs';
@@ -42,6 +37,7 @@ import {
   parseScoringResponse,
   renderEvaluationReport,
 } from './scoring-contract.mjs';
+import { saveEvaluation } from './save-evaluation.mjs';
 
 const tracker = new TokenAccumulator();
 tracker.recordZeroToken('scan');
@@ -62,8 +58,6 @@ const PATHS = {
   profileMode: join(ROOT, 'modes', '_profile.md'),
   articleDigest: join(ROOT, 'article-digest.md'),
   customRules: join(ROOT, 'modes', '_custom.md'),
-  reports:    join(ROOT, 'reports'),
-  trackerAdditions: join(ROOT, 'batch', 'tracker-additions'),
 };
 
 // ---------------------------------------------------------------------------
@@ -286,6 +280,7 @@ const headers = { 'Content-Type': 'application/json' };
 if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
 
 let evaluationText;
+let scoring;
 try {
   const res = await fetch(endpoint, {
     method: 'POST',
@@ -322,7 +317,8 @@ try {
     console.error('❌  The endpoint returned an empty response.');
     process.exit(1);
   }
-  evaluationText = renderEvaluationReport(parseScoringResponse(rawResponse));
+  scoring = parseScoringResponse(rawResponse);
+  evaluationText = renderEvaluationReport(scoring);
 } catch (err) {
   if (err.name === 'TimeoutError') {
     console.error(`❌  Request timed out after ${Math.round(timeoutMs / 1000)}s.`);
@@ -341,97 +337,25 @@ console.log('  CAREER-OPS EVALUATION — powered by ' + modelName + ' (' + endpo
 console.log('═'.repeat(66) + '\n');
 console.log(evaluationText);
 
-// ---------------------------------------------------------------------------
-// Parse score summary
-// ---------------------------------------------------------------------------
-const summaryMatch = evaluationText.match(/---SCORE_SUMMARY---\s*([\s\S]*?)---END_SUMMARY---/);
-
-let company    = 'unknown';
-let role       = 'unknown';
-let score      = '?';
-let archetype  = 'unknown';
-let legitimacy = 'unknown';
-
-if (summaryMatch) {
-  const extract = (key) => {
-    const m = summaryMatch[1].match(new RegExp(`${key}:\\s*(.+)`));
-    return m ? m[1].trim() : 'unknown';
-  };
-  company    = extract('COMPANY');
-  role       = extract('ROLE');
-  score      = extract('SCORE');
-  archetype  = extract('ARCHETYPE');
-  legitimacy = extract('LEGITIMACY');
-}
+const score = scoring.overallScore.toFixed(1);
+const archetype = scoring.archetype;
+const legitimacy = scoring.legitimacy.tier;
 
 // ---------------------------------------------------------------------------
 // Save report
 // ---------------------------------------------------------------------------
 if (saveReport) {
-  let reservedNumbers = [];
-  let reportSaved = false;
   try {
-    if (!existsSync(PATHS.reports)) {
-      mkdirSync(PATHS.reports, { recursive: true });
-    }
-
-    reservedNumbers   = await reserveReportNumbers(1, { rootDir: ROOT, reportsDir: PATHS.reports });
-    const num         = formatReportNumber(reservedNumbers[0]);
-    const today       = new Date().toISOString().split('T')[0];
-    const companySlug = company.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    const filename    = `${num}-${companySlug}-${today}.md`;
-    const reportPath  = join(PATHS.reports, filename);
-    const trackerPath = join(PATHS.trackerAdditions, `${num}-${companySlug}.tsv`);
-
-    const reportContent = `# Evaluation: ${company} — ${role}
-
-**Date:** ${today}
-**Archetype:** ${archetype}
-**Score:** ${score}/5
-**Legitimacy:** ${legitimacy}
-**PDF:** pending
-**Tool:** OpenAI-compatible (${modelName} @ ${endpointHost})
-
----
-
-${evaluationText.replace(/---SCORE_SUMMARY---[\s\S]*?---END_SUMMARY---/, '').trim()}
-`;
-
-    writeFileSync(reportPath, reportContent, 'utf-8');
-    mkdirSync(PATHS.trackerAdditions, { recursive: true });
-    const safe = (value) => String(value ?? '').replace(/[\t\r\n]+/g, ' ').trim();
-    writeFileSync(trackerPath, [
-      String(parseInt(num, 10)),
-      today,
-      safe(company),
-      safe(role),
-      'Evaluated',
-      `${score}/5`,
-      '❌',
-      `[${num}](reports/${filename})`,
-      `OpenAI-compatible evaluation (${modelName})`,
-    ].join('\t') + '\n', 'utf8');
-    console.log(`\n✅  Report saved: reports/${filename}`);
-    reportSaved = true;
-    const mergeOutput = execFileSync(process.execPath, [join(ROOT, 'src/tracker/merge-tracker.mjs')], {
-      cwd: ROOT,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
+    const artifact = await saveEvaluation(scoring, {
+      tool: `OpenAI-compatible (${modelName} @ ${endpointHost})`,
+      rootDir: ROOT,
     });
-    if (mergeOutput.trim()) console.log(mergeOutput.trim());
+    console.log(`\n✅  Report saved: reports/${artifact.filename}`);
     console.log('📊  Tracker merged into data/applications.md.');
   } catch (err) {
-    console.warn(`⚠️   Could not save report: ${err.message}`);
-    if (reportSaved) console.warn('⚠️   The report is intact; its tracker addition remains available for recovery.');
+    console.warn(`⚠️   Could not publish evaluation: ${err.message}`);
+    console.warn('⚠️   Any pending publication journal will be recovered on the next evaluation.');
     process.exitCode = 1;
-  } finally {
-    if (reservedNumbers.length > 0) {
-      try {
-        await releaseReportNumbers(reservedNumbers, { reportsDir: PATHS.reports });
-      } catch (err) {
-        console.warn(`⚠️   Could not release report reservation: ${err.message}`);
-      }
-    }
   }
 }
 

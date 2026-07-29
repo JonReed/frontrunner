@@ -52,7 +52,14 @@ AI coding CLI  ─┐
 ```
 
 ### Discovery — `src/scan/scan.mjs` + `providers/`
-Finds jobs from **open, no-auth public sources**. `src/scan/scan.mjs` is zero-token: it calls public ATS APIs (Greenhouse, Ashby, Lever, BambooHR, Teamtailor, Workday, Breezy) and RSS/JSON boards via per-board modules in `providers/`. Auth-gated/login-required sources are intentionally out of core (they belong in the plugin layer). Results land in `data/pipeline.md`.
+Finds jobs from **open, no-auth public sources**. `src/scan/scan.mjs` is
+zero-token: it calls public ATS APIs (Greenhouse, Ashby, Lever, BambooHR,
+Teamtailor, Workday, Breezy) and RSS/JSON boards via per-board modules in
+`providers/`. Every result then crosses `providers/_contract.mjs`, which
+enforces the same closed, bounded Job schema for built-in sources and plugin
+`provider`, `ingest`, and `search` hooks before any filter or persistence step.
+Auth-gated/login-required sources are intentionally out of core (they belong
+in the plugin layer). Results land in `data/pipeline.md`.
 
 ### Evaluation — `modes/oferta.md` + `modes/_shared.md`
 The heart of the tool. `oferta.md` defines the A–G evaluation blocks; `_shared.md` defines the 1–5 scoring system, archetype detection, posting-legitimacy signals, and global rules. The AI reads these plus your `cv.md` and produces a structured report.
@@ -63,7 +70,23 @@ The heart of the tool. `oferta.md` defines the A–G evaluation blocks; `_shared
 `src/cv/generate-pdf.mjs` (Playwright HTML→PDF), `src/cv/generate-latex.mjs` / `src/cv/build-cv-latex.mjs`, `src/cv/generate-cover-letter.mjs`. ATS-safe templates live in `templates/` and `fonts/`.
 
 ### Tracking — `data/` + `reports/` + tracker scripts
-Every evaluated offer is registered. `data/applications.md` is the canonical tracker table; `reports/{NNN}-{company}-{date}.md` holds full evaluations. `src/tracker/tracker.mjs`, `src/tracker/merge-tracker.mjs`, `src/tracker/dedup-tracker.mjs`, `src/tracker/normalize-statuses.mjs`, and `src/tracker/reconcile-pipeline.mjs` keep it consistent (atomic writes + a SQLite index). Report numbers are claimed atomically via `src/tracker/reserve-report-num.mjs`.
+Every evaluated offer is registered. `data/applications.md` is the canonical
+tracker table; `reports/{NNN}-{company}-{date}.md` holds full evaluations.
+`src/evaluate/evaluation-publication.mjs` journals the report and tracker
+fragment before either becomes visible, then replays interrupted publication
+idempotently. `src/tracker/tracker.mjs`, `src/tracker/merge-tracker.mjs`,
+`src/tracker/dedup-tracker.mjs`, `src/tracker/normalize-statuses.mjs`, and
+`src/tracker/reconcile-pipeline.mjs` keep the tracker consistent (atomic writes
++ a SQLite index). Report numbers are claimed atomically via
+`src/tracker/reserve-report-num.mjs`; a pending publication journal also keeps
+that number occupied after a crash.
+
+Durable user-state files share `src/lib/file-lock.mjs` and
+`src/lib/locked-file.mjs`: owner-verified cross-process locks cover the complete
+read/modify/write transaction, while same-directory temporary files, `fsync`
+and atomic rename prevent readers from seeing partial replacements. This
+boundary covers the pending-role pipeline, scanner audit files, application job
+claims and the agent inbox in addition to the tracker-specific transaction.
 
 ### Liveness — never evaluate a dead posting
 `src/scan/check-liveness.mjs` / `liveness-*.mjs` verify a posting is still open (zero-token) before it costs evaluation time.
@@ -76,7 +99,9 @@ application data, maps it to a fixed Node entry point, and owns structured
 events, result envelopes, timeouts, and cancellation. Clients cannot supply
 executables, working directories, arbitrary flags, or shell fragments. A
 persistent job manager adds atomic per-role claims, bounded logs, reload-safe
-state, and crash recovery for the UI. See
+state, and crash recovery for the UI. Supervised operations are isolated into
+a process group/tree, so cancellation and timeout terminate model, browser and
+renderer descendants before the job becomes terminal. See
 [`docs/APPLICATION_SERVICE.md`](docs/APPLICATION_SERVICE.md).
 
 ### Self-update — `update-system.mjs`

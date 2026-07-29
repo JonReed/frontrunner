@@ -25,9 +25,6 @@ import { execFileSync } from 'node:child_process';
 import readline from 'node:readline';
 import yaml from 'js-yaml';
 import { outputLanguageInstruction, parseOutputLanguage } from '../lib/profile-language.mjs';
-import {
-  formatReportNumber, releaseReportNumbers, reserveReportNumbers,
-} from '../tracker/reserve-report-num.mjs';
 import { TokenAccumulator, formatBreakdown, normalizeOpenAIUsage } from '../lib/token-tracker.mjs';
 import { readJdManifest } from '../scan/jd-cache.mjs';
 import { fetchJobDescriptionViaApi } from '../scan/fetch-jds.mjs';
@@ -39,6 +36,7 @@ import {
   renderEvaluationReport,
 } from './scoring-contract.mjs';
 import { frameUntrustedJobText } from '../security/job-document.mjs';
+import { saveEvaluation } from './save-evaluation.mjs';
 
 import { ROOT as __dirname } from '#paths';
 const tracker = new TokenAccumulator();
@@ -604,45 +602,15 @@ async function cmdEvaluate(input, ctx) {
     return null;
   }
 
-  let reservedNumbers;
   try {
-    reservedNumbers = await reserveReportNumbers(1, {
-      rootDir: __dirname,
-      reportsDir: path.join(__dirname, 'reports'),
-    });
-  } catch (e) {
-    console.error(`Could not reserve a report number: ${e.message}`);
-    return null;
-  }
-
-  try {
-    // Save report
-    const today   = new Date().toISOString().split('T')[0];
-    const num     = reservedNumbers[0];
-    const slug    = String(scoring.company).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'company';
-    const numStr  = formatReportNumber(num);
-    const relPath = `reports/${numStr}-${slug}-${today}.md`;
     const sourceUrl = jdText.match(/^\s*(?:\*\*)?URL:(?:\*\*)?\s*(https?:\/\/\S+)/mi)?.[1]
       ?? (typeof input === 'string' && /^https?:\/\//.test(input) ? input : '(pasted/cached)');
-
-    // Extract Legitimacy from LLM output or fall back to placeholder
-    const legitMatch = result.match(/\*\*Legitimacy:\*\*\s*([^\n]+)/);
-    const legitLine  = legitMatch ? `**Legitimacy:** ${legitMatch[1].trim()}` : '**Legitimacy:** unconfirmed';
-    writeFile(relPath, `# Evaluation: ${scoring.company} — ${scoring.role}\n\n**URL:** ${sourceUrl}\n**Score:** ${scoring.overallScore.toFixed(1)}/5\n${legitLine}\n\n${result}`);
-
-    const scoreStr    = `${scoring.overallScore.toFixed(1)}/5`;
-    const companyName = scoring.company;
-    const reportLink  = `[${numStr}](reports/${numStr}-${slug}-${today}.md)`;
-    const tsvSafe = (value) => String(value ?? '').replace(/[\t\r\n]+/g, ' ').trim();
-    const tsvLine     = `${num}\t${today}\t${tsvSafe(companyName)}\t${tsvSafe(scoring.role)}\tEvaluated\t${scoreStr}\t❌\t${reportLink}\t\n`;
-    const tsvFile     = `batch/tracker-additions/or-${numStr}-${slug}.tsv`;
-    writeFile(tsvFile, `num\tdate\tcompany\trole\tstatus\tscore\tpdf\treport\tnotes\n${tsvLine}`);
-    const mergeOutput = execFileSync(process.execPath, [path.join(__dirname, 'src/tracker/merge-tracker.mjs')], {
-      cwd: __dirname,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
+    const artifact = await saveEvaluation(scoring, {
+      tool: `OpenRouter (${activeModel ?? 'automatic fallback'})`,
+      sourceUrl,
+      rootDir: __dirname,
     });
-    if (mergeOutput.trim()) console.log(mergeOutput.trim());
+    const relPath = `reports/${artifact.filename}`;
 
     console.log(`\n✅ Report saved: ${relPath}`);
     console.log('📊 Tracker merged into data/applications.md.');
@@ -651,12 +619,10 @@ async function cmdEvaluate(input, ctx) {
     console.log('\n─────────────────────────────────────────────────────\n');
 
     return relPath;
-  } finally {
-    try {
-      await releaseReportNumbers(reservedNumbers, { reportsDir: path.join(__dirname, 'reports') });
-    } catch (e) {
-      console.warn(`Could not release report reservation: ${e.message}`);
-    }
+  } catch (e) {
+    console.error(`Could not publish evaluation: ${e.message}`);
+    console.error('Any pending publication journal will be recovered on the next evaluation.');
+    return null;
   }
 }
 
