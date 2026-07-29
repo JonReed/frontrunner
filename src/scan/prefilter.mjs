@@ -33,7 +33,17 @@
  *   node src/scan/prefilter.mjs --explain "Staff Product Engineer, AI"
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync } from 'node:fs';
+import {
+  copyFileSync,
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { join, dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -204,11 +214,56 @@ function loadJdIndex(dir) {
   return idx;
 }
 
-function atomicWrite(file, contents) {
-  mkdirSync(dirname(file), { recursive: true });
-  const tmp = `${file}.tmp-${process.pid}`;
-  writeFileSync(tmp, contents);
-  renameSync(tmp, file);
+function atomicWriteBatch(entries) {
+  const token = `${process.pid}-${randomUUID()}`;
+  const staged = entries.map(({ file, contents }, index) => ({
+    file,
+    contents,
+    tmp: `${file}.tmp-${token}-${index}`,
+    backup: `${file}.bak-${token}-${index}`,
+    existed: existsSync(file),
+    published: false,
+    restoreFailed: false,
+  }));
+
+  try {
+    for (const entry of staged) {
+      mkdirSync(dirname(entry.file), { recursive: true });
+      if (entry.existed && !lstatSync(entry.file).isFile()) {
+        throw new Error(`prefilter: output target is not a file: ${entry.file}`);
+      }
+      writeFileSync(entry.tmp, entry.contents);
+      if (entry.existed) copyFileSync(entry.file, entry.backup);
+    }
+
+    for (const entry of staged) {
+      renameSync(entry.tmp, entry.file);
+      entry.published = true;
+    }
+  } catch (error) {
+    for (const entry of [...staged].reverse()) {
+      try {
+        if (entry.published) {
+          if (entry.existed && existsSync(entry.backup)) copyFileSync(entry.backup, entry.file);
+          else rmSync(entry.file, { force: true });
+        }
+      } catch {
+        // Preserve the original error. A surviving .bak file remains recoverable.
+        entry.restoreFailed = true;
+      }
+    }
+    for (const entry of staged) {
+      try { rmSync(entry.tmp, { force: true }); } catch {}
+      if (!entry.restoreFailed) {
+        try { rmSync(entry.backup, { force: true }); } catch {}
+      }
+    }
+    throw error;
+  }
+
+  for (const entry of staged) {
+    try { rmSync(entry.backup, { force: true }); } catch {}
+  }
 }
 
 export function sanitizeTsvField(value, maxChars = 4_096) {
@@ -216,8 +271,8 @@ export function sanitizeTsvField(value, maxChars = 4_096) {
     .replace(/[\u0000\t\r\n]+/g, ' ')
     .replace(/ {2,}/g, ' ')
     .trim();
-  const bounded = normalized.slice(0, maxChars);
-  return /^[=+\-@]/.test(bounded) ? `'${bounded}` : bounded;
+  const guarded = /^[=+\-@]/.test(normalized) ? `'${normalized}` : normalized;
+  return guarded.slice(0, maxChars);
 }
 
 /**
@@ -227,6 +282,20 @@ export function sanitizeTsvField(value, maxChars = 4_096) {
  */
 export function runPrefilter({ input, jdsDir, out = '', rejects, profile = PROFILE, rules }) {
   if (!existsSync(input)) throw new Error(`prefilter: input not found: ${input}`);
+  const pathRoles = [
+    ['input', resolve(input)],
+    ['rejects', resolve(rejects)],
+    ...(out ? [['out', resolve(out)]] : []),
+  ];
+  for (let index = 0; index < pathRoles.length; index += 1) {
+    for (let other = index + 1; other < pathRoles.length; other += 1) {
+      if (pathRoles[index][1] === pathRoles[other][1]) {
+        throw new Error(
+          `prefilter: ${pathRoles[index][0]} and ${pathRoles[other][0]} must use different paths`,
+        );
+      }
+    }
+  }
   const activeRules = rules ?? getDefaultRules();
   const roles = readRoles(input);
   const jdIndex = loadJdIndex(jdsDir);
@@ -249,10 +318,9 @@ export function runPrefilter({ input, jdsDir, out = '', rejects, profile = PROFI
     else kept.push({ ...r, ...res });
   }
 
-  // Always write the audit trail — rule 1: never silently drop.
-  atomicWrite(
-    rejects,
-    `url\tcompany\ttitle\trule\tevidence\n${rejected
+  const writes = [{
+    file: rejects,
+    contents: `url\tcompany\ttitle\trule\tevidence\n${rejected
       .map((r) => [
         sanitizeTsvField(r.url, 4_096),
         sanitizeTsvField(r.company, 300),
@@ -261,12 +329,12 @@ export function runPrefilter({ input, jdsDir, out = '', rejects, profile = PROFI
         sanitizeTsvField(r.evidence, 140),
       ].join('\t'))
       .join('\n')}\n`,
-  );
+  }];
 
   if (out) {
-    atomicWrite(
-      out,
-      `id\turl\tsource\tnotes\n${kept
+    writes.push({
+      file: out,
+      contents: `id\turl\tsource\tnotes\n${kept
         .map((r, i) => {
           const src = r.source || (r.url.includes('greenhouse')
             ? 'Greenhouse'
@@ -283,8 +351,11 @@ export function runPrefilter({ input, jdsDir, out = '', rejects, profile = PROFI
           ].join('\t');
         })
         .join('\n')}\n`,
-    );
+    });
   }
+  // Prepare every artifact before replacing any of them. If one destination is
+  // invalid or unwritable, the prior audit and filtered batch remain paired.
+  atomicWriteBatch(writes);
 
   const byRule = {};
   for (const r of rejected) byRule[r.rule] = (byRule[r.rule] ?? 0) + 1;

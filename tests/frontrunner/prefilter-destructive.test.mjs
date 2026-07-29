@@ -111,6 +111,64 @@ test('destructive CLI: invalid config fails before replacing existing artifacts'
   }
 });
 
+test('destructive CLI: one invalid output target preserves both existing artifacts', (t) => {
+  const dir = sandbox(t);
+  const input = join(dir, 'input.md');
+  const config = join(dir, 'prefilter.yml');
+  const rejects = join(dir, 'rejects.tsv');
+  const output = join(dir, 'filtered.tsv');
+  writeFileSync(input, '- [ ] https://example.com/job | Acme | Junior Engineer\n');
+  writeFileSync(config, validConfig());
+  writeFileSync(rejects, 'existing rejects\n');
+  mkdirSync(output);
+
+  const result = run([
+    PREFILTER,
+    '--input', input,
+    '--jds', join(dir, 'jds'),
+    '--rejects', rejects,
+    '--out', output,
+    '--config', config,
+  ]);
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /output target is not a file/);
+  assert.equal(readFileSync(rejects, 'utf8'), 'existing rejects\n');
+});
+
+test('destructive CLI: aliased input and artifact paths fail before overwriting', (t) => {
+  const dir = sandbox(t);
+  const input = join(dir, 'input.md');
+  const config = join(dir, 'prefilter.yml');
+  const artifact = join(dir, 'artifact.tsv');
+  writeFileSync(input, '- [ ] https://example.com/job | Acme | Junior Engineer\n');
+  writeFileSync(config, validConfig());
+  writeFileSync(artifact, 'existing artifact\n');
+
+  const sameArtifacts = run([
+    PREFILTER,
+    '--input', input,
+    '--jds', join(dir, 'jds'),
+    '--rejects', artifact,
+    '--out', artifact,
+    '--config', config,
+  ]);
+  assert.notEqual(sameArtifacts.status, 0);
+  assert.match(sameArtifacts.stderr, /rejects and out must use different paths/);
+  assert.equal(readFileSync(artifact, 'utf8'), 'existing artifact\n');
+
+  const inputAsAudit = run([
+    PREFILTER,
+    '--input', input,
+    '--jds', join(dir, 'jds'),
+    '--rejects', input,
+    '--config', config,
+  ]);
+  assert.notEqual(inputAsAudit.status, 0);
+  assert.match(inputAsAudit.stderr, /input and rejects must use different paths/);
+  assert.match(readFileSync(input, 'utf8'), /Junior Engineer/);
+});
+
 test('destructive CLI: flags missing values fail before replacing artifacts', (t) => {
   const dir = sandbox(t);
   const rejects = join(dir, 'rejects.tsv');

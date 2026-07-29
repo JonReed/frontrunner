@@ -19,13 +19,60 @@ const base = {
 test('config compiler rejects malformed structures and unsafe regexes', () => {
   const cases = [
     [{ ...base, below_level: 'junior' }, /below_level must be an array/],
+    [{ ...base, below_leveel: [] }, /unknown key "below_leveel"/],
     [{ ...base, keep_signals: ['('] }, /not a valid regex/],
+    [{ ...base, keep_signals: ['   '] }, /non-empty regex string/],
     [{ ...base, keep_signals: ['^(a+)+$'] }, /super-linear regex/],
     [{ ...base, comp: { enabled: true, clearance_margin: 'nope' } }, /clearance_margin/],
+    [{ ...base, comp: { enabled: true, clearance_margin: true } }, /clearance_margin/],
     [{
       ...base,
       hard_blockers: [{ id: 'empty', enabled: true, all: [] }],
     }, /must contain at least one pattern/],
+    [{
+      ...base,
+      hard_blockers: [{
+        id: 'too_many_conditions',
+        enabled: true,
+        all: Array.from({ length: 21 }, (_, index) => `condition-${index}`),
+      }],
+    }, /has more than 20 patterns/],
+    [{
+      ...base,
+      hard_blockers: [{ id: 'disabled_but_broken', enabled: false, all: ['('] }],
+    }, /not a valid regex/],
+    [{
+      ...base,
+      hard_blockers: [
+        { id: 'duplicate', enabled: false, all: ['one'] },
+        { id: 'duplicate', enabled: true, all: ['two'] },
+      ],
+    }, /duplicates "duplicate"/],
+    [{
+      ...base,
+      hard_blockers: [{ id: 'unknown_key', enabled: false, all: ['one'], typo: true }],
+    }, /unknown key "typo"/],
+    [{
+      ...base,
+      hard_blockers: [{
+        id: 'long_reason',
+        enabled: true,
+        all: ['one'],
+        reason: 'x'.repeat(501),
+      }],
+    }, /reason must be non-empty and at most 500 characters/],
+    [{
+      ...base,
+      keep_signals: Array.from({ length: 100 }, (_, index) => `keep-${index}`),
+      ic_families: Array.from({ length: 100 }, (_, index) => `ic-${index}`),
+      wrong_functions: Array.from({ length: 100 }, (_, index) => `wrong-${index}`),
+      below_level: Array.from({ length: 100 }, (_, index) => `junior-${index}`),
+      hard_blockers: Array.from({ length: 6 }, (_, blocker) => ({
+        id: `blocker_${blocker}`,
+        enabled: false,
+        all: Array.from({ length: 20 }, (_, index) => `blocker-${blocker}-${index}`),
+      })),
+    }, /more than 500 regex patterns in total/],
   ];
 
   for (const [config, expected] of cases) {
