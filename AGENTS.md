@@ -493,11 +493,27 @@ silently treated as expired.
 
 ---
 
-## CI/CD, Community and Governance
+## CI/CD and Contributing
 
-- **GitHub Actions** on every PR: the full `test-all.mjs` suite, risk-based auto-labeler (🔴 core-architecture, ⚠️ agent-behavior, 📄 docs), first-timer welcome bot. **Branch protection** on `main`: status checks required, no direct pushes (except admin bypass). **Dependabot** on npm/Go/Actions.
-- **Contributing:** issue first → discussion → PR with linked issue → CI passes → maintainer review → merge.
-- **Governance:** BDFL with contributor ladder (Participant → Contributor → Triager → Reviewer → Maintainer, see `GOVERNANCE.md`) · Contributor Covenant 2.1 (`CODE_OF_CONDUCT.md`) · private vulnerability reporting (`SECURITY.md`) · help questions → Discord/Discussions, not issues (`SUPPORT.md`) · Discord: https://discord.gg/8pRpHETxa4
+- **GitHub Actions** on every PR: the full `test-all.mjs` suite, risk-based auto-labeler (🔴 core-architecture, ⚠️ agent-behavior, 📄 docs). **Branch protection** on `main`: status checks required. **Dependabot** on npm/Go/Actions.
+- **Contributing:** issue first → PR with linked issue → CI passes → review → merge. See `CONTRIBUTING.md`.
+- **Maintainer:** Furls Digital Ltd. One maintainer, no contributor ladder, no voting process. Security reports go through GitHub private vulnerability reporting (`SECURITY.md`); support questions to this repository's issues (`SUPPORT.md`).
+
+## What this project will not trade away
+
+The constraints every change is judged against. They are listed here rather
+than in a governance document because this is the file agents actually read,
+and each of them is easy to erode one convenience at a time.
+
+- **User files are the user's.** The system/user layer split in
+  `DATA_CONTRACT.md` is not weakened for convenience.
+- **The human decides.** The tool recommends, scores and drafts. It never
+  submits an application.
+- **Remote content is hostile.** Job adverts, API responses and
+  model-generated fields are untrusted, and a model that sees them gets no
+  local tools.
+- **No terminal.** The target user is not a developer. Anything that needs a
+  command line to accomplish is unfinished, not shipped.
 
 ## Headless / Batch Mode
 

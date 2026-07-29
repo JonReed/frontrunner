@@ -428,5 +428,5 @@ test suite remain foundational to this fork.
 
 MIT licensed. Upstream copyright is retained in [LICENSE](LICENSE), alongside
 Furls Digital's copyright covering the changes made here.
-`career-ops` is the upstream project's trademark; Frontrunner is independently
-named in accordance with [TRADEMARK.md](TRADEMARK.md).
+`career-ops` is the upstream project's name and remains theirs; Frontrunner is
+independently named and makes no claim to it.

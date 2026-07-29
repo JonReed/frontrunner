@@ -75,9 +75,8 @@ rights to use, modify, and redistribute the code; it does not grant
 rights to use the project name in commercial product naming,
 endorsement claims, or affiliation messaging.
 
-See [TRADEMARK.md](TRADEMARK.md) for permitted uses, restricted uses,
-and how to request written permission for commercial naming or
-endorsement.
+The "career-ops" name belongs to the upstream project, not to Frontrunner.
+Questions about using that name should go to its author, not to us.
 
 ## 11. Changes
 

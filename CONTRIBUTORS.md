@@ -43,8 +43,8 @@ Frontrunner is forked from. Their work is in this codebase and the credit
 stays with them. This list is **not a ranking and not a hierarchy** — it is
 alphabetical, and the icons say what kind of work someone did, not how much.
 
-Nobody listed here maintains Frontrunner or has access to this repository; see
-[MAINTAINERS.md](MAINTAINERS.md).
+Nobody listed here maintains Frontrunner or has access to this repository.
+Frontrunner is maintained by [Furls Digital Ltd](https://furls.co.uk).
 
 Key: 💻 code · 📖 docs · 🌍 translation · ⚠️ tests · 🔌 scanner provider · 🚇 infrastructure ·
 🐛 bug report · 🤔 ideas · 👀 review

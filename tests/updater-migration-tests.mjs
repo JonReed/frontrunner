@@ -91,11 +91,8 @@ const requiredSystemPaths = [
   'tests/tracker-columns-tests.mjs',
   'tests/updater-migration-tests.mjs',
   'CHANGELOG.md',
-  'CODE_OF_CONDUCT.md',
-  'GOVERNANCE.md',
   'SECURITY.md',
   'SUPPORT.md',
-  'TRADEMARK.md',
 ];
 
 const requiredBootstrapPaths = [
