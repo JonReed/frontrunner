@@ -319,4 +319,4 @@ open a PR. You can also ask on your own behalf — that is not rude here.
 
 ## How to become a contributor
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Open an issue first for anything beyond a typo fix — we merge fast when scope is clear.
+See [CONTRIBUTING.md](../CONTRIBUTING.md). Open an issue first for anything beyond a typo fix — we merge fast when scope is clear.

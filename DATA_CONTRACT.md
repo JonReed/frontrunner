@@ -14,7 +14,7 @@ These files contain your personal data, customizations, and work product. Update
 | `config/benchmarks.yml` | Your market calibration benchmark overrides (optional; copy `templates/benchmarks.yml` here and edit — read by `src/analysis/funnel-velocity.mjs`) |
 | `modes/_profile.md` | Your archetypes, narrative, negotiation scripts |
 | `modes/_custom.md` | Your house rules, custom workflows & output preferences (procedural — survives updates) |
-| `voice-dna.md` | Your writing voice guardrail — banned words, anti-AI-slop rules, tone (optional) |
+| `voice-dna.md` | Your writing voice guardrail — banned words, anti-AI-slop rules, tone (optional; copy `templates/voice-dna.template.md` here and edit) |
 | `article-digest.md` | Your proof points from portfolio |
 | `interview-prep/story-bank.md` | Your accumulated STAR+R stories |
 | `interview-prep/{company}-{role}.md` | Company-specific interview prep reports (written by `/career-ops interview-prep`) |
@@ -53,6 +53,7 @@ These files contain system logic, scripts, templates, and instructions that impr
 | `modes/_shared.md` | Scoring system, global rules, tools |
 | `modes/_custom.template.md` | Template seed for the user's `modes/_custom.md` |
 | `modes/_profile.template.md` | Template seed for the user's `modes/_profile.md` |
+| `templates/voice-dna.template.md` | Template seed for the user's `voice-dna.md` |
 | `modes/oferta.md` | Evaluation mode instructions |
 | `modes/pdf.md` | PDF generation instructions |
 | `modes/cover.md` | Cover letter generation instructions |

@@ -8452,9 +8452,9 @@ try {
   const guardedPaths = (noUserData.match(/const USER_PATHS = \[([\s\S]*?)\];/) || [, ''])[1];
   if (
     guardedPaths.includes('/^modes\\/_custom\\.md$/') &&
-    !guardedPaths.includes('/^voice-dna\\.md$/')
+    guardedPaths.includes('/^voice-dna\\.md$/')
   ) {
-    pass('no-user-data guard protects modes/_custom.md without treating voice-dna.md as user data');
+    pass('no-user-data guard protects modes/_custom.md and voice-dna.md as user layer');
   } else {
     fail('no-user-data guard has the wrong custom/user-layer paths (#1736)');
   }
