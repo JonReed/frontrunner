@@ -10,7 +10,9 @@ export function CvLinks({ pdf, size = 'md' }: { pdf: string; size?: 'sm' | 'md' 
   const href = `/api/file?path=${encodeURIComponent(pdf)}`;
   const cls =
     size === 'sm'
-      ? 'text-sm text-[var(--color-ink-faint)] underline decoration-[var(--color-line-strong)] underline-offset-2 transition hover:text-[var(--color-act)]'
+      ? // Inline text link, but 40px of thumb on a phone. It stays visually a
+        // link; only the hit area grows.
+        'inline-flex min-h-[40px] items-center text-sm text-[var(--color-ink-faint)] underline decoration-[var(--color-line-strong)] underline-offset-2 transition hover:text-[var(--color-act)] sm:min-h-0'
       : 'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-card)] px-3.5 py-2 text-sm font-medium text-[var(--color-ink-soft)] transition hover:border-[var(--color-act)] hover:text-[var(--color-act)]';
 
   return (

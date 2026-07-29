@@ -94,7 +94,7 @@ function RoleRow({ role }: { role: Role }) {
             href={role.url}
             target="_blank"
             rel="noreferrer"
-            className="text-sm text-[var(--color-ink-faint)] underline decoration-[var(--color-line-strong)] underline-offset-2 transition hover:text-[var(--color-act)]"
+            className="inline-flex min-h-[40px] items-center text-sm text-[var(--color-ink-faint)] underline decoration-[var(--color-line-strong)] underline-offset-2 transition hover:text-[var(--color-act)] sm:min-h-0"
           >
             View posting
           </a>

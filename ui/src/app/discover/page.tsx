@@ -75,7 +75,9 @@ export default async function DiscoverPage() {
                 href={r.url}
                 target="_blank"
                 rel="noreferrer"
-                className="shrink-0 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-card)] px-3 py-1.5 text-xs font-medium text-[var(--color-ink-soft)] transition hover:border-[var(--color-act)] hover:text-[var(--color-act)]"
+                // 40px tall on a phone. This is the only control on the page,
+                // and at its desktop height it was a 30px target for a thumb.
+                className="inline-flex min-h-[40px] shrink-0 items-center rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-card)] px-3 text-xs font-medium text-[var(--color-ink-soft)] transition hover:border-[var(--color-act)] hover:text-[var(--color-act)] sm:min-h-0 sm:py-1.5"
               >
                 View posting
               </a>

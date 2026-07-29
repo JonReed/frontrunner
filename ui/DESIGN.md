@@ -255,6 +255,10 @@ and includes people using this under stress.
   page, landmark elements.
 - **Colour is never the only signal.** "CV ready" is green *and* says so.
 - **Hover is never the only way in.** Tooltips open on focus too.
+- **40px minimum touch target on a phone**, including links that look like
+  text. Only the hit area grows — "View CV" still reads as a link. At desktop
+  sizes these were 19–30px controls, which is a miss for anyone whose hands
+  are less steady than a designer's.
 
 ---
 

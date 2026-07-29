@@ -13,11 +13,19 @@ import { readProfile } from '@/lib/profile';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Label above value on a phone, beside it on a laptop.
+ *
+ * A fixed 160px label column leaves about 110px for the value at 375px, which
+ * is not enough for an email address (it overflowed the card) or for a row of
+ * chips (each one wrapped to three lines). `break-words` covers the addresses
+ * and URLs that have no space to break at.
+ */
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex flex-wrap gap-x-6 gap-y-1 border-b border-[var(--color-line)] py-3 last:border-0">
-      <dt className="w-40 shrink-0 text-sm text-[var(--color-ink-faint)]">{label}</dt>
-      <dd className="min-w-0 flex-1 text-[15px]">{value}</dd>
+    <div className="flex flex-col gap-x-6 gap-y-1 border-b border-[var(--color-line)] py-3 last:border-0 sm:flex-row">
+      <dt className="text-sm text-[var(--color-ink-faint)] sm:w-40 sm:shrink-0">{label}</dt>
+      <dd className="min-w-0 flex-1 break-words text-[15px]">{value}</dd>
     </div>
   );
 }
