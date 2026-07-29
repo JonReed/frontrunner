@@ -2,14 +2,14 @@
   "name": "@career-ops/web",
   "version": "0.4.0",
   "private": true,
-  "description": "Official web experience for career-ops — local-first.",
+  "description": "Archived inherited career-ops web application; retained as reference code.",
   "engines": {
     "node": ">=22.5.0"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "node legacy-disabled.mjs",
     "build": "next build",
-    "start": "next start",
+    "start": "node legacy-disabled.mjs",
     "typecheck": "tsc --noEmit",
     "test": "node --test test-clean-chips.mjs"
   },
