@@ -1,6 +1,7 @@
-# Reviewing career-ops PRs — the one-pager
+# Reviewing Frontrunner PRs — the one-pager
 
-For reviewers on the [contributor ladder](../MAINTAINERS.md). Merges still go through a maintainer; your review is what makes them fast and safe.
+What a review here looks for. Useful whether you are reviewing someone else's
+PR or checking your own before opening it.
 
 ## The three rules
 
