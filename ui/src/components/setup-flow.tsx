@@ -85,15 +85,9 @@ const EMPTY: SetupDraft = {
   remote: '',
 };
 
-/**
- * Formats we can read in the browser without a parser.
- *
- * Word and PDF are what most people actually have, and both need a real
- * converter — PDF especially, where a two-column CV extracts as interleaved
- * nonsense. Rather than silently mangling someone's career history, those are
- * refused with an instruction that works today.
- */
-const READABLE = /\.(md|markdown|txt|text|rtf)$/i;
+const PLAIN = /\.(md|markdown|txt|text|rtf)$/i;
+const WORD = /\.docx$/i;
+const LEGACY_WORD = /\.doc$/i;
 
 function readTextFile(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -102,6 +96,59 @@ function readTextFile(file: File): Promise<string> {
     reader.onerror = () => reject(new Error('Could not read that file'));
     reader.readAsText(file);
   });
+}
+
+/**
+ * Read a CV file into markdown, in the browser.
+ *
+ * Word is the format people actually have. Anyone with a PDF CV generated it
+ * from Word or Google Docs, and both export .docx directly — so supporting
+ * .docx covers nearly everyone, and PDF can be left alone rather than guessed
+ * at. There is no deterministic way to read a two-column PDF; text extraction
+ * interleaves the columns, and someone's career history is the wrong place to
+ * discover that.
+ *
+ * mammoth is loaded on demand so its ~2MB and ten transitive dependencies stay
+ * out of the bundle for the majority who paste. It runs entirely client-side,
+ * which keeps "nothing is uploaded" literally true and keeps the parsing of an
+ * untrusted zip archive inside the browser sandbox rather than in the server
+ * process.
+ *
+ * Markdown rather than raw text because cv.md is markdown and the user edits
+ * it later — keeping their headings and bullets is the difference between a
+ * file they recognise and a wall of prose.
+ */
+/**
+ * Undo mammoth's markdown escaping.
+ *
+ * It escapes every punctuation mark it emits, so a perfectly ordinary line
+ * comes back as `Acme Ltd \(2019\-2024\)\.` — which is correct markdown and
+ * looks, to the person whose CV it is, like the import corrupted it.
+ *
+ * Faithfulness beats markdown-correctness here. This text is read by a model
+ * as prose and edited by a human in a textarea; neither benefits from escapes,
+ * and both are hurt by backslashes on every full stop. A CV that genuinely
+ * contained `*` or `_` had them literally, so restoring them is the right
+ * answer rather than a compromise.
+ */
+function unescapeMarkdown(text: string): string {
+  // Not \w — that counts underscore as a word character, and `Cost\_centre` is
+  // exactly the kind of line this exists to fix.
+  return text.replace(/\\([^A-Za-z0-9\s])/g, '$1');
+}
+
+async function readCvFile(file: File): Promise<string> {
+  if (PLAIN.test(file.name)) return readTextFile(file);
+  if (WORD.test(file.name)) {
+    const mammoth = await import('mammoth');
+    const { value } = await mammoth.convertToMarkdown({ arrayBuffer: await file.arrayBuffer() });
+    return unescapeMarkdown(value);
+  }
+  throw new Error(
+    LEGACY_WORD.test(file.name)
+      ? 'That is an older Word format. Open it in Word and save it as .docx, then try again.'
+      : 'Only Word (.docx) and text files can be read. If you have a PDF, export the original as Word — Google Docs and Word both do this — or paste the text instead.',
+  );
 }
 
 function wordCount(text: string) {
@@ -180,28 +227,37 @@ function FilePicker({
   onText: (text: string) => void;
   onError: (message: string | null) => void;
 }) {
+  // Reading a Word file means fetching the parser first. On a slow connection
+  // that is a visible pause, and an unlabelled pause after choosing a file
+  // reads as nothing happened.
+  const [busy, setBusy] = useState(false);
   return (
     <label className="inline-flex min-h-[40px] cursor-pointer items-center text-sm font-medium text-[var(--color-ink-soft)] underline decoration-[var(--color-line-strong)] underline-offset-2 transition hover:text-[var(--color-act)] sm:min-h-0">
-      or choose a file
+      {busy ? 'Reading…' : 'or choose a Word file'}
       <input
         type="file"
         className="sr-only"
-        accept=".md,.markdown,.txt,.text,.rtf"
+        accept=".docx,.md,.markdown,.txt,.text,.rtf"
+        disabled={busy}
         onChange={async (e) => {
           const file = e.target.files?.[0];
           e.target.value = '';                    // let the same file be picked twice
           if (!file) return;
-          if (!READABLE.test(file.name)) {
-            onError(
-              'Word and PDF files cannot be read directly yet. Open it, select all, and paste the text instead.',
-            );
-            return;
-          }
+          setBusy(true);
+          onError(null);
           try {
-            onError(null);
-            onText(await readTextFile(file));
-          } catch {
-            onError('Could not read that file. Paste the text instead.');
+            const text = await readCvFile(file);
+            if (!text.trim()) {
+              // A file that reads as empty is a real outcome, not a success:
+              // scanned or image-only documents produce exactly this.
+              onError('That file came out empty. Paste the text instead.');
+              return;
+            }
+            onText(text);
+          } catch (err) {
+            onError(err instanceof Error ? err.message : 'Could not read that file.');
+          } finally {
+            setBusy(false);
           }
         }}
       />

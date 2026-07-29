@@ -13,17 +13,18 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "mammoth": "^1.12.0",
     "next": "16.2.12",
     "react": "^19.2.5",
     "react-dom": "^19.2.5"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.2",
     "@types/node": "^22",
     "@types/react": "^19",
-    "typescript": "^5.7.0",
+    "postcss": "^8.5.18",
     "tailwindcss": "^4.2.2",
-    "@tailwindcss/postcss": "^4.2.2",
-    "postcss": "^8.5.18"
+    "typescript": "^5.7.0"
   },
   "overrides": {
     "postcss": "^8.5.18",
