@@ -33,17 +33,31 @@
  *   node src/scan/prefilter.mjs --explain "Staff Product Engineer, AI"
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync } from 'node:fs';
-import yaml from 'js-yaml';
+import {
+  copyFileSync,
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { join, dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { ROOT } from '#paths';
+import { MAX_JOB_DOCUMENT_CHARS } from '../security/job-document.mjs';
+import { loadPrefilterRules } from './prefilter-config.mjs';
 const argv = process.argv.slice(2);
 const hasFlag = (f) => argv.includes(f);
 const argVal = (f, d) => {
   const i = argv.indexOf(f);
-  return i !== -1 && argv[i + 1] ? argv[i + 1] : d;
+  if (i === -1) return d;
+  const value = argv[i + 1];
+  if (!value || value.startsWith('-')) throw new Error(`${f} requires a value`);
+  return value;
 };
 
 // ---------------------------------------------------------------- config
@@ -68,35 +82,13 @@ const PROFILE = readProfile();
 
 // ---------------------------------------------------------------- rules
 
-/**
- * Rules are DATA, not code — see config/prefilter.example.yml.
- * Load order: config/prefilter.yml (user layer, gitignored) then the tracked
- * example as a fallback, so a fresh checkout works with sensible defaults.
- */
-function loadRules() {
-  const user = join(ROOT, 'config/prefilter.yml');
-  const example = join(ROOT, 'config/prefilter.example.yml');
-  const file = existsSync(user) ? user : example;
-  if (!existsSync(file)) {
-    console.error('prefilter: no rules file (config/prefilter.yml or .example.yml)');
-    process.exit(1);
+let defaultRules;
+function getDefaultRules() {
+  if (!defaultRules) {
+    defaultRules = loadPrefilterRules({ override: argVal('--config', process.env.CAREER_OPS_PREFILTER) });
   }
-  const cfg = yaml.load(readFileSync(file, 'utf8')) ?? {};
-  const compile = (list) => (list ?? []).map((p) => new RegExp(p, 'i'));
-  return {
-    file,
-    keep: compile(cfg.keep_signals),
-    ic: compile(cfg.ic_families),
-    wrong: compile(cfg.wrong_functions),
-    junior: compile(cfg.below_level),
-    blockers: (cfg.hard_blockers ?? [])
-      .filter((b) => b?.enabled)
-      .map((b) => ({ id: b.id, all: compile(b.all), reason: b.reason ?? b.id })),
-    comp: { enabled: cfg.comp?.enabled !== false, margin: Number(cfg.comp?.clearance_margin ?? 0.8) },
-  };
+  return defaultRules;
 }
-
-const RULES = loadRules();
 
 // ---------------------------------------------------------------- classify
 
@@ -104,43 +96,48 @@ const RULES = loadRules();
  * Classify a role from its title (and optionally JD text).
  * @returns {{verdict:'reject'|'keep', rule:string, evidence:string}}
  */
-export function classify(title, jdText = '', profile = PROFILE, rules = RULES) {
-  const t = String(title || '');
+export function classify(title, jdText = '', profile = PROFILE, rules) {
+  const activeRules = rules ?? getDefaultRules();
+  const t = String(title || '').slice(0, 500);
+  const body = String(jdText ?? '').slice(0, MAX_JOB_DOCUMENT_CHARS);
 
   const hitOf = (list) => list.find((re) => re.test(t));
 
   // 1. Wrong function — unambiguous, check first so "Head of Marketing" dies here.
-  const wrong = hitOf(rules.wrong);
+  const wrong = hitOf(activeRules.wrong);
   if (wrong) return { verdict: 'reject', rule: 'wrong_function', evidence: t.match(wrong)?.[0] ?? '' };
 
   // 2. Junior — but a "Director" token rescues (e.g. "Associate Director").
-  const junior = hitOf(rules.junior);
-  if (junior && !hitOf(rules.keep)) {
+  const junior = hitOf(activeRules.junior);
+  if (junior && !hitOf(activeRules.keep)) {
     return { verdict: 'reject', rule: 'below_level', evidence: t.match(junior)?.[0] ?? '' };
   }
 
   // 3. IC role family — leadership tokens rescue ("Engineering Manager").
-  const ic = hitOf(rules.ic);
-  const lead = hitOf(rules.keep);
+  const ic = hitOf(activeRules.ic);
+  const lead = hitOf(activeRules.keep);
   if (ic && !lead) {
     return { verdict: 'reject', rule: 'ic_role_family', evidence: t.match(ic)?.[0] ?? '' };
   }
 
   // 4. Hard blockers in the JD body.
-  if (jdText) {
-    for (const b of rules.blockers) {
-      if (b.all.every((re) => re.test(jdText))) {
-        const m = jdText.match(/[^.\n]{0,90}clearance[^.\n]{0,60}/i) ?? jdText.match(/[^.\n]{0,90}sponsor[^.\n]{0,60}/i);
+  if (body) {
+    for (const b of activeRules.blockers) {
+      if (b.all.every((re) => re.test(body))) {
+        const m = body.match(/[^.\n]{0,90}clearance[^.\n]{0,60}/i) ?? body.match(/[^.\n]{0,90}sponsor[^.\n]{0,60}/i);
         return { verdict: 'reject', rule: b.id, evidence: (m?.[0] ?? b.reason).trim().slice(0, 140) };
       }
     }
 
     // 5. Published comp below the floor. Only fires on an explicit currency range.
-    if (rules.comp.enabled && profile.minComp > 0) {
-      const sym = profile.currency === 'GBP' ? '£' : profile.currency === 'USD' ? '$' : '€';
+    if (activeRules.comp.enabled && profile.minComp > 0) {
+      const sym = { GBP: '£', USD: '$', EUR: '€' }[profile.currency];
+      if (!sym) {
+        return { verdict: 'keep', rule: lead ? 'leadership_signal' : 'unclear', evidence: lead ? t.match(lead)?.[0] ?? '' : '' };
+      }
       const re = new RegExp(`\\${sym}\\s?(\\d{2,3})(?:,(\\d{3}))?\\s?(k\\b)?`, 'gi');
       const vals = [];
-      for (const m of jdText.matchAll(re)) {
+      for (const m of body.matchAll(re)) {
         let v = Number(m[1] + (m[2] ?? ''));
         if (m[3]) v *= 1000;
         else if (v < 1000) v *= 1000;
@@ -152,7 +149,7 @@ export function classify(title, jdText = '', profile = PROFILE, rules = RULES) {
         // equity and sign-on routinely close a 20-30% gap, so only reject when
         // the published number is far enough below the floor that no plausible
         // package closes it. (Rule 2: bias toward keeping.)
-        const CLEARANCE_MARGIN = rules.comp.margin;
+        const CLEARANCE_MARGIN = activeRules.comp.margin;
         const cutoff = profile.minComp * CLEARANCE_MARGIN;
         if (top < cutoff) {
           return {
@@ -217,11 +214,65 @@ function loadJdIndex(dir) {
   return idx;
 }
 
-function atomicWrite(file, contents) {
-  mkdirSync(dirname(file), { recursive: true });
-  const tmp = `${file}.tmp-${process.pid}`;
-  writeFileSync(tmp, contents);
-  renameSync(tmp, file);
+function atomicWriteBatch(entries) {
+  const token = `${process.pid}-${randomUUID()}`;
+  const staged = entries.map(({ file, contents }, index) => ({
+    file,
+    contents,
+    tmp: `${file}.tmp-${token}-${index}`,
+    backup: `${file}.bak-${token}-${index}`,
+    existed: existsSync(file),
+    published: false,
+    restoreFailed: false,
+  }));
+
+  try {
+    for (const entry of staged) {
+      mkdirSync(dirname(entry.file), { recursive: true });
+      if (entry.existed && !lstatSync(entry.file).isFile()) {
+        throw new Error(`prefilter: output target is not a file: ${entry.file}`);
+      }
+      writeFileSync(entry.tmp, entry.contents);
+      if (entry.existed) copyFileSync(entry.file, entry.backup);
+    }
+
+    for (const entry of staged) {
+      renameSync(entry.tmp, entry.file);
+      entry.published = true;
+    }
+  } catch (error) {
+    for (const entry of [...staged].reverse()) {
+      try {
+        if (entry.published) {
+          if (entry.existed && existsSync(entry.backup)) copyFileSync(entry.backup, entry.file);
+          else rmSync(entry.file, { force: true });
+        }
+      } catch {
+        // Preserve the original error. A surviving .bak file remains recoverable.
+        entry.restoreFailed = true;
+      }
+    }
+    for (const entry of staged) {
+      try { rmSync(entry.tmp, { force: true }); } catch {}
+      if (!entry.restoreFailed) {
+        try { rmSync(entry.backup, { force: true }); } catch {}
+      }
+    }
+    throw error;
+  }
+
+  for (const entry of staged) {
+    try { rmSync(entry.backup, { force: true }); } catch {}
+  }
+}
+
+export function sanitizeTsvField(value, maxChars = 4_096) {
+  const normalized = String(value ?? '')
+    .replace(/[\u0000\t\r\n]+/g, ' ')
+    .replace(/ {2,}/g, ' ')
+    .trim();
+  const guarded = /^[=+\-@]/.test(normalized) ? `'${normalized}` : normalized;
+  return guarded.slice(0, maxChars);
 }
 
 /**
@@ -229,8 +280,23 @@ function atomicWrite(file, contents) {
  * Keeping this callable lets tests exercise the same filesystem behavior as the
  * CLI without touching a user's pipeline, cache, or audit log.
  */
-export function runPrefilter({ input, jdsDir, out = '', rejects, profile = PROFILE, rules = RULES }) {
+export function runPrefilter({ input, jdsDir, out = '', rejects, profile = PROFILE, rules }) {
   if (!existsSync(input)) throw new Error(`prefilter: input not found: ${input}`);
+  const pathRoles = [
+    ['input', resolve(input)],
+    ['rejects', resolve(rejects)],
+    ...(out ? [['out', resolve(out)]] : []),
+  ];
+  for (let index = 0; index < pathRoles.length; index += 1) {
+    for (let other = index + 1; other < pathRoles.length; other += 1) {
+      if (pathRoles[index][1] === pathRoles[other][1]) {
+        throw new Error(
+          `prefilter: ${pathRoles[index][0]} and ${pathRoles[other][0]} must use different paths`,
+        );
+      }
+    }
+  }
+  const activeRules = rules ?? getDefaultRules();
   const roles = readRoles(input);
   const jdIndex = loadJdIndex(jdsDir);
 
@@ -247,23 +313,28 @@ export function runPrefilter({ input, jdsDir, out = '', rejects, profile = PROFI
         /* unreadable JD is not a reason to reject */
       }
     }
-    const res = classify(r.title, jd, profile, rules);
+    const res = classify(r.title, jd, profile, activeRules);
     if (res.verdict === 'reject') rejected.push({ ...r, ...res });
     else kept.push({ ...r, ...res });
   }
 
-  // Always write the audit trail — rule 1: never silently drop.
-  atomicWrite(
-    rejects,
-    `url\tcompany\ttitle\trule\tevidence\n${rejected
-      .map((r) => [r.url, r.company, r.title, r.rule, r.evidence].join('\t'))
+  const writes = [{
+    file: rejects,
+    contents: `url\tcompany\ttitle\trule\tevidence\n${rejected
+      .map((r) => [
+        sanitizeTsvField(r.url, 4_096),
+        sanitizeTsvField(r.company, 300),
+        sanitizeTsvField(r.title, 500),
+        sanitizeTsvField(r.rule, 64),
+        sanitizeTsvField(r.evidence, 140),
+      ].join('\t'))
       .join('\n')}\n`,
-  );
+  }];
 
   if (out) {
-    atomicWrite(
-      out,
-      `id\turl\tsource\tnotes\n${kept
+    writes.push({
+      file: out,
+      contents: `id\turl\tsource\tnotes\n${kept
         .map((r, i) => {
           const src = r.source || (r.url.includes('greenhouse')
             ? 'Greenhouse'
@@ -272,11 +343,19 @@ export function runPrefilter({ input, jdsDir, out = '', rejects, profile = PROFI
               : r.url.includes('myworkdayjobs')
                 ? 'Workday'
                 : 'scan');
-          return `${r.id || i + 1}\t${r.url}\t${src}\t${r.company} — ${r.title}`;
+          return [
+            sanitizeTsvField(r.id || i + 1, 64),
+            sanitizeTsvField(r.url, 4_096),
+            sanitizeTsvField(src, 100),
+            sanitizeTsvField(`${r.company} — ${r.title}`, 1_000),
+          ].join('\t');
         })
         .join('\n')}\n`,
-    );
+    });
   }
+  // Prepare every artifact before replacing any of them. If one destination is
+  // invalid or unwritable, the prior audit and filtered batch remain paired.
+  atomicWriteBatch(writes);
 
   const byRule = {};
   for (const r of rejected) byRule[r.rule] = (byRule[r.rule] ?? 0) + 1;
@@ -307,6 +386,7 @@ Usage:
   --out <file>     Write surviving roles as a batch-input TSV.
   --jds <dir>      JD text dir from fetch-jds.mjs. Default: jds
   --rejects <file> Write rejected roles + reasons as TSV. Default: batch/prefilter-rejects.tsv
+  --config <file>  Explicit prefilter YAML. Default: config/prefilter.yml, then example
   --explain <t>    Show how one title classifies, then exit.
 `);
     return;
@@ -336,7 +416,7 @@ Usage:
     console.log(`  kept:       ${kept.length}  (sent to the LLM)`);
     console.log(`  rejected:   ${rejected.length}  (${result.rejectedPct}% — zero tokens)`);
     console.log('\n  by rule:');
-    for (const [k, v] of Object.entries(byRule).sort((a, b) => b[1] - a[1])) {
+    for (const [k, v] of Object.entries(result.byRule).sort((a, b) => b[1] - a[1])) {
       console.log(`    ${String(v).padStart(4)}  ${k}`);
     }
     console.log(`\n  audit trail: ${rejects}`);

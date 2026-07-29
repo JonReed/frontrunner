@@ -1,0 +1,68 @@
+# Deterministic benchmark fixture for an engineering-leadership search.
+#
+# This is not a shipped default or a user profile. It exists so the scored
+# calibration corpus exercises real rejection rules reproducibly.
+
+keep_signals:
+  - '\bhead of\b'
+  - '\bdirector\b'
+  - '\bvp\b'
+  - '\bvice president\b'
+  - '\bchief\b'
+  - '\bmanaging director\b'
+  - '\bgeneral manager\b'
+  - '\bpartner\b'
+  - '\bpractice (lead|director|manager)\b'
+  - '\bdelivery (lead|manager|director)\b'
+  - '\b(programme?|program) (manager|director|lead)\b'
+  - '\bengineering manager\b'
+  - '\bhead\b'
+  - '\blead of\b'
+  - '\bchief of staff\b'
+
+ic_families:
+  - '\b(software|backend|frontend|full[- ]?stack|platform|infrastructure|inference|security|data|ml|machine learning|research|product|systems|solutions?|forward deployed|applied)\s+engineer\b'
+  - '\b(engineer|developer|programmer)\b'
+  - '\b(research|data|machine learning|applied)\s+scientist\b'
+  - '\bscientist\b'
+  - '\bdesigner\b'
+  - '\banalyst\b'
+  - '\bconsultant\b'
+  - '\btechnician\b'
+  - '\bmember of technical staff\b'
+
+wrong_functions:
+  - '\b(sales|account executive|business development|bdr|sdr)\b'
+  - '\bmarketing\b'
+  - '\bbrand\b'
+  - '\b(finance|accounting|accountant|tax|audit|controller|treasury)\b'
+  - '\b(legal|counsel|paralegal|compliance officer)\b'
+  - '\b(clinical|medical|nurse|physician|pharmacovigilance|epidemiolog)'
+
+below_level:
+  - '\b(intern|internship|graduate|apprentice|trainee|placement)\b'
+  - '\bjunior\b'
+  - '\bentry[- ]level\b'
+  - '\bassociate\b(?!\s+(director|partner|vp))'
+  - '\bfellows?(hips?)?\b'
+  - '\bresidency\b'
+  - '\bbootcamp\b'
+
+hard_blockers:
+  - id: active_security_clearance
+    enabled: false
+    all:
+      - '\b(sc|dv|security)\s*clearance\b'
+      - '\b(active|current|existing|must (already )?(hold|have)|holds?)\b[^.]{0,60}\bclearance\b'
+    reason: requires an ACTIVE security clearance
+
+  - id: no_visa_sponsorship
+    enabled: false
+    all:
+      - '\b(visa|immigration|work (permit|authoriz|authoris)|right to work)\b'
+      - '\b(unable to sponsor|cannot sponsor|do(es)? not (offer|provide) sponsor|no (visa )?sponsorship (is )?(available|offered|provided))\b'
+    reason: JD explicitly states no visa sponsorship
+
+comp:
+  enabled: true
+  clearance_margin: 0.8

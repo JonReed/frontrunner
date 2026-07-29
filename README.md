@@ -142,6 +142,10 @@ The checked-in 8-role, 3-board fixture currently produces:
 | Approximate model output tokens | 17,125 | 3,123 | −81.8% |
 | Roles reaching the model | 8 | 8 | 100% pass rate |
 | False rejects at score ≥3.0 | — | 0 | — |
+
+The separate 105-role leadership calibration rejects
+15 of 88 roles scoring
+below 3.0 (17%) and rejects **0 roles scoring 3.0 or above**.
 <!-- pipeline-benchmark:end -->
 
 These numbers come from
@@ -152,12 +156,9 @@ a deterministic regression benchmark, not a promise that every live job board
 will have the same ratios. Its token comparison measures the compact
 contract-based evaluator path. Claude now uses the same compact contract through
 a tool-less CLI call. The command also records wall time for the local
-deterministic pass.
-
-The broader 89-role scored regression corpus separately asserts that the
-deterministic filter rejects no role that scored 3.0 or above. Every rejection
-is logged with its rule and matching text so the filter can be audited and
-tuned.
+deterministic pass. Run `npm run benchmark:prefilter` to calibrate the active
+user rules against the same scored corpus; add `-- --check` to fail on a false
+reject.
 
 ## Requirements
 

@@ -29,5 +29,28 @@
     "count": 0,
     "roles": []
   },
-  "wallTimeMs": 1.844
+  "wallTimeMs": 1.472,
+  "calibration": {
+    "corpus": {
+      "roles": 105,
+      "source": "benchmarks/prefilter-scored-corpus.json"
+    },
+    "threshold": 3,
+    "highScoreRoles": 17,
+    "lowScoreRoles": 88,
+    "rejected": 15,
+    "kept": 90,
+    "falseRejects": {
+      "count": 0,
+      "roles": []
+    },
+    "lowScoreRejected": 15,
+    "lowScoreCapturePct": 17,
+    "rejectionPrecisionPct": 100,
+    "byRule": {
+      "ic_role_family": 7,
+      "wrong_function": 6,
+      "below_level": 2
+    }
+  }
 }

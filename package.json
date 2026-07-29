@@ -36,6 +36,7 @@
     "pipeline:prepare": "node src/pipeline/run.mjs --prepare-only",
     "benchmark": "node src/benchmark/pipeline-benchmark.mjs --write",
     "benchmark:check": "node src/benchmark/pipeline-benchmark.mjs --check",
+    "benchmark:prefilter": "node src/benchmark/prefilter-calibration.mjs",
     "scan:full": "node src/scan/scan-ats-full.mjs",
     "scan:seeds": "node src/scan/scan-ats-full.mjs --seeds yc,a16z",
     "scan:yc": "node src/scan/scan-ats-full.mjs --seeds yc",
