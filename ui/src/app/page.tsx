@@ -14,6 +14,8 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { readTracker, summarise, type Role, type Readiness } from '@/lib/roles';
 import { readSetup } from '@/lib/setup';
+import { readHealth } from '@/lib/health';
+import { ConnectionBanner } from '@/components/connection';
 import { Match } from '@/components/match';
 import { CvLinks } from '@/components/cv-links';
 import { PipelineOverview } from '@/components/journey-rail';
@@ -167,7 +169,7 @@ export default async function NextUpPage() {
   // completely baffling.
   if (readSetup().needed) redirect('/welcome');
 
-  const [roles, counts] = await Promise.all([readTracker(), summarise()]);
+  const [roles, counts, health] = await Promise.all([readTracker(), summarise(), readHealth()]);
   const actionable = roles.filter((r) => r.readiness !== 'parked');
 
   /*
@@ -192,6 +194,8 @@ export default async function NextUpPage() {
       <div className="mb-7">
         <Headline ready={counts.readyToSend} nearly={counts.oneStepAway} />
       </div>
+
+      <ConnectionBanner health={health} />
 
       <PipelineOverview counts={stageCounts} />
 
