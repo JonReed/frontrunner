@@ -1,14 +1,15 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import {
-  existsSync, mkdtempSync, readFileSync, rmSync,
+  existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync,
+  writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 
 import {
-  checkpointCompatible, loadCheckpoint, writeCheckpoint,
+  checkpointCompatible, loadCheckpoint, removeCheckpoint, writeCheckpoint,
 } from '../../src/scan/scan-ats-full.mjs';
 
 const SCANNER_URL = new URL('../../src/scan/scan-ats-full.mjs', import.meta.url).href;
@@ -97,8 +98,57 @@ test('an interrupted checkpoint replacement never exposes partial JSON', () => {
     assert.equal(writeCheckpoint(first, checkpointPath), true);
     assert.equal(writeCheckpoint(second, checkpointPath), true);
     assert.deepEqual(JSON.parse(readFileSync(checkpointPath, 'utf8')), second);
-    assert.equal(existsSync(`${checkpointPath}.tmp-${process.pid}`), false);
+    assert.deepEqual(readdirSync(dir), ['checkpoint.json']);
   } finally {
     rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('failure after durable temporary write preserves the previous checkpoint', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'frontrunner-scan-checkpoint-failure-'));
+  const checkpointPath = join(dir, 'checkpoint.json');
+  try {
+    const original = '{"version":1,"current":null}\r\n';
+    writeFileSync(checkpointPath, original);
+    const saved = writeCheckpoint({
+      version: 1,
+      current: { name: 'ashby', resumeAt: 80, datasetLen: 100 },
+    }, checkpointPath, {
+      afterWrite() {
+        throw new Error('injected scanner checkpoint interruption');
+      },
+    });
+    assert.equal(saved, false);
+    assert.equal(readFileSync(checkpointPath, 'utf8'), original);
+    assert.deepEqual(readdirSync(dir), ['checkpoint.json']);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('checkpoint publication and removal enforce protected user data without preload', () => {
+  const protectedRoot = mkdtempSync(join(tmpdir(), 'frontrunner-protected-checkpoint-'));
+  const cache = join(protectedRoot, 'data', 'cache');
+  const checkpointPath = join(cache, 'ats-full-checkpoint.json');
+  const previousRoot = process.env.FRONTRUNNER_TEST_PROTECTED_ROOT;
+  try {
+    mkdirSync(cache, { recursive: true });
+    writeFileSync(checkpointPath, 'must survive\n');
+    process.env.FRONTRUNNER_TEST_PROTECTED_ROOT = protectedRoot;
+
+    assert.equal(writeCheckpoint({ version: 1, current: null }, checkpointPath), false);
+    assert.throws(
+      () => removeCheckpoint(checkpointPath),
+      error => error?.code === 'TEST_USER_DATA_WRITE_BLOCKED',
+    );
+    assert.equal(readFileSync(checkpointPath, 'utf8'), 'must survive\n');
+    assert.deepEqual(readdirSync(cache), ['ats-full-checkpoint.json']);
+  } finally {
+    if (previousRoot === undefined) {
+      delete process.env.FRONTRUNNER_TEST_PROTECTED_ROOT;
+    } else {
+      process.env.FRONTRUNNER_TEST_PROTECTED_ROOT = previousRoot;
+    }
+    rmSync(protectedRoot, { recursive: true, force: true });
   }
 });

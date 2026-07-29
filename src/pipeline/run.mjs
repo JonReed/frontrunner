@@ -8,11 +8,8 @@
 
 import {
   existsSync,
-  mkdirSync,
   realpathSync,
   readFileSync,
-  renameSync,
-  writeFileSync,
 } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
@@ -44,13 +41,7 @@ import {
   applicationProgress,
   emitApplicationProgress,
 } from '../application/progress.mjs';
-
-function atomicWrite(file, contents) {
-  mkdirSync(dirname(file), { recursive: true });
-  const tmp = `${file}.tmp-${process.pid}`;
-  writeFileSync(tmp, contents);
-  renameSync(tmp, file);
-}
+import { publishPipelineFile } from './pipeline-files.mjs';
 
 export class PipelineRunBusyError extends FileLockTimeoutError {
   constructor(lockDir, timeoutMs) {
@@ -102,7 +93,7 @@ function rolesTsv(roles) {
     .join('\n')}\n`;
 }
 
-export async function markPipelineOutcomes(file, outcomes) {
+export async function markPipelineOutcomes(file, outcomes, options = {}) {
   if (!outcomes?.size || !existsSync(file)) return 0;
   return withPipelineLock(file, async () => {
     const lines = readFileSync(file, 'utf8').split(/\r?\n/);
@@ -128,7 +119,11 @@ export async function markPipelineOutcomes(file, outcomes) {
       processed = kept.length - 2;
     }
     kept.splice(processed + 1, 0, '', ...moved);
-    atomicWrite(file, `${kept.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd()}\n`);
+    publishPipelineFile(
+      file,
+      `${kept.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd()}\n`,
+      options.writeOptions,
+    );
     return changed;
   });
 }
@@ -380,8 +375,8 @@ export async function runCanonicalPipeline({
       ? await cacheProviderDescriptions(fallbackDescriptions, { outDir: jdsDir })
       : { cached: 0, manifestSize: manifest.size };
 
-    atomicWrite(activeInput, rolesTsv(live));
-    atomicWrite(
+    publishPipelineFile(activeInput, rolesTsv(live));
+    publishPipelineFile(
       livenessResults,
       `url\tcompany\ttitle\tresult\tsource\treason\n${livenessRows
         .map((row) => [row.url, row.company, row.title, row.result, row.source, row.reason]
@@ -411,7 +406,7 @@ export async function runCanonicalPipeline({
         [row.url, row.company, row.title, 'posting_expired', row.reason]
           .map((value) => String(value ?? '').replace(/[\t\r\n]+/g, ' '))
           .join('\t'));
-      atomicWrite(rejects, `${existing}\n${extra.join('\n')}\n`);
+      publishPipelineFile(rejects, `${existing}\n${extra.join('\n')}\n`);
     }
 
     await markPipelineOutcomes(input, new Map([

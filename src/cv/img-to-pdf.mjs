@@ -26,9 +26,10 @@
 
 import { chromium } from 'playwright';
 import { resolve, dirname, extname } from 'path';
-import { readFile, writeFile, mkdir } from 'fs/promises';
+import { readFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { fileURLToPath } from 'url';
+import { publishPdfArtifact } from './pdf-artifact-store.mjs';
 
 const MIME_TYPES = {
   '.png': 'image/png',
@@ -158,7 +159,7 @@ export async function convertImageToPdf(inputPath, outputPath) {
       printBackground: true,
     });
 
-    await writeFile(outputPath, pdfBuffer);
+    publishPdfArtifact(outputPath, pdfBuffer);
 
     return { outputPath, size: pdfBuffer.length, width, height };
   } finally {

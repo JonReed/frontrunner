@@ -156,9 +156,11 @@ prefilter before model evaluation.
 - **Mandatory conservative filtering:** every model-backed entry point runs the
   deterministic gate. Rejections retain the exact rule and matching evidence;
   uncertain roles pass through rather than being silently discarded.
-- **Fail-closed state changes:** tracker writes are locked and atomic, report
-  numbers are reserved safely, interrupted scans checkpoint, and updater
-  failures roll back without leaving a half-installed system. Scanner history,
+- **Fail-closed state changes:** tracker writes are locked, fsync-backed,
+  atomically replaced, and covered by the test user-data barrier; report
+  numbers are reserved safely, interrupted reverse-ATS scans publish
+  fsync-backed resume checkpoints through the same protected boundary, and
+  updater failures roll back without leaving a half-installed system. Scanner history,
   run metrics, portal health, the pending-role pipeline, and the agent inbox use
   the same crash-safe locked replacement boundary, so concurrent scans or local
   clients cannot silently drop each other's state. Application-answer sections,
@@ -169,6 +171,23 @@ prefilter before model evaluation.
   shared JD cache uses the same discipline: scanner, bulk-fetch and
   browser-fallback publishers merge under one lock,
   publish bounded JD files atomically, and commit `jds/index.tsv` last.
+  Batch reconciliation also holds the pipeline lock from its first read through
+  atomic backup and replacement, so it cannot erase a concurrent scan result
+  or expose a truncated inbox after interruption.
+  The canonical pipeline's own active-role, liveness, rejection and inbox
+  outcome files use the shared fsync-backed publisher as well; a failed outcome
+  update preserves the pending inbox and releases its transaction lock.
+  Status-transition observations use their own validated locked atomic
+  publisher as well, retaining every concurrent event without exposing partial
+  TSV rows; audit failure still cannot roll back a successful tracker change.
+  Generated PDF bookkeeping uses a locked atomic merge: concurrent renders
+  retain every `data/pdf-index.tsv` entry while interrupted index publication
+  leaves the previous manifest readable. CV PDFs, image conversions and archived
+  postings publish complete, size-bounded PDF buffers through one fsync-backed
+  atomic boundary, so a killed renderer cannot truncate an existing artifact.
+  Follow-up scheduling now uses that shared owner-verified transaction boundary
+  too, so simultaneous status changes retain every pin and a killed writer
+  cannot truncate or replace the user's follow-up history.
 - **Transactional evaluation publication:** every model provider uses one
   journaled report-to-tracker publisher. If the process, machine, or tracker
   merge fails after model tokens have already been spent, the next evaluation

@@ -43,16 +43,20 @@
  * (status-log.tsv, sibling of the tracker file):
  *   {tracker#}\t{date}\t{from}\t{to}\tset-status\t
  * Date defaults to today; pass --on YYYY-MM-DD when the transition actually
- * happened earlier ("they replied Tuesday"). The append is observation-only:
- * if it fails, a warning goes to stderr and the exit code is unchanged — the
- * tracker remains the source of truth for state. Read by funnel-velocity.mjs.
+ * happened earlier ("they replied Tuesday"). The append uses a separate
+ * owner-verified lock and atomic replacement, so concurrent events cannot be
+ * lost and interruption cannot expose a partial TSV row. It remains
+ * observation-only: if it fails, a warning goes to stderr and the exit code is
+ * unchanged — the tracker remains the source of truth for state. Read by
+ * funnel-velocity.mjs.
  */
 
-import { readFileSync, existsSync, appendFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { extractTrackerReportNumbers, resolveColumns, parseTrackerRow } from './tracker-parse.mjs';
 import { roleFuzzyMatch } from './role-matcher.mjs';
+import { appendStatusTransition } from './status-log.mjs';
 import {
   rebuildRow, resolveTrackerPath, trackerLockDirFor, acquireTrackerLock,
   writeFileAtomic, loadCanonicalStates, resolveCanonicalState, normalizeCompany, cell,
@@ -390,17 +394,23 @@ if (changed && !flags.dryRun) {
 
 // ── status-log append (transition ledger, read by funnel-velocity.mjs) ──
 // Observation trail only: the tracker stays the source of truth for STATE,
-// the ledger records WHEN transitions happened. A failed append is a warning,
-// never a failure — the status write above already succeeded. Sibling of the
-// tracker file so FRONTRUNNER_TRACKER redirects (tests, custom layouts) keep
-// the ledger next to the tracker it describes. Inside the lock window, so
-// concurrent writers can't interleave lines.
+// the ledger records WHEN transitions happened. A failed publication is a
+// warning, never a failure — the status write above already succeeded. Sibling
+// of the tracker file so FRONTRUNNER_TRACKER redirects (tests, custom layouts)
+// keep the ledger next to the tracker it describes. The ledger's own lock and
+// atomic replacement prevent partial or lost lines; the tracker lock keeps the
+// state transition and its observation ordered against other tracker writers.
 let statusLogged = false;
 if (statusChanged && !flags.dryRun) {
   const logPath = join(dirname(APPS_FILE), 'status-log.tsv');
   const eventDate = flags.on ?? new Date().toISOString().slice(0, 10);
   try {
-    appendFileSync(logPath, `${target.num}\t${eventDate}\t${oldStatus}\t${newStatus}\tset-status\t\n`);
+    await appendStatusTransition(logPath, {
+      trackerNum: target.num,
+      date: eventDate,
+      from: oldStatus,
+      to: newStatus,
+    });
     statusLogged = true;
   } catch (err) {
     console.error(`⚠ status-log append failed (status change itself succeeded): ${err.message}`);

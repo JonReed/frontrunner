@@ -17,12 +17,13 @@
  */
 
 import { chromium } from 'playwright';
-import { writeFile, readFile } from 'fs/promises';
+import { readFile } from 'fs/promises';
 import { existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 import { ROOT } from '#paths';
+import { publishPdfArtifact } from '../cv/pdf-artifact-store.mjs';
 const JDS_DIR = join(ROOT, 'jds');
 const PIPELINE_PATH = join(ROOT, 'data', 'pipeline.md');
 
@@ -249,7 +250,7 @@ async function archiveUrl(browser, url, { company: companyHint, role: roleHint }
       preferCSSPageSize: false,
     });
 
-    await writeFile(outputPath, pdfBuffer);
+    publishPdfArtifact(outputPath, pdfBuffer);
 
     const sizeKb = (pdfBuffer.length / 1024).toFixed(1);
     console.log(`Saved (${sizeKb} KB)`);

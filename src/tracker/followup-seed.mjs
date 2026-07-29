@@ -48,12 +48,13 @@
  *   FRONTRUNNER_FOLLOWUPS_LOCK_STALE_MS     stale-lock recovery threshold
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync, rmSync, statSync, realpathSync } from 'fs';
-import { join, dirname, basename, resolve, isAbsolute, relative, sep } from 'path';
-import { fileURLToPath, pathToFileURL } from 'url';
-import { createHash, randomUUID } from 'crypto';
-import { tmpdir } from 'os';
+import { readFileSync, existsSync, realpathSync } from 'node:fs';
+import { join, dirname, basename, resolve, isAbsolute, relative, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { createHash } from 'node:crypto';
+import { tmpdir } from 'node:os';
 import { resolveColumns, parseTrackerRow } from './tracker-parse.mjs';
+import { transactFollowups } from './followup-store.mjs';
 import {
   resolveCadenceConfig,
   normalizeStatus,
@@ -204,7 +205,7 @@ function isAlreadySeeded(content, appNum) {
   return hasFollowupTableRow(content, appNum);
 }
 
-// --- Locking (mirrors merge-tracker.mjs's tracker lock, scoped to follow-ups) --
+// --- Lock path compatibility ------------------------------------------------
 
 function pathIsInside(childPath, parentDir) {
   const relativePath = relative(parentDir, childPath);
@@ -228,120 +229,6 @@ function resolveLockDir(explicitLockDir, followupsPath) {
   if (explicitLockDir) return explicitLockDir;
   const lockKey = createHash('sha256').update(followupsPath).digest('hex').slice(0, 16);
   return resolveFollowupsLockDir(process.env.FRONTRUNNER_FOLLOWUPS_LOCK, lockKey);
-}
-
-function sleep(ms) {
-  return new Promise(res => setTimeout(res, ms));
-}
-
-function processIsAlive(pid) {
-  if (!Number.isInteger(pid) || pid <= 0) return false;
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (err) {
-    return err?.code === 'EPERM';
-  }
-}
-
-function readLockOwner(lockDir) {
-  try {
-    return JSON.parse(readFileSync(join(lockDir, 'owner.json'), 'utf-8'));
-  } catch {
-    return null;
-  }
-}
-
-function lockCanRecover(lockDir, staleMs) {
-  const owner = readLockOwner(lockDir);
-  if (owner?.pid) return !processIsAlive(owner.pid);
-  try {
-    return Date.now() - statSync(lockDir).mtimeMs > staleMs;
-  } catch {
-    return true;
-  }
-}
-
-/**
- * Acquire an exclusive filesystem lock covering the read-check-append
- * critical section for data/follow-ups.md. Mirrors merge-tracker.mjs's
- * tracker lock: atomic `mkdirSync`, an `owner.json` with pid/timestamp,
- * pid-alive detection, stale-lock recovery, and retry/backoff.
- *
- * @param {string} lockDir
- * @param {string} followupsPath - Recorded in owner.json for diagnostics.
- * @param {{timeoutMs?: number, retryMs?: number, staleMs?: number}} [options]
- * @returns {Promise<{release: Function}>}
- */
-async function acquireFollowupsLock(lockDir, followupsPath, options = {}) {
-  const timeoutMs = options.timeoutMs ?? 60_000;
-  const retryMs = options.retryMs ?? 75;
-  const staleMs = options.staleMs ?? 10 * 60_000;
-  const recoverGuardDir = `${lockDir}.recover`;
-  const token = randomUUID();
-  const startedAt = Date.now();
-
-  while (Date.now() - startedAt < timeoutMs) {
-    try {
-      mkdirSync(lockDir);
-      writeFileSync(join(lockDir, 'owner.json'), JSON.stringify({
-        pid: process.pid,
-        token,
-        startedAt: new Date().toISOString(),
-        followups: followupsPath,
-      }, null, 2));
-
-      let released = false;
-      return {
-        release() {
-          if (released) return;
-          released = true;
-          const owner = readLockOwner(lockDir);
-          if (owner?.token === token) {
-            rmSync(lockDir, { recursive: true, force: true });
-          }
-        },
-      };
-    } catch (err) {
-      if (err?.code !== 'EEXIST') throw err;
-
-      let hasRecoverGuard = false;
-      try {
-        mkdirSync(recoverGuardDir);
-        hasRecoverGuard = true;
-      } catch (guardErr) {
-        if (guardErr?.code !== 'EEXIST') throw guardErr;
-      }
-
-      if (hasRecoverGuard) {
-        try {
-          if (lockCanRecover(lockDir, staleMs)) {
-            rmSync(lockDir, { recursive: true, force: true });
-            continue;
-          }
-        } finally {
-          rmSync(recoverGuardDir, { recursive: true, force: true });
-        }
-      }
-
-      await sleep(retryMs);
-    }
-  }
-
-  throw new SeedError('LOCK_TIMEOUT', `Timed out waiting for follow-ups lock at ${lockDir}`);
-}
-
-// --- Atomic write (mirrors writeFileAtomic in tracker.mjs / merge-tracker.mjs) --
-
-function writeFileAtomic(filePath, content) {
-  const tmpPath = join(dirname(filePath), `.${basename(filePath)}.${process.pid}.${Date.now()}.${randomUUID()}.tmp`);
-  try {
-    writeFileSync(tmpPath, content);
-    renameSync(tmpPath, filePath);
-  } catch (err) {
-    rmSync(tmpPath, { force: true });
-    throw err;
-  }
 }
 
 function appendPins(existingContent, pinLines) {
@@ -373,6 +260,7 @@ function appendPins(existingContent, pinLines) {
  * @param {number} [options.lockTimeoutMs]
  * @param {number} [options.lockRetryMs]
  * @param {number} [options.lockStaleMs]
+ * @param {object} [options.writeOptions] - Atomic publisher hooks (tests only).
  * @returns {Promise<object>}
  */
 export async function seedFollowup(appNum, options = {}) {
@@ -415,24 +303,27 @@ export async function seedFollowup(appNum, options = {}) {
   }
 
   const lockDir = resolveLockDir(options.lockDir, followupsPath);
-  const lock = await acquireFollowupsLock(lockDir, followupsPath, {
-    timeoutMs: options.lockTimeoutMs ?? envInt('FRONTRUNNER_FOLLOWUPS_LOCK_TIMEOUT_MS', 60_000),
-    retryMs: options.lockRetryMs ?? envInt('FRONTRUNNER_FOLLOWUPS_LOCK_RETRY_MS', 75),
-    staleMs: options.lockStaleMs ?? envInt('FRONTRUNNER_FOLLOWUPS_LOCK_STALE_MS', 10 * 60_000),
-  });
-
-  try {
-    const existingContent = existsSync(followupsPath) ? readFileSync(followupsPath, 'utf-8') : null;
+  return transactFollowups(followupsPath, existingContent => {
     if (existingContent != null && isAlreadySeeded(existingContent, appNum) && !options.force) {
-      return { seeded: false, appNum, pin: null, nextDate, appliedDate, setDate, reason: 'already-seeded' };
+      return {
+        value: { seeded: false, appNum, pin: null, nextDate, appliedDate, setDate, reason: 'already-seeded' },
+      };
     }
 
-    mkdirSync(dirname(followupsPath), { recursive: true });
-    writeFileAtomic(followupsPath, appendPins(existingContent, [pin]));
-    return { seeded: true, appNum, pin, nextDate, appliedDate, setDate };
-  } finally {
-    lock.release();
-  }
+    return {
+      content: appendPins(existingContent, [pin]),
+      value: { seeded: true, appNum, pin, nextDate, appliedDate, setDate },
+    };
+  }, {
+    lockOptions: {
+      lockDir,
+      timeoutMs: options.lockTimeoutMs ?? envInt('FRONTRUNNER_FOLLOWUPS_LOCK_TIMEOUT_MS', 60_000),
+      retryMs: options.lockRetryMs ?? envInt('FRONTRUNNER_FOLLOWUPS_LOCK_RETRY_MS', 75),
+      staleMs: options.lockStaleMs ?? envInt('FRONTRUNNER_FOLLOWUPS_LOCK_STALE_MS', 10 * 60_000),
+      createTimeoutError: dir => new SeedError('LOCK_TIMEOUT', `Timed out waiting for follow-ups lock at ${dir}`),
+    },
+    writeOptions: options.writeOptions,
+  });
 }
 
 // --- Core: backfill all Applied rows ---------------------------------------
@@ -486,14 +377,7 @@ export async function seedBackfill(options = {}) {
   }
 
   const lockDir = resolveLockDir(options.lockDir, followupsPath);
-  const lock = await acquireFollowupsLock(lockDir, followupsPath, {
-    timeoutMs: options.lockTimeoutMs ?? envInt('FRONTRUNNER_FOLLOWUPS_LOCK_TIMEOUT_MS', 60_000),
-    retryMs: options.lockRetryMs ?? envInt('FRONTRUNNER_FOLLOWUPS_LOCK_RETRY_MS', 75),
-    staleMs: options.lockStaleMs ?? envInt('FRONTRUNNER_FOLLOWUPS_LOCK_STALE_MS', 10 * 60_000),
-  });
-
-  try {
-    const existingContent = existsSync(followupsPath) ? readFileSync(followupsPath, 'utf-8') : null;
+  return transactFollowups(followupsPath, existingContent => {
     const checkContent = existingContent ?? '';
     const seeded = [];
     const skipped = [];
@@ -517,15 +401,19 @@ export async function seedBackfill(options = {}) {
       newPins.push(plan.pin);
     }
 
-    if (newPins.length > 0) {
-      mkdirSync(dirname(followupsPath), { recursive: true });
-      writeFileAtomic(followupsPath, appendPins(existingContent, newPins));
-    }
-
-    return { seeded, skipped };
-  } finally {
-    lock.release();
-  }
+    return newPins.length > 0
+      ? { content: appendPins(existingContent, newPins), value: { seeded, skipped } }
+      : { value: { seeded, skipped } };
+  }, {
+    lockOptions: {
+      lockDir,
+      timeoutMs: options.lockTimeoutMs ?? envInt('FRONTRUNNER_FOLLOWUPS_LOCK_TIMEOUT_MS', 60_000),
+      retryMs: options.lockRetryMs ?? envInt('FRONTRUNNER_FOLLOWUPS_LOCK_RETRY_MS', 75),
+      staleMs: options.lockStaleMs ?? envInt('FRONTRUNNER_FOLLOWUPS_LOCK_STALE_MS', 10 * 60_000),
+      createTimeoutError: dir => new SeedError('LOCK_TIMEOUT', `Timed out waiting for follow-ups lock at ${dir}`),
+    },
+    writeOptions: options.writeOptions,
+  });
 }
 
 // --- CLI ---------------------------------------------------------------

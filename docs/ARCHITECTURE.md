@@ -83,7 +83,16 @@ Its `scan` command delegates to the canonical scanner and owns no scan writes.
 boundary for CV tailoring. Claude and OpenAI-compatible workers return bounded
 content without identity or markup; fixed code injects trusted profile fields,
 renders the selected template, verifies claims, and atomically publishes HTML.
-`src/cv/generate-pdf.mjs` converts HTML to PDF;
+`src/cv/generate-pdf.mjs` converts HTML to PDF. All Chromium PDF producers
+(`generate-pdf`, `img-to-pdf` and `archive-posting`) publish their complete,
+validated and size-bounded buffers through `src/cv/pdf-artifact-store.mjs`.
+Same-directory fsync-backed replacement means interruption cannot expose a
+partial PDF or truncate an existing artifact. Generated-CV
+`data/pdf-index.tsv` bookkeeping is centralized in
+`src/cv/pdf-index-store.mjs`: records are schema-bounded, repository-relative,
+merged under an owner-verified lock and atomically replaced. Concurrent renders
+therefore retain every distinct entry, while a failed replacement leaves the
+previous manifest readable.
 `src/cv/generate-latex.mjs` / `src/cv/build-cv-latex.mjs` and
 `src/cv/generate-cover-letter.mjs` provide the other generation paths. ATS-safe
 templates live in `templates/` and `fonts/`.
@@ -100,15 +109,36 @@ idempotently. `src/tracker/tracker.mjs`, `src/tracker/merge-tracker.mjs`,
 `src/tracker/reserve-report-num.mjs`; a pending publication journal also keeps
 that number occupied after a crash.
 
+Pipeline reconciliation shares the scanner's canonical pipeline lock across
+its complete read/decision/publication transaction. It atomically publishes
+both the pre-reconcile backup and the new inbox, so concurrent scan additions
+survive and interruption before replacement leaves the original readable.
+`src/pipeline/pipeline-files.mjs` is the canonical pipeline-file publisher:
+active-role, liveness, rejection and final inbox-outcome replacements are
+fsync-backed, atomic and protected from test writes. Inbox publication remains
+inside the pipeline transaction lock, so a failed replacement preserves the
+pending role and releases the lock for an immediate retry.
+
 Durable user-state files share `src/lib/file-lock.mjs` and
 `src/lib/locked-file.mjs`: owner-verified cross-process locks cover the complete
 read/modify/write transaction, while same-directory temporary files, `fsync`
 and atomic rename prevent readers from seeing partial replacements. This
-boundary covers the pending-role pipeline, scanner audit files, application job
-claims, the agent inbox, application-answer sections, reply candidates and
-assessment events in addition to the tracker-specific transaction. External
-reply content is schema/size bounded before persistence, and application-answer
-writes resolve only to existing Markdown files contained under `reports/`.
+publisher now also owns the canonical tracker replacement beneath its
+tracker-specific transaction, so standalone tests cannot bypass the user-data
+write barrier and every tracker writer gets the same durable publication
+semantics. The boundary also covers the pending-role pipeline, scanner audit
+files, application job claims, the agent inbox, application-answer sections,
+reply candidates and assessment events. The
+observation-only status transition ledger also uses a validated locked atomic
+append: concurrent events are retained and interruption cannot tear a TSV row,
+while ledger failure never changes the already-committed tracker state.
+Follow-up pins are published through `src/tracker/followup-store.mjs` under the
+same owner-verified transaction boundary. Concurrent Applied transitions retain
+every pin, and interruption between the durable temporary write and rename
+leaves the prior follow-up history intact.
+External reply content is schema/size bounded before persistence, and
+application-answer writes resolve only to existing Markdown files contained
+under `reports/`.
 Opt-in ATS discovery updates re-read, validate and deduplicate `portals.yml`
 inside the same lock before atomically preserving the user's formatting.
 Confirmed candidate-source additions use
@@ -423,8 +453,10 @@ and treats reports and generated HTML as untrusted output.
   erase another process's entry.
 - The updater stages replacements and rolls back injected failures rather than
   leaving mixed versions.
-- The reverse ATS scanner checkpoints its lowest unfinished index and resumes
-  safely after interruption.
+- The reverse ATS scanner checkpoints its lowest unfinished index through the
+  shared fsync-backed atomic publisher and resumes safely after interruption.
+  Publication failure preserves the previous valid checkpoint, and tests cannot
+  overwrite or delete a protected live checkpoint.
 - Liveness uncertainty is never silently converted into an expired result.
 - Job-source records cannot bypass the central result schema through a new scan
   or portal-probe entry point; a regression test inventories every consumer.

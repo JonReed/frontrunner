@@ -28,6 +28,12 @@ copyFileSync(join(ROOT, 'src/cv/generate-pdf.mjs'), script);
 // theming, #1837); copy it into the sandbox too or the isolated script fails
 // to load with ERR_MODULE_NOT_FOUND before it can parse any --max-pages arg.
 copyFileSync(join(ROOT, 'src/cv/theme-style.mjs'), join(sandbox, 'src/cv/theme-style.mjs'));
+copyFileSync(join(ROOT, 'src/cv/pdf-index-store.mjs'), join(sandbox, 'src/cv/pdf-index-store.mjs'));
+copyFileSync(join(ROOT, 'src/cv/pdf-artifact-store.mjs'), join(sandbox, 'src/cv/pdf-artifact-store.mjs'));
+mkdirSync(join(sandbox, 'src/lib'), { recursive: true });
+for (const file of ['file-lock.mjs', 'locked-file.mjs', 'test-user-data-policy.mjs']) {
+  copyFileSync(join(ROOT, 'src/lib', file), join(sandbox, 'src/lib', file));
+}
 mkdirSync(playwrightStub, { recursive: true });
 writeFileSync(join(playwrightStub, 'package.json'), JSON.stringify({
   name: 'playwright',

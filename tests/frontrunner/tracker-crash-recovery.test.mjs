@@ -1,13 +1,16 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import {
-  existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync,
+  existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 
-import { openTrackerTransaction } from '../../src/tracker/tracker-utils.mjs';
+import {
+  openTrackerTransaction,
+  writeFileAtomic,
+} from '../../src/tracker/tracker-utils.mjs';
 
 const TRACKER_UTILS_URL = new URL(
   '../../src/tracker/tracker-utils.mjs',
@@ -141,5 +144,30 @@ test('eight concurrent tracker transactions preserve every row exactly once', as
     }
   } finally {
     rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('tracker publication enforces the user-data barrier without a preload hook', (t) => {
+  const protectedRoot = mkdtempSync(join(tmpdir(), 'frontrunner-protected-tracker-'));
+  t.after(() => rmSync(protectedRoot, { recursive: true, force: true }));
+  const dataDir = join(protectedRoot, 'data');
+  const tracker = join(dataDir, 'applications.md');
+  const previousRoot = process.env.FRONTRUNNER_TEST_PROTECTED_ROOT;
+  mkdirSync(dataDir, { recursive: true });
+  writeFileSync(tracker, 'must survive\n');
+  process.env.FRONTRUNNER_TEST_PROTECTED_ROOT = protectedRoot;
+  try {
+    assert.throws(
+      () => writeFileAtomic(tracker, 'stale test destroyed this\n'),
+      error => error?.code === 'TEST_USER_DATA_WRITE_BLOCKED',
+    );
+    assert.equal(readFileSync(tracker, 'utf8'), 'must survive\n');
+    assert.deepEqual(readdirSync(dataDir), ['applications.md']);
+  } finally {
+    if (previousRoot === undefined) {
+      delete process.env.FRONTRUNNER_TEST_PROTECTED_ROOT;
+    } else {
+      process.env.FRONTRUNNER_TEST_PROTECTED_ROOT = previousRoot;
+    }
   }
 });

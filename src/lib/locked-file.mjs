@@ -34,7 +34,10 @@ export function replaceFileAtomic(filePath, content, options = {}) {
 
   try {
     descriptor = openSync(temporary, 'wx', mode);
-    writeFileSync(descriptor, String(content), 'utf8');
+    const payload = typeof content === 'string' || ArrayBuffer.isView(content)
+      ? content
+      : String(content);
+    writeFileSync(descriptor, payload, typeof payload === 'string' ? 'utf8' : undefined);
     fsyncSync(descriptor);
     closeSync(descriptor);
     descriptor = undefined;
@@ -59,6 +62,7 @@ export function replaceFileAtomic(filePath, content, options = {}) {
         }
       }
     }
+    options.afterRename?.(filePath);
   } catch (error) {
     if (descriptor !== undefined) {
       try {

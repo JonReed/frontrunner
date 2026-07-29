@@ -13,8 +13,8 @@ contains only a few compatibility entry points. Common commands are exposed via
 | `npm run normalize` | `src/tracker/normalize-statuses.mjs` | Fix non-canonical statuses |
 | `npm run dedup` | `src/tracker/dedup-tracker.mjs` | Remove duplicate tracker entries |
 | `npm run merge` | `src/tracker/merge-tracker.mjs` | Merge batch TSVs into applications.md |
-| `npm run pdf` | `src/cv/generate-pdf.mjs` | Convert HTML to ATS-optimized PDF |
-| `npm run img-to-pdf` | `src/cv/img-to-pdf.mjs` | Convert a single screenshot/image into a single-page PDF |
+| `npm run pdf` | `src/cv/generate-pdf.mjs` | Convert HTML to ATS-optimized PDF; the bounded PDF and its locked manifest record both publish through crash-safe atomic boundaries |
+| `npm run img-to-pdf` | `src/cv/img-to-pdf.mjs` | Convert a single screenshot/image into a single-page PDF with bounded atomic publication |
 | `node src/cv/build-cv-latex.mjs` | `src/cv/build-cv-latex.mjs` | Build .tex from structured JSON payload |
 | `npm run sync-check` | `src/cv/cv-sync-check.mjs` | Validate CV/profile consistency |
 | `npm run patterns` | `src/analysis/analyze-patterns.mjs` | Analyze tracker outcomes and report patterns |
@@ -26,8 +26,8 @@ contains only a few compatibility entry points. Common commands are exposed via
 | `npm run liveness` | `src/scan/check-liveness.mjs` | Test if job URLs are still active |
 | `npm run extract` | `src/scan/browser-extract.mjs` | Headless read-only page extractor (opt-in `scan.extractor: cli`) — compact JSON for scan/JD |
 | `npm run scan` | `src/scan/scan.mjs` | Zero-token portal scanner |
-| `npm run pipeline` | `src/pipeline/run.mjs` | Canonical scan → cache → liveness → prefilter → evaluation flow; one cross-process lease prevents overlapping runs and duplicate model spend |
-| `npm run pipeline:prepare` | `src/pipeline/run.mjs` | Run all zero-token pipeline stages without evaluation under the same whole-run lease |
+| `npm run pipeline` | `src/pipeline/run.mjs` | Canonical scan → cache → liveness → prefilter → evaluation flow; one cross-process lease prevents overlapping runs and duplicate model spend, while fsync-backed publication protects working files and inbox outcomes |
+| `npm run pipeline:prepare` | `src/pipeline/run.mjs` | Run all zero-token pipeline stages without evaluation under the same whole-run lease and durable file-publication boundary |
 | `node src/scan/fetch-jds.mjs [--input file] [--out dir]` | `src/scan/fetch-jds.mjs` | Bulk-cache clean ATS descriptions; cache files and the merged manifest publish through the shared crash-safe JD store |
 | `npm run benchmark` | `src/benchmark/pipeline-benchmark.mjs` | Regenerate the efficiency artifact and README benchmark table |
 | `npm run benchmark:check` | `src/benchmark/pipeline-benchmark.mjs` | Fail if the benchmark artifact or README table is stale |
@@ -40,7 +40,7 @@ contains only a few compatibility entry points. Common commands are exposed via
 | `npm run paste-reply` | `src/tracker/paste-reply.mjs` | Manual/no-Gmail input into the `src/tracker/reply-watch.mjs` classification pipeline |
 | `npm run openai:tailor` | `src/evaluate/openai-tailor.mjs` | Tailor via any OpenAI-compatible endpoint; the model returns bounded versioned JSON, then code injects trusted identity, renders, fact-checks and atomically publishes HTML |
 | `npm run or` | `src/evaluate/openrouter-runner.mjs` | OpenRouter evaluate/apply helper using fixed brokered endpoints, bounded responses, canonical scanning and a crash-safe concurrent model blacklist |
-| `npm run reconcile` | `src/tracker/reconcile-pipeline.mjs` | Remove batch-evaluated offers from pipeline.md "Pendientes" |
+| `npm run reconcile` | `src/tracker/reconcile-pipeline.mjs` | Remove batch-evaluated offers under the shared pipeline lock with an atomic backup/replacement |
 | `npm run cover-letter` | `src/cv/generate-cover-letter.mjs` | Render a cover-letter JSON payload to PDF |
 | `npm run verify:portals` | `src/scan/verify-portals.mjs` | Probe ATS endpoints to confirm portals.yml slugs resolve (network) |
 | `npm run reposts` | `src/analysis/detect-reposts.mjs` | Flag re-listed (ghost) postings from scan history |
@@ -49,7 +49,7 @@ contains only a few compatibility entry points. Common commands are exposed via
 | `npm run openai:eval` | `src/evaluate/openai-eval.mjs` | Evaluate a JD via any OpenAI-compatible endpoint |
 | `npm run claude:eval` | `src/evaluate/claude-eval.mjs` | Evaluate a cached JD through Claude with zero tools and schema-only output |
 | `npm run star` | `src/evaluate/match-star.mjs` | Match a behavioural question to your best STAR story (zero-LLM) |
-| `npm run archive` | `src/scan/archive-posting.mjs` | Save a live job posting as PDF before it disappears |
+| `npm run archive` | `src/scan/archive-posting.mjs` | Save a live job posting through the bounded atomic PDF publisher before it disappears |
 | `npm run prepare:application` | `src/evaluate/prepare-application.mjs` | Print an ATS prefill summary (read-only, never POSTs) |
 
 ---
@@ -278,6 +278,12 @@ Ledger line format (TSV, appended by `src/tracker/set-status.mjs`, `#`-prefixed 
 {tracker#}\t{YYYY-MM-DD}\t{from}\t{to}\t{source}\t{note}
 ```
 
+`set-status` validates the event and publishes it through a separate
+owner-verified lock plus atomic replacement. Concurrent transitions therefore
+retain every complete row, and an interrupted append leaves the previous ledger
+readable. The tracker remains authoritative: a ledger publication failure is
+reported but never reverses a successful status change.
+
 `from` may be `-` (unknown prior state); `to` = `-` retracts the row's latest observation; a later `correction`-source line with the same (tracker#, to) replaces the earlier observation's date. Sources: set-status | correction | backfill | manual (only set-status/correction feed day-math).
 
 **Exit codes:** `0` always (missing tracker/ledger produce an explanatory empty result), `1` self-test or benchmarks-load failure.
@@ -471,6 +477,11 @@ node src/scan/scan-ats-full.mjs --md-out notes/scans    # also write a dated mar
 npm run scan:seeds                             # probe VC portfolio seed companies (--seeds yc,a16z)
 npm run scan:yc                                # Y Combinator portfolio only (--seeds yc)
 ```
+
+Long reverse-ATS sweeps publish `data/cache/ats-full-checkpoint.json` through
+the shared fsync-backed atomic writer. `SIGINT`/`SIGTERM` therefore preserves a
+complete resume point; a failed replacement leaves the previous checkpoint
+readable, and test processes cannot overwrite or delete the live checkpoint.
 
 `--seeds <list>` fetches comma-separated VC portfolio sources (e.g. `yc,a16z`)
 and probes those companies via the ATS providers instead of (or in addition
@@ -684,9 +695,9 @@ These have no `npm run` binding — modes and agents call them with
 
 | Invocation | Purpose |
 |------------|---------|
-| `node src/tracker/set-status.mjs <report#\|company> <State> [--note]` | Canonical tracker write path: strict states.yml validation, shared lock, atomic write. Modes call this instead of hand-editing `applications.md` |
+| `node src/tracker/set-status.mjs <report#\|company> <State> [--note]` | Canonical tracker write path: strict states.yml validation, shared lock, fsync-backed atomic publication and test user-data protection. Modes call this instead of hand-editing `applications.md` |
 | `node src/tracker/followup-cadence.mjs [--summary]` | Follow-up cadence per active application; flags overdue entries |
-| `node src/tracker/followup-seed.mjs [--backfill]` | Seed `data/follow-ups.md` with a pinned first follow-up date when a row turns Applied |
+| `node src/tracker/followup-seed.mjs [--backfill]` | Seed `data/follow-ups.md` with a pinned first follow-up date when a row turns Applied; shared owner-verified locking and atomic publication preserve concurrent pins and prior bytes after interruption |
 | `node src/tracker/reply-watch.mjs` | Classify employer replies from `data/reply-candidates.json`, match to tracker rows, print a review digest |
 | `node src/analysis/process-quality.mjs [--summary]` | Aggregate `[process-friction]` tags from `data/active-interviews.md` per company |
 | `node src/tracker/reserve-report-num.mjs [--count N]` | Atomically reserve report numbers for parallel workers (fixes the #749 race) |

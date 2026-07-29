@@ -8,11 +8,13 @@
  * copies — and every writer excludes every other writer through the same lock.
  */
 
-import { readFileSync, writeFileSync, renameSync, rmSync, mkdirSync, statSync, existsSync, realpathSync } from 'fs';
+import { readFileSync, writeFileSync, rmSync, mkdirSync, statSync, existsSync, realpathSync } from 'fs';
 import { join, dirname, basename, resolve, relative, isAbsolute, sep } from 'path';
 import { createHash, randomUUID } from 'crypto';
 import { tmpdir } from 'os';
 import yaml from 'js-yaml';
+
+import { replaceFileAtomic } from '../lib/locked-file.mjs';
 
 /**
  * Rebuild a markdown table row from the cells produced by `line.split('|')`.
@@ -459,16 +461,7 @@ export async function openTrackerTransaction(appsFile, options = {}) {
  * @returns {void}
  */
 export function writeFileAtomic(path, content, options = {}) {
-  const tmpPath = join(dirname(path), `.${basename(path)}.${process.pid}.${Date.now()}.${randomUUID()}.tmp`);
-  try {
-    writeFileSync(tmpPath, content);
-    options.afterWrite?.(tmpPath);
-    renameSync(tmpPath, path);
-    options.afterRename?.(path);
-  } catch (err) {
-    rmSync(tmpPath, { force: true });
-    throw err;
-  }
+  replaceFileAtomic(path, content, options);
 }
 
 /**

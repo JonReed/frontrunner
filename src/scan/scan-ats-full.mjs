@@ -30,7 +30,7 @@
  *   node src/scan/scan-ats-full.mjs --help               # print this usage block and exit
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync, renameSync, unlinkSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync, unlinkSync } from 'fs';
 import { pathToFileURL } from 'url';
 import { createHash } from 'crypto';
 import path from 'path';
@@ -46,6 +46,8 @@ import workday from '../../providers/workday.mjs';
 import icims from '../../providers/icims.mjs';
 import { buildTitleFilter, buildLocationFilter, buildContentFilter, matchedTitleKeywords, loadSeenUrls, normalizeUrlForDedup, appendToPipeline, appendToScanHistory, loadBlacklist } from './scan.mjs';
 import { SEED_SOURCES, toPortalEntry } from '../../config/seeds/vc-portfolios.mjs';
+import { replaceFileAtomic } from '../lib/locked-file.mjs';
+import { assertTestUserDataWriteAllowed } from '../lib/test-user-data-policy.mjs';
 import { normalizeCompany } from '../tracker/tracker-utils.mjs';
 
 // ── Config ──────────────────────────────────────────────────────────
@@ -113,19 +115,24 @@ export function checkpointCompatible(cp, opts) {
 // (ENOSPC, EACCES, read-only volume) would reject the whole sweep and discard
 // every in-memory match from a multi-hour run — the checkpoint killing the work
 // it exists to protect. A failed write costs resumability, not the results.
-export function writeCheckpoint(cp, file = CHECKPOINT_PATH) {
-  const tmp = `${file}.tmp-${process.pid}`;
+export function writeCheckpoint(cp, file = CHECKPOINT_PATH, writeOptions = {}) {
   try {
-    mkdirSync(path.dirname(file), { recursive: true });
-    writeFileSync(tmp, JSON.stringify(cp), 'utf-8');
-    renameSync(tmp, file); // atomic: a crash mid-write can't corrupt the checkpoint
+    replaceFileAtomic(file, JSON.stringify(cp), {
+      ...writeOptions,
+      mode: writeOptions.mode ?? 0o600,
+    });
     return true;
   } catch (err) {
     console.error(`\n⚠ checkpoint write failed (${err.message}) — sweep continues, --resume unavailable`);
     return false;
-  } finally {
-    try { if (existsSync(tmp)) unlinkSync(tmp); } catch {}
   }
+}
+
+export function removeCheckpoint(file = CHECKPOINT_PATH) {
+  if (!existsSync(file)) return false;
+  assertTestUserDataWriteAllowed(file);
+  unlinkSync(file);
+  return true;
 }
 
 /**
@@ -984,7 +991,7 @@ async function main() {
   // checkpoint, otherwise a late SIGTERM could recreate a misleading
   // "unfinished" checkpoint after all results were already persisted.
   removeSignalHandlers();
-  if (!opts.dryRun && existsSync(CHECKPOINT_PATH)) unlinkSync(CHECKPOINT_PATH);
+  if (!opts.dryRun) removeCheckpoint(CHECKPOINT_PATH);
 
   // The authoritative machine-readable result: lets a caller (e.g. the web)
   // tell a *degraded* scan (capped / stale dataset / undated dropped) apart

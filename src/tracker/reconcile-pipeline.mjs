@@ -18,33 +18,39 @@
  * an entry already present in Procesadas is dropped from Pendientes without a
  * second copy. Safe to run after every batch.
  *
- * Run: node src/tracker/reconcile-pipeline.mjs [--dry-run] [--state <path>] [--pipeline <path>]
+ * Run: node src/tracker/reconcile-pipeline.mjs [--dry-run] [--state <path>] [--pipeline <path>] [--reports <dir>]
  */
 
-import { readFileSync, writeFileSync, existsSync, readdirSync, copyFileSync, realpathSync, statSync } from 'fs';
-import { join, dirname, resolve, relative, isAbsolute } from 'path';
-import { fileURLToPath } from 'url';
-import { normalizeReportLink } from './tracker-links.mjs';
+import { readFileSync, existsSync, readdirSync, realpathSync, statSync } from 'fs';
+import { join, dirname, resolve, relative, isAbsolute, sep } from 'path';
+import { withPipelineLock } from './pipeline-lock.mjs';
+import { publishPipelineReconciliation } from './pipeline-reconciliation-write.mjs';
 
 import { ROOT as FRONTRUNNER } from '#paths';
 const DRY_RUN = process.argv.includes('--dry-run');
 
 if (process.argv.includes('-h') || process.argv.includes('--help')) {
-  console.log('Usage: node src/tracker/reconcile-pipeline.mjs [--dry-run] [--state <path>] [--pipeline <path>]');
+  console.log('Usage: node src/tracker/reconcile-pipeline.mjs [--dry-run] [--state <path>] [--pipeline <path>] [--reports <dir>]');
   console.log('  Moves batch-processed offers out of pipeline.md "Pendientes" into "Procesadas".');
   process.exit(0);
 }
 
 function argValue(flag) {
   const i = process.argv.indexOf(flag);
-  return i >= 0 && i + 1 < process.argv.length ? process.argv[i + 1] : null;
+  if (i < 0) return null;
+  const value = process.argv[i + 1];
+  if (!value || value.startsWith('-')) {
+    console.error(`Invalid ${flag}: expected a path value`);
+    process.exit(1);
+  }
+  return value;
 }
 
 // Constrain user-supplied --state/--pipeline paths to the repository tree, so a
 // crafted path cannot read from or overwrite files outside the project.
 // Symlinks are resolved first (realpathSync) so an in-repo symlink cannot
 // smuggle the real target outside the tree past a purely lexical check.
-function resolveInsideRepo(inputPath, fallbackPath, flag) {
+function resolveInsideRepo(inputPath, fallbackPath, flag, { directory = false } = {}) {
   const abs = resolve(inputPath || fallbackPath);
   let repoReal, targetReal;
   try {
@@ -61,10 +67,14 @@ function resolveInsideRepo(inputPath, fallbackPath, flag) {
     console.error(`Invalid ${flag}: path must stay inside the repository (${abs})`);
     process.exit(1);
   }
-  // Reject a directory target early — otherwise readFileSync/copyFileSync would
-  // throw an unhandled EISDIR later instead of failing with a clear message.
-  if (existsSync(abs) && statSync(abs).isDirectory()) {
+  // Reject a directory target early — otherwise the later file reads would
+  // throw an unhandled EISDIR instead of failing with a clear message.
+  if (!directory && existsSync(abs) && statSync(abs).isDirectory()) {
     console.error(`Invalid ${flag}: expected a file, not a directory (${abs})`);
+    process.exit(1);
+  }
+  if (directory && existsSync(abs) && !statSync(abs).isDirectory()) {
+    console.error(`Invalid ${flag}: expected a directory (${abs})`);
     process.exit(1);
   }
   return abs;
@@ -75,16 +85,22 @@ const defaultPipeline = existsSync(join(FRONTRUNNER, 'data/pipeline.md'))
   : join(FRONTRUNNER, 'pipeline.md');
 const PIPELINE_FILE = resolveInsideRepo(argValue('--pipeline'), defaultPipeline, '--pipeline');
 const STATE_FILE = resolveInsideRepo(argValue('--state'), join(FRONTRUNNER, 'batch/batch-state.tsv'), '--state');
-const REPORTS_DIR = join(FRONTRUNNER, 'reports');
+const REPORTS_DIR = resolveInsideRepo(
+  argValue('--reports'),
+  join(FRONTRUNNER, 'reports'),
+  '--reports',
+  { directory: true },
+);
 
+await withPipelineLock(PIPELINE_FILE, async () => {
 // ---- guards ----
 if (!existsSync(STATE_FILE)) {
   console.log('No batch-state.tsv found — nothing to reconcile.');
-  process.exit(0);
+  return;
 }
 if (!existsSync(PIPELINE_FILE)) {
   console.log('No pipeline.md found — nothing to reconcile.');
-  process.exit(0);
+  return;
 }
 
 // ---- parse batch-state.tsv ----
@@ -103,7 +119,7 @@ for (const line of readFileSync(STATE_FILE, 'utf-8').split(/\r?\n/)) {
 
 if (DONE.size === 0) {
   console.log('No completed batch entries in batch-state.tsv — nothing to reconcile.');
-  process.exit(0);
+  return;
 }
 
 // ---- report lookup ----
@@ -148,7 +164,8 @@ function resolvePdf(reportFile) {
 }
 
 // ---- parse pipeline.md ----
-const lines = readFileSync(PIPELINE_FILE, 'utf-8').split(/\r?\n/);
+const pipelineContent = readFileSync(PIPELINE_FILE, 'utf-8');
+const lines = pipelineContent.split(/\r?\n/);
 
 const PENDING_RE = /^##\s+(Pendientes|Pending)\s*$/i;
 const PROCESSED_RE = /^##\s+(Procesadas|Processed)\s*$/i;
@@ -169,7 +186,7 @@ for (let i = 0; i < lines.length; i++) {
 
 if (pendStart < 0) {
   console.log('No "Pendientes" section in pipeline.md — nothing to reconcile.');
-  process.exit(0);
+  return;
 }
 
 function sectionEnd(start) {
@@ -227,7 +244,11 @@ for (let i = pendStart + 1; i < pendEnd; i++) {
   const pdf = resolvePdf(reportFile);
   const num = parseInt(done.reportNum, 10);
 
-  const reportLink = normalizeReportLink(`[${num}](reports/${reportFile})`, dirname(PIPELINE_FILE), FRONTRUNNER);
+  const reportPath = relative(
+    dirname(PIPELINE_FILE),
+    join(REPORTS_DIR, reportFile),
+  ).split(sep).join('/');
+  const reportLink = `[${num}](${reportPath})`;
   movedProcLines.push(`- [x] ${reportLink} | ${url} | ${company} | ${role} | ${score} | PDF ${pdf}`);
   moved.push({ url, company, role, num, score });
   procUrls.add(url);
@@ -242,7 +263,7 @@ for (const s of skippedNoReport) {
 
 if (removeIdx.size === 0) {
   console.log('✅ pipeline.md already in sync — nothing to reconcile.');
-  process.exit(0);
+  return;
 }
 
 // ---- rebuild the file ----
@@ -289,9 +310,13 @@ console.log(`📋 Pendientes now: ${newCount} entr${newCount === 1 ? 'y' : 'ies'
 
 if (DRY_RUN) {
   console.log('(dry-run — no changes written)');
-  process.exit(0);
+  return;
 }
 
-copyFileSync(PIPELINE_FILE, `${PIPELINE_FILE}.pre-reconcile.bak`);
-writeFileSync(PIPELINE_FILE, newContent);
-console.log(`✅ pipeline.md updated (backup: ${PIPELINE_FILE}.pre-reconcile.bak)`);
+const publication = publishPipelineReconciliation({
+  pipelineFile: PIPELINE_FILE,
+  currentContent: pipelineContent,
+  nextContent: newContent,
+});
+console.log(`✅ pipeline.md updated (backup: ${publication.backupPath})`);
+});
