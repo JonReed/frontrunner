@@ -90,7 +90,6 @@ const requiredSystemPaths = [
   '.cursor/skills/',
   'tests/tracker-columns-tests.mjs',
   'tests/updater-migration-tests.mjs',
-  'CHANGELOG.md',
   'SECURITY.md',
   'SUPPORT.md',
 ];

@@ -180,7 +180,7 @@ Built and used by [santifer](https://santifer.io) to evaluate 740+ offers, gener
 Two layers — full list in `DATA_CONTRACT.md`:
 
 - **User Layer (NEVER auto-updated; personalization goes HERE):** `cv.md`, `config/profile.yml`, `modes/_profile.md`, `modes/_custom.md`, `article-digest.md`, `portals.yml`, `data/*`, `reports/*`, `output/*`, `interview-prep/*`
-- **System Layer (auto-updatable; DON'T put user data here):** `modes/_shared.md` and all other modes, `AGENTS.md`, `CLAUDE.md`, `CODEX.md`, `OPENCODE.md`, `KIMI.md`, `GEMINI.md`, `*.mjs` scripts, `templates/*`, `batch/*`
+- **System Layer (auto-updatable; DON'T put user data here):** `modes/_shared.md` and all other modes, `AGENTS.md`, `CLAUDE.md`, `CODEX.md`, `GEMINI.md`, `*.mjs` scripts, `templates/*`, `batch/*`
 - **Application trees:** `web/*` and `ui/*` are versioned interface code,
   contain no user data, and are updated from the official Frontrunner
   repository with the rest of the system layer. `ui/` is the only supported

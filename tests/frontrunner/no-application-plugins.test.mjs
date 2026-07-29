@@ -25,7 +25,6 @@ const PRODUCT_DOCS = [
   '.env.example',
   '.github/SECURITY.md',
   'AGENTS.md',
-  'ARCHITECTURE.md',
   'CONTRIBUTING.md',
   'DATA_CONTRACT.md',
   'README.md',
@@ -34,7 +33,6 @@ const PRODUCT_DOCS = [
 
 const RUNTIME_FILES = [
   '.gitignore',
-  '.npmignore',
   'doctor.mjs',
   'src/scan/scan.mjs',
   'src/scan/validate-portals.mjs',

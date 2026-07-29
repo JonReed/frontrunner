@@ -31,7 +31,6 @@ Copilot CLI, Kimi, Grok Build CLI, Cursor and others will very likely work. They
 are simply not tested here, and a support question about one of them will not
 get a useful answer.
 
-`OPENCODE.md`, `KIMI.md` and `GEMINI.md` remain in the repository root. They are
-two-line files that import `AGENTS.md`, they cost nothing to keep, and deleting
-inherited files makes every future `git merge upstream/main` conflict on them —
-permanently. Undocumented is cheaper than deleted.
+`GEMINI.md` remains in the repository root. It is a deliberate no-op that stops
+Antigravity CLI loading the full project instructions twice. The `OPENCODE.md`
+and `KIMI.md` shims have been removed.

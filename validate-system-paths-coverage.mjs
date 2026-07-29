@@ -44,16 +44,9 @@ if (SYSTEM_PATHS.length === 0 || USER_PATHS.length === 0) {
 const ALL_PATHS = [...SYSTEM_PATHS, ...USER_PATHS];
 
 const EXCLUDES = [
-  '.coderabbit.yaml',
   '.editorconfig',
-  '.envrc',
   '.gitignore',
-  '.npmignore',
-  '.release-please-manifest.json',
-  'release-please-config.json',
   'renovate.json',
-  'flake.lock',
-  'flake.nix',
   'batch/logs/.gitkeep',
   'batch/tracker-additions/.gitkeep',
   'interview-prep/.gitkeep',
@@ -85,7 +78,6 @@ if (process.argv.includes('--self-test')) {
 
   // Test explicitly excluded files
   assert(covered('.gitignore') === true, '.gitignore must be covered (excluded)');
-  assert(covered('.coderabbit.yaml') === true, '.coderabbit.yaml must be covered (excluded)');
   assert(covered('.editorconfig') === true, '.editorconfig must be covered (excluded, #1438/#1613)');
 
   // Test exact matches in SYSTEM_PATHS / USER_PATHS
@@ -103,7 +95,6 @@ if (process.argv.includes('--self-test')) {
   assert(covered('web-dashboard/index.html') === false, 'web-dashboard/ must NOT ride the web/ prefix exclude');
   assert(covered('ui/package.json') === true, 'ui/ tree must be covered by the updater manifest');
   assert(covered('ui-kit/index.ts') === false, 'ui-kit/ must NOT ride the ui/ prefix exclude');
-  assert(covered('.npmignore') === true, '.npmignore must be covered (excluded)');
 
   // Test unrelated file
   assert(covered('untracked-orphan-file-xyz.js') === false, 'untracked-orphan-file-xyz.js must NOT be covered');

@@ -867,7 +867,7 @@ console.log('\n5. Data contract validation');
 
 // Check system files exist
 const systemFiles = [
-  'CLAUDE.md', 'CODEX.md', 'OPENCODE.md', 'VERSION', 'DATA_CONTRACT.md', 'docs/CODEX.md',
+  'CLAUDE.md', 'CODEX.md', 'VERSION', 'DATA_CONTRACT.md', 'docs/CODEX.md',
   'modes/_shared.md', 'modes/_profile.template.md',
   'modes/oferta.md', 'modes/pdf.md', 'modes/scan.md',
   'modes/heuristics/recruiter-side.md',
@@ -975,43 +975,6 @@ for (const f of skillEntrypoints) {
   }
 }
 
-// The Dockerfile pins playwright twice — the FROM base image tag (bundled
-// Chromium) and the --save-exact npm install — so the npm package matches
-// the browser the container ships. Nothing enforced either pin against
-// package.json's own playwright version, so this keeps all three in sync
-// going forward instead of relying on whoever next reads the Dockerfile.
-{
-  const pkgPlaywright = JSON.parse(readFile('package.json')).dependencies?.playwright;
-  const dockerfile = readFile('Dockerfile');
-  const dockerfileLine2 = dockerfile.split(/\r?\n/, 3)[1] ?? '';
-  const fromPinMatch = dockerfile.match(/^FROM mcr\.microsoft\.com\/playwright:v([\d.]+)-/m);
-  const runPinMatch = dockerfile.match(/--save-exact playwright@([\d.]+)/);
-  const commentPinMatch = dockerfileLine2.match(/matches playwright@([\d.]+) in package\.json/);
-  if (!pkgPlaywright) {
-    fail('package.json missing dependencies.playwright — cannot check Dockerfile pins against it');
-  } else {
-    if (!fromPinMatch) {
-      fail('Dockerfile missing the expected "FROM mcr.microsoft.com/playwright:vX-<distro>" base image line');
-    } else if (fromPinMatch[1] !== pkgPlaywright) {
-      fail(`Dockerfile's FROM base image is playwright@${fromPinMatch[1]} but package.json depends on playwright@${pkgPlaywright} — bump the base image tag`);
-    } else {
-      pass(`Dockerfile's FROM base image (${fromPinMatch[1]}) matches package.json`);
-    }
-    if (!runPinMatch) {
-      fail('Dockerfile missing the expected "--save-exact playwright@X" RUN line');
-    } else if (runPinMatch[1] !== pkgPlaywright) {
-      fail(`Dockerfile pins playwright@${runPinMatch[1]} but package.json depends on playwright@${pkgPlaywright} — bump the Dockerfile's --save-exact pin`);
-    } else {
-      pass(`Dockerfile's playwright pin (${runPinMatch[1]}) matches package.json`);
-    }
-    if (commentPinMatch && commentPinMatch[1] !== pkgPlaywright) {
-      fail(`Dockerfile's line-2 comment claims playwright@${commentPinMatch[1]} but package.json depends on playwright@${pkgPlaywright} — update the comment`);
-    } else if (commentPinMatch) {
-      pass('Dockerfile\'s line-2 comment version matches package.json');
-    }
-  }
-}
-
 // Check user files are NOT tracked (gitignored)
 const userFiles = [
   'config/profile.yml', 'modes/_profile.md', 'portals.yml',
@@ -1090,7 +1053,7 @@ const allowedFiles = [
   'README.ja.md', 'README.ko-KR.md', 'README.pl.md', 'README.pt-BR.md', 'README.ru.md', 'README.ta.md', 'README.cn.md',
   'README.ua.md', 'README.zh-TW.md', 'README.tr.md',
   // Standard project files
-  'LICENSE', 'CITATION.cff', 'CONTRIBUTING.md', 'CHANGELOG.md',
+  'LICENSE', 'CONTRIBUTING.md',
   'package.json', '.github/FUNDING.yml', 'CLAUDE.md', 'AGENTS.md', 'test-all.mjs',
   '.claude-plugin/marketplace.json', '.claude-plugin/plugin.json', '.github/plugin/plugin.json',
   // Community files (legitimately reference the upstream project)
@@ -3673,7 +3636,7 @@ for (const section of requiredSections) {
 
 console.log('\n11. CLI wrapper file integrity');
 
-const cliWrappers = ['CLAUDE.md', 'CODEX.md', 'OPENCODE.md'];
+const cliWrappers = ['CLAUDE.md', 'CODEX.md'];
 for (const f of cliWrappers) {
   if (!fileExists(f)) {
     fail(`Missing CLI wrapper: ${f}`);

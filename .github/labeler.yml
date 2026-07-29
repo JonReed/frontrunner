@@ -3,7 +3,6 @@
       - any-glob-to-any-file:
           - AGENTS.md
           - CLAUDE.md
-          - OPENCODE.md
           - DATA_CONTRACT.md
           - modes/_shared.md
 
