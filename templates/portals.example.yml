@@ -627,7 +627,7 @@ search_queries:
 # URL to detect, so they must be selected with an explicit `provider:`
 # field: 4dayweek, agentic-jobs, arbeitnow, arbeitsagentur, flowxtra, getonbrd, glints,
 # himalayas, ibm, jobicy, jobstreet, justjoin, landingjobs, nofluffjobs, remoteok, remotive,
-# thehub, vdab, weworkremotely, workingnomads, wttj. Examples for every built-in provider are below.
+# thehub, vdab, weworkremotely, workingnomads, wttj, a16z-speedrun-talent. Examples for every built-in provider are below.
 
 # ── Built-in provider examples ────────────────────────────────────
 # Commented config for each provider in providers/. Copy a stanza into
@@ -749,6 +749,11 @@ search_queries:
 # - name: The Hub                         # Nordic/EU startup board
 #   provider: thehub
 #   max_pages: 3          # optional page cap (15 jobs/page, default 3, max 67)
+#
+# - name: a16z speedrun talent network    # a16z speedrun + wider a16z portfolio (~200 startups)
+#   provider: a16z-speedrun-talent
+#   max_pages: 3          # optional page cap (50 jobs/page, default 3)
+#   q: machine learning   # optional server-side full-text search (synonyms expand)
 #   enabled: true
 #
 # - name: Arbeitnow                       # EU/DACH-heavy board, newest-first

@@ -81,7 +81,7 @@ modes/_custom.md
 
 # Generated
 .resolved-prompt-*
-node_modules/
+node_modules
 bun.lock
 # Report-number reservation sentinels (ephemeral, created by reserve-report-num.mjs)
 reports/*-RESERVED.md
@@ -126,7 +126,6 @@ src/**/output/
 
 # UI v2
 ui/.next/
-ui/node_modules/
 ui/next-env.d.ts
 ui/.jobs/
 
