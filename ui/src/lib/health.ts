@@ -44,13 +44,37 @@ function isHealth(value: unknown): value is Health {
 }
 
 /**
- * Never throws.
+ * Cache the good news, never the bad.
  *
- * A page that cannot determine health should render as "not connected" rather
- * than 500. The whole point is to be the thing that still works when the
- * engine does not.
+ * Checking spawns a process that spawns the Claude CLI: ~200ms on every page
+ * load, for a fact that changes about twice in a user's lifetime — once at
+ * setup and once if a token ever expires. Measured before caching: pages with
+ * the check served in 219ms against 51ms for a page without it.
+ *
+ * The asymmetry is deliberate. A connected result is cached, because it is the
+ * state someone spends months in and re-checking it constantly buys nothing.
+ * A disconnected result is NOT cached, because the copy tells the user to sign
+ * in and reload — and a cache that made them wait 60 seconds to see their own
+ * fix take effect would be worse than the delay it saved.
  */
+const CACHE_MS = 60_000;
+let cached: { at: number; value: Health } | null = null;
+
 export function readHealth(): Promise<Health> {
+  if (cached && cached.value.signedIn && Date.now() - cached.at < CACHE_MS) {
+    return Promise.resolve(cached.value);
+  }
+  return readHealthUncached().then((value) => {
+    cached = { at: Date.now(), value };
+    return value;
+  });
+}
+
+/**
+ * Never throws. A page that cannot determine health renders as "not connected"
+ * rather than 500 — the whole point is to still work when the engine does not.
+ */
+function readHealthUncached(): Promise<Health> {
   return new Promise((resolve) => {
     let settled = false;
     const done = (value: Health) => {
