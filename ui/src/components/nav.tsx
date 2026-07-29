@@ -35,8 +35,19 @@ function isActive(pathname: string, href: string) {
  * all four in thumb reach, nothing hidden. On a laptop, where they fit, they
  * stay inline in the header where navigation is expected to be.
  */
+/**
+ * Setup has no navigation.
+ *
+ * Every destination is empty until the CV exists, so offering four of them
+ * during onboarding is four ways to leave a five-minute task and find nothing.
+ */
+function isSetup(pathname: string) {
+  return pathname.startsWith('/welcome');
+}
+
 export function HeaderNav() {
   const pathname = usePathname();
+  if (isSetup(pathname)) return null;
   return (
     <nav aria-label="Main" className="hidden gap-1 text-sm sm:flex">
       {NAV.map((n) => (
@@ -59,6 +70,7 @@ export function HeaderNav() {
 
 export function BottomNav() {
   const pathname = usePathname();
+  if (isSetup(pathname)) return null;
   return (
     <nav
       aria-label="Main"

@@ -8,6 +8,8 @@
   "private": true,
   "scripts": {
     "doctor": "node doctor.mjs",
+    "ui": "npm --prefix ui run dev",
+    "ui:install": "npm --prefix ui install",
     "or": "node src/evaluate/openrouter-runner.mjs",
     "or:scan": "node src/evaluate/openrouter-runner.mjs scan",
     "or:pipeline": "node src/pipeline/run.mjs --engine openrouter",

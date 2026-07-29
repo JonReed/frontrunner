@@ -11,7 +11,9 @@
  */
 
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { readTracker, summarise, type Role, type Readiness } from '@/lib/roles';
+import { readSetup } from '@/lib/setup';
 import { Match } from '@/components/match';
 import { CvLinks } from '@/components/cv-links';
 import { PipelineOverview } from '@/components/journey-rail';
@@ -160,6 +162,11 @@ function Headline({ ready, nearly }: { ready: number; nearly: number }) {
 }
 
 export default async function NextUpPage() {
+  // First run goes to setup rather than to an empty screen. Without this, a
+  // new installation opens on "You are all caught up" — technically true, and
+  // completely baffling.
+  if (readSetup().needed) redirect('/welcome');
+
   const [roles, counts] = await Promise.all([readTracker(), summarise()]);
   const actionable = roles.filter((r) => r.readiness !== 'parked');
 
