@@ -47,8 +47,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/*
           Footer priorities, in order:
           1. Reassurance. This audience is handing over their entire employment
-             history; that their data never leaves the machine matters more to
-             them than who built it.
+             history; where it is stored and when it is sent to their selected
+             model provider matters more than who built it.
           2. Attribution — quiet, and BOTH parties. Crediting the sponsor in the
              UI while the upstream project appears only in a README would
              undercut the honesty of calling this a fork. Both or neither.
@@ -56,7 +56,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <footer className="mx-auto max-w-4xl px-6 pb-10">
           <div className="border-t border-[var(--color-line)] pt-5 text-xs leading-relaxed text-[var(--color-ink-faint)]">
             <p className="font-medium text-[var(--color-ink-soft)]">
-              Your CV, notes and applications stay on this computer.
+              Your files stay on this computer. AI actions send only relevant,
+              bounded context to your selected model provider.
             </p>
             <p className="mt-1.5">
               Built by{' '}

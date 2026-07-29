@@ -21,14 +21,10 @@
  * would still let a cold parallel burst through. With both, the 29 above
  * becomes 1.
  *
- * Why patch `dns.lookup` rather than configure the HTTP client: career-ops
- * depends on no HTTP library — providers call the global `fetch()`. Node
- * exposes no supported way to give `fetch()` a custom resolver without
- * taking on `undici` as a direct dependency to build an `Agent` with a
- * `connect.lookup` option. Patching the `node:dns` module object keeps the
- * dependency list untouched: `net.connect` reads `dns.lookup` at call time,
- * so importing this file once (`_http.mjs` does) covers every provider and
- * every direct `fetch()` in the process.
+ * The shared provider broker now pins each connection to an address it has
+ * validated, so this cache is an efficiency aid for legacy/direct Node fetch
+ * users rather than a security boundary. It remains dependency-free and
+ * process-wide.
  *
  * Scope of the patch — deliberately narrow:
  *   - Only the callback-style `dns.lookup` on the `node:dns` module object.

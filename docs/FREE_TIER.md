@@ -54,8 +54,9 @@ a rate-limit error; career-ops will pause and suggest retrying tomorrow.
 
 ## Batch Mode Behavior
 
-- `batch-runner.sh` spawns `claude -p` workers by default (Claude Code
-  specific). To use Antigravity CLI workers instead, invoke them manually:
+- `npm run pipeline` uses a tool-less, schema-constrained Claude CLI call by
+  default. The model cannot read/write files, browse, or run shell commands.
+  To use Antigravity CLI workers instead, invoke them manually:
 
   ```bash
   agy -p "evaluate <URL>"

@@ -3,11 +3,10 @@
 import { readFileSync, existsSync, readdirSync } from 'fs';
 import { resolve, join } from 'path';
 import { spawnSync } from 'child_process';
-import { fileURLToPath } from 'url';
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url));
-const batchStateFile = join(__dirname, 'batch', 'batch-state.tsv');
-const reportsDir = join(__dirname, 'reports');
+import { ROOT } from '#paths';
+const batchStateFile = join(ROOT, 'batch', 'batch-state.tsv');
+const reportsDir = join(ROOT, 'reports');
 
 function usage() {
   console.log(`career-ops batch tailor — bulk generate tailored CVs for high-scoring batch jobs
@@ -73,23 +72,18 @@ for (let i = 0; i < toProcess.length; i++) {
   const job = toProcess[i];
   console.log(`\n[${i + 1}/${toProcess.length}] Tailoring CV for Report ${job.reportNum} (Score: ${job.score}) — ${job.url}`);
   
-  // Try to find the local report file to pass to the agent
+  // Resolve report identity for deterministic PDF/index linkage.
   const matchingReport = reports.find(f => f.startsWith(`${job.reportNum}-`) && f.endsWith('.md'));
-  const reportContext = matchingReport ? `\nThe evaluation report is available at: reports/${matchingReport}` : '';
-  
-  const prompt = `Tailor the CV for this role and generate the HTML and PDF CVs. \nURL: ${job.url}\nReport number: ${job.reportNum}${reportContext}`;
-  
-  const claudeArgs = [
-    '-p',
-    '--dangerously-skip-permissions',
-    '--append-system-prompt-file',
-    'modes/pdf.md',
-    prompt
+  const tailorArgs = [
+    join(ROOT, 'src/cv/claude-tailor.mjs'),
+    '--url', job.url,
+    '--report', matchingReport ?? job.reportNum,
+    '--tracker', job.id,
   ];
-  
-  const res = spawnSync('claude', claudeArgs, { stdio: 'inherit' });
+
+  const res = spawnSync(process.execPath, tailorArgs, { cwd: ROOT, stdio: 'inherit' });
   if (res.error) {
-    console.error(`Error running claude: ${res.error.message}`);
+    console.error(`Error running secure CV tailoring: ${res.error.message}`);
   } else if (res.status !== 0) {
     console.error(`Worker exited with status ${res.status}`);
   } else {

@@ -1,21 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# career-ops batch runner — standalone orchestrator for claude -p workers
-# Reads batch-input.tsv, delegates each offer to a claude -p worker,
+# Frontrunner legacy batch state runner — tool-less Claude evaluator
+# Reads batch-input.tsv, delegates each offer to deterministic orchestration,
 # tracks state in batch-state.tsv for resumability.
 #
-# NOTE: This script is Claude Code-specific. It uses claude -p with
-# --dangerously-skip-permissions and --append-system-prompt-file flags
-# that are not available in other CLIs. Multi-CLI support is out of scope
-# for now — contributions welcome.
+# The model has no tools or write access. claude-eval.mjs validates its JSON;
+# ordinary code writes the report and tracker. Prefer `npm run pipeline`.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 BATCH_DIR="$SCRIPT_DIR"
 INPUT_FILE="$BATCH_DIR/batch-input.tsv"
 STATE_FILE="$BATCH_DIR/batch-state.tsv"
-PROMPT_FILE="$BATCH_DIR/batch-prompt.md"
 PROFILE_FILE="$PROJECT_DIR/config/profile.yml"
 LOGS_DIR="$BATCH_DIR/logs"
 DISCARD_LOG="$LOGS_DIR/discard.log"
@@ -54,7 +51,7 @@ is_decimal_number() {
 
 usage() {
   cat <<'USAGE'
-career-ops batch runner — process job offers in batch via claude -p workers
+Frontrunner legacy batch runner — process cached JDs via tool-less Claude
 Uses spend_tier from config/profile.yml unless --model overrides it.
 
 Usage: batch-runner.sh [OPTIONS]
@@ -67,12 +64,12 @@ Options:
   --start-from N       Start from offer ID N (skip earlier IDs)
   --limit N            Max number of offers to process in this run
   --max-retries N      Max retry attempts per offer (default: 2)
-  --min-score N        Skip PDF/tracker for offers scoring below N (default: 0 = off)
-  --skip-pdf           Skip PDF generation entirely (write ❌ in tracker PDF column)
+  --min-score N        Mark lower-scoring jobs skipped after evaluation (default: 0)
+  --skip-pdf           Compatibility no-op; evaluation never creates a CV/PDF
   --rate-limit-sleep N Seconds to wait before retrying a rate-limited worker
                        (default: 300)
-  --model NAME         Override the tier-resolved Claude model passed to
-                       `claude -p --model` (otherwise uses config/profile.yml
+  --model NAME         Override the tier-resolved Claude model passed to the
+                       tool-less evaluator (otherwise uses config/profile.yml
                        spend_tier: economy/standard/premium; default standard)
   --status             Show batch progress and a per-job table, then exit
   --watch              Live-refresh progress until the run completes
@@ -81,7 +78,6 @@ Options:
 Files:
   batch-input.tsv      Input offers (id, url, source, notes)
   batch-state.tsv      Processing state (auto-managed)
-  batch-prompt.md      Prompt template for workers
   logs/                Per-offer logs
   tracker-additions/   Tracker lines for post-batch merge
 
@@ -173,10 +169,6 @@ check_prerequisites() {
     exit 1
   fi
 
-  if [[ ! -f "$PROMPT_FILE" ]]; then
-    echo "ERROR: $PROMPT_FILE not found."
-    exit 1
-  fi
 
   if ! command -v claude &>/dev/null; then
     echo "ERROR: 'claude' CLI not found in PATH."
@@ -506,8 +498,6 @@ process_offer() {
   retries=$(get_retries "$id")
   local report_num
   report_num=$(reserve_report_num "$id" "$url" "$started_at" "$retries")
-  local date
-  date=$(date +%Y-%m-%d)
   # Use mktemp instead of a predictable /tmp path: a fixed name like
   # /tmp/batch-jd-${id}.txt is guessable, so an attacker on a shared machine
   # could pre-create it as a symlink and redirect or clobber the write.
@@ -515,10 +505,9 @@ process_offer() {
   jd_file="$(mktemp "${TMPDIR:-/tmp}/batch-jd-${id}.XXXXXX")"
 
   # Pre-populate the JD from `node src/scan/fetch-jds.mjs` output when available.
-  # Without this the file stays EMPTY and every worker falls through to
-  # batch-prompt.md step 1's "fetch {{URL}} with WebFetch" — pulling a full
-  # rendered HTML page (~18k tokens measured) into the model's context to
-  # obtain a ~1.8k-token job description. A 9.9x input saving per role.
+  # Without this the file stays EMPTY and the runner fails closed. The inherited
+  # worker fetched a rendered HTML page (~18k tokens measured) to obtain a
+  # ~1.8k-token description; that unsafe, expensive fallback no longer exists.
   local jd_index="$PROJECT_DIR/jds/index.tsv"
   if [[ -f "$jd_index" ]]; then
     local cached_jd
@@ -531,68 +520,23 @@ process_offer() {
 
   echo "--- Processing offer #$id: $url (report $report_num, attempt $((retries + 1)))"
 
-  # Build the prompt with placeholders replaced
-  local prompt
   if [[ "$SKIP_PDF" == "true" ]]; then
-    prompt="Process this job offer. Run the pipeline: A-G evaluation + report .md + tracker line. Do not generate PDF; write ❌ in the tracker PDF column and set \"pdf\": null in the final JSON."
-    echo "    ⏭️  --skip-pdf set — skipping PDF generation for #$id ($url)"
-  else
-    prompt="Process this job offer. Run the full pipeline: A-G evaluation + report .md + optional PDF + tracker line."
+    echo "    ℹ️  --skip-pdf is retained for compatibility; evaluation is already PDF-free"
   fi
-  prompt="$prompt URL: $url"
-  prompt="$prompt JD file: $jd_file"
-  prompt="$prompt Report number: $report_num"
-  prompt="$prompt Date: $date"
-  prompt="$prompt Batch ID: $id"
 
   local log_file="$LOGS_DIR/${report_num}-${id}.log"
 
-  # Prepare system prompt with placeholders resolved
-  local resolved_prompt="$BATCH_DIR/.resolved-prompt-${id}.md"
-  # Escape sed delimiter characters in variables to prevent substitution breakage
-  local esc_url esc_jd_file esc_report_num esc_date esc_id
-  esc_url="${url//\\/\\\\}"
-  esc_url="${esc_url//|/\\|}"
-  esc_jd_file="${jd_file//\\/\\\\}"
-  esc_jd_file="${esc_jd_file//|/\\|}"
-  esc_report_num="${report_num//|/\\|}"
-  esc_date="${date//|/\\|}"
-  esc_id="${id//|/\\|}"
-  sed \
-    -e "s|{{URL}}|${esc_url}|g" \
-    -e "s|{{JD_FILE}}|${esc_jd_file}|g" \
-    -e "s|{{REPORT_NUM}}|${esc_report_num}|g" \
-    -e "s|{{DATE}}|${esc_date}|g" \
-    -e "s|{{ID}}|${esc_id}|g" \
-    "$PROMPT_FILE" > "$resolved_prompt"
-
-  # Inject user-layer personalization into the temporary worker prompt.
-  # The resolved prompt is gitignored runtime state, so user profile data stays
-  # out of the system layer while batch scoring matches interactive scoring.
-  for context_file in "$PROJECT_DIR/modes/_profile.md" "$PROJECT_DIR/config/profile.yml" "$PROJECT_DIR/modes/_custom.md"; do
-    if [[ -f "$context_file" ]]; then
-      {
-        printf '\n\n---\n\n'
-        printf '## Runtime personalization: %s\n\n' "${context_file#"$PROJECT_DIR/"}"
-        printf '> Authoritative file contents injected by the runner. Do not read this path again.\n\n'
-        sed 's/^/    /' "$context_file"
-        printf '\n'
-      } >> "$resolved_prompt"
-    fi
-  done
-
-  # Launch claude -p worker.
-  # The model is resolved once per run from spend_tier unless --model was
-  # passed. Building the command in an array keeps quoting safe regardless.
-  # --strict-mcp-config (with no --mcp-config) starts workers with no MCP
-  # servers: they only evaluate offers and need none. Without it each parallel
-  # worker inherits the parent session's MCP (e.g. Playwright) and they deadlock
-  # fighting over the single shared browser when --parallel > 1 (issue #506).
-  local -a claude_args=(-p --dangerously-skip-permissions --strict-mcp-config)
+  # Launch the tool-less evaluator. The model returns schema-constrained JSON;
+  # src/evaluate/claude-eval.mjs performs all filesystem writes itself.
+  if [[ ! -s "$jd_file" ]]; then
+    update_state "$id" "$url" "failed" "$started_at" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$report_num" "-" "no cached JD; refusing agent/browser fallback" "$retries"
+    echo "    ❌ No cached JD. Run the canonical pipeline so API/browser ingestion happens before evaluation."
+    return 0
+  fi
+  local -a claude_args=(node "$PROJECT_DIR/src/evaluate/claude-eval.mjs" --file "$jd_file" --url "$url" --report-num "$report_num")
   if [[ -n "$RESOLVED_MODEL" ]]; then
     claude_args+=(--model "$RESOLVED_MODEL")
   fi
-  claude_args+=(--append-system-prompt-file "$resolved_prompt" "$prompt")
 
   local exit_code=0
   local terminal_failure_recorded=false
@@ -600,7 +544,7 @@ process_offer() {
   local max_shim_retries=4
   while true; do
     exit_code=0
-    claude "${claude_args[@]}" > "$log_file" 2>&1 || exit_code=$?
+    "${claude_args[@]}" > "$log_file" 2>&1 || exit_code=$?
 
     if [[ $exit_code -eq 0 ]]; then
       break
@@ -639,9 +583,6 @@ process_offer() {
 
     break
   done
-
-  # Cleanup resolved prompt
-  rm -f "$resolved_prompt"
 
   local completed_at
   completed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)

@@ -45,6 +45,7 @@ contains only a few compatibility entry points. Common commands are exposed via
 | `npm run gemini:eval` | `src/evaluate/gemini-eval.mjs` | Evaluate a JD with Google Gemini (free-tier alternative) |
 | `npm run ollama:eval` | `src/evaluate/ollama-eval.mjs` | Evaluate a JD with a local Ollama model |
 | `npm run openai:eval` | `src/evaluate/openai-eval.mjs` | Evaluate a JD via any OpenAI-compatible endpoint |
+| `npm run claude:eval` | `src/evaluate/claude-eval.mjs` | Evaluate a cached JD through Claude with zero tools and schema-only output |
 | `npm run star` | `src/evaluate/match-star.mjs` | Match a behavioural question to your best STAR story (zero-LLM) |
 | `npm run archive` | `src/scan/archive-posting.mjs` | Save a live job posting as PDF before it disappears |
 | `npm run prepare:application` | `src/evaluate/prepare-application.mjs` | Print an ATS prefill summary (read-only, never POSTs) |

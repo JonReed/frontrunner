@@ -27,6 +27,8 @@
  * (no slashes / traversal), and server-side redirects are refused.
  */
 
+import { fetchJson } from '../../providers/_http.mjs';
+
 const TIMEOUT_MS = 8_000;
 // Strict path-segment charset. Anything with a slash, dot-dot, or other char is
 // rejected before it can reach the fixed-host API URL template.
@@ -93,13 +95,7 @@ const ATS_PROVIDERS = [
     // unauthenticated hits (see providers/ashby.mjs). Give it more room than the ATS
     // default so a slow-but-live board doesn't time out into a Playwright fallback.
     timeoutMs: 20_000,
-    async interpret(res, { jobId }) {
-      let json;
-      try {
-        json = await res.json();
-      } catch {
-        return null; // unparseable body → inconclusive, let the browser decide
-      }
+    async interpret(json, { jobId }) {
       return classifyAshbyBoard(json, jobId);
     },
   },
@@ -159,7 +155,7 @@ export function classifyAshbyBoard(json, jobId) {
  * Map a posting URL to its ATS API URL, or null if it isn't a known ATS posting
  * (or any extracted segment fails the strict charset). Pure + deterministic.
  * @param {string} rawUrl
- * @returns {{ ats: string, apiUrl: string, parts: Record<string, string>, timeoutMs?: number, interpret?: (res: Response, parts: Record<string, string>) => Promise<{ result: 'active' | 'expired', code: string, reason: string } | null> } | null}
+ * @returns {{ ats: string, apiUrl: string, parts: Record<string, string>, timeoutMs?: number, interpret?: (json: unknown, parts: Record<string, string>) => Promise<{ result: 'active' | 'expired', code: string, reason: string } | null> } | null}
  */
 export function resolveAtsApi(rawUrl) {
   let u;
@@ -197,36 +193,30 @@ export async function checkLivenessViaApi(url) {
   if (!resolved) return null;
   const { ats, apiUrl, parts, interpret, timeoutMs } = resolved;
 
-  // The timeout guards the whole classification (fetch + any `interpret` body read),
-  // since aborting the shared signal also tears down an in-flight res.json().
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs || TIMEOUT_MS);
   try {
-    let res;
+    let json;
     try {
-      res = await fetch(apiUrl, {
+      json = await fetchJson(apiUrl, {
         method: 'GET',
         headers: { 'user-agent': 'career-ops-liveness/1.0', accept: 'application/json' },
-        redirect: 'error', // refuse server-side redirects (SSRF + ambiguity guard)
-        signal: controller.signal,
+        redirect: 'error',
+        timeoutMs: timeoutMs || TIMEOUT_MS,
+        maxResponseBytes: 2 * 1024 * 1024,
       });
-    } catch {
+    } catch (error) {
+      if (error?.status === 404 || error?.status === 410) {
+        return { result: 'expired', code: `${ats}_api_gone`, reason: `ATS API ${error.status} — posting removed` };
+      }
       return null; // network / timeout / redirect → inconclusive, let Playwright decide
     }
 
-    if (res.status === 404 || res.status === 410) {
-      return { result: 'expired', code: `${ats}_api_gone`, reason: `ATS API ${res.status} — posting removed` };
+    // Org-level APIs (Ashby) inspect the body to confirm THIS posting; per-job
+    // APIs treat a successful bounded JSON response as proof the posting is live.
+    if (interpret) {
+      return await interpret(json, parts);
     }
-    if (res.status === 200) {
-      // Org-level APIs (Ashby) inspect the body to confirm THIS posting; per-job
-      // APIs (Greenhouse, Lever) treat a 200 as proof the posting is live.
-      if (interpret) return await interpret(res, parts);
-      return { result: 'active', code: `${ats}_api_ok`, reason: 'ATS API returns the posting (live)' };
-    }
-    return null; // 429/5xx/other → inconclusive, fall back to the browser check
+    return { result: 'active', code: `${ats}_api_ok`, reason: 'ATS API returns the posting (live)' };
   } catch {
     return null; // interpret abort / unexpected error → inconclusive
-  } finally {
-    clearTimeout(timer);
   }
 }

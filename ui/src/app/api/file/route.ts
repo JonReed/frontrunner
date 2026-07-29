@@ -11,7 +11,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { createReadStream, existsSync, statSync } from 'node:fs';
+import { createReadStream, existsSync, realpathSync, statSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { ROOT } from '@/lib/roles';
 
@@ -37,19 +37,29 @@ export async function GET(req: Request) {
   if (!existsSync(abs) || !statSync(abs).isFile()) {
     return NextResponse.json({ error: 'not found' }, { status: 404 });
   }
+  const realRoot = realpathSync(ALLOWED_ROOT);
+  const realFile = realpathSync(abs);
+  if (realFile !== realRoot && !realFile.startsWith(realRoot + sep)) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
 
   const ext = abs.slice(abs.lastIndexOf('.')).toLowerCase();
   const type = TYPES[ext];
   if (!type) return NextResponse.json({ error: 'unsupported type' }, { status: 415 });
 
-  const stream = createReadStream(abs);
+  const stream = createReadStream(realFile);
+  const responseHeaders: Record<string, string> = {
+    'content-type': type,
+    'content-disposition': `inline; filename="${abs.split(sep).pop()}"`,
+    'cache-control': 'no-store',
+    'x-content-type-options': 'nosniff',
+  };
+  if (ext === '.html') {
+    // The generated HTML is useful to preview, but it is still model-derived.
+    // A sandboxed document cannot inherit the UI origin or call local actions.
+    responseHeaders['content-security-policy'] = "sandbox; default-src 'none'; style-src 'unsafe-inline'; img-src data:";
+  }
   return new NextResponse(stream as unknown as ReadableStream, {
-    headers: {
-      'content-type': type,
-      // inline so the browser previews the CV rather than dropping it in
-      // Downloads — people want to LOOK at it before sending it anywhere.
-      'content-disposition': `inline; filename="${abs.split(sep).pop()}"`,
-      'cache-control': 'no-store',
-    },
+    headers: responseHeaders,
   });
 }

@@ -26,14 +26,15 @@ test('OpenAI and Gemini evaluators keep the per-role JD out of their system prom
     const promptBuild = source.match(/const systemPrompt = buildScoringPrompt\(\{([\s\S]*?)\n\}\);/)?.[1] ?? '';
     assert.ok(promptBuild, `${file}: scoring prompt construction not found`);
     assert.doesNotMatch(promptBuild, /\bjdText\b/, `${file}: JD leaked into cacheable system prompt`);
-    assert.match(source, /JOB DESCRIPTION TO EVALUATE:\\n\\n\$\{jdText\}/, `${file}: JD is not a separate user turn`);
+    assert.match(source, /content: jobDocument\.prompt|generateContent\(jobDocument\.prompt\)/, `${file}: framed JD is not a separate user turn`);
   }
 });
 
-test('batch workers are told not to re-read personalization already injected into context', () => {
-  const prompt = readFileSync(join(ROOT, 'batch/batch-prompt.md'), 'utf8');
+test('batch does not duplicate personalization into a temporary worker prompt', () => {
   const runner = readFileSync(join(ROOT, 'batch/batch-runner.sh'), 'utf8');
+  const evaluator = readFileSync(join(ROOT, 'src/evaluate/claude-eval.mjs'), 'utf8');
 
-  assert.match(prompt, /Runtime personalization[\s\S]*do not read the same file again/i);
-  assert.match(runner, /Do not read this path again/);
+  assert.doesNotMatch(runner, /\.resolved-prompt|Runtime personalization|batch-prompt\.md/);
+  assert.match(evaluator, /buildScoringPrompt/);
+  assert.match(evaluator, /config', 'profile\.yml/);
 });

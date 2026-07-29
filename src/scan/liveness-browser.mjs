@@ -6,6 +6,11 @@
  */
 
 import { classifyLiveness } from './liveness-core.mjs';
+import {
+  assertSafeRemoteUrl,
+  inspectRemoteUrl,
+  resolvePublicAddresses,
+} from '../security/remote-target-policy.mjs';
 
 const NAVIGATE_TIMEOUT_MS = 15_000;
 const HYDRATION_WAIT_MS = 2_000;
@@ -56,48 +61,6 @@ export function jitteredDelayMs(baseMs) {
 //      also be matched against the IPv4 block list.
 // `0.0.0.0` and the all-zeros IPv6 `::` both reach loopback on Linux and need
 // explicit entries; the original list omitted them.
-const PRIVATE_HOST_PATTERNS = [
-  /^localhost$/,
-  /^localhost\.localdomain$/,
-  /^0\.0\.0\.0$/,
-  /^127\./,
-  /^10\./,
-  /^192\.168\./,
-  /^172\.(1[6-9]|2\d|3[01])\./,
-  /^169\.254\./,
-  /^::1$/,
-  /^::$/,
-  /^fc[0-9a-f]{2}:/,
-  /^fe80:/,
-];
-
-// Lowercase, strip IPv6 brackets, strip FQDN trailing dot. The `hostname`
-// returned by `new URL(...)` is already percent-decoded and IDNA-normalized,
-// but it preserves brackets around IPv6 hosts and trailing dots on FQDNs.
-function normalizeHost(rawHostname) {
-  if (!rawHostname) return '';
-  let h = String(rawHostname).toLowerCase();
-  if (h.startsWith('[') && h.endsWith(']')) h = h.slice(1, -1);
-  if (h.endsWith('.')) h = h.slice(0, -1);
-  return h;
-}
-
-// IPv4-mapped IPv6 (RFC 4291 §2.5.5.2): `::ffff:0:0/96` routes to the embedded
-// IPv4 address. Two textual forms — dotted (`::ffff:127.0.0.1`) and pure-hex
-// (`::ffff:7f00:1`). Return the embedded IPv4 in dotted-decimal form, or null
-// if `host` is not an IPv4-mapped IPv6.
-function extractMappedIPv4(host) {
-  const dotted = host.match(/^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
-  if (dotted) return dotted[1];
-  const hex = host.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
-  if (hex) {
-    const a = parseInt(hex[1], 16);
-    const b = parseInt(hex[2], 16);
-    return `${(a >> 8) & 0xff}.${a & 0xff}.${(b >> 8) & 0xff}.${b & 0xff}`;
-  }
-  return null;
-}
-
 // Returns null when the URL is safe to fetch, otherwise a structured guard
 // result with a stable `code` (used for routing in scan.mjs) plus a human
 // `reason`. Stable codes — not regex on reason strings — drive downstream
@@ -105,72 +68,13 @@ function extractMappedIPv4(host) {
 //
 // Exported for unit tests; the main entry point is checkUrlLiveness.
 export function rejectPrivateOrInvalid(url) {
-  let parsed;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return { code: 'invalid_url', reason: 'invalid URL' };
-  }
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    return { code: 'unsupported_protocol', reason: `unsupported protocol ${parsed.protocol}` };
-  }
-  const host = normalizeHost(parsed.hostname);
-  const mappedIPv4 = extractMappedIPv4(host);
-  const candidates = mappedIPv4 ? [host, mappedIPv4] : [host];
-  for (const candidate of candidates) {
-    if (PRIVATE_HOST_PATTERNS.some((pattern) => pattern.test(candidate))) {
-      return { code: 'blocked_host', reason: `blocked host ${parsed.hostname}` };
-    }
-  }
-  return null;
+  return inspectRemoteUrl(url);
 }
 
 const dnsCache = new Map();
-
 async function resolveDnsCached(hostname) {
-  if (dnsCache.has(hostname)) {
-    const cached = dnsCache.get(hostname);
-    if (cached instanceof Error) throw cached;
-    return cached;
-  }
-  const dns = await import('dns/promises');
-  try {
-    const [ipv4, ipv6, lookupList] = await Promise.all([
-      dns.resolve4(hostname).catch(() => []),
-      dns.resolve6(hostname).catch(() => []),
-      dns.lookup(hostname, { all: true }).catch(() => [])
-    ]);
-    const addresses = Array.from(new Set([
-      ...ipv4,
-      ...ipv6,
-      ...lookupList.map(item => item.address)
-    ]));
-    if (addresses.length === 0) {
-      throw new Error(`DNS resolution returned no addresses for ${hostname}`);
-    }
-    dnsCache.set(hostname, addresses);
-    return addresses;
-  } catch (err) {
-    dnsCache.set(hostname, err);
-    throw err;
-  }
-}
-
-async function validateUrlSecurity(urlString, resolveHostname = resolveDnsCached) {
-  const url = new URL(urlString.endsWith('.') ? urlString.slice(0, -1) : urlString);
-  const hostname = url.hostname;
-  const host = normalizeHost(hostname);
-  const addresses = await resolveHostname(host);
-  for (const ip of addresses) {
-    const norm = normalizeHost(ip);
-    const mapped = extractMappedIPv4(norm);
-    const candidates = mapped ? [norm, mapped] : [norm];
-    for (const candidate of candidates) {
-      if (PRIVATE_HOST_PATTERNS.some((pattern) => pattern.test(candidate))) {
-        throw new Error(`Access denied: Egress guard blocked private target IP ${ip}`);
-      }
-    }
-  }
+  if (!dnsCache.has(hostname)) dnsCache.set(hostname, resolvePublicAddresses(hostname));
+  return dnsCache.get(hostname);
 }
 
 export async function checkUrlLiveness(
@@ -196,7 +100,7 @@ export async function checkUrlLiveness(
         return route.abort('blockedbyclient');
       }
       try {
-        await validateUrlSecurity(requestUrl, resolveHostname);
+        await assertSafeRemoteUrl(requestUrl, { resolveHostname });
         return route.continue();
       } catch (err) {
         console.warn(`Blocked request to restricted destination (DNS): ${requestUrl} - ${err.message}`);

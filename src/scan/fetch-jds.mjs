@@ -42,6 +42,8 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { ROOT } from '#paths';
+import { fetchJson as safeFetchJson } from '../../providers/_http.mjs';
+import { normalizeJobText } from '../security/job-document.mjs';
 // ---------------------------------------------------------------- args
 
 const argv = process.argv.slice(2);
@@ -87,12 +89,12 @@ export const htmlToText = (html) =>
 const safe = (s) => String(s).replace(/[^a-zA-Z0-9._-]/g, '-').slice(0, 80);
 
 async function getJson(url) {
-  const res = await fetch(url, {
+  return safeFetchJson(url, {
     headers: { accept: 'application/json', 'user-agent': 'career-ops/fetch-jds' },
-    signal: AbortSignal.timeout(30_000),
+    timeoutMs: 30_000,
+    redirect: 'error',
+    maxResponseBytes: 8 * 1024 * 1024,
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
 }
 
 // ---------------------------------------------------------------- url parsing
@@ -199,7 +201,9 @@ export async function fetchJobDescriptionViaApi(rawUrl, fetchJson = getJson) {
     provider: parsed.provider,
     title: post.title,
     location: post.location,
-    text: `# ${post.title}\n\n**Location:** ${post.location}\n**URL:** ${rawUrl}\n\n---\n\n${post.text}\n`,
+    text: normalizeJobText(
+      `# ${post.title}\n\n**Location:** ${post.location}\n**URL:** ${rawUrl}\n\n---\n\n${post.text}\n`,
+    ),
   };
 }
 
@@ -300,10 +304,9 @@ export async function runFetchJds({ input, outDir, force = false, fetchJson = ge
       }
       const file = join(outDir, `${safe(b.provider)}-${safe(b.slug)}-${safe(jobId)}.md`);
       if (!existsSync(file) || force) {
-        writeFileSync(
-          file,
-          `# ${post.title}\n\n**Location:** ${post.location}\n**URL:** ${url}\n\n---\n\n${post.text}\n`,
-        );
+        writeFileSync(file, `${normalizeJobText(
+          `# ${post.title}\n\n**Location:** ${post.location}\n**URL:** ${url}\n\n---\n\n${post.text}`,
+        )}\n`);
       }
       written.push({ url, file, chars: post.text.length });
       manifest.set(url, file);

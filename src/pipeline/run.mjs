@@ -129,11 +129,6 @@ function defaultRun(command, args, options = {}) {
 
 async function defaultEvaluationRunner({ engine, kept, jdsDir, run = defaultRun }) {
   if (engine === 'none' || kept.length === 0) return { attempted: 0, completed: [], failed: [] };
-  if (engine === 'batch') {
-    run(join(ROOT, 'batch', 'batch-runner.sh'), []);
-    return { attempted: kept.length, completed: [], failed: [] };
-  }
-
   const index = new Map();
   const indexFile = join(jdsDir, 'index.tsv');
   if (existsSync(indexFile)) {
@@ -151,7 +146,9 @@ async function defaultEvaluationRunner({ engine, kept, jdsDir, run = defaultRun 
       continue;
     }
     try {
-      if (engine === 'openrouter') {
+      if (engine === 'claude' || engine === 'batch') {
+        run(process.execPath, [join(ROOT, 'src/evaluate/claude-eval.mjs'), '--file', file, '--url', role.url]);
+      } else if (engine === 'openrouter') {
         run(process.execPath, [join(ROOT, 'src/evaluate/openrouter-runner.mjs'), 'evaluate', '--file', file]);
       } else {
         const evaluator = engine === 'gemini' ? 'gemini-eval.mjs' : 'openai-eval.mjs';
@@ -172,7 +169,7 @@ export async function runCanonicalPipeline({
   batchInput = join(ROOT, 'batch', 'batch-input.tsv'),
   rejects = join(ROOT, 'batch', 'prefilter-rejects.tsv'),
   livenessResults = join(ROOT, 'batch', 'liveness-results.tsv'),
-  engine = 'batch',
+  engine = 'claude',
   scan = true,
   scanRunner = () => defaultRun(process.execPath, [join(ROOT, 'src/scan/scan.mjs')]),
   fetchJds = runFetchJds,
@@ -268,7 +265,7 @@ export async function runCanonicalPipeline({
     kept: filtered.kept,
     jdsDir,
   });
-  if (engine !== 'batch' && engine !== 'none' && evaluation.completed?.length) {
+  if (engine !== 'none' && evaluation.completed?.length) {
     await markPipelineOutcomes(
       input,
       new Map(evaluation.completed.map((url) => [url, 'evaluated'])),
@@ -303,20 +300,23 @@ async function main() {
 
 Usage:
   npm run pipeline
-  node src/pipeline/run.mjs [--engine batch|openrouter|openai|gemini|none]
+  node src/pipeline/run.mjs [--engine claude|openrouter|openai|gemini|none]
 
 Options:
   --input <file>       Input pipeline/TSV (default data/pipeline.md)
-  --engine <name>      Evaluation provider (default batch)
+  --engine <name>      Tool-less evaluation provider (default claude)
   --skip-scan          Use the existing input without running scan first
   --prepare-only       Alias for --engine none
   --json               Print the machine-readable run summary
 `);
     return;
   }
-  const engine = args.includes('--prepare-only') ? 'none' : argValue(args, '--engine', 'batch');
-  if (!['batch', 'openrouter', 'openai', 'gemini', 'none'].includes(engine)) {
+  const engine = args.includes('--prepare-only') ? 'none' : argValue(args, '--engine', 'claude');
+  if (!['claude', 'batch', 'openrouter', 'openai', 'gemini', 'none'].includes(engine)) {
     throw new Error(`unsupported engine: ${engine}`);
+  }
+  if (engine === 'batch') {
+    console.warn('Warning: --engine batch is deprecated; using the tool-less Claude evaluator.');
   }
   const result = await runCanonicalPipeline({
     input: resolve(ROOT, argValue(args, '--input', 'data/pipeline.md')),

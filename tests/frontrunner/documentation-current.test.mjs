@@ -17,11 +17,12 @@ test('README documents the executable canonical pipeline and generated benchmark
   assert.match(readme, /provider APIs.*Playwright is a fallback/is);
 });
 
-test('architecture does not resurrect the nonexistent multi-CLI batch flag or browser-first flow', () => {
+test('architecture documents tool-less Claude and does not resurrect browser-first or privileged batch flow', () => {
   const architecture = read('docs/ARCHITECTURE.md');
   assert.doesNotMatch(architecture, /batch-runner\.sh.*--cli/s);
   assert.doesNotMatch(architecture, /Extract.*Playwright\/WebFetch/);
-  assert.match(architecture, /API engines[\s\S]*Claude batch/);
+  assert.match(architecture, /API engines[\s\S]*Tool-less Claude CLI/);
+  assert.doesNotMatch(architecture, /self-contained worker|skipped permissions/);
   assert.match(architecture, /mandatory prefilter/);
 });
 
@@ -36,9 +37,10 @@ test('canonical agent documentation routes pipeline mode to code, not hand-built
   assert.doesNotMatch(mode, /Playwright \(preferred\)/);
 });
 
-test('batch documentation accurately says Claude-only, A-G, and mandatory deterministic filtering', () => {
+test('batch documentation accurately says tool-less Claude, A-G, and mandatory deterministic filtering', () => {
   const batch = read('batch/README.md');
-  assert.match(batch, /Claude Code headless workers/);
+  assert.match(batch, /tool-less Claude/);
+  assert.match(batch, /zero tools/);
   assert.match(batch, /A-G report/);
   assert.match(batch, /runs the deterministic prefilter again/);
   assert.doesNotMatch(batch, /supports multiple CLIs|A-F report/);

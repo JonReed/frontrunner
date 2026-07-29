@@ -15,7 +15,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { readTracker, readReport } from '@/lib/roles';
-import { parseReport, renderMarkdown } from '@/lib/report';
+import { parseReport } from '@/lib/report';
+import { safeExternalUrl } from '@/lib/urls';
+import { ReportMarkdown } from '@/components/report-markdown';
 import { Match } from '@/components/match';
 import { BuildCv } from '@/components/build-cv';
 import { CvLinks } from '@/components/cv-links';
@@ -26,10 +28,9 @@ function Section({ title, body }: { title: string; body: string }) {
   return (
     <section className="mb-7">
       <h2 className="mb-2 text-base font-bold tracking-tight">{title}</h2>
-      <div
-        className="space-y-2.5 text-[15px] leading-relaxed text-[var(--color-ink-soft)] [&_strong]:text-[var(--color-ink)]"
-        dangerouslySetInnerHTML={{ __html: renderMarkdown(body) }}
-      />
+      <div className="space-y-2.5 text-[15px] leading-relaxed text-[var(--color-ink-soft)] [&_strong]:text-[var(--color-ink)]">
+        <ReportMarkdown body={body} />
+      </div>
     </section>
   );
 }
@@ -42,6 +43,7 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
 
   const markdown = role.reportPath ? await readReport(role.reportPath) : null;
   const report = markdown ? parseReport(markdown) : null;
+  const jobUrl = safeExternalUrl(role.url);
 
   return (
     // pb-28: the action bar is sticky, so without room beneath it the final
@@ -67,9 +69,9 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
         <div className="mt-3 flex flex-wrap items-center gap-2">
         {role.pdf && <CvLinks pdf={role.pdf} />}
         {/* Read the original before trusting anything below it. */}
-        {role.url && (
+        {jobUrl && (
           <a
-            href={role.url}
+            href={jobUrl}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-card)] px-3 py-1.5 text-sm font-medium text-[var(--color-ink-soft)] transition hover:border-[var(--color-act)] hover:text-[var(--color-act)]"
@@ -120,7 +122,7 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
         badged so it is never a surprise.
       */}
       <div className="sticky bottom-4 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-card)] p-5 shadow-md shadow-black/5">
-        <BuildCv roleNum={role.num} hasPdf={role.hasPdf} pdf={role.pdf} url={role.url} />
+        <BuildCv roleNum={role.num} hasPdf={role.hasPdf} pdf={role.pdf} url={jobUrl} />
       </div>
     </div>
   );

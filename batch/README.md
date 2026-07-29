@@ -1,7 +1,8 @@
 # Batch Processing
 
-Process multiple job offers in parallel via Claude Code headless workers. Each
-worker produces an A-G report, optional PDF, and tracker line. For ordinary
+Process multiple job offers in parallel via tool-less Claude calls. The model
+has zero tools and returns schema-constrained scoring data; deterministic code
+produces each A-G report and tracker line. For ordinary
 use, prefer the canonical `npm run pipeline`; it prepares this input safely.
 
 ## Quick Start
@@ -39,7 +40,7 @@ use, prefer the canonical `npm run pipeline`; it prepares this input safely.
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--parallel N` | `1` | Number of concurrent headless workers |
+| `--parallel N` | `1` | Number of concurrent schema-only evaluations |
 | `--dry-run` | off | Preview pending offers without processing |
 | `--retry-failed` | off | Only retry offers marked as `failed` in state |
 | `--resume-paused` | off | Resume offers paused after a Claude session/rate limit |
@@ -53,7 +54,7 @@ use, prefer the canonical `npm run pipeline`; it prepares this input safely.
 ```
 batch/
   batch-runner.sh          # Orchestrator script
-  batch-prompt.md          # Prompt template sent to each worker
+  batch-prompt.md          # Legacy compatibility prompt (not model authority)
   batch-input.tsv          # Input offers (you create this)
   batch-state.tsv          # Processing state (auto-managed, resumable)
   logs/                    # Per-offer worker logs ({report_num}-{id}.log)
@@ -67,10 +68,12 @@ batch/
    if that boundary is unavailable. Workers read
    `batch-input.filtered.tsv`, never the unchecked source directly.
 2. It reads `batch-state.tsv`, assigns collision-safe reserved report numbers,
-   and launches Claude workers with `batch-prompt.md`.
-3. Each worker evaluates the offer, writes an A-G report to `reports/`,
-   optionally generates a PDF, and writes a tracker TSV to
-   `tracker-additions/`.
+   and launches `src/evaluate/claude-eval.mjs`.
+3. Claude receives the bounded JD and candidate context with `--tools ""`,
+   safe mode, strict MCP isolation and a JSON schema. Code validates the result,
+   writes an A-G report to `reports/`, and writes a tracker TSV to
+   `tracker-additions/`. A missing cached JD fails closed; there is no agent or
+   browser fallback.
 4. After all workers finish, batch-runner calls `src/tracker/merge-tracker.mjs` to merge TSVs into `data/applications.md`, `src/tracker/reconcile-pipeline.mjs` to move processed offers out of the `data/pipeline.md` inbox, and `src/tracker/verify-pipeline.mjs` to check integrity.
 
 ## Tracker Merge

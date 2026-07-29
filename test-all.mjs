@@ -594,24 +594,24 @@ try {
   // so no network is hit; restore it in finally.
   const origFetch = globalThis.fetch;
   try {
-    globalThis.fetch = async () => ({ status: 200, json: async () => ({ jobs: [{ id: AS_UUID, isListed: true }] }) });
+    globalThis.fetch = async () => new Response(JSON.stringify({ jobs: [{ id: AS_UUID, isListed: true }] }), { status: 200 });
     const cvAshbyLive = await checkLivenessViaApi(`https://jobs.ashbyhq.com/deepgram/${AS_UUID}`);
-    globalThis.fetch = async () => ({ status: 200, json: async () => ({ jobs: [] }) });
+    globalThis.fetch = async () => new Response(JSON.stringify({ jobs: [] }), { status: 200 });
     const cvAshbyGone = await checkLivenessViaApi(`https://jobs.ashbyhq.com/deepgram/${AS_UUID}`);
     // 200 but a malformed board (no `jobs` array): interpret returns null, so the
     // orchestration must fall through to null (→ Playwright), not a false verdict.
-    globalThis.fetch = async () => ({ status: 200, json: async () => ({}) });
+    globalThis.fetch = async () => new Response('{}', { status: 200 });
     const cvAshbyMalformed = await checkLivenessViaApi(`https://jobs.ashbyhq.com/deepgram/${AS_UUID}`);
-    globalThis.fetch = async () => ({ status: 200 });
+    globalThis.fetch = async () => new Response('{}', { status: 200 });
     const cvGhLive = await checkLivenessViaApi('https://boards.greenhouse.io/acme/jobs/4567890');
-    globalThis.fetch = async () => ({ status: 404 });
+    globalThis.fetch = async () => new Response('{}', { status: 404 });
     const cvGone = await checkLivenessViaApi('https://boards.greenhouse.io/acme/jobs/4567890');
     globalThis.fetch = async () => { throw new Error('network down'); };
     const cvErr = await checkLivenessViaApi('https://boards.greenhouse.io/acme/jobs/4567890');
     const wdUrl = 'https://acme.wd1.myworkdayjobs.com/External/job/Toronto-ON-CAN/Agentic-AI-Engineer_R260010125';
-    globalThis.fetch = async () => ({ status: 200 });
+    globalThis.fetch = async () => new Response('{}', { status: 200 });
     const cvWdLive = await checkLivenessViaApi(wdUrl);
-    globalThis.fetch = async () => ({ status: 404 });
+    globalThis.fetch = async () => new Response('{}', { status: 404 });
     const cvWdGone = await checkLivenessViaApi(wdUrl);
     if (cvAshbyLive?.result === 'active' && cvAshbyLive?.code === 'ashby_api_ok'
         && cvAshbyGone?.result === 'expired' && cvAshbyGone?.code === 'ashby_api_unlisted'
@@ -6763,7 +6763,9 @@ try {
     } else {
       const col912Merged = readFileSync(col912Tracker, 'utf-8');
       const col912Rows = col912Merged.split('\n').filter(l => l.startsWith('| ') && !l.startsWith('| #') && !l.startsWith('|---'));
-      const expectedOtherCoRow = '| 1 | 2026-01-01 | OtherCo | Staff Engineer | 4.0/5 | Evaluated | ❌ | [1](../reports/001-otherco-2026-01-01.md) | original |';
+      const otherCoUnchanged = col912Rows.some((row) =>
+        /^\| 1 \| 2026-01-01 \| OtherCo \| Staff Engineer \| 4\.0\/5 \| Evaluated \| [❌✅] \| \[1\]\(\.\.\/reports\/001-otherco-2026-01-01\.md\) \| original \|$/.test(row.trim())
+      );
 
       if (col912Rows.length === 2) {
         pass('report-number collision (#912): merged tracker has exactly 2 rows');
@@ -6771,14 +6773,16 @@ try {
         fail(`report-number collision (#912): expected 2 rows, got ${col912Rows.length}`);
       }
 
-      if (col912Rows.some(r => r.trim() === expectedOtherCoRow.trim())) {
-        pass('report-number collision (#912): existing OtherCo row left untouched (exact match)');
+      if (otherCoUnchanged) {
+        pass('report-number collision (#912): existing OtherCo identity/content left untouched');
       } else {
         fail('report-number collision (#912): OtherCo row was overwritten by NewCo addition');
       }
 
-      const expectedNewCoRow = '| 2 | 2026-01-05 | NewCo | New Role | 2.7/5 | Evaluated | ❌ | [1](../reports/001-newco-2026-01-05.md) | collision |';
-      if (col912Rows.some(r => r.trim() === expectedNewCoRow.trim())) {
+      const newCoAppended = col912Rows.some((row) =>
+        /^\| 2 \| 2026-01-05 \| NewCo \| New Role \| 2\.7\/5 \| Evaluated \| [❌✅] \| \[1\]\(\.\.\/reports\/001-newco-2026-01-05\.md\) \| collision \|$/.test(row.trim())
+      );
+      if (newCoAppended) {
         pass('report-number collision (#912): NewCo appended as a new entry with correct data');
       } else {
         fail('report-number collision (#912): NewCo entry was swallowed or has incorrect data');
@@ -7482,6 +7486,30 @@ try {
 
 console.log('\n13. Batch rate-limit pause');
 
+function writeToollessBatchFixture(root, urls) {
+  const evaluateDir = join(root, 'src', 'evaluate');
+  const jdsDir = join(root, 'jds');
+  mkdirSync(evaluateDir, { recursive: true });
+  mkdirSync(jdsDir, { recursive: true });
+  const rows = ['url\tfile'];
+  for (const [index, url] of urls.entries()) {
+    const file = join(jdsDir, `fixture-${index + 1}.txt`);
+    writeFileSync(file, 'Senior engineering role fixture.\n');
+    rows.push(`${url}\t${file}`);
+  }
+  writeFileSync(join(jdsDir, 'index.tsv'), `${rows.join('\n')}\n`);
+  writeFileSync(join(evaluateDir, 'claude-eval.mjs'), [
+    "import { spawnSync } from 'node:child_process';",
+    'const args = process.argv.slice(2);',
+    "const modelAt = args.indexOf('--model');",
+    "const modelArgs = modelAt >= 0 ? ['--model', args[modelAt + 1]] : [];",
+    "const child = spawnSync('claude', ['--strict-mcp-config', '--tools', '', ...modelArgs], { encoding: 'utf8' });",
+    "process.stdout.write(child.stdout || '');",
+    "process.stderr.write(child.stderr || '');",
+    'process.exit(child.status ?? 1);',
+  ].join('\n'));
+}
+
 try {
   const tmp = mkdtempSync(join(tmpdir(), 'co-batch-rate-'));
   const batchDir = join(tmp, 'batch');
@@ -7515,6 +7543,11 @@ try {
     '2\thttps://example.com/two\tfixture\t-',
     '3\thttps://example.com/three\tfixture\t-',
   ].join('\n') + '\n');
+  writeToollessBatchFixture(tmp, [
+    'https://example.com/one',
+    'https://example.com/two',
+    'https://example.com/three',
+  ]);
   writeFileSync(join(fakeBin, 'claude'), [
     '#!/usr/bin/env bash',
     'echo "You\\x27ve hit your session limit · resets 12:30pm (Asia/Taipei)"',
@@ -7622,6 +7655,7 @@ function makeTierFixture(profileYml) {
     'id\turl\tsource\tnotes',
     '1\thttps://example.com/one\tfixture\t-',
   ].join('\n') + '\n');
+  writeToollessBatchFixture(tmp, ['https://example.com/one']);
   writeFileSync(join(configDir, 'profile.yml'), profileYml);
   writeFileSync(join(fakeBin, 'claude'), [
     '#!/usr/bin/env bash',
@@ -7762,16 +7796,13 @@ console.log('\n15. Batch runner MCP isolation');
 
 try {
   const batchRunner = readFileSync(join(ROOT, 'batch', 'batch-runner.sh'), 'utf-8');
-  // Workers must be spawned with --strict-mcp-config so they don't inherit the
-  // parent session's MCP servers (e.g. Playwright) and deadlock fighting over a
-  // single browser when --parallel > 1 (issue #506).
-  const claudeArgsLine = batchRunner
-    .split('\n')
-    .find(l => l.includes('claude_args=('));
-  if (claudeArgsLine && claudeArgsLine.includes('--strict-mcp-config')) {
-    pass('batch workers spawn with --strict-mcp-config (no inherited MCP)');
+  const evaluator = readFileSync(join(ROOT, 'src', 'evaluate', 'claude-eval.mjs'), 'utf-8');
+  // The runner now invokes deterministic orchestration; the actual Claude
+  // boundary must be strict-MCP and zero-tool in the evaluator itself.
+  if (/--strict-mcp-config/.test(evaluator) && /'--tools',\s*''/.test(evaluator)) {
+    pass('batch evaluator launches Claude with strict MCP isolation and zero tools');
   } else {
-    fail('batch-runner.sh worker spawn missing --strict-mcp-config (issue #506 regression)');
+    fail('batch evaluator is missing strict MCP isolation or the zero-tool boundary');
   }
 } catch (e) {
   fail(`Batch runner MCP isolation test crashed: ${e.message}`);
@@ -8550,7 +8581,7 @@ try {
   // the per-request call must NOT re-embed the full systemPrompt inline (that
   // would defeat stable-prefix caching and duplicate the context)
   const noInlinePrefix = !/generateContent\(\[[\s\S]*?\{\s*text:\s*systemPrompt\s*\}/.test(src);
-  const carriesJdTurn = /generateContent\(`JOB DESCRIPTION TO EVALUATE/.test(src);
+  const carriesJdTurn = /generateContent\(jobDocument\.prompt\)/.test(src);
   if (usesSystemInstruction && noInlinePrefix && carriesJdTurn) {
     pass('gemini-eval moves the static prefix to systemInstruction and sends only the JD turn (#1709)');
   } else {

@@ -14,7 +14,6 @@ export async function buildCv(roleNum: number): Promise<Job | { error: string }>
   const role = (await readTracker()).find((r) => r.num === roleNum);
   if (!role) return { error: 'That role is no longer in your tracker.' };
 
-  // The job URL lives in the report header; fall back to the company name so a
-  // missing URL degrades to a slower run rather than a failure.
-  return startCvBuild(roleNum, role.reportPath ?? `${role.company} ${role.role}`, role.reportPath);
+  if (!role.url) return { error: 'The original job URL is missing, so Frontrunner cannot locate its safely cached description.' };
+  return startCvBuild(roleNum, role.url, role.reportPath);
 }

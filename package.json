@@ -50,6 +50,7 @@
     "gemini:eval": "node src/evaluate/gemini-eval.mjs",
     "ollama:eval": "node src/evaluate/ollama-eval.mjs",
     "openai:eval": "node src/evaluate/openai-eval.mjs",
+    "claude:eval": "node src/evaluate/claude-eval.mjs",
     "openai:tailor": "node src/evaluate/openai-tailor.mjs",
     "eval:golden": "node src/evaluate/eval-golden.mjs",
     "star": "node src/evaluate/match-star.mjs",

@@ -9,8 +9,10 @@ remain against your real experience, and keeps your applications and documents
 in one place.
 
 It is a fork of [career-ops](https://github.com/santifer/career-ops). Frontrunner
-keeps its provider ecosystem, scoring framework, file formats, and safety rules,
-but changes how jobs are collected, filtered, and presented.
+keeps its provider ecosystem, scoring framework, file formats, and ethical
+application rules, but changes how jobs are collected, filtered, secured, and
+presented. The inherited implementation did not treat job adverts as hostile
+input; Frontrunner does.
 
 > **The measured difference:** on the checked-in deterministic benchmark,
 > Frontrunner uses **93.3% fewer model input tokens**, **84.1% fewer output
@@ -106,9 +108,9 @@ from hand-edited README estimates. Run `npm run benchmark` to regenerate the
 artifact and `npm run benchmark:check` to fail when it is stale. The fixture is
 a deterministic regression benchmark, not a promise that every live job board
 will have the same ratios. Its token comparison measures the compact
-contract-based API evaluator path; the Claude Code batch worker still carries
-its self-contained orchestration prompt. The command also records wall time for
-the local deterministic pass.
+contract-based evaluator path. Claude now uses the same compact contract through
+a tool-less CLI call. The command also records wall time for the local
+deterministic pass.
 
 The broader 89-role scored regression corpus separately asserts that the
 deterministic filter rejects no role that scored 3.0 or above. Every rejection
@@ -172,8 +174,9 @@ Frontrunner currently has three surfaces:
 
 - **Conversation** — the main supported workflow. Ask your AI coding assistant
   to scan, evaluate, prepare, or track an application in plain language.
-- **`web/`** — the inherited career-ops web application. It is feature-rich but
-  remains an experimental, developer-started interface.
+- **`web/`** — the inherited career-ops web application. It has not adopted
+  Frontrunner's full hostile-content UI boundary and should be treated as
+  deprecated rather than exposed or relied upon.
 - **`ui/`** — the new Frontrunner interface. It is organised around the next
   useful action rather than implementation commands, but is still incomplete.
 
@@ -196,8 +199,10 @@ scan → cache clean job descriptions → check liveness → prefilter → evalu
 
 Provider APIs are used for descriptions and liveness where available.
 Playwright is a fallback, not the first request. Only the final evaluation
-stage needs a model. OpenAI-compatible, Gemini, Ollama, OpenRouter, and Claude
-batch entry points all run the deterministic gate before a provider request.
+stage needs a model. OpenAI-compatible, Gemini, Ollama, OpenRouter, and the
+default tool-less Claude evaluator all run the deterministic gate before a
+provider request. `--engine batch` remains a deprecated alias for tool-less
+Claude; it no longer launches an agent worker.
 
 Use `npm run pipeline:prepare` to run every zero-token stage without starting
 evaluation. Select a non-default evaluator with
@@ -229,9 +234,11 @@ while a false rejection can cost an opportunity.
 
 ## Data and privacy
 
-Your CV, profile, reports, application tracker, and generated documents stay in
-the local checkout. They are gitignored and separated from updateable system
-files.
+Your CV, profile, reports, application tracker, and generated documents are
+stored in the local checkout. They are gitignored and separated from updateable
+system files. Model-backed evaluation necessarily sends the bounded job text
+plus the relevant CV/profile context to the model provider you select. Use
+Ollama if that content must never leave the machine.
 
 The canonical user data remains human-readable Markdown, YAML, and TSV. See
 [DATA_CONTRACT.md](DATA_CONTRACT.md) for the exact boundary.
@@ -239,6 +246,50 @@ The canonical user data remains human-readable Markdown, YAML, and TSV. See
 Generated application content is restricted to your CV, profile, portfolio
 digest, writing samples, and facts you explicitly provide. Frontrunner may
 rephrase evidence but must not invent experience, metrics, or authorship.
+
+## Security model
+
+Frontrunner assumes every website, API response, redirect, job URL, job advert,
+and model-generated field is malicious. This is a hard architectural boundary,
+not prompt wording that each provider has to remember.
+
+- **One egress policy:** core providers and bulk JD ingestion use the shared
+  HTTP broker. It accepts only HTTP(S), rejects embedded credentials,
+  localhost/private/link-local/metadata destinations, checks resolved IPs,
+  pins brokered connections to the checked address, revalidates every redirect,
+  times out stalled bodies, and enforces response byte limits. Playwright
+  applies the same destination policy to every page subrequest.
+- **Anonymous core sources:** built-in providers use public, anonymous
+  endpoints. A future authenticated source must be an isolated plugin with
+  explicit credentials and capabilities; credentials are never attached to
+  arbitrary job URLs.
+- **Hostile-document quarantine:** JD text is normalized, capped at 24,000
+  characters, fingerprinted, inspected for instruction-like signals, and
+  enclosed in an explicit untrusted-data block. Detection is telemetry—not a
+  claim that prompt injection can be sanitized away.
+- **Models have no authority:** Claude evaluation and CV tailoring run with
+  `--tools ""`, safe mode, no MCP servers, no plugins/hooks, no session
+  persistence, and schema-constrained output. Frontrunner never uses
+  `--dangerously-skip-permissions`. OpenAI, Gemini, Ollama, and OpenRouter
+  evaluators are API calls with no local tools.
+- **Code owns effects:** models return bounded evidence, scores, or a CV render
+  payload. Deterministic code validates it, chooses paths, writes reports and
+  tracker rows, escapes HTML, verifies CV facts, and invokes fixed PDF commands.
+- **Local UI means local:** the new UI binds to `127.0.0.1`, rejects non-local
+  Host/Origin values, sets an enforced CSP and security headers, validates file
+  containment and job IDs, allows only HTTP(S) external links, renders report
+  Markdown as escaped React elements, and sandboxes generated HTML previews.
+
+The local UI is not a hosted scraping service and should not be exposed on a
+LAN or the public internet. Local-only operation also does not grant permission
+to scrape a site: users remain responsible for the terms and access rules of
+the sources they configure. Reviewed provider code, local-parser commands,
+plugins, the selected model provider, browser/OS compromise, and a hostile
+local user remain outside the remote-job-content sandbox.
+
+See the [full threat model](docs/career-ops-threat-model.md), including the
+unsafe inherited baseline, abuse cases, residual risks, and implementation
+status.
 
 ## Relationship to career-ops
 

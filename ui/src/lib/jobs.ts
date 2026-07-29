@@ -2,9 +2,8 @@
  * jobs.ts — spawn and supervise the CLI so the user never opens a terminal.
  *
  * This is the layer that makes the product's main promise true. Tailoring a CV
- * is an agent task: it reads the CV, the job description and the evaluation,
- * rewrites the content, then renders HTML and PDF. There is no scriptable
- * shortcut — it has to run `claude -p`. So the UI runs it.
+ * is a model task, but the model is deliberately tool-less. It returns a
+ * bounded JSON payload; deterministic code renders and fact-checks the PDF.
  *
  * Design constraints that matter more than elegance here:
  *
@@ -21,7 +20,7 @@
  */
 
 import { spawn } from 'node:child_process';
-import { mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync, appendFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync, appendFileSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 import { ROOT } from './roles';
 
@@ -58,12 +57,16 @@ function ensureDir() {
 }
 
 function jobPath(id: string) {
+  if (!/^cv-\d+-[a-z0-9]+$/.test(id)) throw new Error('invalid job id');
   return join(JOBS_DIR, `${id}.json`);
 }
 
 function write(job: Job) {
   ensureDir();
-  writeFileSync(jobPath(job.id), JSON.stringify(job, null, 2));
+  const target = jobPath(job.id);
+  const temporary = `${target}.${process.pid}.${Date.now()}.tmp`;
+  writeFileSync(temporary, JSON.stringify(job, null, 2), { mode: 0o600 });
+  renameSync(temporary, target);
 }
 
 /**
@@ -150,6 +153,7 @@ export function startCvBuild(roleNum: number, jobUrl: string, reportPath: string
   ensureDir();
   const id = `cv-${roleNum}-${Date.now().toString(36)}`;
   const logFile = join(JOBS_DIR, `${id}.log`);
+  writeFileSync(logFile, '', { mode: 0o600 });
 
   const job: Job = {
     id,
@@ -160,14 +164,14 @@ export function startCvBuild(roleNum: number, jobUrl: string, reportPath: string
   };
   write(job);
 
-  const reportLine = reportPath ? `\nThe evaluation report is at: ${reportPath}` : '';
-  const prompt =
-    `Tailor the CV for this role and generate the HTML and PDF CVs.\n` +
-    `URL: ${jobUrl}\nTracker row: ${roleNum}${reportLine}`;
-
   const child = spawn(
-    'claude',
-    ['-p', '--dangerously-skip-permissions', '--append-system-prompt-file', 'modes/pdf.md', prompt],
+    process.execPath,
+    [
+      'src/cv/claude-tailor.mjs',
+      '--url', jobUrl,
+      '--tracker', String(roleNum),
+      ...(reportPath ? ['--report', reportPath] : []),
+    ],
     { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'], detached: false },
   );
 
@@ -193,7 +197,7 @@ export function startCvBuild(roleNum: number, jobUrl: string, reportPath: string
       finishedAt: Date.now(),
       error:
         err.message.includes('ENOENT')
-          ? 'Could not find the Claude CLI. Frontrunner needs it installed and signed in.'
+          ? 'Could not start the secure CV builder. Check that Node and the Claude CLI are installed.'
           : err.message,
     });
   });

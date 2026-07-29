@@ -110,7 +110,7 @@ test('code—not the model—renders every report block and machine summary', ()
   const report = renderEvaluationReport(parsed);
   for (const block of 'ABCDEFG') assert.match(report, new RegExp(`Block ${block}`));
   assert.match(report, /SCORE: 4\.2/);
-  assert.match(report, /CONTRACT_VERSION: 1\.1/);
+  assert.match(report, new RegExp(`CONTRACT_VERSION: ${SCORING_CONTRACT_VERSION.replace('.', '\\.')}`));
   assert.match(report, /## Machine Summary/);
   assert.match(report, /score: 4\.2/);
   assert.match(report, /soft_gaps:/);

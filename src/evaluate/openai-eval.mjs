@@ -36,6 +36,7 @@ import {
 } from '../tracker/reserve-report-num.mjs';
 import { TokenAccumulator, formatBreakdown, normalizeOpenAIUsage } from '../lib/token-tracker.mjs';
 import { evaluateDeterministicGate, formatGateRejection } from './evaluation-gate.mjs';
+import { frameUntrustedJobText } from '../security/job-document.mjs';
 import {
   buildScoringPrompt,
   parseScoringResponse,
@@ -147,6 +148,11 @@ for (let i = 0; i < args.length; i++) {
 if (!jdText) {
   console.error('❌  No Job Description provided. Run with --help for usage.');
   process.exit(1);
+}
+const jobDocument = frameUntrustedJobText(jdText);
+jdText = jobDocument.text;
+if (jobDocument.suspiciousSignals.length) {
+  console.warn(`⚠️   Job text contains ${jobDocument.suspiciousSignals.length} instruction-like signal(s); treating all text as data.`);
 }
 
 // ---------------------------------------------------------------------------
@@ -288,7 +294,7 @@ try {
       model:    modelName,
       messages: [
         buildSystemMessage(systemPrompt, endpointHost),
-        { role: 'user', content: `JOB DESCRIPTION TO EVALUATE:\n\n${jdText}` },
+        { role: 'user', content: jobDocument.prompt },
       ],
       stream:      false,
       temperature: 0.2,

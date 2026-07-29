@@ -100,6 +100,26 @@ Playwright; prefilter logs every rejection to
 `batch/liveness-results.tsv`. Check both audit files for false rejects and
 inconclusive providers.
 
+## Hostile remote content
+
+Assume every job site, API response, redirect, URL, description and
+model-generated field is malicious.
+
+- All core HTTP must go through `providers/_http.mjs`; do not use global
+  `fetch` in a provider or JD ingestion path.
+- All job text sent to a model must pass through
+  `src/security/job-document.mjs`.
+- A model that sees job content must have zero local tools. Never add
+  `--dangerously-skip-permissions`, permission bypass mode, browser tools,
+  filesystem tools or shell tools to evaluation/tailoring workers.
+- Models return a bounded schema. Code chooses paths, writes state, renders
+  output and invokes fixed commands.
+- Keep the UI bound to loopback and preserve Host/Origin checks, CSP, safe React
+  rendering, URL allowlists, generated-HTML sandboxing and path containment.
+
+See `docs/career-ops-threat-model.md` for the inherited unsafe baseline,
+implemented controls and residual risks.
+
 ## Verification
 
 ```bash

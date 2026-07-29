@@ -15,8 +15,9 @@
  */
 
 import { readFile, readdir, open } from 'node:fs/promises';
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { join, resolve, sep } from 'node:path';
+import { safeExternalUrl } from './urls';
 
 /** Repo root: the career-ops checkout this UI lives inside. */
 export const ROOT = join(process.cwd(), '..');
@@ -259,10 +260,12 @@ export async function readInbox(): Promise<InboxRole[]> {
   for (const line of raw.split('\n')) {
     const m = line.match(/^-\s*\[\s*\]\s*(\S+)\s*(.*)$/);
     if (!m) continue;
+    const url = safeExternalUrl(m[1]);
+    if (!url) continue;
     const parts = m[2].split('|').map((p) => p.trim()).filter(Boolean);
     const postedPart = parts.find((p) => p.startsWith('posted:'));
     out.push({
-      url: m[1],
+      url,
       company: parts[0] ?? '',
       role: parts[1] ?? '',
       location: parts[2] ?? '',
@@ -312,28 +315,38 @@ function readPdfIndex(): Map<string, { pdf: string; html: string }> {
 
 /** Read just the `**URL:**` line from a report header. */
 async function readUrlFromReport(reportPath: string): Promise<string | null> {
-  for (const candidate of [join(ROOT, 'data', reportPath), join(ROOT, reportPath)]) {
-    if (!existsSync(candidate)) continue;
+  const candidate = safeReportFile(reportPath);
+  if (!candidate || !existsSync(candidate)) return null;
     try {
       const fh = await open(candidate, 'r');
       const { buffer } = await fh.read(Buffer.alloc(2048), 0, 2048, 0);
       await fh.close();
       const m = buffer.toString('utf8').match(/^\*\*URL:\*\*\s*(\S+)/m);
-      return m ? m[1] : null;
+      return m ? safeExternalUrl(m[1]) : null;
     } catch {
       return null;
     }
-  }
-  return null;
 }
 
 /** Full report markdown for a role, when one exists. */
 export async function readReport(reportPath: string): Promise<string | null> {
-  const candidates = [join(ROOT, 'data', reportPath), join(ROOT, reportPath)];
-  for (const c of candidates) {
-    if (existsSync(c)) return readFile(c, 'utf8');
+  const candidate = safeReportFile(reportPath);
+  if (!candidate || !existsSync(candidate)) return null;
+  return readFile(candidate, { encoding: 'utf8', flag: 'r' });
+}
+
+function safeReportFile(reportPath: string): string | null {
+  if (typeof reportPath !== 'string' || reportPath.length > 300 || !reportPath.endsWith('.md')) return null;
+  const reportsRoot = resolve(ROOT, 'reports');
+  const candidate = resolve(ROOT, reportPath);
+  if (!candidate.startsWith(`${reportsRoot}${sep}`) || !existsSync(candidate)) return null;
+  try {
+    const realRoot = realpathSync(reportsRoot);
+    const realCandidate = realpathSync(candidate);
+    return realCandidate.startsWith(`${realRoot}${sep}`) ? realCandidate : null;
+  } catch {
+    return null;
   }
-  return null;
 }
 
 export async function listReports(): Promise<string[]> {

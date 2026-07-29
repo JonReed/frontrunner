@@ -36,6 +36,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import yaml from 'js-yaml';
 import { LIVENESS_CONTEXT_OPTIONS, rejectPrivateOrInvalid } from './liveness-browser.mjs';
+import { assertSafeRemoteUrl, resolvePublicAddresses } from '../security/remote-target-policy.mjs';
 
 import { ROOT as CAREER_OPS } from '#paths';
 const DEFAULT_TIMEOUT_MS = 15_000;
@@ -197,6 +198,17 @@ async function main() {
     console.error(JSON.stringify({ error: guard.reason, code: guard.code }));
     process.exit(1);
   }
+  const dnsCache = new Map();
+  const resolveHostname = (hostname) => {
+    if (!dnsCache.has(hostname)) dnsCache.set(hostname, resolvePublicAddresses(hostname));
+    return dnsCache.get(hostname);
+  };
+  try {
+    await assertSafeRemoteUrl(url, { resolveHostname });
+  } catch (error) {
+    console.error(JSON.stringify({ error: error.message, code: error.code ?? 'blocked_host' }));
+    process.exit(1);
+  }
 
   let chromium;
   try {
@@ -214,9 +226,13 @@ async function main() {
     // private/loopback/link-local or non-http(s) host. Guarding only the initial
     // URL isn't enough once we return page CONTENT: a server-side redirect could
     // otherwise steer the browser at internal infrastructure (SSRF).
-    await context.route('**/*', (route) => {
-      if (rejectPrivateOrInvalid(route.request().url())) return route.abort('blockedbyclient');
-      return route.continue();
+    await context.route('**/*', async (route) => {
+      try {
+        await assertSafeRemoteUrl(route.request().url(), { resolveHostname });
+        return route.continue();
+      } catch {
+        return route.abort('blockedbyclient');
+      }
     });
     const page = await context.newPage();
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout });
