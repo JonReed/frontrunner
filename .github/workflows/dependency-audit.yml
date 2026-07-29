@@ -1,0 +1,41 @@
+name: Dependency audit
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-audit
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: npm audit (${{ matrix.workspace }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - workspace: root
+            directory: .
+            lockfile: package-lock.json
+          - workspace: ui
+            directory: ui
+            lockfile: ui/package-lock.json
+          - workspace: web
+            directory: web
+            lockfile: web/package-lock.json
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: ${{ matrix.lockfile }}
+      - name: Fail on high or critical advisories
+        run: npm audit --package-lock-only --audit-level=high
+        working-directory: ${{ matrix.directory }}

@@ -23,3 +23,4 @@
 - [ ] I ran `node test-all.mjs` and all tests pass
 - [ ] My changes respect the [Data Contract](https://github.com/Furls-Digital/frontrunner/blob/main/DATA_CONTRACT.md) (no modifications to user-layer files)
 - [ ] New dependencies and GitHub Actions are justified and pinned by the lockfile or an immutable commit SHA
+- [ ] New direct dependencies satisfy the maintenance, license, vulnerability, and release-age rules in `CONTRIBUTING.md` (or the PR documents a security exception)

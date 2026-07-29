@@ -80,6 +80,26 @@ Rule of thumb before you build: **provider modules, languages, CLI support, mode
 - Interface changes must pass their package's typecheck and build, and should be tested with representative local data
 - Don't commit personal data (cv.md, profile.yml, applications.md, reports/)
 
+### Dependency policy
+
+Keep the dependency surface small. Prefer the standard library or an existing
+dependency when that produces maintainable code. A new direct dependency
+requires prior discussion and must:
+
+- be at least seven days old when reviewed, unless it is an urgent security fix
+  and the exception is explained in the PR;
+- have active maintenance, an MIT-compatible license, and no known high or
+  critical vulnerability affecting its use here;
+- be added through the relevant package manifest with the updated
+  `package-lock.json` committed; and
+- avoid install-time scripts unless the PR explains why they are necessary and
+  how their supply-chain risk is contained.
+
+Dependabot checks npm packages daily but waits 3 days for patches, 7 days for
+minor releases, and 30 days for major releases. Security updates are not
+delayed. Compatible patch and minor releases are grouped by workspace; major
+updates are reviewed separately and are never auto-merged.
+
 ## What we do NOT accept
 
 - **PRs that scrape platforms prohibiting automated access** (LinkedIn, etc.). We actively reject these to respect third-party ToS.
