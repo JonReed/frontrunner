@@ -26,12 +26,14 @@
  *      node src/analysis/assessment-log.mjs --self-test
  */
 
-import { readFileSync, existsSync, appendFileSync, mkdirSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath, pathToFileURL } from 'url';
+import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
+import { pathToFileURL } from 'url';
 
 import { ROOT as CAREER_OPS } from '#paths';
-const LOG_PATH = join(CAREER_OPS, 'data/assessments.tsv');
+import { mutateFileLocked } from '../lib/locked-file.mjs';
+const LOG_PATH = process.env.CAREER_OPS_ASSESSMENTS
+  || join(CAREER_OPS, 'data/assessments.tsv');
 
 const HEADER_COMMENT = [
   '# assessments.tsv — append-only skills-assessment log (user layer). Never rewrite rows.',
@@ -131,7 +133,21 @@ export function buildRow(fields, today) {
   ].join('\t');
 }
 
-function addEntry(args) {
+export async function appendAssessmentRow(row, logPath = LOG_PATH, options = {}) {
+  await mutateFileLocked(logPath, current => {
+    const prefix = current
+      ? (current.endsWith('\n') ? '' : '\n')
+      : `${HEADER_COMMENT}\n`;
+    return `${current}${prefix}${row}\n`;
+  }, {
+    writeOptions: {
+      mode: 0o600,
+      afterWrite: options.afterWrite,
+    },
+  });
+}
+
+async function addEntry(args) {
   const fields = {};
   for (let i = 0; i < args.length; i++) {
     const m = args[i].match(/^--(company|report|platform|subject|threshold|score|stale)$/);
@@ -146,16 +162,8 @@ function addEntry(args) {
     console.error('Usage: node src/analysis/assessment-log.mjs add --company <name> [--report <num>] --platform <vendor> --subject <topic> [--threshold <pct>] [--score <pct>] [--stale "<note>"]');
     process.exit(1);
   }
-  // Append-only: existing rows are never rewritten. Create with header comment on first use.
-  mkdirSync(dirname(LOG_PATH), { recursive: true });
-  let prefix;
-  if (existsSync(LOG_PATH)) {
-    const existing = readFileSync(LOG_PATH, 'utf-8');
-    prefix = existing.endsWith('\n') || existing === '' ? '' : '\n';
-  } else {
-    prefix = HEADER_COMMENT + '\n';
-  }
-  appendFileSync(LOG_PATH, prefix + row + '\n');
+  // Append-only: a shared lock keeps concurrent events and the one-time header.
+  await appendAssessmentRow(row);
   console.log(JSON.stringify({ added: true, row: row.split('\t') }, null, 2));
 }
 
@@ -271,10 +279,10 @@ function printSummary(result) {
   console.log('');
 }
 
-function main() {
+async function main() {
   const args = process.argv.slice(2);
   if (args.includes('--self-test')) { selfTest(); return; }
-  if (args[0] === 'add') { addEntry(args.slice(1)); return; }
+  if (args[0] === 'add') { await addEntry(args.slice(1)); return; }
 
   const content = existsSync(LOG_PATH) ? readFileSync(LOG_PATH, 'utf-8') : '';
   const { rows, malformed } = parseAssessments(content);
@@ -288,5 +296,5 @@ function main() {
 }
 
 if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
-  main();
+  await main();
 }

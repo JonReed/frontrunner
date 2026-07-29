@@ -8996,7 +8996,7 @@ try {
   writeFileSync(join(lpDir, 'index.mjs'), 'export default { ingest: async () => [] };');
   const lpMan = { id: 'lp', dir: lpDir, version: '1.0.0', hooks: ['ingest'], requiredEnv: [], allowedHosts: ['api.lp.test'], allowsLocalhost: false, skill: null };
   const tree0 = lockMod.hashPluginTree(lpDir);
-  lockMod.writeLockEntry(lockTmp, 'lp', { source: 'local', version: '1.0.0', integrity: tree0.integrity, files: tree0.files, consent: lockMod.consentSurface(lpMan) });
+  await lockMod.writeLockEntry(lockTmp, 'lp', { source: 'local', version: '1.0.0', integrity: tree0.integrity, files: tree0.files, consent: lockMod.consentSurface(lpMan) });
 
   if (lockMod.diffPlugin(lpMan, lockMod.readLock(lockTmp).plugins.lp).status === 'match') pass('lock: unchanged plugin diffs as match');
   else fail('lock: unchanged plugin should match');
@@ -9009,7 +9009,7 @@ try {
   else fail('lock: widened surface should require re-consent');
 
   console.warn = () => {};
-  const gateLocal = eng.lockGate(lpMan, lockTmp); // local + drift-nobump → block (the rug-pull defense)
+  const gateLocal = await eng.lockGate(lpMan, lockTmp); // local + drift-nobump → block (the rug-pull defense)
   console.warn = __origWarn;
   if (gateLocal.load === false) pass('lockGate BLOCKS a local plugin whose files changed without a version bump (rug-pull)');
   else fail('lockGate should block a local drift-nobump plugin');
@@ -9071,12 +9071,12 @@ try {
   else fail('successor: bundled should win without an approved successor install');
 
   // (2) Installed but at the WRONG sha → off-registry, still no override (the pin invariant).
-  lockMod.writeLockEntry(succTmp, 'gmail', { source: 'local', sha: 'c'.repeat(40), version: '2.0.0', integrity: 'x', files: {}, consent: {} });
+  await lockMod.writeLockEntry(succTmp, 'gmail', { source: 'local', sha: 'c'.repeat(40), version: '2.0.0', integrity: 'x', files: {}, consent: {} });
   if (!eng.resolveSuccessorIds(succTmp).has('gmail')) pass('successor: an installed sha that differs from the registry pin does NOT override (off-registry never wins)');
   else fail('successor: sha mismatch must not override');
 
   // (3) Installed at the EXACT registry sha → the maintained successor wins.
-  lockMod.writeLockEntry(succTmp, 'gmail', { source: 'local', sha: SUCC_SHA, version: '2.0.0', integrity: 'x', files: {}, consent: {} });
+  await lockMod.writeLockEntry(succTmp, 'gmail', { source: 'local', sha: SUCC_SHA, version: '2.0.0', integrity: 'x', files: {}, consent: {} });
   const ids1 = eng.resolveSuccessorIds(succTmp);
   if (ids1.has('gmail')) pass('successor: a registry-approved successor installed at the pinned sha is resolved as an override');
   else fail('successor: approved+pinned successor should be resolved');

@@ -32,6 +32,7 @@ These files contain your personal data, customizations, and work product. Update
 | `data/follow-ups.md` | Your follow-up history |
 | `data/active-interviews.md` | Your active interview processes, incl. inline `[process-friction]` notes (read by `src/analysis/process-quality.mjs`) |
 | `data/agent-inbox.md` | Your append-only request queue drained at session start (written by `src/tracker/agent-inbox.mjs`) |
+| `data/.add-entry-PUBLISHING.json` | Temporary, mode-0600 recovery journal used only while a confirmed addition spans `cv.md` and `article-digest.md`; removed after both canonical sources are safely published |
 | `data/reply-candidates.json` | Your normalized employer-reply candidates (subject, body, sender, signal — read by `src/tracker/reply-watch.mjs`) |
 | `data/pdf-index.tsv` | PDF↔report linkage manifest (written by `src/cv/generate-pdf.mjs`, read by `find.mjs`, the interfaces, and the `email` mode) |
 | `data/offers/*` | Your received offers/contracts, promise notes, prep reports, and reply drafts (PII — gitignored, written by the `offer-prep` mode) |

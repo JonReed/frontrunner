@@ -86,7 +86,20 @@ Durable user-state files share `src/lib/file-lock.mjs` and
 read/modify/write transaction, while same-directory temporary files, `fsync`
 and atomic rename prevent readers from seeing partial replacements. This
 boundary covers the pending-role pipeline, scanner audit files, application job
-claims and the agent inbox in addition to the tracker-specific transaction.
+claims, the agent inbox, application-answer sections, reply candidates and
+assessment events in addition to the tracker-specific transaction. External
+reply content is schema/size bounded before persistence, and application-answer
+writes resolve only to existing Markdown files contained under `reports/`.
+Opt-in ATS discovery updates re-read, validate and deduplicate `portals.yml`
+inside the same lock before atomically preserving the user's formatting.
+Confirmed candidate-source additions use
+`src/tracker/add-entry-publication.mjs`: a bounded write-ahead journal makes a
+joint `cv.md` + `article-digest.md` change recoverable, while before-state
+hashes stop recovery from overwriting a human edit made after interruption.
+Plugin activation in `config/plugins.yml` and integrity/capability consent in
+`plugins.lock` use the same locked replacement boundary. The enable path
+persists the pin before activation; removal disables first. Malformed or
+unwritable consent state therefore leaves plugin code inactive.
 
 ### Liveness — never evaluate a dead posting
 `src/scan/check-liveness.mjs` / `liveness-*.mjs` verify a posting is still open (zero-token) before it costs evaluation time.
@@ -98,10 +111,11 @@ Local interfaces request a versioned operation such as `scan.run`,
 application data, maps it to a fixed Node entry point, and owns structured
 events, result envelopes, timeouts, and cancellation. Clients cannot supply
 executables, working directories, arbitrary flags, or shell fragments. A
-persistent job manager adds atomic per-role claims, bounded logs, reload-safe
-state, and crash recovery for the UI. Supervised operations are isolated into
-a process group/tree, so cancellation and timeout terminate model, browser and
-renderer descendants before the job becomes terminal. See
+persistent job manager adds atomic per-role claims, per-job transactional
+state, bounded crash-safe logs, reload-safe state, durable cancellation
+requests, and crash recovery for the UI. Supervised operations are isolated
+into a process group/tree, so cancellation and timeout terminate model, browser
+and renderer descendants before the job becomes terminal. See
 [`docs/APPLICATION_SERVICE.md`](docs/APPLICATION_SERVICE.md).
 
 ### Self-update — `update-system.mjs`

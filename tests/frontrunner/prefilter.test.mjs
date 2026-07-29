@@ -216,10 +216,9 @@ test('shipped config ships both hard blockers disabled', () => {
   }
 });
 
-test('shipped config still rejects genuinely junior roles', () => {
-  // Neutral must not mean inert.
+test('shipped config keeps genuinely junior roles until the user selects a target level', () => {
   for (const t of ['Graduate Software Engineer', 'Engineering Intern', 'Apprentice Developer']) {
-    assert.equal(classify(t, '', noProfile, shipped).verdict, 'reject', t);
+    assert.equal(classify(t, '', noProfile, shipped).verdict, 'keep', t);
   }
 });
 

@@ -31,7 +31,7 @@
  * Issue #1864 — github.com/santifer/career-ops
  */
 
-import { readFileSync, existsSync, writeFileSync, renameSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { dirname, join, resolve } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import yaml from 'js-yaml';
@@ -44,6 +44,7 @@ import lever from '../../providers/lever.mjs';
 import workday from '../../providers/workday.mjs';
 
 import { ROOT as CAREER_OPS } from '#paths';
+import { mutateFileLocked } from '../lib/locked-file.mjs';
 const PORTALS_PATH = process.env.CAREER_OPS_PORTALS || join(CAREER_OPS, 'portals.yml');
 
 // Safe charset for a slug that will be interpolated into an ATS URL. Consistent
@@ -410,6 +411,113 @@ export function insertIntoTrackedCompanies(fileText, snippets) {
   before = before.replace(/\n[ \t]*(?=\n*$)/g, (m2, off) => (off >= headerEnd ? '\n' : m2));
 
   return before + block + after;
+}
+
+function validateDiscoveredPortal(match) {
+  if (!match || typeof match !== 'object') {
+    throw new Error('discovered portal must be an object');
+  }
+  const name = typeof match.name === 'string' ? match.name.trim() : '';
+  if (!name || name.length > 200 || /[\0\r\n]/u.test(name)) {
+    throw new Error('discovered portal name is invalid');
+  }
+  const validateUrl = (raw, label, allowedHost) => {
+    if (typeof raw !== 'string' || raw.length > 2_000 || /[\0\r\n]/u.test(raw)) {
+      throw new Error(`discovered portal ${label} is invalid`);
+    }
+    let parsed;
+    try {
+      parsed = new URL(raw);
+    } catch {
+      throw new Error(`discovered portal ${label} is invalid`);
+    }
+    if (
+      parsed.protocol !== 'https:'
+      || parsed.username
+      || parsed.password
+      || !allowedHost(parsed.hostname.toLowerCase())
+    ) {
+      throw new Error(`discovered portal ${label} is not a supported ATS URL`);
+    }
+    return raw;
+  };
+  const careersUrl = validateUrl(
+    match.careers_url,
+    'careers_url',
+    host => (
+      ['job-boards.greenhouse.io', 'jobs.ashbyhq.com', 'jobs.lever.co', 'jobs.eu.lever.co']
+        .includes(host)
+      || host.endsWith('.myworkdayjobs.com')
+    ),
+  );
+  const api = match.api === undefined
+    ? undefined
+    : validateUrl(
+      match.api,
+      'api',
+      host => host === 'boards-api.greenhouse.io',
+    );
+  const provider = match.provider === undefined ? undefined : String(match.provider);
+  if (provider && !['greenhouse', 'ashby', 'lever', 'workday'].includes(provider)) {
+    throw new Error('discovered portal provider is invalid');
+  }
+  const notes = match.notes === undefined ? undefined : String(match.notes);
+  if (notes && (notes.length > 500 || /[\0\r\n]/u.test(notes))) {
+    throw new Error('discovered portal notes are invalid');
+  }
+  return {
+    ...match,
+    name,
+    careers_url: careersUrl,
+    ...(api ? { api } : {}),
+    ...(provider ? { provider } : {}),
+    ...(notes ? { notes } : {}),
+  };
+}
+
+/**
+ * Re-read, deduplicate and append resolved boards while holding the shared
+ * portals file lock. The discovery probes happen outside the transaction;
+ * only this short deterministic mutation is serialized.
+ */
+export async function appendDiscoveredPortals(
+  matches,
+  portalsPath = PORTALS_PATH,
+  options = {},
+) {
+  if (!Array.isArray(matches)) throw new TypeError('matches must be an array');
+  const validatedMatches = matches.map(validateDiscoveredPortal);
+  let outcome;
+  await mutateFileLocked(portalsPath, current => {
+    if (!existsSync(portalsPath)) {
+      throw new Error(`portals.yml not found at ${portalsPath}`);
+    }
+    let parsed;
+    try {
+      parsed = yaml.load(current);
+    } catch (error) {
+      throw new Error(`portals.yml could not be parsed: ${error.message}`);
+    }
+    const existingEntries = Array.isArray(parsed?.tracked_companies)
+      ? parsed.tracked_companies
+      : [];
+    const { fresh, duplicates } = dedupeAgainstPortals(validatedMatches, existingEntries);
+    const snippets = fresh.map(renderPortalEntry);
+    outcome = {
+      fresh,
+      duplicates,
+      snippets,
+      written: fresh.length > 0,
+    };
+    return fresh.length > 0
+      ? insertIntoTrackedCompanies(current, snippets)
+      : current;
+  }, {
+    writeOptions: {
+      afterWrite: options.afterWrite,
+    },
+  });
+  return outcome;
 }
 
 // ── Network functions (separated from pure logic, like vc-portfolios.mjs) ──
@@ -836,8 +944,8 @@ async function main() {
       warnings.push(`portals.yml: could not parse for dedupe — ${err.message}`);
     }
   }
-  const { fresh, duplicates } = dedupeAgainstPortals(resolved, existingEntries);
-  const snippets = fresh.map(renderPortalEntry);
+  let { fresh, duplicates } = dedupeAgainstPortals(resolved, existingEntries);
+  let snippets = fresh.map(renderPortalEntry);
 
   // Data-contract rule: portals.yml is a USER-LAYER file and is NEVER written
   // unless the user explicitly opts in with --write. The default is preview —
@@ -845,13 +953,11 @@ async function main() {
   // rest of career-ops treats user files (see DATA_CONTRACT.md).
   let written = false;
   if (opts.write && fresh.length && existsSync(PORTALS_PATH)) {
-    const current = readFileSync(PORTALS_PATH, 'utf-8');
-    // Write-to-temp-then-rename: atomic on the same filesystem, so a crash
-    // mid-write can't leave the user's portals.yml truncated.
-    const tmpPath = `${PORTALS_PATH}.tmp-${process.pid}`;
-    writeFileSync(tmpPath, insertIntoTrackedCompanies(current, snippets), 'utf-8');
-    renameSync(tmpPath, PORTALS_PATH);
-    written = true;
+    const mutation = await appendDiscoveredPortals(resolved, PORTALS_PATH);
+    fresh = mutation.fresh;
+    duplicates = mutation.duplicates;
+    snippets = mutation.snippets;
+    written = mutation.written;
   } else if (opts.write && fresh.length && !existsSync(PORTALS_PATH)) {
     warnings.push(`--write given but portals.yml not found at ${PORTALS_PATH} — printing entries instead`);
   } else if (!opts.write && fresh.length) {

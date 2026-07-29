@@ -28,8 +28,9 @@ merges cannot quietly reintroduce it.
 | Generated HTML active content | Fixed | escaped deterministic builder plus sandbox CSP on previews |
 | Provider supply-chain capability audit | Fixed for core adapters; residual reviewed-code trust | regression test forbids direct fetch and child-process imports; `local-parser` remains an explicit operator-configured exception |
 | Job-source result integrity | Fixed | `providers/_contract.mjs` enforces one closed, bounded Job schema after every core/plugin provider fetch and plugin `ingest`/`search` result; every scanner, probe and job-producing plugin path is inventory-tested against bypass |
-| Local backend operation boundary | Fixed | versioned exact-key requests, fixed operation catalog, `shell: false`, bounded events/results, whole-process-tree cancellation/timeouts and atomic paid-job claims in `src/application/` |
-| Durable local user state | Fixed for tracker, scanner audit, pipeline, application jobs and agent inbox | owner-verified cross-process file locks, durable temporary writes and atomic same-directory replacement in `src/lib/file-lock.mjs` and `src/lib/locked-file.mjs` |
+| Local backend operation boundary | Fixed | versioned exact-key requests, fixed operation catalog, `shell: false`, bounded events/results, whole-process-tree cancellation/timeouts, atomic paid-job claims and marker-based cross-process cancellation in `src/application/` |
+| Durable local user state | Fixed for tracker, scanner audit, pipeline, application jobs, agent inbox, application answers, reply candidates, assessment events, portal discovery and confirmed candidate-source additions | owner-verified cross-process file locks, durable temporary writes and atomic same-directory replacement in `src/lib/file-lock.mjs` and `src/lib/locked-file.mjs`; report mutations are path-contained, hostile reply/portal records are bounded, and joint CV/proof-point publication is journaled with before-state conflict detection |
+| Plugin activation and consent integrity | Fixed for local durability; plugin code remains trusted local code | `config/plugins.yml` and `plugins.lock` use serialized atomic replacement; enable pins before activation, removal disables first, malformed state blocks loading, and destructive tests cover concurrent and interrupted writes |
 | Evaluation publication integrity | Fixed | every evaluator uses a bounded, path-derived write-ahead journal; report and tracker publication replay idempotently after crash or merge failure |
 | Inherited privileged web runtime | Removed from reachable product surface | `web` package start commands fail closed; request-wide proxy returns `410 Gone` even when Next.js is launched directly |
 
@@ -37,14 +38,30 @@ The regression suite destructively tests private/metadata targets, private DNS
 answers, redirect revalidation, oversized bodies, hostile JD framing,
 schema-output flooding, zero-tool Claude arguments, loopback binding and raw
 HTML sink removal. Application-job tests also race simultaneous paid requests,
-inject malformed state and oversized output, simulate orphan recovery, and
-prove a cancelled parent cannot leave a descendant alive to mutate state.
+inject malformed state and oversized output, simulate orphan recovery, cancel
+an operation from an independent process without signalling an unverified PID,
+prove late completion cannot resurrect reaped state, and prove a cancelled
+parent cannot leave a descendant alive to mutate state.
 Durable-state tests race independent scanner and inbox processes, inject a
 pre-rename failure, and assert that every row survives without torn files,
 duplicate headers, abandoned locks or temporary files.
 Evaluation-publication tests inject tracker failure, terminate a process after
 its report write, race concurrent recovery, and prove a corrupted journal
 cannot redirect writes outside fixed report/tracker paths.
+Candidate-source publication tests terminate a process between `cv.md` and
+`article-digest.md`, race independent writers, replay the journal
+idempotently, and prove recovery preserves a newer human edit instead of
+overwriting it.
+Secondary-state tests race independent reply and assessment writers, inject
+replacement failures, reject oversized reply content, and prove application
+answers cannot mutate a file outside `reports/` through either a direct path or
+a symlink.
+Portal-discovery tests race independent writers with duplicate boards, inject a
+replacement failure, preserve comments and unrelated configuration, and reject
+malformed YAML or unsafe discovered URLs before mutation.
+Plugin-consent tests race independent enable processes, inject activation and
+lock replacement failures, and prove malformed consent state blocks imports
+without losing prior settings or integrity pins.
 Provider-contract tests inject malformed arrays, unsafe URLs, throwing record
 accessors, oversized fields, description floods and result floods, and assert
 that every consumer uses the same boundary.

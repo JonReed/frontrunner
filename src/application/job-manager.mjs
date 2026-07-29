@@ -12,13 +12,14 @@ import {
   mkdirSync,
   readFileSync,
   readdirSync,
-  renameSync,
-  writeFileSync,
+  rmSync,
 } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 
 import { ROOT } from '#paths';
+import { withFileLock } from '../lib/file-lock.mjs';
+import { replaceFileAtomic } from '../lib/locked-file.mjs';
 import { withPipelineLock } from '../tracker/pipeline-lock.mjs';
 import {
   APPLICATION_API_VERSION,
@@ -31,6 +32,7 @@ const OPERATION_TIMEOUT_MS = 5 * 60_000;
 const STALE_JOB_MS = OPERATION_TIMEOUT_MS + 10_000;
 const LOG_LIMIT = 64 * 1024;
 const RESULT_TAIL_LIMIT = 16 * 1024;
+const DEFAULT_CANCEL_POLL_MS = 100;
 const JOB_ID = /^cv-\d+-[a-z0-9]+$/u;
 
 const STAGE_SIGNALS = Object.freeze([
@@ -101,6 +103,10 @@ export function createApplicationJobManager(options = {}) {
     ? options.onOperation
     : () => {};
   const now = options.now ?? (() => Date.now());
+  const cancelPollMs = options.cancelPollMs ?? DEFAULT_CANCEL_POLL_MS;
+  if (!Number.isSafeInteger(cancelPollMs) || cancelPollMs < 1) {
+    throw new TypeError('cancelPollMs must be a positive integer');
+  }
   const idFactory = options.idFactory
     ?? (roleNum => `cv-${roleNum}-${now().toString(36)}${randomUUID().replaceAll('-', '').slice(0, 6)}`);
 
@@ -112,21 +118,23 @@ export function createApplicationJobManager(options = {}) {
   };
 
   const logPath = id => join(jobsDir, `${id}.log`);
+  const cancelPath = id => join(jobsDir, `${id}.cancel`);
 
-  const write = (job) => {
+  const writeUnlocked = (job) => {
     if (!validStoredJob(job)) throw new Error('invalid application job state');
     ensureDir();
-    const target = jobPath(job.id);
-    const temporary = `${target}.${process.pid}.${randomUUID()}.tmp`;
-    writeFileSync(temporary, JSON.stringify(job, null, 2), { mode: 0o600 });
-    renameSync(temporary, target);
+    replaceFileAtomic(jobPath(job.id), `${JSON.stringify(job, null, 2)}\n`, {
+      mode: 0o600,
+    });
   };
 
   const appendLog = (id, text) => {
     try {
       const file = logPath(id);
       const current = existsSync(file) ? readFileSync(file, 'utf8') : '';
-      writeFileSync(file, boundedTail(`${current}${String(text ?? '')}`), { mode: 0o600 });
+      replaceFileAtomic(file, boundedTail(`${current}${String(text ?? '')}`), {
+        mode: 0o600,
+      });
     } catch {
       // Diagnostic output must never change the backend operation result.
     }
@@ -145,7 +153,7 @@ export function createApplicationJobManager(options = {}) {
     }
   };
 
-  const reapIfStale = (job) => {
+  const reapIfStaleUnlocked = (job) => {
     if (job.status !== 'running' || now() - job.startedAt < STALE_JOB_MS) return job;
     const reaped = {
       ...job,
@@ -153,55 +161,109 @@ export function createApplicationJobManager(options = {}) {
       finishedAt: now(),
       error: 'Timed out. The CV build stopped unexpectedly and can be tried again.',
     };
-    write(reaped);
+    writeUnlocked(reaped);
+    rmSync(cancelPath(job.id), { force: true });
     return reaped;
   };
 
-  const readJob = (id) => {
+  const readStoredJob = (id) => {
     try {
       const job = JSON.parse(readFileSync(jobPath(id), 'utf8'));
-      if (!validStoredJob(job)) return null;
-      const current = reapIfStale(job);
-      if (current.status === 'running') {
-        current.stage = stageFromLog(id) ?? current.stage;
-      }
-      return current;
+      return validStoredJob(job) ? job : null;
     } catch {
       return null;
     }
   };
 
-  const listJobs = () => {
+  const readJob = async (id) => {
+    let target;
+    try {
+      target = jobPath(id);
+    } catch {
+      return null;
+    }
+    if (!existsSync(target)) return null;
+    return withFileLock(target, async () => {
+      const job = readStoredJob(id);
+      if (!job) return null;
+      const current = reapIfStaleUnlocked(job);
+      if (current.status === 'running') {
+        return {
+          ...current,
+          stage: existsSync(cancelPath(id))
+            ? 'Cancelling'
+            : (stageFromLog(id) ?? current.stage),
+        };
+      }
+      return current;
+    });
+  };
+
+  const listJobs = async () => {
     ensureDir();
-    return readdirSync(jobsDir)
+    const jobs = await Promise.all(readdirSync(jobsDir)
       .filter(file => file.endsWith('.json') && JOB_ID.test(file.slice(0, -5)))
-      .map(file => readJob(file.slice(0, -5)))
+      .map(file => readJob(file.slice(0, -5))));
+    return jobs
       .filter(Boolean)
       .sort((left, right) => right.startedAt - left.startedAt);
   };
 
-  const runningJobFor = roleNum => (
-    listJobs().find(job => job.roleNum === roleNum && job.status === 'running') ?? null
+  const runningJobFor = async roleNum => (
+    (await listJobs()).find(
+      job => job.roleNum === roleNum && job.status === 'running',
+    ) ?? null
   );
+
+  const transitionTerminal = async (id, build) => {
+    const target = jobPath(id);
+    return withFileLock(target, async () => {
+      const current = readStoredJob(id);
+      if (!current || current.status !== 'running') return current;
+      const next = build(current);
+      writeUnlocked(next);
+      rmSync(cancelPath(id), { force: true });
+      return next;
+    });
+  };
 
   const finish = (job, result) => {
     const tail = technicalTail(result.outputTail);
-    write({
-      ...job,
+    return transitionTerminal(job.id, current => ({
+      ...current,
       status: result.status === 'succeeded' ? 'done' : 'failed',
       finishedAt: result.finishedAt ?? now(),
       exitCode: Number.isInteger(result.exitCode) ? result.exitCode : undefined,
       tail: tail || undefined,
       error: result.status === 'succeeded' ? undefined : publicFailure(result),
-    });
+    }));
   };
 
-  const failUnexpectedly = (job, error) => {
-    write({
-      ...job,
-      status: 'failed',
-      finishedAt: now(),
-      error: String(error?.message ?? error ?? 'The secure CV builder failed to start.').slice(0, 1_000),
+  const failUnexpectedly = (job, error) => transitionTerminal(job.id, current => ({
+    ...current,
+    status: 'failed',
+    finishedAt: now(),
+    error: String(error?.message ?? error ?? 'The secure CV builder failed to start.').slice(0, 1_000),
+  }));
+
+  const cancelJob = async (id) => {
+    let target;
+    try {
+      target = jobPath(id);
+    } catch {
+      return null;
+    }
+    if (!existsSync(target)) return null;
+    return withFileLock(target, async () => {
+      const current = readStoredJob(id);
+      if (!current) return null;
+      const job = reapIfStaleUnlocked(current);
+      if (job.status !== 'running') return job;
+      replaceFileAtomic(cancelPath(id), `${JSON.stringify({
+        version: APPLICATION_API_VERSION,
+        requestedAt: now(),
+      })}\n`, { mode: 0o600 });
+      return { ...job, stage: 'Cancelling' };
     });
   };
 
@@ -219,12 +281,12 @@ export function createApplicationJobManager(options = {}) {
     ensureDir();
     const claimPath = join(jobsDir, `role-${String(request.input.roleNum)}.claim`);
     return withLock(claimPath, async () => {
-      const existing = runningJobFor(request.input.roleNum);
+      const existing = await runningJobFor(request.input.roleNum);
       if (existing) return existing;
 
       const id = idFactory(request.input.roleNum);
       if (!JOB_ID.test(id)) throw new Error('job id factory returned an invalid id');
-      writeFileSync(logPath(id), '', { mode: 0o600 });
+      replaceFileAtomic(logPath(id), '', { mode: 0o600 });
       const job = {
         id,
         roleNum: request.input.roleNum,
@@ -232,18 +294,33 @@ export function createApplicationJobManager(options = {}) {
         status: 'running',
         startedAt: now(),
       };
-      write(job);
+      await withFileLock(jobPath(id), async () => writeUnlocked(job));
+
+      const operationController = new AbortController();
+      const abortOperation = () => operationController.abort();
+      if (signal?.aborted) abortOperation();
+      else signal?.addEventListener('abort', abortOperation, { once: true });
+      const pollCancellation = () => {
+        if (existsSync(cancelPath(id))) abortOperation();
+      };
+      pollCancellation();
+      const cancelTimer = setInterval(pollCancellation, cancelPollMs);
 
       const operation = Promise.resolve().then(() => execute(request, {
         runId: id,
-        signal,
+        signal: operationController.signal,
         onEvent(event) {
           if (event.type === 'output') appendLog(id, event.text);
         },
       }));
       const completion = operation
         .then(result => finish(job, result))
-        .catch(error => failUnexpectedly(job, error));
+        .catch(error => failUnexpectedly(job, error))
+        .finally(() => {
+          clearInterval(cancelTimer);
+          signal?.removeEventListener('abort', abortOperation);
+          rmSync(cancelPath(id), { force: true });
+        });
       try {
         onOperation(completion);
       } catch {
@@ -257,6 +334,7 @@ export function createApplicationJobManager(options = {}) {
     readJob,
     listJobs,
     runningJobFor,
+    cancelJob,
     startCvBuild,
   });
 }

@@ -17,7 +17,7 @@
  */
 
 import path from 'path';
-import { existsSync, readFileSync, writeFileSync, rmSync, mkdirSync } from 'fs';
+import { existsSync, readFileSync, rmSync } from 'fs';
 import { fileURLToPath } from 'url';
 import yaml from 'js-yaml';
 
@@ -30,6 +30,7 @@ import { readLock, writeLockEntry, removeLockEntry, hashPluginTree, consentSurfa
 import { installFromRepo, scaffoldNew, parseRepoArg } from './plugin-install.mjs';
 import { enforceProviderResult } from '../../providers/_contract.mjs';
 import { appendToPipeline } from '../scan/scan.mjs';
+import { mutateFileLocked } from '../lib/locked-file.mjs';
 
 import { ROOT } from '#paths';
 const APPLICATIONS_PATH = path.join(ROOT, 'data', 'applications.md');
@@ -204,17 +205,50 @@ function findManifest(id) {
   return discoverPlugins(pluginRoots(ROOT), resolveSuccessorIds(ROOT)).find(m => m.id === id) || null;
 }
 
-// Write enabled:true/false into config/plugins.yml, merging (never clobbering
-// the user's other plugins or non-secret settings).
-function setEnabled(id, on, settings) {
-  const file = path.join(ROOT, 'config', 'plugins.yml');
-  let cfg = {};
-  if (existsSync(file)) { try { cfg = yaml.load(readFileSync(file, 'utf8')) || {}; } catch {} }
-  if (!cfg.plugins || typeof cfg.plugins !== 'object') cfg.plugins = {};
-  const prev = (cfg.plugins[id] && typeof cfg.plugins[id] === 'object') ? cfg.plugins[id] : {};
-  cfg.plugins[id] = { ...prev, ...(settings || {}), enabled: on };
-  mkdirSync(path.join(ROOT, 'config'), { recursive: true });
-  writeFileSync(file, '# career-ops plugin activation — see config/plugins.example.yml\n' + yaml.dump(cfg), 'utf8');
+// Transactionally write enabled:true/false into config/plugins.yml, merging
+// without clobbering the user's other plugins or non-secret settings.
+export async function setPluginEnabled(root, id, on, settings, options = {}) {
+  if (typeof id !== 'string' || !/^[a-z0-9][a-z0-9-]{0,63}$/u.test(id)) {
+    throw new Error('plugin id is invalid');
+  }
+  if (typeof on !== 'boolean') throw new TypeError('plugin enabled state must be boolean');
+  if (
+    settings !== undefined
+    && (!settings || typeof settings !== 'object' || Array.isArray(settings))
+  ) {
+    throw new TypeError('plugin settings must be a plain object');
+  }
+  const file = path.join(root, 'config', 'plugins.yml');
+  await mutateFileLocked(file, current => {
+    let cfg = {};
+    if (current.trim()) {
+      try {
+        cfg = yaml.load(current);
+      } catch (error) {
+        throw new Error(`config/plugins.yml could not be parsed: ${error.message}`);
+      }
+      if (!cfg || typeof cfg !== 'object' || Array.isArray(cfg)) {
+        throw new Error('config/plugins.yml must contain a YAML object');
+      }
+    }
+    if (!cfg.plugins) cfg.plugins = {};
+    if (typeof cfg.plugins !== 'object' || Array.isArray(cfg.plugins)) {
+      throw new Error('config/plugins.yml plugins must be an object');
+    }
+    const prev = (
+      cfg.plugins[id]
+      && typeof cfg.plugins[id] === 'object'
+      && !Array.isArray(cfg.plugins[id])
+    ) ? cfg.plugins[id] : {};
+    cfg.plugins[id] = { ...prev, ...(settings || {}), enabled: on };
+    return '# career-ops plugin activation — see config/plugins.example.yml\n'
+      + yaml.dump(cfg);
+  }, {
+    writeOptions: {
+      mode: 0o600,
+      afterWrite: options.afterWrite,
+    },
+  });
 }
 
 // The capability card a user must consent to before a plugin runs.
@@ -266,7 +300,7 @@ function cmdSkill(args) {
   console.log('\n' + skill.body);
 }
 
-function cmdEnable(args) {
+async function cmdEnable(args) {
   const id = args.find(a => !a.startsWith('--'));
   const confirm = args.includes('--confirm');
   if (!id) { console.error('Usage: node src/plugins/plugins.mjs enable <id> [--confirm]'); process.exit(1); }
@@ -282,33 +316,33 @@ function cmdEnable(args) {
     return;
   }
   const tree = hashPluginTree(m.dir);
-  writeLockEntry(ROOT, id, {
+  await writeLockEntry(ROOT, id, {
     source: source === 'bundled' ? 'bundled' : 'local',
     repo: entry?.repo || null, sha: entry?.sha || null,
     version: m.version || '0.0.0', integrity: tree.integrity, files: tree.files,
     consent: { ...consentSurface(m), acceptedAt: new Date().toISOString() },
   });
-  setEnabled(id, true);
+  await setPluginEnabled(ROOT, id, true);
   console.log(`✅ Enabled ${id}.${m.requiredEnv.length ? ' Add its keys to .env: ' + m.requiredEnv.join(', ') : ''}`);
 }
 
-function cmdTrust(args) {
+async function cmdTrust(args) {
   const id = args[0];
   const m = findManifest(id);
   if (!m) { console.error(`Unknown plugin "${id}".`); process.exit(1); }
   const tree = hashPluginTree(m.dir);
   const entry = readLock(ROOT).plugins?.[id] || {};
-  writeLockEntry(ROOT, id, { ...entry, source: classifySource(m, ROOT, entry) === 'bundled' ? 'bundled' : 'local', version: m.version || '0.0.0', integrity: tree.integrity, files: tree.files, consent: { ...consentSurface(m), acceptedAt: new Date().toISOString() } });
+  await writeLockEntry(ROOT, id, { ...entry, source: classifySource(m, ROOT, entry) === 'bundled' ? 'bundled' : 'local', version: m.version || '0.0.0', integrity: tree.integrity, files: tree.files, consent: { ...consentSurface(m), acceptedAt: new Date().toISOString() } });
   console.log(`✓ Re-pinned ${id} to its current files — it will load again.`);
 }
 
-function cmdRemove(args) {
+async function cmdRemove(args) {
   const id = args[0];
   if (!id) { console.error('Usage: node src/plugins/plugins.mjs remove <id>'); process.exit(1); }
   const dir = path.join(ROOT, 'plugins.local', id);
+  await setPluginEnabled(ROOT, id, false);
+  await removeLockEntry(ROOT, id);
   if (existsSync(dir)) rmSync(dir, { recursive: true, force: true });
-  removeLockEntry(ROOT, id);
-  try { setEnabled(id, false); } catch {}
   console.log(`✓ Removed ${id} (plugins.local + lock + disabled).`);
 }
 
@@ -347,14 +381,14 @@ async function cmdAdd(args) {
   try { installed = installFromRepo(ROOT, { url, sha: useSha }); }
   catch (e) { console.error(`✗ ${e.message}`); process.exit(1); }
 
-  writeLockEntry(ROOT, installed.id, {
+  await writeLockEntry(ROOT, installed.id, {
     source: 'local', repo: installed.repo, sha: installed.sha,
     version: installed.manifest.version || '0.0.0', integrity: installed.integrity, files: installed.files,
     consent: consentSurface(installed.manifest),
   });
   console.log(`✓ Installed plugins.local/${installed.id}  (${approved ? '✓ approved' : '❓ unverified'}, pinned ${String(useSha).slice(0, 7)})`);
   console.log(capabilityCard(installed.manifest, approved ? 'approved' : 'unverified'));
-  if (confirm) { setEnabled(installed.id, true); console.log(`\n✅ Enabled.${installed.manifest.requiredEnv.length ? ' Add keys to .env: ' + installed.manifest.requiredEnv.join(', ') : ''}`); }
+  if (confirm) { await setPluginEnabled(ROOT, installed.id, true); console.log(`\n✅ Enabled.${installed.manifest.requiredEnv.length ? ' Add keys to .env: ' + installed.manifest.requiredEnv.join(', ') : ''}`); }
   else console.log(`\n  To enable it (grants the above), run:  node src/plugins/plugins.mjs enable ${installed.id} --confirm`);
 }
 

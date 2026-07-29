@@ -48,8 +48,13 @@ import readline from 'node:readline';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { ROOT as __dirname } from '#paths';
+import { mutateFileLocked } from '../lib/locked-file.mjs';
 const CANDIDATES_PATH = process.env.CAREER_OPS_REPLY_CANDIDATES
   || path.join(__dirname, 'data', 'reply-candidates.json');
+const MAX_CANDIDATES_BYTES = 10_000_000;
+const MAX_CANDIDATES = 10_000;
+const MAX_REPLY_BODY_CHARS = 100_000;
+const CANDIDATE_KEYS = 'body_snippet,from,message_id,signal,subject';
 
 
 /**
@@ -110,29 +115,64 @@ export function normalizeCandidate({ subject, from, body }) {
  * missing, without disturbing any existing entries. Exported for direct unit
  * testing. Returns the total candidate count after the append.
  */
-export function appendCandidate(candidate, candidatesPath = CANDIDATES_PATH) {
-  let candidates = [];
-  if (fs.existsSync(candidatesPath)) {
-    let parsed;
-    try {
-      parsed = JSON.parse(fs.readFileSync(candidatesPath, 'utf-8'));
-    } catch (e) {
-      throw new Error(`Could not parse existing candidates file at ${candidatesPath}: ${e.message}`);
-    }
-    if (!Array.isArray(parsed)) {
-      throw new Error(`Existing candidates file at ${candidatesPath} is not a JSON array`);
-    }
-    candidates = parsed;
-  } else {
-    fs.mkdirSync(path.dirname(candidatesPath), { recursive: true });
+export async function appendCandidate(
+  candidate,
+  candidatesPath = CANDIDATES_PATH,
+  options = {},
+) {
+  if (
+    !candidate
+    || typeof candidate !== 'object'
+    || Object.keys(candidate).sort().join(',') !== CANDIDATE_KEYS
+    || typeof candidate.message_id !== 'string'
+    || !/^[a-zA-Z0-9._:-]{1,200}$/u.test(candidate.message_id)
+    || typeof candidate.from !== 'string'
+    || candidate.from.length > 1_000
+    || typeof candidate.subject !== 'string'
+    || candidate.subject.length > 2_000
+    || typeof candidate.body_snippet !== 'string'
+    || candidate.body_snippet.length > MAX_REPLY_BODY_CHARS
+    || candidate.signal !== null
+  ) {
+    throw new Error('Reply candidate is malformed or exceeds the safe size limit');
   }
-  candidates.push(candidate);
-  // Write-then-rename so an interrupted write (crash, signal, disk full)
-  // can never leave the real candidates file truncated/corrupted.
-  const tmpPath = `${candidatesPath}.tmp`;
-  fs.writeFileSync(tmpPath, JSON.stringify(candidates, null, 2), 'utf-8');
-  fs.renameSync(tmpPath, candidatesPath);
-  return candidates.length;
+
+  let total = 0;
+  await mutateFileLocked(candidatesPath, current => {
+    if (Buffer.byteLength(current) > MAX_CANDIDATES_BYTES) {
+      throw new Error(`Existing candidates file at ${candidatesPath} is too large`);
+    }
+    let candidates = [];
+    if (current.trim()) {
+      let parsed;
+      try {
+        parsed = JSON.parse(current);
+      } catch (e) {
+        throw new Error(`Could not parse existing candidates file at ${candidatesPath}: ${e.message}`);
+      }
+      if (!Array.isArray(parsed)) {
+        throw new Error(`Existing candidates file at ${candidatesPath} is not a JSON array`);
+      }
+      candidates = parsed;
+    }
+    if (candidates.length >= MAX_CANDIDATES) {
+      throw new Error(`Existing candidates file at ${candidatesPath} reached its entry limit`);
+    }
+    candidates.push(candidate);
+    const next = `${JSON.stringify(candidates, null, 2)}\n`;
+    if (Buffer.byteLength(next) > MAX_CANDIDATES_BYTES) {
+      throw new Error(`Candidates file at ${candidatesPath} exceeds the safe size limit`);
+    }
+    total = candidates.length;
+    return next;
+  }, {
+    initial: '[]\n',
+    writeOptions: {
+      mode: 0o600,
+      afterWrite: options.afterWrite,
+    },
+  });
+  return total;
 }
 
 // Collect subject/from/body from stdin via a single readline.Interface and a
@@ -229,7 +269,7 @@ async function main() {
   }
 
   const candidate = normalizeCandidate(input);
-  const total = appendCandidate(candidate);
+  const total = await appendCandidate(candidate);
 
   const preview = candidate.body_snippet.length > 80
     ? `${candidate.body_snippet.slice(0, 80)}…`

@@ -53,7 +53,7 @@ function deferred() {
   return { promise, resolve };
 }
 
-test('job-control accepts only versioned CV starts and contained job reads', () => {
+test('job-control accepts only versioned CV starts and contained job reads/cancellations', () => {
   const start = validateJobControlRequest(cvRequest());
   assert.equal(start.action, 'start');
   assert.equal(start.request.operation, 'cv.build');
@@ -66,10 +66,20 @@ test('job-control accepts only versioned CV starts and contained job reads', () 
   });
   assert.equal(read.id, 'cv-12-abc123');
 
+  const cancel = validateJobControlRequest({
+    version: '1',
+    action: 'cancel',
+    id: 'cv-12-abc123',
+  });
+  assert.equal(cancel.action, 'cancel');
+  assert.equal(cancel.id, 'cv-12-abc123');
+
   for (const invalid of [
     { ...cvRequest(), command: '/bin/sh' },
     { ...cvRequest(), version: '2' },
     { version: '1', action: 'read', id: '../../etc/passwd' },
+    { version: '1', action: 'cancel', id: '../../etc/passwd' },
+    { version: '1', action: 'cancel', id: 'cv-12-abc123', request: {} },
     {
       version: '1',
       action: 'start',
@@ -78,6 +88,37 @@ test('job-control accepts only versioned CV starts and contained job reads', () 
   ]) {
     assert.throws(() => validateJobControlRequest(invalid));
   }
+});
+
+test('job-control cancellation delegates only a validated opaque job id', async () => {
+  const output = outputSink();
+  const expected = {
+    id: 'cv-12-abc123',
+    roleNum: 12,
+    kind: 'build-cv',
+    status: 'running',
+    startedAt: 10,
+    stage: 'Cancelling',
+  };
+  const result = await main({
+    input: Readable.from([JSON.stringify({
+      version: '1',
+      action: 'cancel',
+      id: expected.id,
+    })]),
+    output: output.stream,
+    errorOutput: outputSink().stream,
+    managerFactory() {
+      return {
+        async cancelJob(id) {
+          assert.equal(id, expected.id);
+          return expected;
+        },
+      };
+    },
+  });
+  assert.deepEqual(result, expected);
+  assert.deepEqual(JSON.parse(output.body()), expected);
 });
 
 test('job-control read returns one bounded JSON record from the persistent manager', async () => {

@@ -41,6 +41,18 @@ Requests are limited to 64 KiB. Unknown fields and operations are rejected.
 Paths are repository-relative and contained under the operation's allowed data
 directory. URLs and model identifiers have explicit syntax and size limits.
 
+Persistent job control uses the same versioned, closed protocol:
+
+```json
+{"version":"1","action":"read","id":"cv-42-abc123"}
+{"version":"1","action":"cancel","id":"cv-42-abc123"}
+```
+
+Only an opaque validated job ID is accepted. Cancellation creates a bounded,
+contained marker beside that job's state. The controller that actually owns the
+operation observes the marker and aborts through the service; another process
+never guesses or signals an operating-system PID.
+
 ## Lifecycle guarantees
 
 - Events have a version, run ID, monotonically increasing sequence, timestamp,
@@ -58,8 +70,11 @@ directory. URLs and model identifiers have explicit syntax and size limits.
 - Presentation callbacks cannot crash or change the backend operation.
 - Persistent jobs use atomic per-role claims, so concurrent UI requests return
   one running job rather than duplicating model spend.
-- Job state is atomically replaced, logs and result tails are bounded, and an
-  orphaned running job is recoverable after a process crash.
+- Job reads, stale reaping, cancellation and terminal writes are serialized per
+  job. State and bounded logs use durable atomic replacement, and a late
+  completion cannot overwrite an already-terminal recovery result.
+- Cancellation markers are removed on every terminal path. An orphaned running
+  job is recoverable after a process crash.
 
 The contract accepts an optional idempotency key and the catalog supplies a
 stable default deduplication key. Persistent job deduplication belongs to the
@@ -71,6 +86,8 @@ silently invent cross-process state.
 New local interfaces must use this boundary instead of spawning backend scripts
 directly. The Frontrunner UI's CV builder is migrated; it launches only the
 fixed, bounded `job-control.mjs` adapter and cannot choose a backend command.
+The backend cancel action is available for the workflow UI to expose without
+adding a new privileged endpoint.
 The inherited `web/` tree is archived fail-closed: package start commands are
 disabled and all runtime requests receive `410 Gone`. Its legacy endpoints are
 not an alternate application boundary. Direct command-line entry points remain

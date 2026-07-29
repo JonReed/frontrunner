@@ -59,14 +59,16 @@ export function validateJobControlRequest(value) {
       request,
     });
   }
-  if (value.action === 'read') {
-    if (value.request !== undefined) throw controlError('read does not accept an application request');
+  if (value.action === 'read' || value.action === 'cancel') {
+    if (value.request !== undefined) {
+      throw controlError(`${value.action} does not accept an application request`);
+    }
     if (typeof value.id !== 'string' || !JOB_ID.test(value.id)) {
-      throw controlError('read requires a valid job id');
+      throw controlError(`${value.action} requires a valid job id`);
     }
     return Object.freeze({
       version: APPLICATION_API_VERSION,
-      action: 'read',
+      action: value.action,
       id: value.id,
     });
   }
@@ -93,12 +95,14 @@ export async function main({
       },
     });
     const job = control.action === 'read'
-      ? manager.readJob(control.id)
-      : await manager.startCvBuild(
-        control.request.input?.roleNum,
-        control.request.input?.jobUrl,
-        control.request.input?.reportPath ?? null,
-      );
+      ? await manager.readJob(control.id)
+      : control.action === 'cancel'
+        ? await manager.cancelJob(control.id)
+        : await manager.startCvBuild(
+          control.request.input?.roleNum,
+          control.request.input?.jobUrl,
+          control.request.input?.reportPath ?? null,
+        );
     output.write(`${JSON.stringify(job)}\n`);
     if (completion) await completion;
     return job;

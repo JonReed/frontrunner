@@ -14,9 +14,18 @@ Plugins load **only** when you opt in. With no `config/plugins.yml`, the core
 runs exactly as it always has — no plugin code runs, no `.env` is read, nothing
 changes. Two gates must both be satisfied:
 
-1. **Enable** the plugin in `config/plugins.yml` (copy `config/plugins.example.yml`).
+1. **Enable and consent** with
+   `node src/plugins/plugins.mjs enable <id>`. The command records both the
+   activation and an integrity/capability pin.
 2. **Provide its keys** in your own `.env` (each plugin declares which it needs).
    Run `node doctor.mjs` or `node src/plugins/plugins.mjs list` to see what's missing.
+
+Activation and consent are serialized, durable state changes: concurrent
+commands preserve every plugin entry, interrupted writes leave the previous
+files intact, and malformed `config/plugins.yml` or `plugins.lock` blocks the
+affected activation rather than silently trusting code. Manual configuration
+is still supported for compatibility; the engine must persist a matching pin
+before that plugin can load.
 
 ## Anatomy of a plugin
 

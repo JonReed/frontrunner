@@ -19,7 +19,7 @@ contains only a few compatibility entry points. Common commands are exposed via
 | `npm run sync-check` | `src/cv/cv-sync-check.mjs` | Validate CV/profile consistency |
 | `npm run patterns` | `src/analysis/analyze-patterns.mjs` | Analyze tracker outcomes and report patterns |
 | `npm run upskill` | `src/analysis/upskill.mjs` | Aggregate skill-gap map from tracked reports (or `--url-text <url\|file>` for a single-JD targeted gap analysis) |
-| `npm run add` | `src/tracker/add-entry.mjs` | Dedup + insert a `/career-ops add` entry into cv.md / article-digest.md |
+| `npm run add` | `src/tracker/add-entry.mjs` | Dedup + transactionally insert a confirmed `/career-ops add` entry into cv.md / article-digest.md; interrupted two-file publication resumes from a contained journal |
 | `npm run update:check` | `update-system.mjs check` | Check for official Frontrunner updates |
 | `npm run update` | `update-system.mjs apply` | Apply an official Frontrunner update |
 | `npm run rollback` | `update-system.mjs rollback` | Rollback last update |
@@ -284,7 +284,7 @@ Ledger line format (TSV, appended by `src/tracker/set-status.mjs`, `#`-prefixed 
 
 ## assessment-log
 
-Logs "received a skills assessment" as a structured per-application event (eSkill, HackerRank, Criteria, Predictive Index, ...) instead of burying it in free-text notes. Each event records platform, subject tested, pass threshold vs score achieved (both optional — vendors often hide them), and a candidate-observed staleness note (e.g. "test content references Adobe Acrobat 9, a 2008-era version"; empty = no staleness observed). Events append to `data/assessments.tsv` (user layer, created on first `add`, never rewritten). Aggregates count events, pass/fail (only when both threshold and score are known), and stale-flagged events per platform; malformed lines are always reported, never dropped silently.
+Logs "received a skills assessment" as a structured per-application event (eSkill, HackerRank, Criteria, Predictive Index, ...) instead of burying it in free-text notes. Each event records platform, subject tested, pass threshold vs score achieved (both optional — vendors often hide them), and a candidate-observed staleness note (e.g. "test content references Adobe Acrobat 9, a 2008-era version"; empty = no staleness observed). Events append to `data/assessments.tsv` (user layer, created on first `add`, never rewritten). The append is locked and atomically replaced, so concurrent local clients retain every event and interruption cannot tear the TSV. Aggregates count events, pass/fail (only when both threshold and score are known), and stale-flagged events per platform; malformed lines are always reported, never dropped silently.
 
 ```bash
 node src/analysis/assessment-log.mjs add --company Acme --report 042 --platform eSkill --subject "MS Office" --threshold 70 --score 92 --stale "references Adobe Acrobat 9 (2008-era)"
@@ -528,7 +528,7 @@ Multiple matches print as a table; zero matches print a clean message.
 
 ## paste-reply
 
-Manual, no-Gmail input path into `src/tracker/reply-watch.mjs`'s classification pipeline (#1802). `src/tracker/reply-watch.mjs` already classifies employer replies and matches them to tracker rows, but its only input is `data/reply-candidates.json`, and the only planned way to populate that file is a Gmail scanner (#1583, unbuilt, requires OAuth inbox-read access). `src/tracker/paste-reply.mjs` normalizes a pasted (or file-provided) email's subject/from/body into the exact candidate shape `src/tracker/reply-watch.mjs` expects and appends it — existing candidates are never overwritten. It does not classify the reply itself (that stays `src/tracker/reply-watch.mjs`'s job) and never runs `src/tracker/reply-watch.mjs` or touches `data/applications.md`.
+Manual, no-Gmail input path into `src/tracker/reply-watch.mjs`'s classification pipeline (#1802). `src/tracker/reply-watch.mjs` already classifies employer replies and matches them to tracker rows, but its only input is `data/reply-candidates.json`, and the only planned way to populate that file is a Gmail scanner (#1583, unbuilt, requires OAuth inbox-read access). `src/tracker/paste-reply.mjs` normalizes a pasted (or file-provided) email's subject/from/body into the exact bounded candidate shape `src/tracker/reply-watch.mjs` expects and appends it under a shared lock — concurrent writers cannot overwrite one another, and interrupted replacements preserve the prior JSON. It does not classify the reply itself (that stays `src/tracker/reply-watch.mjs`'s job) and never runs `src/tracker/reply-watch.mjs` or touches `data/applications.md`.
 
 ```bash
 npm run paste-reply                    # interactive: prompts for subject, from, body
@@ -689,9 +689,10 @@ These have no `npm run` binding — modes and agents call them with
 | `node src/analysis/process-quality.mjs [--summary]` | Aggregate `[process-friction]` tags from `data/active-interviews.md` per company |
 | `node src/tracker/reserve-report-num.mjs [--count N]` | Atomically reserve report numbers for parallel workers (fixes the #749 race) |
 | `node src/tracker/agent-inbox.mjs add "..."` | Atomically append a request to the queue the agent drains at the next session start; concurrent local clients are serialized |
+| `node src/scan/discover-ats.mjs --in companies.yml [--write]` | Resolve companies to supported public ATS boards; preview by default, or validate and transactionally append unique boards to `portals.yml` with `--write` |
 | `node src/cv/generate-latex.mjs <input.tex> [output.pdf]` | Validate and compile a generated `.tex` CV via tectonic or pdflatex |
 | `node src/analysis/classify-tier.mjs` | Classify a job title into intern / entry / mid / senior |
-| `node src/plugins/plugins.mjs list\|run <id> [hook]` | CLI host for non-provider plugin hooks (see [PLUGINS.md](PLUGINS.md)) |
+| `node src/plugins/plugins.mjs list\|run <id> [hook]\|enable <id>\|trust <id>\|remove <id>` | Plugin host and serialized, fail-closed activation/integrity-consent manager (see [PLUGINS.md](PLUGINS.md)) |
 | `node src/plugins/plugin-install.mjs` | Clone/scaffold/validate community plugins (allowlisted URLs, pinned SHA) |
 | `node src/plugins/plugin-audit.mjs` | Static safety scan for community/registry plugins |
 | `node src/plugins/validate-plugin-registry.mjs` | Shape gate for `plugins-registry/<id>.json` files |

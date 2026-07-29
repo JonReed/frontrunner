@@ -1,12 +1,26 @@
 #!/usr/bin/env node
 
-import { readFileSync, writeFileSync } from 'fs';
-import { resolve } from 'path';
+import {
+  readFileSync,
+  realpathSync,
+  statSync,
+} from 'node:fs';
+import {
+  isAbsolute,
+  relative,
+  resolve,
+} from 'node:path';
 import { fileURLToPath } from 'url';
+
+import { REPORTS_DIR } from '#paths';
+import { mutateFileLocked } from '../lib/locked-file.mjs';
 
 export const APPLICATION_ANSWERS_HEADING = '## Application Answers';
 
 const VALID_STATES = new Set(['filled', 'submitted']);
+const MAX_INPUT_BYTES = 1_000_000;
+const MAX_REPORT_BYTES = 4_000_000;
+const ALLOWED_REPORTS_DIR = process.env.CAREER_OPS_REPORTS_DIR || REPORTS_DIR;
 
 function inline(value) {
   return String(value ?? '').replace(/\s+/g, ' ').trim();
@@ -182,6 +196,45 @@ function usage() {
   ].join('\n');
 }
 
+export function resolveApplicationAnswersReportPath(value, reportsDir = ALLOWED_REPORTS_DIR) {
+  const root = realpathSync(resolve(reportsDir));
+  const requested = resolve(value);
+  const file = realpathSync(requested);
+  const rel = relative(root, file);
+  if (!rel || rel.startsWith('..') || isAbsolute(rel) || !file.endsWith('.md')) {
+    throw new Error('Application answers report must be an existing Markdown file under reports/');
+  }
+  if (!statSync(file).isFile()) {
+    throw new Error('Application answers report must be a regular file');
+  }
+  return file;
+}
+
+export async function writeApplicationAnswers(reportValue, snapshot, options = {}) {
+  const reportPath = resolveApplicationAnswersReportPath(
+    reportValue,
+    options.reportsDir,
+  );
+  let normalized;
+  await mutateFileLocked(reportPath, current => {
+    if (Buffer.byteLength(current) > MAX_REPORT_BYTES) {
+      throw new Error('Application answers report is too large');
+    }
+    const updated = upsertApplicationAnswersSection(current, snapshot);
+    if (Buffer.byteLength(updated) > MAX_REPORT_BYTES) {
+      throw new Error('Application answers update exceeds the report size limit');
+    }
+    normalized = normalizeApplicationAnswersSnapshot(snapshot);
+    return updated;
+  }, {
+    writeOptions: {
+      mode: 0o600,
+      afterWrite: options.afterWrite,
+    },
+  });
+  return normalized;
+}
+
 async function main() {
   let args;
   try {
@@ -201,18 +254,20 @@ async function main() {
     return;
   }
 
-  const inputText = args.input === '-' ? readFileSync(0, 'utf-8') : readFileSync(resolve(args.input), 'utf-8');
+  const inputText = args.input === '-'
+    ? readFileSync(0, 'utf-8')
+    : readFileSync(resolve(args.input), 'utf-8');
+  if (Buffer.byteLength(inputText) > MAX_INPUT_BYTES) {
+    throw new Error('Application answers input is too large');
+  }
   const input = JSON.parse(inputText);
   const snapshot = {
     ...input,
     date: args.date || input.date,
     state: args.state || input.state,
   };
-  const reportPath = resolve(args.report);
-  const updated = upsertApplicationAnswersSection(readFileSync(reportPath, 'utf-8'), snapshot);
-  writeFileSync(reportPath, updated, 'utf-8');
-
-  const normalized = normalizeApplicationAnswersSnapshot(snapshot);
+  const reportPath = resolveApplicationAnswersReportPath(args.report);
+  const normalized = await writeApplicationAnswers(reportPath, snapshot);
   console.log(JSON.stringify({ report: reportPath, date: normalized.date, state: normalized.state }, null, 2));
 }
 

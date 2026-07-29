@@ -11,8 +11,9 @@
  *    no dotenv, and mutates no process.env. scan.mjs imports `mergeProviderPlugins`
  *    on every run, and that import must be free — so a plain `node src/scan/scan.mjs` with
  *    no config/plugins.yml behaves byte-identically to before this feature.
- *  - Fail-open everywhere. A malformed manifest, a throwing import, a missing
- *    key, or a hung hook logs a `⚠️` and is SKIPPED — never crashes the core.
+ *  - Plugin failures do not crash the core. A malformed manifest, throwing
+ *    import, missing key, hung hook, or unreadable consent state logs a `⚠️`
+ *    and SKIPS that plugin. Consent/integrity failures always fail closed.
  *  - Opt-in. Nothing loads unless config/plugins.yml enables it AND every
  *    declared requiredEnv var is present.
  *  - Least-privilege ctx is a CONVENIENCE, not a sandbox. Plain ESM can't
@@ -100,9 +101,9 @@ function pluginsConfigPath(root) {
 }
 
 /**
- * Read config/plugins.yml. Fail-open to {} if absent or malformed — exactly the
- * graceful posture scan.mjs uses for its own config. js-yaml is imported lazily
- * so this module stays side-effect-free at import time.
+ * Read config/plugins.yml. Missing or malformed configuration becomes {}:
+ * core operation continues, while every plugin remains disabled. js-yaml is
+ * imported lazily so this module stays side-effect-free at import time.
  * @param {string} root
  * @returns {Promise<object>}
  */
@@ -536,33 +537,41 @@ function pluginSource(manifest, root) {
 /**
  * Integrity gate run on an ENABLED plugin before importing it (the rug-pull
  * defense). Returns { load }. Re-pins the lock on the benign cases (silent).
- * Fail-open on the engine itself (a lock-read error never blocks).
+ * An unreadable lock or failed durable pin blocks that plugin without crashing
+ * the core.
  */
-export function lockGate(manifest, root) {
+export async function lockGate(manifest, root) {
   const source = pluginSource(manifest, root);
   let lock;
-  try { lock = readLock(root); } catch { return { load: true }; }
+  try { lock = readLock(root); } catch (error) {
+    warnSkip(manifest.id, `integrity lock unreadable — ${error.message}`);
+    return { load: false };
+  }
   const entry = lock.plugins?.[manifest.id];
   let d;
   try { d = diffPlugin(manifest, entry); }
   catch (err) { warnSkip(manifest.id, `integrity check failed — ${err.message}`); return { load: false }; }
 
-  const repin = () => {
+  const repin = async () => {
     try {
       const tree = hashPluginTree(manifest.dir);
-      writeLockEntry(root, manifest.id, {
+      await writeLockEntry(root, manifest.id, {
         source, version: manifest.version || '0.0.0',
         integrity: tree.integrity, files: tree.files, consent: consentSurface(manifest),
       });
-    } catch { /* best-effort; never block load on a write failure */ }
+      return true;
+    } catch (error) {
+      warnSkip(manifest.id, `could not persist integrity pin — ${error.message}`);
+      return false;
+    }
   };
 
   switch (d.status) {
-    case 'unpinned': repin(); return { load: true };            // grandfathered hand-enable → pin so future tampering is caught
+    case 'unpinned': return { load: await repin() };            // grandfathered hand-enable → pin before load
     case 'match': return { load: true };
-    case 'legit-update': repin(); return { load: true };        // version bumped → honest update, re-pin quietly
+    case 'legit-update': return { load: await repin() };        // version bumped → honest update, re-pin before load
     case 'drift-nobump':
-      if (source === 'bundled') { repin(); return { load: true }; } // reviewed-by-construction (branch-protected checkout) → re-pin
+      if (source === 'bundled') return { load: await repin() }; // reviewed-by-construction
       warnSkip(manifest.id, `files changed since you trusted it without a version bump — possible tampering (${d.changedFiles.slice(0, 5).join(', ')}). Review, then \`node src/plugins/plugins.mjs trust ${manifest.id}\``);
       return { load: false };
     case 'surface-widened':
@@ -578,7 +587,7 @@ export async function loadPlugins(kind, { root, dryRun = false }) {
   const out = [];
   for (const manifest of manifests) {
     if (!pluginStatus(manifest, cfg).enabled) continue;
-    if (!lockGate(manifest, root).load) continue;
+    if (!(await lockGate(manifest, root)).load) continue;
     const hook = await importHook(manifest, kind);
     if (!hook) continue;
     out.push({ id: manifest.id, manifest, hook, ctx: buildCtx(manifest, { dryRun, settings: pluginSettings(manifest.id, cfg) }) });
@@ -703,7 +712,7 @@ export async function mergeProviderPlugins(providersMap, { root }) {
         providersMap.set(manifest.id, inactiveProviderStub(manifest.id, reason)); // (5)
         continue;
       }
-      if (!lockGate(manifest, root).load) {
+      if (!(await lockGate(manifest, root)).load) {
         providersMap.set(manifest.id, inactiveProviderStub(manifest.id, 'integrity/consent check failed — see ⚠️ above; run `node src/plugins/plugins.mjs trust ' + manifest.id + '` or `enable ' + manifest.id + '`'));
         continue;
       }

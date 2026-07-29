@@ -15,7 +15,7 @@ presented. The inherited implementation did not treat job adverts as hostile
 input; Frontrunner does.
 
 > **The measured difference:** on the checked-in deterministic benchmark,
-> Frontrunner uses **93.3% fewer model input tokens**, **84.1% fewer output
+> Frontrunner uses **92.3% fewer model input tokens**, **81.8% fewer output
 > tokens**, and **62.5% fewer description HTTP calls** than the inherited flow.
 > Its separate scored regression corpus has **zero false rejects at a score of
 > 3.0 or above**. See the [reproducible benchmark](#reproducible-benchmark).
@@ -70,10 +70,15 @@ prefilter before model evaluation.
   dedicated process group on POSIX and a fixed `taskkill /T` tree on Windows.
   Timeout or cancellation terminates descendant model and browser processes
   too, so a reported stop cannot leave token spend or file mutations running
-  in the background.
+  in the background. The persistent backend accepts a validated job ID and
+  writes a contained cancellation request; the owning controller observes it
+  and aborts the operation without signalling an unverified or recycled PID.
 - **No duplicate AI spend:** UI jobs are persisted across reloads and claimed
   atomically per role. Simultaneous clicks, requests, or server processes
   return the same running job instead of launching a second paid model call.
+  Reads, stale-job recovery, cancellation, and terminal completion are
+  serialized per job, so a late process result cannot resurrect or overwrite a
+  job already made terminal.
 - **Model only for judgement:** provider APIs and deterministic code handle
   collection, description extraction, freshness, obvious mismatches, report
   rendering, pipeline state, and tracker-safe output. The model receives clean
@@ -100,12 +105,24 @@ prefilter before model evaluation.
   failures roll back without leaving a half-installed system. Scanner history,
   run metrics, portal health, the pending-role pipeline, and the agent inbox use
   the same crash-safe locked replacement boundary, so concurrent scans or local
-  clients cannot silently drop each other's state.
+  clients cannot silently drop each other's state. Application-answer sections,
+  pasted reply candidates, and assessment events use it too; reply input is
+  schema/size bounded and report updates are contained under `reports/`.
+  Explicit ATS discovery also re-reads and re-deduplicates `portals.yml` inside
+  the lock, so simultaneous discoveries preserve every unique board. Plugin
+  activation and integrity consent are serialized and atomically replaced too:
+  concurrent enables cannot lose a pin, and malformed consent state prevents
+  plugin code from loading.
 - **Transactional evaluation publication:** every model provider uses one
   journaled report-to-tracker publisher. If the process, machine, or tracker
   merge fails after model tokens have already been spent, the next evaluation
   resumes the same publication idempotently instead of losing the result,
   duplicating the tracker row, or reusing its report number.
+- **Crash-safe candidate facts:** a confirmed `/add` update to `cv.md` and
+  `article-digest.md` is serialized and write-ahead journaled. If Frontrunner
+  stops between those two canonical files, the operation resumes without
+  duplicating the entry; if either file was edited meanwhile, recovery refuses
+  to overwrite the newer human change.
 - **Regression evidence:** destructive crash/interruption tests, the scored-role
   false-reject corpus, and a generated efficiency benchmark run in CI. The
   aggregate runner also supervises framework tests so a failing destructive
@@ -121,9 +138,9 @@ The checked-in 8-role, 3-board fixture currently produces:
 | Measure | inherited flow | Frontrunner | Change |
 |---|---:|---:|---:|
 | Description HTTP calls | 8 | 3 | −62.5% |
-| Approximate model input tokens | 277,006 | 18,939 | −93.2% |
-| Approximate model output tokens | 17,125 | 2,729 | −84.1% |
-| Roles reaching the model | 8 | 7 | 87.5% pass rate |
+| Approximate model input tokens | 276,854 | 21,441 | −92.3% |
+| Approximate model output tokens | 17,125 | 3,123 | −81.8% |
+| Roles reaching the model | 8 | 8 | 100% pass rate |
 | False rejects at score ≥3.0 | — | 0 | — |
 <!-- pipeline-benchmark:end -->
 

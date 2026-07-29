@@ -52,8 +52,8 @@ keep_signals:
 # for an engineer. Uncomment the preset below only if you are targeting
 # management/leadership and want IC roles filtered out.
 #
-# With this empty, prefilter still rejects on below_level, hard_blockers and
-# comp — it just does not judge IC vs leadership.
+# With this empty, prefilter still rejects on enabled hard_blockers and comp —
+# it just does not judge IC vs leadership.
 # ---------------------------------------------------------------------------
 ic_families: []
 
@@ -121,17 +121,25 @@ wrong_functions: []
 #   - '\bretail\b'
 
 # ---------------------------------------------------------------------------
-# below_level — seniority below your target, regardless of function.
-# Rescued by a keep_signal, so "Associate Director" survives "associate".
+# below_level — seniority below YOUR target, regardless of function.
+#
+# SHIPS EMPTY ON PURPOSE. A junior role is a mismatch for a director and the
+# intended target for an early-career candidate. Uncomment the preset only
+# when those levels are outside your search. Matches are rescued by a
+# keep_signal, so "Associate Director" survives "associate".
 # ---------------------------------------------------------------------------
-below_level:
-  - '\b(intern|internship|graduate|apprentice|trainee|placement)\b'
-  - '\bjunior\b'
-  - '\bentry[- ]level\b'
-  - '\bassociate\b(?!\s+(director|partner|vp))'
-  - '\bfellows?(hips?)?\b'
-  - '\bresidency\b'
-  - '\bbootcamp\b'
+below_level: []
+
+# --- Preset: filtering OUT early-career roles -----------------------------
+# Use when you are targeting established senior/leadership roles.
+#
+#   - '\b(intern|internship|graduate|apprentice|trainee|placement)\b'
+#   - '\bjunior\b'
+#   - '\bentry[- ]level\b'
+#   - '\bassociate\b(?!\s+(director|partner|vp))'
+#   - '\bfellows?(hips?)?\b'
+#   - '\bresidency\b'
+#   - '\bbootcamp\b'
 
 # ---------------------------------------------------------------------------
 # hard_blockers — matched against the JD BODY, not the title. Each needs

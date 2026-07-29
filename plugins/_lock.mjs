@@ -1,9 +1,9 @@
 // @ts-check
 // plugins/_lock.mjs — integrity pinning for plugins (the rug-pull / OWASP-MCP04
-// defense). Pure, side-effect-free import (node:crypto + node:fs only, NO
-// child_process so it stays loadable under plugins/). plugins.lock is a USER-
-// layer file (gitignored) recording, per enabled plugin, the sha256 of EVERY
-// file in its directory + the consented capability surface.
+// defense). Side-effect-free on import and free of child processes so it stays
+// loadable under plugins/. plugins.lock is a USER-layer file (gitignored)
+// recording, per enabled plugin, the sha256 of EVERY file in its directory +
+// the consented capability surface.
 //
 // Honest scope: the lock is tamper-EVIDENCE, not containment. A local attacker
 // with write access to plugins.local/ also has write access to plugins.lock and
@@ -12,8 +12,10 @@
 // WITHOUT a version bump (the postmark-mcp class). Stated plainly in README.
 
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, writeFileSync, readdirSync, lstatSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, lstatSync } from 'node:fs';
 import path from 'node:path';
+
+import { mutateFileLocked } from '../src/lib/locked-file.mjs';
 
 const LOCK_VERSION = 1;
 
@@ -58,30 +60,101 @@ export function hashPluginTree(dir) {
   return { files, integrity: sha256(Buffer.from(aggregate)) };
 }
 
-/** Read plugins.lock (fail-open to an empty lock — like the rest of the engine). */
+/** Read plugins.lock. Missing is empty; malformed consent state fails closed. */
 export function readLock(root) {
   const file = lockPath(root);
   if (!existsSync(file)) return { lockfileVersion: LOCK_VERSION, plugins: {} };
+  let parsed;
   try {
-    const parsed = JSON.parse(readFileSync(file, 'utf8'));
-    if (!parsed || typeof parsed !== 'object' || typeof parsed.plugins !== 'object') return { lockfileVersion: LOCK_VERSION, plugins: {} };
-    return parsed;
-  } catch {
-    return { lockfileVersion: LOCK_VERSION, plugins: {} };
+    parsed = JSON.parse(readFileSync(file, 'utf8'));
+  } catch (error) {
+    throw new Error(`plugins.lock is not valid JSON: ${error.message}`);
   }
+  if (
+    !parsed
+    || typeof parsed !== 'object'
+    || Array.isArray(parsed)
+    || parsed.lockfileVersion !== LOCK_VERSION
+    || !parsed.plugins
+    || typeof parsed.plugins !== 'object'
+    || Array.isArray(parsed.plugins)
+  ) {
+    throw new Error('plugins.lock has an invalid structure or version');
+  }
+  return parsed;
 }
 
 /** Merge a single entry into plugins.lock (never clobber other plugins' entries). */
-export function writeLockEntry(root, id, entry) {
-  const lock = readLock(root);
-  lock.lockfileVersion = LOCK_VERSION;
-  lock.plugins[id] = entry;
-  writeFileSync(lockPath(root), JSON.stringify(lock, null, 2) + '\n', 'utf8');
+export async function writeLockEntry(root, id, entry, options = {}) {
+  if (typeof id !== 'string' || !/^[a-z0-9][a-z0-9-]{0,63}$/u.test(id)) {
+    throw new Error('plugin lock id is invalid');
+  }
+  const file = lockPath(root);
+  await mutateFileLocked(file, current => {
+    let lock = { lockfileVersion: LOCK_VERSION, plugins: {} };
+    if (current.trim()) {
+      let parsed;
+      try {
+        parsed = JSON.parse(current);
+      } catch (error) {
+        throw new Error(`plugins.lock is not valid JSON: ${error.message}`);
+      }
+      if (
+        !parsed
+        || typeof parsed !== 'object'
+        || Array.isArray(parsed)
+        || parsed.lockfileVersion !== LOCK_VERSION
+        || !parsed.plugins
+        || typeof parsed.plugins !== 'object'
+        || Array.isArray(parsed.plugins)
+      ) {
+        throw new Error('plugins.lock has an invalid structure or version');
+      }
+      lock = parsed;
+    }
+    lock.plugins[id] = entry;
+    return `${JSON.stringify(lock, null, 2)}\n`;
+  }, {
+    writeOptions: {
+      mode: 0o600,
+      afterWrite: options.afterWrite,
+    },
+  });
 }
 
-export function removeLockEntry(root, id) {
-  const lock = readLock(root);
-  if (lock.plugins[id]) { delete lock.plugins[id]; writeFileSync(lockPath(root), JSON.stringify(lock, null, 2) + '\n', 'utf8'); }
+export async function removeLockEntry(root, id, options = {}) {
+  const file = lockPath(root);
+  if (!existsSync(file)) return false;
+  let removed = false;
+  await mutateFileLocked(file, current => {
+    let lock;
+    try {
+      lock = JSON.parse(current);
+    } catch (error) {
+      throw new Error(`plugins.lock is not valid JSON: ${error.message}`);
+    }
+    if (
+      !lock
+      || typeof lock !== 'object'
+      || Array.isArray(lock)
+      || lock.lockfileVersion !== LOCK_VERSION
+      || !lock.plugins
+      || typeof lock.plugins !== 'object'
+      || Array.isArray(lock.plugins)
+    ) {
+      throw new Error('plugins.lock has an invalid structure or version');
+    }
+    if (!lock.plugins[id]) return current;
+    delete lock.plugins[id];
+    removed = true;
+    return `${JSON.stringify(lock, null, 2)}\n`;
+  }, {
+    writeOptions: {
+      mode: 0o600,
+      afterWrite: options.afterWrite,
+    },
+  });
+  return removed;
 }
 
 /**

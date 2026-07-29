@@ -252,6 +252,7 @@ AI-powered, CLI-agnostic job search automation: pipeline tracking, offer evaluat
 | `src/cv/generate-pdf.mjs` | Playwright: HTML to PDF |
 | `src/cv/generate-latex.mjs` | LaTeX CV validator + pdflatex compiler |
 | `src/scan/scan.mjs` | Zero-token portal scanner (Greenhouse/Ashby/Lever APIs, zero LLM cost) |
+| `src/scan/discover-ats.mjs` | Zero-token company-to-ATS resolver; preview-only unless `--write`, then validates and appends unique boards to `portals.yml` under the shared durable-state lock |
 | `src/scan/scan-ats-full.mjs` | Reverse-ATS keyword-first scanner over full public ATS datasets (Greenhouse/Lever/Ashby/Workday/iCIMS), filtered by portals.yml `title_filter`/`location_filter` — no company list needed; checkpoints every 500 companies, `--resume` continues an interrupted sweep |
 | `src/scan/check-liveness.mjs` / `src/scan/liveness-core.mjs` | Job posting liveness checker + shared logic (expired signals win over generic Apply text) |
 | `src/scan/liveness-service.mjs` | Canonical API-first liveness boundary with lazy Playwright fallback |
@@ -260,7 +261,7 @@ AI-powered, CLI-agnostic job search automation: pipeline tracking, offer evaluat
 | `src/evaluate/scoring-contract.mjs` | Versioned model JSON contract + deterministic A–G report renderer |
 | `src/tracker/set-status.mjs` | Canonical tracker-row update: `node src/tracker/set-status.mjs <report#\|company> <State> [--note] [--force]` — strict states.yml validation, report-link mismatch guard, shared lock, atomic write |
 | `src/tracker/invite-match.mjs` | Fuzzy-match a pasted interview invite (company, date, req ID) against the tracker, ranking candidates when a company has multiple entries (JSON or `--summary`) |
-| `src/tracker/paste-reply.mjs` | Manual/no-Gmail input into reply-watch classification — normalizes a pasted/file email (subject/from/body) and appends to `data/reply-candidates.json`; never overwrites entries, never classifies, never touches the tracker |
+| `src/tracker/paste-reply.mjs` | Manual/no-Gmail input into reply-watch classification — bounds and normalizes a pasted/file email, then appends it to `data/reply-candidates.json` with locked atomic replacement; never classifies or touches the tracker |
 | `src/analysis/analyze-patterns.mjs` | Pattern analysis incl. per-ATS-vendor advance rate (JSON) |
 | `src/analysis/upskill.mjs` | Weighted skill-gap map from tracked reports; known skills from `cv.md`/`config/profile.yml` excluded (JSON) |
 | `src/analysis/stats.mjs` | Lifetime pipeline stats: tracker roll-up, canonical `ever*` funnel, scan totals, portal coverage, follow-up compliance, scan-run trends (JSON or `--summary`) |
@@ -269,7 +270,7 @@ AI-powered, CLI-agnostic job search automation: pipeline tracking, offer evaluat
 | `src/analysis/detect-reposts.mjs` | Flags roles re-listed 2+ times in 90 days from `scan-history.tsv` (JSON or `--summary`) |
 | `src/analysis/process-quality.mjs` | Per-company recruiting-friction rate from `[process-friction]` tags in `data/active-interviews.md` Notes (JSON or `--summary`) |
 | `src/analysis/salary-gap.mjs` | Desired/advertised/actual comp gap analyzer — folds report `advertised_comp` + `data/salary-observations.tsv` (JSON or `--summary`) |
-| `src/analysis/assessment-log.mjs` | Skills-assessment logger — `add` appends platform/subject/threshold/score + staleness note to `data/assessments.tsv` (JSON or `--summary`) |
+| `src/analysis/assessment-log.mjs` | Skills-assessment logger — `add` safely appends platform/subject/threshold/score + staleness note to `data/assessments.tsv` under the shared durable-state lock (JSON or `--summary`) |
 | `src/analysis/jd-skill-gap.mjs` | Zero-LLM JD skill classifier vs `cv.md`: existing / supportedByResume / gap; never auto-adds claims to `cv.md` (JSON or `--summary`) |
 | `reports/` | Evaluation reports `{###}-{company-slug}-{YYYY-MM-DD}.md` — Blocks A-G + Risk Summary + `## Machine Summary` YAML for downstream analysis |
 

@@ -38,13 +38,16 @@
  * files so tests never touch a real user CV.
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath, pathToFileURL } from 'url';
+import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
+import { pathToFileURL } from 'url';
 
 import { ROOT as CAREER_OPS } from '#paths';
+import { mutateAddEntrySources } from './add-entry-publication.mjs';
 const CV_FILE = process.env.CAREER_OPS_CV || join(CAREER_OPS, 'cv.md');
 const ARTICLE_DIGEST_FILE = process.env.CAREER_OPS_ARTICLE_DIGEST || join(CAREER_OPS, 'article-digest.md');
+const PUBLICATION_JOURNAL = process.env.CAREER_OPS_ADD_ENTRY_JOURNAL
+  || join(CAREER_OPS, 'data', '.add-entry-PUBLISHING.json');
 
 // Normalize a title/heading for duplicate detection: lowercase, collapse to
 // alphanumerics only. "FraudShield", "Fraud-Shield", "fraud shield" all match.
@@ -211,34 +214,25 @@ async function main() {
     process.exit(1);
   }
 
-  const cvText = existsSync(CV_FILE) ? readFileSync(CV_FILE, 'utf-8') : null;
-  const articleText = existsSync(ARTICLE_DIGEST_FILE) ? readFileSync(ARTICLE_DIGEST_FILE, 'utf-8') : null;
-
   let out;
   try {
-    out = applyAdd(payload, { cvText, articleText });
+    if (dryRun) {
+      const cvText = existsSync(CV_FILE) ? readFileSync(CV_FILE, 'utf-8') : null;
+      const articleText = existsSync(ARTICLE_DIGEST_FILE)
+        ? readFileSync(ARTICLE_DIGEST_FILE, 'utf-8')
+        : null;
+      out = applyAdd(payload, { cvText, articleText });
+    } else {
+      out = await mutateAddEntrySources({
+        cvPath: CV_FILE,
+        articlePath: ARTICLE_DIGEST_FILE,
+        journalPath: PUBLICATION_JOURNAL,
+        compute: current => applyAdd(payload, current),
+      });
+    }
   } catch (e) {
     console.error(`add-entry: ${e.message}`);
     process.exit(1);
-  }
-
-  if (!dryRun) {
-    // Track what actually landed so a failure on the second write reports which
-    // file was already mutated (the two writes aren't transactional).
-    const written = [];
-    try {
-      if (payload.cv && out.result.cv?.status === 'added') {
-        writeFileSync(CV_FILE, out.cv);
-        written.push('cv.md');
-      }
-      if (payload.articleDigest && (out.result.articleDigest?.status === 'added' || out.result.articleDigest?.status === 'created')) {
-        writeFileSync(ARTICLE_DIGEST_FILE, out.articleDigest);
-        written.push('article-digest.md');
-      }
-    } catch (e) {
-      console.error(`add-entry: write failed after writing [${written.join(', ') || 'nothing'}]: ${e.message}`);
-      process.exit(1);
-    }
   }
 
   console.log(JSON.stringify({ dryRun, ...out.result }, null, 2));
@@ -246,5 +240,5 @@ async function main() {
 
 // Only run main() when invoked directly, not when imported by tests.
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  main();
+  await main();
 }

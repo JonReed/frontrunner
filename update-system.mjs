@@ -194,6 +194,7 @@ const SYSTEM_PATHS = [
   'src/tracker/reconcile-pipeline.mjs',
   'src/tracker/dedup-tracker.mjs',
   'src/tracker/add-entry.mjs',
+  'src/tracker/add-entry-publication.mjs',
   'src/tracker/role-matcher.mjs',
   'src/tracker/tracker-utils.mjs',
   'src/tracker/tracker-parse.mjs',

@@ -116,10 +116,25 @@ and treats reports and generated HTML as untrusted output.
 
 ## Failure and Concurrency Boundaries
 
+- Persistent application jobs serialize reads, stale recovery, cancellation and
+  terminal transitions per job. Cancellation is a contained durable marker
+  observed by the owning controller, never a request to signal a stored PID.
 - Tracker mutations use shared locking and atomic replacement.
+- Application-answer report sections, pasted reply candidates and assessment
+  events use the same boundary; report paths are contained under `reports/`
+  and hostile reply records have closed shape, count and byte limits.
+- Opt-in ATS discovery validates fixed provider URLs and re-deduplicates
+  `portals.yml` inside its write lock, preventing lost boards across concurrent
+  discovery runs while preserving comments and formatting.
 - Report numbers are reserved with atomic sentinels before parallel work.
 - Evaluation report/tracker publication is write-ahead journaled and
   idempotently recovered after interruption or merge failure.
+- Confirmed additions spanning `cv.md` and `article-digest.md` are serialized,
+  write-ahead journaled and replayed only when each source still matches its
+  recorded before-state; newer human edits fail closed.
+- Plugin activation and integrity/capability consent use locked atomic
+  replacement. Enable pins before activation, removal disables before deleting
+  the pin, and malformed consent state prevents plugin code from loading.
 - The updater stages replacements and rolls back injected failures rather than
   leaving mixed versions.
 - The reverse ATS scanner checkpoints its lowest unfinished index and resumes
