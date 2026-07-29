@@ -7111,6 +7111,191 @@ try {
   fail(`merge-tracker reserved-number fidelity test crashed: ${e.message}`);
 }
 
+// ── DEDUP BLINDNESS FROM `---` / "Empresa" IN A DATA ROW (#2265) ─────────
+// Readers recognized the markdown separator row with `line.includes('---')`,
+// which also matched any DATA row whose free text contained three hyphens — a
+// URL slug like `Senior-Engineer---Platform-Team`, an em dash typed as
+// `---` — or, via the sibling `.includes('Empresa')` guard, a Spanish-market
+// company name. Such a row never reached `existingApps`, so it was invisible to
+// duplicate detection: re-evaluating that exact role appended a second row
+// instead of updating the first in place.
+//
+// #1704 fixed the NUMBERING half of this (the separate usedNumbers pass, so the
+// hidden row's number is never reissued) and deliberately left `existingApps`
+// alone. This covers the dedup half, and pins the row-format check that shares
+// the same heuristic.
+console.log('\n🧪 Testing dedup blindness from `---` / "Empresa" in a data row...');
+try {
+  const hyphenTmp = mkdtempSync(join(tmpdir(), 'career-ops-dedup-hyphen-'));
+  try {
+    const hData = join(hyphenTmp, 'data');
+    const hReports = join(hyphenTmp, 'reports');
+    const hAdditions = join(hyphenTmp, 'additions');
+    mkdirSync(hData);
+    mkdirSync(hReports);
+    mkdirSync(hAdditions);
+
+    const hTracker = join(hData, 'applications.md');
+    const hHeader =
+      '# Applications Tracker\n\n' +
+      '| # | Date | Company | Role | Score | Status | PDF | Report | Notes |\n' +
+      '|---|------|---------|------|-------|--------|-----|--------|-------|\n';
+    // Row #2 hides behind `---` (URL slug); row #1 hides behind "Empresa"
+    // (a Spanish company name). Both must be visible to dedup.
+    const hRows =
+      '| 2 | 2026-01-05 | Acme Corp | Director, Data Platform | 4.3/5 | Evaluated | ❌ | ' +
+      '[2](../reports/002-acme-corp-2026-01-05.md) | URL slug says Senior-Engineer---Platform-Team. |\n' +
+      '| 1 | 2026-01-05 | Empresa Ejemplo | Data Lead | 3.9/5 | Evaluated | ❌ | ' +
+      '[1](../reports/001-empresa-ejemplo-2026-01-05.md) | Madrid hybrid. |\n';
+    writeFileSync(hTracker, hHeader + hRows);
+    for (const r of ['002-acme-corp-2026-01-05.md', '001-empresa-ejemplo-2026-01-05.md']) {
+      writeFileSync(join(hReports, r), '# fixture\n');
+    }
+
+    // Re-evaluation of BOTH existing roles at a higher score. Correct behavior
+    // is two in-place updates and zero new rows.
+    writeFileSync(join(hAdditions, '002-acme-corp.tsv'),
+      '2\t2026-01-06\tAcme Corp\tDirector, Data Platform\tEvaluated\t4.8/5\t❌\t' +
+      '[2](reports/002-acme-corp-2026-01-05.md)\tre-evaluated after JD update\n');
+    writeFileSync(join(hAdditions, '001-empresa-ejemplo.tsv'),
+      '1\t2026-01-06\tEmpresa Ejemplo\tData Lead\tEvaluated\t4.1/5\t❌\t' +
+      '[1](reports/001-empresa-ejemplo-2026-01-05.md)\tre-evaluated after JD update\n');
+
+    const hOut = run(NODE, ['merge-tracker.mjs'], {
+      env: { ...process.env, CAREER_OPS_TRACKER: hTracker, CAREER_OPS_ADDITIONS: hAdditions },
+    });
+
+    if (hOut === null) {
+      fail('merge-tracker crashed on the `---`/"Empresa" fixture');
+    } else {
+      if (/Existing: 2 entries/.test(hOut)) {
+        pass('rows containing `---` and "Empresa" are both visible to merge-tracker');
+      } else {
+        fail(`merge-tracker did not see both rows — expected "Existing: 2 entries", got: ${hOut.split('\n').find(l => l.includes('Existing:')) || '(none)'}`);
+      }
+
+      const hMerged = readFileSync(hTracker, 'utf-8');
+      const hDataRows = hMerged.split('\n').filter(l => /^\|\s*\d+\s*\|/.test(l));
+
+      if (hDataRows.length === 2) {
+        pass('re-evaluating a `---`/"Empresa" row updates in place, no duplicate row appended');
+      } else {
+        fail(`expected 2 rows after two in-place updates, got ${hDataRows.length}`);
+      }
+
+      if (/4\.8\/5/.test(hMerged) && /4\.1\/5/.test(hMerged)) {
+        pass('both re-evaluated scores landed on the existing rows');
+      } else {
+        fail('re-evaluated scores did not reach the existing rows');
+      }
+
+      // The separator row must still be found, or new rows land in the wrong
+      // place (or nowhere) — the structural match has to keep working.
+      if (hMerged.includes('|---|------|')) {
+        pass('table separator row survives the merge intact');
+      } else {
+        fail('table separator row was consumed or rewritten');
+      }
+    }
+
+    // verify-pipeline's row-format check shares the heuristic: a malformed row
+    // carrying `---` used to skip the column-count check entirely.
+    const hBadRow = join(hData, 'applications-badrow.md');
+    writeFileSync(hBadRow, hHeader +
+      '| 3 | 2026-01-05 | Acme | Truncated Row --- with hyphens |\n' + hRows);
+    let badOut = '';
+    let badCode = 0;
+    try {
+      badOut = execFileSync(NODE, ['verify-pipeline.mjs'], {
+        cwd: ROOT, encoding: 'utf-8', timeout: 30000,
+        env: { ...process.env, CAREER_OPS_TRACKER: hBadRow, CAREER_OPS_REPORTS: hReports },
+      });
+    } catch (e) {
+      badOut = String(e.stdout ?? '');
+      badCode = e.status ?? -1;
+    }
+    if (/Row with too few columns/.test(badOut) && badCode === 1) {
+      pass('verify-pipeline flags a malformed row even when it contains `---`');
+    } else {
+      fail(`verify-pipeline did not flag a short row containing \`---\` (exit ${badCode})`);
+    }
+
+    // Header detection must key on the whole header SCHEMA, not one telltale
+    // cell: a malformed row carrying an exact `Empresa`/`Company` cell (a
+    // company genuinely named that, a one-word note) must not be mistaken for
+    // the header and skip the column-count check.
+    const hHeaderish = join(hData, 'applications-headerish.md');
+    writeFileSync(hHeaderish, hHeader +
+      '| 4 | 2026-01-05 | Empresa | Short Row |\n' +
+      '| 5 | 2026-01-05 | Company | Also Short |\n' + hRows);
+    let hdrOut = '';
+    let hdrCode = 0;
+    try {
+      hdrOut = execFileSync(NODE, ['verify-pipeline.mjs'], {
+        cwd: ROOT, encoding: 'utf-8', timeout: 30000,
+        env: { ...process.env, CAREER_OPS_TRACKER: hHeaderish, CAREER_OPS_REPORTS: hReports },
+      });
+    } catch (e) {
+      hdrOut = String(e.stdout ?? '');
+      hdrCode = e.status ?? -1;
+    }
+    const shortRowErrors = (hdrOut.match(/Row with too few columns/g) || []).length;
+    if (shortRowErrors === 2 && hdrCode === 1) {
+      pass('a malformed row with an exact Empresa/Company cell is not mistaken for the header');
+    } else {
+      fail(`expected 2 short-row errors for header-like malformed rows, got ${shortRowErrors} (exit ${hdrCode})`);
+    }
+
+    // …and the real header row must still be recognized, or every tracker
+    // reports its own header as a malformed row.
+    if (!/Row with too few columns[^\n]*# \| Date \| Company/.test(hdrOut)) {
+      pass('the genuine header row is still recognized as header furniture');
+    } else {
+      fail('the genuine header row was flagged as a malformed data row');
+    }
+
+    // A FULLY localized header must map through the alias table, not fall back
+    // to LEGACY_COLMAP (#2274). On a plain 9-column table the fallback happens
+    // to line up and hides the bug; with a Location column inserted, the Score
+    // cell is read from Location instead — an ES tracker scored "Remote".
+    const trackerParse = await import(pathToFileURL(join(ROOT, 'tracker-parse.mjs')).href);
+    const esHeader = '| # | Fecha | Empresa | Puesto | Location | Score | Status | PDF | Report | Notes |';
+    const esMap = trackerParse.detectColumns([esHeader]);
+    if (esMap && esMap.score === 6 && esMap.company === 3 && esMap.role === 4 && esMap.location === 5) {
+      pass('a fully localized header maps through the alias table (#2274)');
+    } else {
+      fail(`localized header did not map: ${JSON.stringify(esMap)}`);
+    }
+
+    // The two readers must agree on every shape, or validation skips as
+    // furniture what column detection cannot parse.
+    const headerShapes = [
+      ['| # | Date | Company | Role | Score | Status | PDF | Report | Notes |', true],
+      ['| # | Date | Company | Role | Location | Score | Status | PDF | Report | Notes |', true],
+      ['| # | Fecha | Empresa | Puesto | Score | Status | PDF | Report | Notes |', true],
+      [esHeader, true],
+      ['| 4 | 2026-01-05 | Company | Short Row |', false],
+      ['| 5 | 2026-01-05 | Empresa | Also Short |', false],
+      ['| 6 | 2026-01-05 | Acme Corp | Director | 4.0/5 | Evaluated | ❌ | — | note |', false],
+      ['|---|------|---------|------|-------|--------|-----|--------|-------|', false],
+    ];
+    const disagreements = headerShapes.filter(([line, expected]) => {
+      const isHeader = trackerParse.isHeaderRow(line);
+      const detects = trackerParse.detectColumns([line]) !== null;
+      return isHeader !== detects || isHeader !== expected;
+    });
+    if (disagreements.length === 0) {
+      pass('isHeaderRow and detectColumns agree on every header shape');
+    } else {
+      fail(`isHeaderRow/detectColumns disagree on: ${disagreements.map(d => d[0].slice(0, 40)).join(' | ')}`);
+    }
+  } finally {
+    rmSync(hyphenTmp, { recursive: true, force: true });
+  }
+} catch (e) {
+  fail(`dedup blindness test crashed: ${e.message}`);
+}
+
 // ── MERGE-TRACKER REQ/JOB-NUMBER DEDUP GUARD (#1524) ─────────────────────
 // Tier-3 dedup (company + fuzzy role match) had no req/job-number awareness:
 // two distinct postings at the same company with similarly-worded titles were
