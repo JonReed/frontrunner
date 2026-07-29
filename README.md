@@ -62,6 +62,10 @@ prefilter before model evaluation.
 
 - **One backend pipeline:** `npm run pipeline` owns scan, cache, liveness,
   prefilter, and evaluation in that order.
+- **One local application boundary:** interfaces request a small versioned
+  operation; fixed backend code chooses executables, scripts, paths, flags,
+  timeouts, cancellation, and bounded lifecycle output. This removes ad-hoc
+  command construction from future UI work.
 - **Model only for judgement:** provider APIs and deterministic code handle
   collection, description extraction, freshness, obvious mismatches, report
   rendering, pipeline state, and tracker-safe output. The model receives clean
@@ -302,7 +306,8 @@ local user remain outside the remote-job-content sandbox.
 
 See the [full threat model](docs/career-ops-threat-model.md), including the
 unsafe inherited baseline, abuse cases, residual risks, and implementation
-status.
+status. The [local application-service contract](docs/APPLICATION_SERVICE.md)
+documents the fixed operation catalog that local interfaces must use.
 
 ## Relationship to career-ops
 

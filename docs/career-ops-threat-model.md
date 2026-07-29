@@ -27,6 +27,7 @@ merges cannot quietly reintroduce it.
 | UI filesystem traversal | Fixed | strict job IDs plus canonical report/output containment |
 | Generated HTML active content | Fixed | escaped deterministic builder plus sandbox CSP on previews |
 | Provider supply-chain capability audit | Fixed for core adapters; residual reviewed-code trust | regression test forbids direct fetch and child-process imports; `local-parser` remains an explicit operator-configured exception |
+| Local backend operation boundary | Implemented; UI migration is the next pass | versioned exact-key requests, fixed operation catalog, `shell: false`, bounded events/results, cancellation and timeouts in `src/application/` |
 
 The regression suite destructively tests private/metadata targets, private DNS
 answers, redirect revalidation, oversized bodies, hostile JD framing,
@@ -81,6 +82,8 @@ Open questions that would change risk:
   subprocesses; deterministic modules perform the writes
   (`src/evaluate/claude-eval.mjs`, `src/cv/claude-tailor.mjs`).
 - Deterministic code writes reports, tracker additions, cached JDs, and PDFs.
+- The local application service validates operation data and supervises fixed
+  backend entry points (`src/application/`).
 - The local Next.js UI reads tracker/report files and renders report Markdown
   (`ui/src/lib/roles.ts`, `ui/src/lib/report.ts`).
 
@@ -88,9 +91,9 @@ Open questions that would change risk:
 
 The bullets and threat tables in the remainder of this document describe the
 **pre-hardening baseline** unless explicitly marked as a current control. They
-are retained as a record of why the inherited implementation was unsafe; use
-the implementation-status table above for current behavior.
-are retained as regression requirements, not descriptions of current behavior.
+are retained as regression requirements and a record of why the inherited
+implementation was unsafe; use the implementation-status table above for
+current behavior.
 
 - Internet → provider transport: hostile JSON, HTML, XML, redirects, headers,
   and URLs cross HTTP(S). Timeouts and a user agent are centralized, while
@@ -278,6 +281,7 @@ flowchart LR
 | `src/scan/fetch-jds.mjs` | Persists hostile descriptions without one universal content cap/envelope | TM-005, TM-006 |
 | `src/scan/scan.mjs` | Normalization, trust enrichment and pipeline serialization choke point | TM-005, TM-007 |
 | `src/pipeline/run.mjs` | Best location to require the normalized `JobDocument` boundary | TM-001, TM-006 |
+| `src/application/` | Fixed local operation catalog, validation, lifecycle, cancellation and timeout boundary | TM-004, TM-008 |
 | `src/evaluate/scoring-contract.mjs` | Tool-less structured boundary and semantic prompt-injection target | TM-003, TM-006 |
 | `src/evaluate/openrouter-runner.mjs` | Retains separate legacy fetch/browser logic | TM-002, TM-005 |
 | `src/plugins/plugin-audit.mjs` | Existing audit pattern can be extended to core provider capabilities | TM-007 |

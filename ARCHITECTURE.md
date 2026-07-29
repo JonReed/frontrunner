@@ -26,9 +26,14 @@ The single most important architectural rule: **system files** and **user files*
 
 Settled doctrine ([#918](https://github.com/santifer/career-ops/issues/918)): the human-readable, git-diffable files (`data/applications.md`, `reports/`, `data/pipeline.md`) are the **permanent source of truth**. SQLite exists only as a derived index (fast queries, reindex-on-delete) and will never become a primary store — not even opt-in. The web interfaces, community plugins, and external scripts all read the files; a second canonical store would force every reader to support two modes forever. Performance work is welcome **on the derived layer**; the files stay the brain.
 
-## Why the flat root
+## Domain layout and stable entry points
 
-The repo keeps its ~70 scripts at the root deliberately ([#1386](https://github.com/santifer/career-ops/issues/1386)). Path stability is a feature here, not an accident: the updater's `SYSTEM_PATHS` allowlist, community plugins, docs, guides, and the muscle memory of thousands of users (`node src/scan/scan.mjs`) all reference these paths. A cosmetic reorganization would break forks and plugins for no functional gain. The conventions that keep the flat root navigable: one script = one job, `*.test.mjs` sits next to what it tests, and every script is registered in `SYSTEM_PATHS` (enforced in CI by the coverage guard).
+Backend modules are grouped by responsibility under `src/`: scanning,
+evaluation, tracking, CV generation, analysis, security, plugins, pipeline
+orchestration, and the local application-service boundary. Repository-root
+scripts are retained only as stable human and CI entry points. All modules
+derive paths from `src/paths.mjs`, so internal files can move without silently
+changing the repository root.
 
 ## Component map
 
@@ -62,6 +67,15 @@ Every evaluated offer is registered. `data/applications.md` is the canonical tra
 
 ### Liveness — never evaluate a dead posting
 `src/scan/check-liveness.mjs` / `liveness-*.mjs` verify a posting is still open (zero-token) before it costs evaluation time.
+
+### Local application service — `src/application/`
+
+Local interfaces request a versioned operation such as `scan.run`,
+`pipeline.prepare`, `pipeline.run`, or `cv.build`. The service validates bounded
+application data, maps it to a fixed Node entry point, and owns structured
+events, result envelopes, timeouts, and cancellation. Clients cannot supply
+executables, working directories, arbitrary flags, or shell fragments. See
+[`docs/APPLICATION_SERVICE.md`](docs/APPLICATION_SERVICE.md).
 
 ### Self-update — `update-system.mjs`
 Safely pulls new system files from the official Frontrunner repository without
@@ -102,4 +116,5 @@ scan ──► data/pipeline.md ──► evaluate (oferta + cv) ──► repor
 - The boundary → `DATA_CONTRACT.md`
 - The scoring → `modes/_shared.md` + `modes/oferta.md`
 - Adding a job source → [`providers/README.md`](providers/README.md)
+- The local backend boundary → [`docs/APPLICATION_SERVICE.md`](docs/APPLICATION_SERVICE.md)
 - The updater → `update-system.mjs`

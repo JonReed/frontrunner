@@ -14,6 +14,7 @@ src/tracker/         applications tracker, locking, statuses, follow-ups
 src/cv/              CV + cover letter rendering (HTML and LaTeX) and PDF
 src/analysis/        patterns, upskill, stats, salary, funnel
 src/evaluate/        model-backed evaluation and tailoring
+src/application/     versioned local operations, supervision, cancellation
 src/lib/             shared helpers
 src/plugins/         plugin host and registry validation
 tests/               ALL tests (see the two conventions below)
@@ -119,6 +120,8 @@ model-generated field is malicious.
   output and invokes fixed commands.
 - Keep the UI bound to loopback and preserve Host/Origin checks, CSP, safe React
   rendering, URL allowlists, generated-HTML sandboxing and path containment.
+- UI and desktop actions must use `src/application/`; never accept or assemble
+  request-controlled executables, working directories, flags, or shell text.
 
 See `docs/career-ops-threat-model.md` for the inherited unsafe baseline,
 implemented controls and residual risks.
