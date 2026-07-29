@@ -29,7 +29,7 @@ function child(code, env) {
 function fixture() {
   const dir = mkdtempSync(join(tmpdir(), 'frontrunner-tracker-crash-'));
   const tracker = join(dir, 'applications.md');
-  const lockDir = join(dir, 'career-ops-merge-tracker-crash.lock');
+  const lockDir = join(dir, 'frontrunner-merge-tracker-crash.lock');
   writeFileSync(tracker, 'original\n');
   return { dir, tracker, lockDir };
 }

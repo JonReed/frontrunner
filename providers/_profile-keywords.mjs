@@ -18,11 +18,11 @@
 import { existsSync, readFileSync } from 'fs';
 import yaml from 'js-yaml';
 
-// Matches the CAREER_OPS_PROFILE override already honored by src/scan/scan.mjs,
+// Matches the FRONTRUNNER_PROFILE override already honored by src/scan/scan.mjs,
 // src/cv/cv-templates.mjs, src/tracker/followup-cadence.mjs, and
 // test-all.mjs — without this, a user with that env var set would get
 // silently different fallback behavior here than everywhere else.
-const DEFAULT_PROFILE_PATH = process.env.CAREER_OPS_PROFILE || 'config/profile.yml';
+const DEFAULT_PROFILE_PATH = process.env.FRONTRUNNER_PROFILE || 'config/profile.yml';
 
 function cleanKeywords(value) {
   const arr = Array.isArray(value) ? value : [];

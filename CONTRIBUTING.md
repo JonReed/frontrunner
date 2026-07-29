@@ -1,15 +1,15 @@
-# Contributing to Career-Ops
+# Contributing to Frontrunner
 
-Thanks for your interest in contributing! Career-Ops is built with Claude Code, and you can use it for development too.
+Thanks for your interest in contributing! Frontrunner is built with Claude Code, and you can use it for development too.
 
 ## Why contribute here
 
-career-ops is a great place to make your **first open-source contribution** — and a great line on your résumé.
+Frontrunner is a great place to make your **first open-source contribution** — and a great line on your résumé.
 
 - **You already get it.** This is a job-search tool. If you're job-hunting, you understand the problem better than most — which makes you a better contributor.
 - **A real merged PR, on something people use.** 55K+ stars, shipping most weeks. Your name in the history of a real project, not a toy repo.
 - **We answer fast.** Open an issue or PR and you'll hear back, usually within a day or two. No black holes.
-- **Tiny on-ramps.** Browse [`good first issue`](https://github.com/santifer/career-ops/contribute) — each is scoped small, with a time estimate, the pattern to copy, and a clear "done", so your first PR is a win, not a maze.
+- **Tiny on-ramps.** Browse [`good first issue`](https://github.com/Furls-Digital/frontrunner/contribute) — each is scoped small, with a time estimate, the pattern to copy, and a clear "done", so your first PR is a win, not a maze.
 - **Your human work gets a real review.** We read every PR. We don't drown contributors in bot noise, and we don't merge AI-slop — put thought in, get thought back.
 - **A path forward.** Consistent, high-quality contributors get credited publicly and invited into bigger roles (reviewer, then maintainer).
 
@@ -48,7 +48,7 @@ The review process you'll experience here is documented end-to-end in [Agentic m
 - Translate modes to other languages
 - Improve documentation
 - Add example CVs for different roles (in `docs/examples/`)
-- Report bugs via [Issues](https://github.com/santifer/career-ops/issues)
+- Report bugs via [Issues](https://github.com/Furls-Digital/frontrunner/issues)
 
 **Bigger contributions:**
 - New evaluation dimensions or scoring logic
@@ -69,7 +69,7 @@ We credit contributors publicly and invite high-signal folks up the ladder. Want
 
 ## Scope: the core vs. the shared layer
 
-career-ops core is **local-first and human-in-the-loop** by design — it runs on your machine and drafts applications for *you* to review and submit. Centralized infrastructure — hosted job aggregation, a shared matching service, proxies or Workers the project would operate — is **not part of the core**: it's heavier than a free local tool should carry, and it's where the project is headed as a *separate, opt-in service*. See the direction here: **[Where career-ops is going](https://github.com/santifer/career-ops/discussions/904)**.
+Frontrunner core is **local-first and human-in-the-loop** by design — it runs on your machine and drafts applications for *you* to review and submit. Centralized infrastructure — hosted job aggregation, a shared matching service, proxies or Workers the project would operate — is **not part of the core**: it's heavier than a free local tool should carry, and it's where the project is headed as a *separate, opt-in service*. Discuss that direction in [GitHub Issues](https://github.com/Furls-Digital/frontrunner/issues).
 
 Rule of thumb before you build: **provider modules, languages, CLI support, modes, local interfaces, docs and fixes → the core.** Bigger centralized or automation ideas (a hosted layer, auto-apply, scraping infrastructure) → **start in that discussion**, so we can route them together instead of a large PR that can't merge.
 
@@ -103,11 +103,11 @@ updates are reviewed separately and are never auto-merged.
 ## What we do NOT accept
 
 - **PRs that scrape platforms prohibiting automated access** (LinkedIn, etc.). We actively reject these to respect third-party ToS.
-- **PRs that enable auto-submitting applications** without human review. career-ops is a decision-support tool, not a spam bot.
+- **PRs that enable auto-submitting applications** without human review. Frontrunner is a decision-support tool, not a spam bot.
 - **PRs that add external API dependencies** without prior discussion in an issue.
-- **PRs that add centralized or hosted infrastructure to the core** (proxies, aggregation services, shared Workers). That's the separate opt-in service, not the open-core — bring it to the [direction discussion](https://github.com/santifer/career-ops/discussions/904) first.
-- **Integrations that send your data to a third-party service** — providers or sync features that require a third-party account or push your CV, pipeline, or notes out to an external service. career-ops is local-first and zero-keys: your job-search data stays on your machine. Reading *public* job-listing APIs locally is welcome (that's how the built-in providers work); routing your personal data through someone else's service is not.
-- **PRs that add third-party hosted entry-points or service badges to the README** — links or embeds that route users' resumes or job data through a service the project doesn't operate. The README stays to assets the project controls, and the official online experience is something we keep first-party (see [The Vision](https://github.com/santifer/career-ops/discussions/156)). Projects built on career-ops are welcome — share them in the [Discord](https://discord.gg/8pRpHETxa4) or Discussions, just not on the front page.
+- **PRs that add centralized or hosted infrastructure to the core** (proxies, aggregation services, shared Workers). That's the separate opt-in service, not the open-core — open an [issue](https://github.com/Furls-Digital/frontrunner/issues) first.
+- **Integrations that send your data to a third-party service** — providers or sync features that require a third-party account or push your CV, pipeline, or notes out to an external service. Frontrunner is local-first and zero-keys: your job-search data stays on your machine. Reading *public* job-listing APIs locally is welcome (that's how the built-in providers work); routing your personal data through someone else's service is not.
+- **PRs that add third-party hosted entry-points or service badges to the README** — links or embeds that route users' resumes or job data through a service the project doesn't operate. The README stays to assets the project controls, and the official online experience is something we keep first-party. Projects built on Frontrunner are welcome — share them in [GitHub Issues](https://github.com/Furls-Digital/frontrunner/issues), just not on the front page.
 - **PRs containing personal data** (real CVs, emails, phone numbers). Use `docs/examples/` with fictional data instead.
 
 ## Development
@@ -148,5 +148,5 @@ project and is not ours to license.
 ## Need Help?
 
 - [Join the Discord](https://discord.gg/8pRpHETxa4) — fastest way to get answers and connect with other contributors
-- [Open an issue](https://github.com/santifer/career-ops/issues)
+- [Open an issue](https://github.com/Furls-Digital/frontrunner/issues)
 - [Read the architecture docs](docs/ARCHITECTURE.md)

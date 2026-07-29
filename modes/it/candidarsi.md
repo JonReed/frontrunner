@@ -66,7 +66,7 @@ Per ogni domanda, costruire la risposta seguendo questo schema:
 2. **Blocco G precedente:** se esiste una bozza, usarla come base e affinarla.
 3. **Tono "Vi scelgo":** sicuro e professionale, non implorante né puramente descrittivo.
 4. **Specificità:** citare qualcosa di concreto dell'annuncio visibile a schermo.
-5. **career-ops proof point:** includerlo nel campo "Informazioni aggiuntive" se presente nel modulo.
+5. **frontrunner proof point:** includerlo nel campo "Informazioni aggiuntive" se presente nel modulo.
 
 **Campi specifici per i moduli di candidatura italiani:**
 - **Retribuzione desiderata (RAL):** fascia definita in `profile.yml` in euro, con l'aggiunta "negoziabile in base al pacchetto complessivo di benefit e welfare".
@@ -104,7 +104,7 @@ Note:
 Se il candidato conferma di aver inviato il modulo:
 1. Aggiornare lo stato ad "Applied" con la CLI canonica: `node src/tracker/set-status.mjs <report#> Applied` (non modificare la tabella di `applications.md` a mano).
 2. Aggiornare il Blocco G del report con le risposte effettivamente inviate.
-3. Suggerire il passo successivo: `/career-ops contacto` per avviare il contatto su LinkedIn con il responsabile della selezione.
+3. Suggerire il passo successivo: `/frontrunner contacto` per avviare il contatto su LinkedIn con il responsabile della selezione.
 
 ## Gestione dello scorrimento
 

@@ -66,7 +66,7 @@ dropped so one bad posting cannot discard every valid posting on the board.
 
 `fetch` receives an HTTP context built by [`_http.mjs`](_http.mjs):
 `fetchText(url, opts?)` and `fetchJson(url, opts?)` with a 10s default
-timeout and a `career-ops` user agent; non-2xx responses throw an `Error`
+timeout and a `frontrunner` user agent; non-2xx responses throw an `Error`
 carrying `.status`, `.body`, and `.retryAfter`. Paginating providers should
 honor the optional `ctx.maxPages` hint (the portal health probe passes 1) and
 use the optional `ctx.sleep(ms)` pacing hook when present.

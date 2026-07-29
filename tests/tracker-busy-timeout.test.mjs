@@ -17,7 +17,7 @@ console.log('\ntracker.mjs — SQLite busy_timeout (#1957)');
 // openDb reads DB_PATH once at import time, so point it at a throwaway file
 // before importing tracker.mjs — the test never touches a real applications.db.
 const work = mkdtempSync(join(tmpdir(), 'cops-busy-'));
-process.env.CAREER_OPS_TRACKER_DB = join(work, 'applications.db');
+process.env.FRONTRUNNER_TRACKER_DB = join(work, 'applications.db');
 
 try {
   const { DatabaseSync } = await import('node:sqlite');

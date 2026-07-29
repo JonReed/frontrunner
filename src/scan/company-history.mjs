@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * company-history.mjs — Per-Company Evidence-Card Aggregator for career-ops
+ * company-history.mjs — Per-Company Evidence-Card Aggregator for frontrunner
  *
  * READ-ONLY. Never writes a file. Joins the tracker (data/applications.md),
  * follow-ups (data/follow-ups.md), and scan-history (data/scan-history.tsv)
@@ -57,7 +57,7 @@ import {
   normalizeStatus,
 } from '../tracker/followup-cadence.mjs';
 
-import { ROOT as CAREER_OPS } from '#paths';
+import { ROOT as FRONTRUNNER } from '#paths';
 const DEFAULT_STALE_AFTER_DAYS = 365;
 const DEFAULT_SILENCE_WINDOW_DAYS = 28;
 
@@ -171,7 +171,7 @@ function parseArgs(argv) {
 // (days_first_response.range_days[1] * 2). Try it, fall back to the hardcoded
 // default. A missing file or any parse failure degrades silently to the default
 // — this is a nice-to-have default source, never a hard dependency.
-export function resolveDefaultSilenceWindow(rootDir = CAREER_OPS) {
+export function resolveDefaultSilenceWindow(rootDir = FRONTRUNNER) {
   try {
     const path = join(rootDir, 'templates/benchmarks.yml');
     if (!existsSync(path)) return DEFAULT_SILENCE_WINDOW_DAYS;
@@ -198,7 +198,7 @@ function resolveNow(now) {
 
 // --- Source loaders (each returns {rows|clusters, loaded}; missing file -> empty + loaded:false) ---
 
-export function loadTrackerRows(rootDir = CAREER_OPS) {
+export function loadTrackerRows(rootDir = FRONTRUNNER) {
   const path = resolveTrackerPath(rootDir);
   if (!existsSync(path)) return { rows: [], loaded: false };
   const content = readFileSync(path, 'utf-8');
@@ -212,13 +212,13 @@ export function loadTrackerRows(rootDir = CAREER_OPS) {
   return { rows, loaded: true };
 }
 
-export function loadFollowupRows(rootDir = CAREER_OPS, overridePath) {
+export function loadFollowupRows(rootDir = FRONTRUNNER, overridePath) {
   const path = overridePath || join(rootDir, 'data/follow-ups.md');
   if (!existsSync(path)) return { rows: [], loaded: false };
   return { rows: parseFollowups(readFileSync(path, 'utf-8')), loaded: true };
 }
 
-export function loadRepostClusters(rootDir = CAREER_OPS, overridePath) {
+export function loadRepostClusters(rootDir = FRONTRUNNER, overridePath) {
   const path = overridePath || join(rootDir, 'data/scan-history.tsv');
   if (!existsSync(path)) return { clusters: [], loaded: false };
   const rows = parseScanHistory(readFileSync(path, 'utf-8'));
@@ -520,7 +520,7 @@ export function renderSummary(result) {
   const lines = [];
   lines.push('');
   lines.push('='.repeat(78));
-  lines.push('  Company History — career-ops');
+  lines.push('  Company History — frontrunner');
   lines.push(`  companies: ${result.companies.length} | silence window: ${result.metadata.silenceWindowDays}d`);
   lines.push('='.repeat(78));
   lines.push('');
@@ -698,7 +698,7 @@ async function runSelfTest() {
 
   // --- absent-file degradation: each source absent -> false, no crash, other axes still work ---
   {
-    const bogusRoot = join(CAREER_OPS, '__does-not-exist__');
+    const bogusRoot = join(FRONTRUNNER, '__does-not-exist__');
     const tracker = loadTrackerRows(bogusRoot);
     check(tracker.loaded === false && tracker.rows.length === 0, 'loadTrackerRows against a nonexistent root degrades gracefully');
 
@@ -808,15 +808,15 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     });
   } else {
     const run = async () => {
-      const tracker = loadTrackerRows(CAREER_OPS);
-      const followups = loadFollowupRows(CAREER_OPS, followupsOverride);
-      const scanHistory = loadRepostClusters(CAREER_OPS, scanHistoryOverride);
+      const tracker = loadTrackerRows(FRONTRUNNER);
+      const followups = loadFollowupRows(FRONTRUNNER, followupsOverride);
+      const scanHistory = loadRepostClusters(FRONTRUNNER, scanHistoryOverride);
       const statusLog = await loadStatusLogSource();
 
       // parseArgs already validated the flag as a positive integer.
       const silenceWindowDays = silenceWindowArg !== undefined
         ? parseInt(silenceWindowArg, 10)
-        : resolveDefaultSilenceWindow(CAREER_OPS);
+        : resolveDefaultSilenceWindow(FRONTRUNNER);
 
       const result = buildCompanyCards(
         {

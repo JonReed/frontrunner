@@ -1,10 +1,10 @@
-# Gedeelde context -- career-ops (Nederlands)
+# Gedeelde context -- frontrunner (Nederlands)
 
 <!-- ============================================================
 AANPASSING VAN DIT BESTAND
      ============================================================
 Dit bestand bevat de deelcontext voor alle modi
-career-ops in de Nederlandse versie. Voordat je career-ops gebruikt, MOET je:
+frontrunner in de Nederlandse versie. Voordat je frontrunner gebruikt, MOET je:
 1. Vul config/profile.yml in met uw persoonlijke gegevens
 2. Maak cv.md aan in de root van het project (CV in Markdown)
 3. (Optioneel) Maak article-digest.md aan met je proof points

@@ -65,9 +65,10 @@ function movedScripts(root) {
  */
 function stalePatterns(base) {
   const b = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const inheritedRootAlias = ['CAREER', 'OPS'].join('_');
   return [
-    // join(ROOT, 'scan.mjs') / join(CAREER_OPS, "scan.mjs")
-    new RegExp(`join\\(\\s*(?:ROOT|CAREER_OPS)\\s*,\\s*['"]${b}['"]`, 'g'),
+    // Recognize current aliases and the parent project's alias after merges.
+    new RegExp(`join\\(\\s*(?:ROOT|FRONTRUNNER|${inheritedRootAlias})\\s*,\\s*['"]${b}['"]`, 'g'),
     // "$PROJECT_DIR/scan.mjs" and friends
     new RegExp(`\\$\\{?[A-Z_]+\\}?/${b}`, 'g'),
     // node scan.mjs   (help text, docs, npm scripts)

@@ -109,8 +109,8 @@ function mergeTrackerDefault(rootDir) {
     stdio: ['ignore', 'pipe', 'pipe'],
     env: {
       ...process.env,
-      CAREER_OPS_TRACKER: trackerPath,
-      CAREER_OPS_ADDITIONS: join(rootDir, 'batch', 'tracker-additions'),
+      FRONTRUNNER_TRACKER: trackerPath,
+      FRONTRUNNER_ADDITIONS: join(rootDir, 'batch', 'tracker-additions'),
     },
   });
 }

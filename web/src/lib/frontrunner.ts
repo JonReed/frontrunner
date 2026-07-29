@@ -4,14 +4,14 @@ import { atomicWrite } from "@/lib/core/safe-write";
 import { parseApplications } from "@/lib/tracker-table.mjs";
 
 /**
- * Resolve the career-ops "home" — the directory holding the user's sibling
+ * Resolve the frontrunner "home" — the directory holding the user's sibling
  * files (cv.md, data/, reports/). In production the web/ app lives inside the
- * career-ops checkout, so the home is its parent (..). Dev overrides via
- * CAREER_OPS_ROOT to read the user's real (gitignored) data from a separate
+ * frontrunner checkout, so the home is its parent (..). Dev overrides via
+ * FRONTRUNNER_ROOT to read the user's real (gitignored) data from a separate
  * checkout — see web/.env.local.
  */
-export function careerOpsRoot(): string {
-  const env = process.env.CAREER_OPS_ROOT?.trim();
+export function frontrunnerRoot(): string {
+  const env = process.env.FRONTRUNNER_ROOT?.trim();
   if (env) return env;
   return path.resolve(process.cwd(), "..");
 }
@@ -23,7 +23,7 @@ export function careerOpsRoot(): string {
  * as module imports and fails the production build otherwise.
  */
 export function rootScript(nameNoExt: string): string {
-  return path.join(careerOpsRoot(), `${nameNoExt}.mjs`);
+  return path.join(frontrunnerRoot(), `${nameNoExt}.mjs`);
 }
 
 // Feature-detect the core's `src/tracker/tracker.mjs delete --num` row-delete (#1200) by probing
@@ -39,7 +39,7 @@ export function trackerCanDelete(): boolean {
 
 function read(rel: string): string | null {
   try {
-    return fs.readFileSync(path.join(careerOpsRoot(), rel), "utf8");
+    return fs.readFileSync(path.join(frontrunnerRoot(), rel), "utf8");
   } catch {
     return null;
   }
@@ -122,7 +122,7 @@ export type Application = {
 export function readApplications(): Application[] {
   const md = read("data/applications.md");
   if (!md) return [];
-  return parseApplications(md, careerOpsRoot());
+  return parseApplications(md, frontrunnerRoot());
 }
 
 /**
@@ -153,7 +153,7 @@ export function doctorState(): {
 } {
   const has = (rel: string) => {
     try {
-      return fs.existsSync(path.join(careerOpsRoot(), rel));
+      return fs.existsSync(path.join(frontrunnerRoot(), rel));
     } catch {
       return false;
     }
@@ -180,7 +180,7 @@ export type PipelineSummary = {
 };
 
 export function pipelineSummary(): PipelineSummary {
-  const root = careerOpsRoot();
+  const root = frontrunnerRoot();
   const scanDates = readScanDates();
   return {
     root,
@@ -201,12 +201,12 @@ export function findReportFile(n: string): string | null {
   if (Number.isNaN(target)) return null;
   let files: string[];
   try {
-    files = fs.readdirSync(path.join(careerOpsRoot(), "reports"));
+    files = fs.readdirSync(path.join(frontrunnerRoot(), "reports"));
   } catch {
     return null;
   }
   const match = files.find((f) => f.endsWith(".md") && parseInt(f, 10) === target);
-  return match ? path.join(careerOpsRoot(), "reports", match) : null;
+  return match ? path.join(frontrunnerRoot(), "reports", match) : null;
 }
 
 export function readReport(n: string): ReportData | null {
@@ -227,7 +227,7 @@ export function findApplication(n: string): Application | null {
  *  web assistant learns go HERE (single source of truth) inside a managed marker
  *  block — so the CLI sees them too. No web-only memory store (that would drift). */
 export function profilePath(): string {
-  return path.join(careerOpsRoot(), "modes", "_profile.md");
+  return path.join(frontrunnerRoot(), "modes", "_profile.md");
 }
 
 const NOTES_START = "<!-- co-web-notes:start -->";
@@ -246,7 +246,7 @@ export function readMemory(): string {
     /* no _profile.md yet */
   }
   try {
-    return fs.readFileSync(path.join(careerOpsRoot(), ".career-ops-web", "memory.md"), "utf8").trim();
+    return fs.readFileSync(path.join(frontrunnerRoot(), ".frontrunner-web", "memory.md"), "utf8").trim();
   } catch {
     return "";
   }

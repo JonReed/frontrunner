@@ -13,7 +13,7 @@
  *   6. On the default path, a first `add` self-heals .gitignore (idempotent) so
  *      the personal queue isn't accidentally tracked.
  *
- * Provisions a throwaway queue via CAREER_OPS_INBOX and a temp CWD; never
+ * Provisions a throwaway queue via FRONTRUNNER_INBOX and a temp CWD; never
  * touches real user data.
  */
 
@@ -42,7 +42,7 @@ function tmp(prefix) {
 function run(inbox, args, opts = {}) {
   return execFileSync(NODE, [CLI, ...args], {
     cwd: ROOT,
-    env: { ...process.env, CAREER_OPS_INBOX: inbox },
+    env: { ...process.env, FRONTRUNNER_INBOX: inbox },
     encoding: 'utf8',
     stdio: ['pipe', 'pipe', 'pipe'],
     ...opts,
@@ -115,7 +115,7 @@ console.log('6. first add on the default path self-heals .gitignore (idempotent)
   const repo = tmp('inbox-repo-');
   writeFileSync(join(repo, '.gitignore'), 'node_modules\noutput/*\n');
   const addOnce = () => execFileSync(NODE, [CLI, 'add', 'queue a scan'], {
-    cwd: repo, env: { ...process.env, CAREER_OPS_INBOX: '' }, stdio: ['pipe', 'pipe', 'pipe'],
+    cwd: repo, env: { ...process.env, FRONTRUNNER_INBOX: '' }, stdio: ['pipe', 'pipe', 'pipe'],
   });
   addOnce(); addOnce();
   const gi = readFileSync(join(repo, '.gitignore'), 'utf8');

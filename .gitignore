@@ -114,7 +114,7 @@ package-lock.json
 plan/
 
 # Web — runtime cache/history the dashboard writes locally; nothing here is tracked.
-.career-ops-web/
+.frontrunner-web/
 
 # Efficiency layer — generated artefacts, not source
 jds/

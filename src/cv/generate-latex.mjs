@@ -7,7 +7,7 @@
  *   node src/cv/generate-latex.mjs <input.tex> [output.pdf]
  *   node src/cv/generate-latex.mjs <input.tex> [output.pdf] --compile-only
  *
- * Default: validates career-ops template structure (from templates/cv-template.tex).
+ * Default: validates frontrunner template structure (from templates/cv-template.tex).
  * --compile-only: skip template validation; compile any user-owned .tex (latex-tex mode).
  *
  * Requires: tectonic (preferred) or pdflatex on PATH.

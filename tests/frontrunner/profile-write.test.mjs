@@ -3,7 +3,7 @@
  *
  * This module writes cv.md and config/profile.yml — the two files whose loss
  * costs a user the most. Every test below runs against a temporary checkout via
- * CAREER_OPS_PROFILE_BASE; none of them may touch the real one.
+ * FRONTRUNNER_PROFILE_BASE; none of them may touch the real one.
  */
 
 import assert from 'node:assert/strict';
@@ -29,12 +29,12 @@ function sandbox() {
   const dir = mkdtempSync(join(tmpdir(), 'profile-write-'));
   mkdirSync(join(dir, 'config'), { recursive: true });
   writeFileSync(join(dir, 'config', 'profile.example.yml'), readFileSync(REAL_TEMPLATE, 'utf8'));
-  process.env.CAREER_OPS_PROFILE_BASE = dir;
+  process.env.FRONTRUNNER_PROFILE_BASE = dir;
   return dir;
 }
 
 function cleanup(dir) {
-  delete process.env.CAREER_OPS_PROFILE_BASE;
+  delete process.env.FRONTRUNNER_PROFILE_BASE;
   rmSync(dir, { recursive: true, force: true });
 }
 

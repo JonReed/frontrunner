@@ -21,25 +21,25 @@ must review and send manually.
 
 Supported inputs:
 
-1. `/career-ops email {report-number-or-slug}`
+1. `/frontrunner email {report-number-or-slug}`
    - Load the matching `reports/{NNN}-*.md`.
    - Use the report header, score, archetype, PDF status, and evaluation content.
    - If `data/pdf-index.tsv` contains a PDF for that report, mention it as the CV
      attachment candidate. If no PDF is indexed, say that the CV should be
-     generated first via `/career-ops pdf {slug}` or attached manually.
+     generated first via `/frontrunner pdf {slug}` or attached manually.
 
-2. `/career-ops email {pasted JD}`
+2. `/frontrunner email {pasted JD}`
    - Use the pasted JD directly.
    - Do not create a report, tracker row, PDF, or cover letter.
    - Ask for company name if the JD lacks it and the email would otherwise read
      generic.
 
-3. `/career-ops email`
+3. `/frontrunner email`
    - If there is a most recent evaluated tracker row, offer to draft from that
      row.
    - If no usable context exists, ask for a report number, slug, or JD.
 
-4. `/career-ops email stuck {report-number-or-slug}`
+4. `/frontrunner email stuck {report-number-or-slug}`
    - Load the matching `reports/{NNN}-*.md` for company and role context.
    - Draft a process-stuck recovery email (see the dedicated section below).
    - Also trigger this variant conversationally when the user describes a
@@ -47,7 +47,7 @@ Supported inputs:
      can't submit the form", "the assessment link is dead", "the login loop
      won't let me back in". Confirm the variant before drafting if ambiguous.
 
-5. `/career-ops email noshow {report-number-or-slug}`
+5. `/frontrunner email noshow {report-number-or-slug}`
    - Load the matching `reports/{NNN}-*.md` for company and role context.
    - Draft a confirmed-time no-show follow-up (see the dedicated section
      below).
@@ -151,7 +151,7 @@ If a report has a score:
 - `>= 4.5`: confident, priority application.
 - `4.0-4.4`: good match, worth applying.
 - `< 4.0`: restrained; do not oversell. If below 4.0, warn the user before
-  drafting that career-ops normally recommends against applying.
+  drafting that frontrunner normally recommends against applying.
 
 ---
 

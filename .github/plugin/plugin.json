@@ -1,5 +1,5 @@
 {
-  "name": "career-ops",
+  "name": "frontrunner",
   "version": "1.23.0",
   "description": "AI job search command center — evaluate offers, tailor CVs, scan portals, track applications",
   "author": {
@@ -7,6 +7,6 @@
     "url": "https://github.com/Furls-Digital/frontrunner"
   },
   "skills": [
-    "./.agents/skills/career-ops"
+    "./.agents/skills/frontrunner"
   ]
 }

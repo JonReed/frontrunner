@@ -212,7 +212,7 @@ tracked_companies:
 
     const scan = () => execFileSync(NODE, [join(ROOT, 'src/scan/scan.mjs')], {
       cwd: dir,
-      env: { ...process.env, CAREER_OPS_PORTALS: portals },
+      env: { ...process.env, FRONTRUNNER_PORTALS: portals },
       encoding: 'utf-8',
       stdio: ['ignore', 'pipe', 'pipe'],
     });

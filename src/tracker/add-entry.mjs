@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * add-entry.mjs — Deterministic dedup + insertion for `/career-ops add`.
+ * add-entry.mjs — Deterministic dedup + insertion for `/frontrunner add`.
  *
  * The `add` mode (agent) does the fetching, extraction, ATS-bullet writing,
  * preview, and confirm-before-write gate. This helper does ONE thing: take a
@@ -34,7 +34,7 @@
  * Exit codes: 0 on success (including a no-op "duplicate"); non-zero only on a
  * hard error (bad/empty payload, a requested target file missing, unwritable).
  *
- * Test isolation: CAREER_OPS_CV / CAREER_OPS_ARTICLE_DIGEST override the target
+ * Test isolation: FRONTRUNNER_CV / FRONTRUNNER_ARTICLE_DIGEST override the target
  * files so tests never touch a real user CV.
  */
 
@@ -42,12 +42,12 @@ import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { pathToFileURL } from 'url';
 
-import { ROOT as CAREER_OPS } from '#paths';
+import { ROOT as FRONTRUNNER } from '#paths';
 import { mutateAddEntrySources } from './add-entry-publication.mjs';
-const CV_FILE = process.env.CAREER_OPS_CV || join(CAREER_OPS, 'cv.md');
-const ARTICLE_DIGEST_FILE = process.env.CAREER_OPS_ARTICLE_DIGEST || join(CAREER_OPS, 'article-digest.md');
-const PUBLICATION_JOURNAL = process.env.CAREER_OPS_ADD_ENTRY_JOURNAL
-  || join(CAREER_OPS, 'data', '.add-entry-PUBLISHING.json');
+const CV_FILE = process.env.FRONTRUNNER_CV || join(FRONTRUNNER, 'cv.md');
+const ARTICLE_DIGEST_FILE = process.env.FRONTRUNNER_ARTICLE_DIGEST || join(FRONTRUNNER, 'article-digest.md');
+const PUBLICATION_JOURNAL = process.env.FRONTRUNNER_ADD_ENTRY_JOURNAL
+  || join(FRONTRUNNER, 'data', '.add-entry-PUBLISHING.json');
 
 // Normalize a title/heading for duplicate detection: lowercase, collapse to
 // alphanumerics only. "FraudShield", "Fraud-Shield", "fraud shield" all match.
@@ -174,7 +174,7 @@ export function applyAdd(payload, { cvText = null, articleText = null } = {}) {
     if (!normalizeKey(dedupKey)) throw new Error('payload.articleDigest requires a non-empty dedupKey (used for dedup/idempotency)');
     // article-digest.md is optional; create it from a header when missing.
     const current = articleText === null
-      ? '# Article Digest -- Proof Points\n\nCompact proof points from portfolio projects. Read by career-ops at evaluation time.\n'
+      ? '# Article Digest -- Proof Points\n\nCompact proof points from portfolio projects. Read by frontrunner at evaluation time.\n'
       : articleText;
     if (articleDigestHasEntry(current, dedupKey)) {
       result.articleDigest = { status: 'duplicate' };

@@ -1,11 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import yaml from "js-yaml";
-import { careerOpsRoot } from "@/lib/career-ops";
+import { frontrunnerRoot } from "@/lib/frontrunner";
 
 /**
  * ACL for templates/states.yml — the SINGLE SOURCE OF TRUTH for canonical
- * application states (career-ops writer + dashboard reader both read it). Per the
+ * application states (frontrunner writer + dashboard reader both read it). Per the
  * web↔core contract we READ it live and never hardcode the list (the maintainer
  * once mis-listed it from memory — the file had one more). The FALLBACK below is
  * only a last resort if the file is unreadable, and is kept identical to the file.
@@ -34,7 +34,7 @@ let cache: CanonicalState[] | null = null;
 export function readCanonicalStates(): CanonicalState[] {
   if (cache) return cache;
   try {
-    const raw = fs.readFileSync(path.join(careerOpsRoot(), "templates", "states.yml"), "utf8");
+    const raw = fs.readFileSync(path.join(frontrunnerRoot(), "templates", "states.yml"), "utf8");
     const doc = yaml.load(raw) as { states?: unknown };
     const list = Array.isArray(doc?.states) ? doc.states : null;
     if (list && list.length) {

@@ -66,7 +66,7 @@ Untuk tiap pertanyaan, susun jawaban mengikuti skema ini:
 2. **Blok G sebelumnya**: Jika ada draft, jadikan dasar lalu perhalus
 3. **Nada "Saya memilih Anda"**: kerangka yang sama seperti di auto-pipeline -- percaya diri, tidak memohon
 4. **Spesifisitas**: kutip sesuatu yang konkret dari lowongan yang terlihat di layar
-5. **Proof point career-ops**: sertakan di "Informasi tambahan" jika ada kolom semacam itu
+5. **Proof point frontrunner**: sertakan di "Informasi tambahan" jika ada kolom semacam itu
 
 **Kolom khas formulir Indonesia yang umum:**
 - **Ekspektasi gaji (bulanan/tahunan)** -> Rentang dari `profile.yml`, dalam IDR, dengan catatan "dapat dinegosiasikan sesuai paket keseluruhan"; perjelas apakah angkanya gross atau nett
@@ -104,7 +104,7 @@ Catatan:
 Jika kandidat mengonfirmasi lamaran sudah dikirim:
 1. Perbarui status di `applications.md` dari "Evaluated" menjadi "Applied"
 2. Perbarui Blok G report dengan jawaban final
-3. Sarankan langkah berikutnya: `/career-ops contacto` untuk outreach LinkedIn ke hiring manager
+3. Sarankan langkah berikutnya: `/frontrunner contacto` untuk outreach LinkedIn ke hiring manager
 
 ## Penanganan scroll
 

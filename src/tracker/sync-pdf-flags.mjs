@@ -19,9 +19,9 @@ import { fileURLToPath } from 'url';
 import { extractTrackerReportNumbers, resolveColumns, parseTrackerRow } from './tracker-parse.mjs';
 import { rebuildRow, resolveTrackerPath, openTrackerTransaction } from './tracker-utils.mjs';
 
-import { ROOT as CAREER_OPS } from '#paths';
-const APPS_FILE = resolveTrackerPath(CAREER_OPS);
-const PDF_MANIFEST = process.env.CAREER_OPS_PDF_INDEX || join(CAREER_OPS, 'data', 'pdf-index.tsv');
+import { ROOT as FRONTRUNNER } from '#paths';
+const APPS_FILE = resolveTrackerPath(FRONTRUNNER);
+const PDF_MANIFEST = process.env.FRONTRUNNER_PDF_INDEX || join(FRONTRUNNER, 'data', 'pdf-index.tsv');
 
 const flags = { dryRun: false, json: false };
 for (const arg of process.argv.slice(2)) {

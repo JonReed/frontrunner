@@ -37,7 +37,7 @@
  * treated as the body and the subject is left blank.
  *
  * Env:
- *   CAREER_OPS_REPLY_CANDIDATES  override the output JSON path (used by tests;
+ *   FRONTRUNNER_REPLY_CANDIDATES  override the output JSON path (used by tests;
  *                                 defaults to data/reply-candidates.json next to
  *                                 this script, matching reply-watch.mjs's default)
  */
@@ -49,7 +49,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { ROOT as __dirname } from '#paths';
 import { mutateFileLocked } from '../lib/locked-file.mjs';
-const CANDIDATES_PATH = process.env.CAREER_OPS_REPLY_CANDIDATES
+const CANDIDATES_PATH = process.env.FRONTRUNNER_REPLY_CANDIDATES
   || path.join(__dirname, 'data', 'reply-candidates.json');
 const MAX_CANDIDATES_BYTES = 10_000_000;
 const MAX_CANDIDATES = 10_000;

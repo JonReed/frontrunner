@@ -50,7 +50,7 @@ import { normalizeCompany } from '../tracker/tracker-utils.mjs';
 
 // ── Config ──────────────────────────────────────────────────────────
 
-const PORTALS_PATH = process.env.CAREER_OPS_PORTALS || 'portals.yml';
+const PORTALS_PATH = process.env.FRONTRUNNER_PORTALS || 'portals.yml';
 const PIPELINE_PATH = 'data/pipeline.md';
 const CACHE_DIR = 'data/cache/ats-companies';
 const CACHE_TTL_HOURS = 24;
@@ -71,7 +71,7 @@ const RESOLVER_FAILURE_LIMIT = 50;
 // Crash insurance for multi-hour directory sweeps: progress + matches are
 // checkpointed every CHECKPOINT_EVERY companies so --resume can continue a
 // dead run (with its ORIGINAL date window) instead of restarting from zero.
-const CHECKPOINT_PATH = process.env.CAREER_OPS_ATS_CHECKPOINT || 'data/cache/ats-full-checkpoint.json';
+const CHECKPOINT_PATH = process.env.FRONTRUNNER_ATS_CHECKPOINT || 'data/cache/ats-full-checkpoint.json';
 const CHECKPOINT_EVERY = 500;
 
 export function loadCheckpoint(file = CHECKPOINT_PATH) {
@@ -884,7 +884,7 @@ async function main() {
       log(`\n  ⛔ stopped ${name}: ${RESOLVER_FAILURE_LIMIT} consecutive DNS failures.`);
       log(`     Your resolver is refusing queries — it may be rate-limiting this host.`);
       log(`     Lower CONCURRENCY, raise the resolver's per-client limit, or set`);
-      log(`     CAREER_OPS_NO_DNS_CACHE=1 only if you know the cache is at fault.`);
+      log(`     FRONTRUNNER_NO_DNS_CACHE=1 only if you know the cache is at fault.`);
       break;
     }
     completedSources.add(name);
@@ -1030,7 +1030,7 @@ async function main() {
     log('\n(dry run — run without --dry-run to save results)');
     return;
   }
-  log(`\n→ Run /career-ops pipeline to evaluate new offers.`);
+  log(`\n→ Run /frontrunner pipeline to evaluate new offers.`);
 }
 
 // Only run main() when invoked directly, not when imported by tests.

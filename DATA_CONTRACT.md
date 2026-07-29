@@ -17,7 +17,7 @@ These files contain your personal data, customizations, and work product. Update
 | `voice-dna.md` | Your writing voice guardrail — banned words, anti-AI-slop rules, tone (optional; copy `templates/voice-dna.template.md` here and edit) |
 | `article-digest.md` | Your proof points from portfolio |
 | `interview-prep/story-bank.md` | Your accumulated STAR+R stories |
-| `interview-prep/{company}-{role}.md` | Company-specific interview prep reports (written by `/career-ops interview-prep`) |
+| `interview-prep/{company}-{role}.md` | Company-specific interview prep reports (written by `/frontrunner interview-prep`) |
 | `interview-prep/sessions/*.md` | Interview sessions — real transcripts + mock sessions (sensitive: real names/companies; gitignored except scaffold). Drives `patterns` Step 1b targeting signal and `interview-redflag` analysis. Scaffold files (`README.md`, `.gitkeep`) are system-owned. |
 | `portals.yml` | Your customized company list |
 | `data/applications.md` | Your application tracker (source of truth) |

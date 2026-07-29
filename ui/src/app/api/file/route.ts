@@ -1,7 +1,7 @@
 /**
  * Serve generated documents (CV PDFs and their HTML) to the browser.
  *
- * These live in the career-ops checkout, outside Next's public/ directory, so
+ * These live in the frontrunner checkout, outside Next's public/ directory, so
  * they need an explicit route. That makes path validation the whole job of
  * this file: a naive implementation here would let any query string read any
  * file on the user's machine.

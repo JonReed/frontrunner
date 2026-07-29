@@ -83,7 +83,7 @@ export function useExplore(): ExploreCtx {
 // Explore results are expensive (a scan walks the ATS network; an AI search spends
 // tokens). Persist the SETTLED result set per-tab so a reload or a mode toggle never
 // throws the work away (disc#5 — "came back to explore, work is lost").
-const RESULTS_KEY = "career-ops:explore-results";
+const RESULTS_KEY = "frontrunner:explore-results";
 type ResultSnapshot = {
   v: number;
   mode: ExploreMode;
@@ -345,7 +345,7 @@ export function ExploreProvider({ children }: { children: React.ReactNode }) {
     if (!intent) return;
     let cliId: string | null = null;
     try {
-      cliId = JSON.parse(localStorage.getItem("career-ops:config") || "{}").cliId || null;
+      cliId = JSON.parse(localStorage.getItem("frontrunner:config") || "{}").cliId || null;
     } catch {
       cliId = null;
     }

@@ -256,7 +256,7 @@ try {
   // the test is hermetic regardless of whether the checkout is onboarded).
   {
     const withTmpCwd = async (setup, run) => {
-      const tmp = mkdtempSync(join(tmpdir(), 'career-ops-vdab-fallback-'));
+      const tmp = mkdtempSync(join(tmpdir(), 'frontrunner-vdab-fallback-'));
       const cwdBefore = process.cwd();
       try {
         setup(tmp);

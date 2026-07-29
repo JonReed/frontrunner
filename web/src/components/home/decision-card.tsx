@@ -6,7 +6,7 @@ import { Check, X, FileText, Loader2 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { CompanyLogo } from "@/components/company-logo";
 import { scoreNum, scoreTone } from "@/lib/format";
-import type { Application } from "@/lib/career-ops";
+import type { Application } from "@/lib/frontrunner";
 
 // Awaiting-decision row: a scored role with no terminal status. One-tap Apply /
 // Skip writes back through the EXISTING /api/status (UPDATE-only, canonical states).

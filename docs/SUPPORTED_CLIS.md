@@ -10,9 +10,9 @@ a non-technical user: *which command-line agent tool do you use?*
 
 | CLI | Entry File | How to invoke |
 | --- | --- | --- |
-| Claude Code | `CLAUDE.md` | Interactive: `claude` (then `/career-ops`). Headless: `claude -p "prompt"` |
+| Claude Code | `CLAUDE.md` | Interactive: `claude` (then `/frontrunner`). Headless: `claude -p "prompt"` |
 | Codex | `CODEX.md` (see [`docs/CODEX.md`](CODEX.md)) | Interactive: `codex`, then plain text. Headless: `codex exec "prompt"` |
-| Antigravity CLI | `AGENTS.md` | Interactive: `agy` (then `/career-ops`). Headless: `agy -p "prompt"` |
+| Antigravity CLI | `AGENTS.md` | Interactive: `agy` (then `/frontrunner`). Headless: `agy -p "prompt"` |
 
 **Claude Code is the one the application itself uses.** The desktop UI spawns it
 directly — `src/application/contract.mjs` defaults to the `claude` engine — so

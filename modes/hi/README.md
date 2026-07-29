@@ -1,6 +1,6 @@
-# career-ops — हिन्दी मोड्स (`modes/hi/`)
+# frontrunner — हिन्दी मोड्स (`modes/hi/`)
 
-यह folder career-ops modes के हिन्दी अनुवाद रखता है, उन candidates के लिए जो भारतीय job market में नौकरी ढूंढ रहे हैं या हिन्दी job listings के साथ काम कर रहे हैं।
+यह folder frontrunner modes के हिन्दी अनुवाद रखता है, उन candidates के लिए जो भारतीय job market में नौकरी ढूंढ रहे हैं या हिन्दी job listings के साथ काम कर रहे हैं।
 
 ## कब उपयोग करें?
 

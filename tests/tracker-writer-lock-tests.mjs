@@ -44,9 +44,9 @@ async function runWhileLocked({
   completion = 'completes the intended update after lock release',
   beforeMutationOutput = null,
 }) {
-  const dir = mkdtempSync(join(tmpdir(), 'career-ops-writer-lock-'));
+  const dir = mkdtempSync(join(tmpdir(), 'frontrunner-writer-lock-'));
   const tracker = join(dir, 'applications.md');
-  const lockDir = join(dir, `career-ops-merge-tracker-${name}.lock`);
+  const lockDir = join(dir, `frontrunner-merge-tracker-${name}.lock`);
   const db = join(dir, 'applications.db');
   writeFileSync(tracker, content);
 
@@ -64,10 +64,10 @@ async function runWhileLocked({
 
   const childEnv = {
     ...process.env,
-    CAREER_OPS_TRACKER: tracker,
-    CAREER_OPS_TRACKER_DB: db,
-    CAREER_OPS_TRACKER_LOCK: lockDir,
-    CAREER_OPS_TRACKER_LOCK_RETRY_MS: '20',
+    FRONTRUNNER_TRACKER: tracker,
+    FRONTRUNNER_TRACKER_DB: db,
+    FRONTRUNNER_TRACKER_LOCK: lockDir,
+    FRONTRUNNER_TRACKER_LOCK_RETRY_MS: '20',
   };
   const launchWriter = (timeoutMs) => {
     let stdout = '';
@@ -77,7 +77,7 @@ async function runWhileLocked({
       cwd: ROOT,
       env: {
         ...childEnv,
-        CAREER_OPS_TRACKER_LOCK_TIMEOUT_MS: String(timeoutMs),
+        FRONTRUNNER_TRACKER_LOCK_TIMEOUT_MS: String(timeoutMs),
       },
       stdio: ['pipe', 'pipe', 'pipe'],
     });
@@ -262,7 +262,7 @@ await runWhileLocked({
 });
 
 async function testTrackerLockReleaseRetriesPartialCleanup() {
-  const dir = mkdtempSync(join(tmpdir(), 'career-ops-lock-release-'));
+  const dir = mkdtempSync(join(tmpdir(), 'frontrunner-lock-release-'));
   const lockDir = join(dir, 'tracker.lock');
   let removeAttempts = 0;
   try {
@@ -306,7 +306,7 @@ async function testTrackerLockReleaseRetriesPartialCleanup() {
 await testTrackerLockReleaseRetriesPartialCleanup();
 
 async function testTrackerLockReleasePreservesReplacementAfterPartialCleanup() {
-  const dir = mkdtempSync(join(tmpdir(), 'career-ops-lock-replacement-'));
+  const dir = mkdtempSync(join(tmpdir(), 'frontrunner-lock-replacement-'));
   const lockDir = join(dir, 'tracker.lock');
   let removeAttempts = 0;
   try {
@@ -347,7 +347,7 @@ async function testTrackerLockReleasePreservesReplacementAfterPartialCleanup() {
 await testTrackerLockReleasePreservesReplacementAfterPartialCleanup();
 
 async function testTrackerTransactionCloseReportsCleanupFailure() {
-  const dir = mkdtempSync(join(tmpdir(), 'career-ops-transaction-close-'));
+  const dir = mkdtempSync(join(tmpdir(), 'frontrunner-transaction-close-'));
   const tracker = join(dir, 'applications.md');
   const lockDir = join(dir, 'tracker.lock');
   const originalConsoleError = console.error;
@@ -385,7 +385,7 @@ async function testTrackerTransactionCloseReportsCleanupFailure() {
 await testTrackerTransactionCloseReportsCleanupFailure();
 
 async function testReplyWatchConflictingRecommendations() {
-  const dir = mkdtempSync(join(tmpdir(), 'career-ops-reply-conflict-'));
+  const dir = mkdtempSync(join(tmpdir(), 'frontrunner-reply-conflict-'));
   const tracker = join(dir, 'applications.md');
   const candidatesPath = join(dir, 'candidates.json');
   const db = join(dir, 'applications.db');
@@ -417,11 +417,11 @@ async function testReplyWatchConflictingRecommendations() {
       cwd: ROOT,
       env: {
         ...process.env,
-        CAREER_OPS_TRACKER: tracker,
-        CAREER_OPS_TRACKER_DB: db,
-        CAREER_OPS_TRACKER_LOCK: join(dir, 'career-ops-merge-tracker-conflict.lock'),
-        CAREER_OPS_TRACKER_LOCK_TIMEOUT_MS: '1000',
-        CAREER_OPS_TRACKER_LOCK_RETRY_MS: '20',
+        FRONTRUNNER_TRACKER: tracker,
+        FRONTRUNNER_TRACKER_DB: db,
+        FRONTRUNNER_TRACKER_LOCK: join(dir, 'frontrunner-merge-tracker-conflict.lock'),
+        FRONTRUNNER_TRACKER_LOCK_TIMEOUT_MS: '1000',
+        FRONTRUNNER_TRACKER_LOCK_RETRY_MS: '20',
       },
       stdio: ['pipe', 'pipe', 'pipe'],
     });

@@ -85,7 +85,7 @@ const PROFILE = readProfile();
 let defaultRules;
 function getDefaultRules() {
   if (!defaultRules) {
-    defaultRules = loadPrefilterRules({ override: argVal('--config', process.env.CAREER_OPS_PREFILTER) });
+    defaultRules = loadPrefilterRules({ override: argVal('--config', process.env.FRONTRUNNER_PREFILTER) });
   }
   return defaultRules;
 }

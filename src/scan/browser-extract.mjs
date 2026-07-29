@@ -38,7 +38,7 @@ import yaml from 'js-yaml';
 import { LIVENESS_CONTEXT_OPTIONS, rejectPrivateOrInvalid } from './liveness-browser.mjs';
 import { assertSafeRemoteUrl, resolvePublicAddresses } from '../security/remote-target-policy.mjs';
 
-import { ROOT as CAREER_OPS } from '#paths';
+import { ROOT as FRONTRUNNER } from '#paths';
 const DEFAULT_TIMEOUT_MS = 15_000;
 const HYDRATION_WAIT_MS = 2_000;
 const JD_TEXT_CAP = 12_000;     // plenty for a JD; a fraction of a full snapshot
@@ -61,7 +61,7 @@ const NAV_LABEL_STOPWORDS = new Set([
  * @param {string} [profilePath]
  * @returns {'cli'|'mcp'}
  */
-export function resolveExtractorMode(profilePath = join(CAREER_OPS, 'config/profile.yml')) {
+export function resolveExtractorMode(profilePath = join(FRONTRUNNER, 'config/profile.yml')) {
   try {
     if (!existsSync(profilePath)) return 'mcp';
     const raw = yaml.load(readFileSync(profilePath, 'utf-8')) || {};

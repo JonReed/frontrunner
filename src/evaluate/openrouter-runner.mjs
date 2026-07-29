@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * career-ops OpenRouter Runner
+ * frontrunner OpenRouter Runner
  * No Claude Code CLI required — uses OpenRouter free models with automatic fallback.
  *
  * Usage:
@@ -209,7 +209,7 @@ async function callOpenRouter(systemPrompt, userMessage) {
     );
   }
 
-  const pinnedModel = process.env.CAREER_OPS_MODEL;
+  const pinnedModel = process.env.FRONTRUNNER_MODEL;
   if (pinnedModel) {
     activeModel = pinnedModel;
     process.stdout.write(`[model] ${pinnedModel} (pinned) ... `);
@@ -590,7 +590,7 @@ const [,, command, ...args] = invokedDirectly ? process.argv : [];
 const ctx = invokedDirectly ? loadContext() : null;
 
 // Load free models list before running any AI command (skip when a model is pinned)
-if (invokedDirectly && ['evaluate', 'eval', 'apply', 'models'].includes(command) && !process.env.CAREER_OPS_MODEL) {
+if (invokedDirectly && ['evaluate', 'eval', 'apply', 'models'].includes(command) && !process.env.FRONTRUNNER_MODEL) {
   await loadFreeModels();
 }
 
@@ -633,7 +633,7 @@ if (invokedDirectly) switch (command) {
 
   default:
     console.log(`
-career-ops OpenRouter Runner
+frontrunner OpenRouter Runner
 Auto-fetches free models from OpenRouter API and rotates through them with fallback.
 
 COMMANDS:
@@ -653,11 +653,11 @@ SETUP:
 MODEL SELECTION:
   - Free models are fetched automatically via the OpenRouter API at runtime.
   - They are tried in sequence; if one fails the next is used automatically.
-  - Pin a model:  CAREER_OPS_MODEL=deepseek/deepseek-r1:free node src/evaluate/openrouter-runner.mjs eval <url>
+  - Pin a model:  FRONTRUNNER_MODEL=deepseek/deepseek-r1:free node src/evaluate/openrouter-runner.mjs eval <url>
 `);
 }
 
 if (invokedDirectly && ['scan', 'evaluate', 'eval', 'pipeline', 'apply'].includes(command)) {
-  const modelName = process.env.CAREER_OPS_MODEL || activeModel || 'free-rotation';
+  const modelName = process.env.FRONTRUNNER_MODEL || activeModel || 'free-rotation';
   console.log('\n' + formatBreakdown(tracker, modelName, 'openrouter'));
 }

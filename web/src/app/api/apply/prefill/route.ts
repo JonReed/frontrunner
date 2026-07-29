@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { resolveCli } from "@/lib/clis";
-import { careerOpsRoot, readMemory } from "@/lib/career-ops";
+import { frontrunnerRoot, readMemory } from "@/lib/frontrunner";
 import { getSession } from "@/lib/apply/session";
 
 export const runtime = "nodejs";
@@ -71,7 +71,7 @@ function extractJsonObject(text: string): { obj: Record<string, unknown> | null;
 // browser access) drafts an answer per field from cv.md / profile / the job's
 // report. We stream a live diagnostic log of every step (spawn, heartbeats,
 // exit code/signal, parse outcome) so a stuck/empty prefill is observable on the
-// page AND written to <root>/.career-ops-web/apply-prefill.log for debugging.
+// page AND written to <root>/.frontrunner-web/apply-prefill.log for debugging.
 export async function POST(req: Request) {
   let body: { sessionId?: string; cliId?: string };
   try {
@@ -82,7 +82,7 @@ export async function POST(req: Request) {
   const { sessionId, cliId } = body;
   const t0 = Date.now();
   const encoder = new TextEncoder();
-  const logPath = path.join(careerOpsRoot(), ".career-ops-web", "apply-prefill.log");
+  const logPath = path.join(frontrunnerRoot(), ".frontrunner-web", "apply-prefill.log");
   try {
     fs.mkdirSync(path.dirname(logPath), { recursive: true });
   } catch {
@@ -157,7 +157,7 @@ Output ONLY a compact JSON object mapping each field id → {"value": "...", "ne
 
       const result = await new Promise<{ buf: string; code: number | null; signal: NodeJS.Signals | null }>((resolve) => {
         // stdin = /dev/null so the CLI doesn't wait 3s for piped input.
-        const child = spawn(binPath, args, { cwd: careerOpsRoot(), env: process.env, stdio: ["ignore", "pipe", "pipe"] });
+        const child = spawn(binPath, args, { cwd: frontrunnerRoot(), env: process.env, stdio: ["ignore", "pipe", "pipe"] });
         let buf = "";
         let firstByteAt = 0;
         const hb = setInterval(() => {

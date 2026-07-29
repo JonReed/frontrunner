@@ -1,4 +1,4 @@
-# career-ops -- Nederlandstalige modi (`modes/nl/`)
+# frontrunner -- Nederlandstalige modi (`modes/nl/`)
 
 Dit bestand bevat Nederlandse vertalingen van de belangrijkste carrièremodi voor kandidaten die zich richten op de Nederlandstalige arbeidsmarkt (Nederland en Vlaanderen).
 

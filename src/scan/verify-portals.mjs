@@ -34,7 +34,7 @@ import { fetchJson as defaultFetchJson, makeHttpCtx } from '../../providers/_htt
 import { fetchProviderJobs } from '../../providers/_contract.mjs';
 import { loadProviders, resolveProvider } from '../../providers/_registry.mjs';
 
-const DEFAULT_PORTALS_PATH = process.env.CAREER_OPS_PORTALS || 'portals.yml';
+const DEFAULT_PORTALS_PATH = process.env.FRONTRUNNER_PORTALS || 'portals.yml';
 
 // The core providers/ directory — the SAME adapters the scanner loads. Resolved
 // from this file's location so it's independent of the caller's cwd.

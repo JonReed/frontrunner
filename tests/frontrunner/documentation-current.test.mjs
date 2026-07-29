@@ -35,7 +35,7 @@ test('architecture documents tool-less Claude and does not resurrect browser-fir
 
 test('canonical agent documentation routes pipeline mode to code, not hand-built agent fan-out', () => {
   const agents = read('AGENTS.md');
-  const skill = read('.agents/skills/career-ops/SKILL.md');
+  const skill = read('.agents/skills/frontrunner/SKILL.md');
   const mode = read('modes/pipeline.md');
   assert.match(agents, /src\/pipeline\/run\.mjs` is the canonical backend orchestrator/);
   assert.match(skill, /For `pipeline`, run `npm run pipeline`/);

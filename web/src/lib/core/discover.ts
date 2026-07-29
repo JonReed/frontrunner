@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { careerOpsRoot, readInbox, readApplications } from "@/lib/career-ops";
+import { frontrunnerRoot, readInbox, readApplications } from "@/lib/frontrunner";
 import { canon } from "@/lib/explore-ai";
 
 /**
@@ -17,7 +17,7 @@ export function assembleDedupContext(): { urls: Set<string>; lines: string[] } {
 
   // scan-history.tsv col 0 = url (every URL ever surfaced)
   try {
-    const tsv = fs.readFileSync(path.join(careerOpsRoot(), "data", "scan-history.tsv"), "utf8");
+    const tsv = fs.readFileSync(path.join(frontrunnerRoot(), "data", "scan-history.tsv"), "utf8");
     const rows = tsv.split("\n");
     for (let i = 1; i < rows.length; i++) {
       const url = rows[i].split("\t")[0]?.trim();

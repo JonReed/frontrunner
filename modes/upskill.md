@@ -8,7 +8,7 @@ Phase 1 (this mode): aggregate gap map from tracked reports, with an optional LL
 
 **Targeted mode** (`node src/analysis/upskill.mjs --url-text <url-or-file>`, #1739) analyses a *single* JD instead of the tracked history: it extracts the JD's required skills, suppresses the ones already in `cv.md`/`config/profile.yml`, and prints the remaining gaps as JSON (`{ mode: "targeted", gaps, excludedAsKnown, knownSkills }`). Known-skill suppression uses the same canonical extraction as the aggregate path, so a CV skill is never reported as a gap and a real gap is never hidden. `--url-text` accepts either an `http(s)` URL (Playwright, then a redirect-refusing fetch fallback) or a local file path. The web-searched learning plan (Step 3, #1740) is generated for the aggregate report; the targeted single-JD path prints gaps only.
 
-Pattern credit: [MadsLorentzen/ai-job-search](https://github.com/MadsLorentzen/ai-job-search)'s `/upskill`, adapted to career-ops' tracker and A–F scoring model.
+Pattern credit: [MadsLorentzen/ai-job-search](https://github.com/MadsLorentzen/ai-job-search)'s `/upskill`, adapted to frontrunner' tracker and A–F scoring model.
 
 ## Inputs
 
@@ -73,7 +73,7 @@ Turn the eligible gaps into a resourced, actionable plan. This section is **pure
 - Hard search budget: **max 2 searches per gap**, capped at **~12 searches per aggregate run**; always include the current year in the query.
 - **Write-time URL liveness:** liveness-check every cited URL at generation time using the check-liveness pattern (`node src/scan/check-liveness.mjs <url> ...`, backed by `src/scan/liveness-core.mjs`). Dead links never enter the report.
 - **Free-first with explicit failure:** if no free option surfaces for a gap, the plan SAYS so — it never silently substitutes a paid resource.
-- **Scope boundary:** the plan LINKS each resource to `/career-ops training {name}` for a full judging pass; it never runs training's 6-dimension scoring itself. `upskill` finds; `training` judges.
+- **Scope boundary:** the plan LINKS each resource to `/frontrunner training {name}` for a full judging pass; it never runs training's 6-dimension scoring itself. `upskill` finds; `training` judges.
 
 Embed the result as the `## Learning Plan` section of the report (Step 4 template), positioned just below `## Suggested Order` — Suggested Order sequences the gaps, the plan then resources each one.
 
@@ -123,7 +123,7 @@ _Resources below are web-searched fresh every run — never version-controlled, 
 - [{Resource name}]({URL}) — {one-line why}. (free)
 - [{Resource name}]({URL}) — {one-line why}. (paid — only if no free option exists)
 
-→ To judge one of these against your profile, run `/career-ops training {resource name}`.
+→ To judge one of these against your profile, run `/frontrunner training {resource name}`.
 
 {If no free resource surfaced for a gap, say so explicitly rather than silently substituting a paid one: "No free resource found for {skill} this run — only paid options surfaced (listed for transparency)."}
 ```
@@ -166,4 +166,4 @@ These eight rules are non-negotiable; each is frozen as a CI assertion so a futu
 5. **Hard search budget.** Max 2 searches per gap, capped at ~12 searches per aggregate run; always include the current year in queries.
 6. **Free-first with explicit failure.** If no free option is found for a gap, the plan SAYS so — it never silently substitutes a paid resource.
 7. **Effort from stated length only.** Effort estimates come only from the resource's own stated length — never invented.
-8. **Scope boundary.** Plan entries link to `/career-ops training {name}` for judging a specific resource; the plan itself never runs training's 6-dimension scoring. `upskill` finds; `training` judges.
+8. **Scope boundary.** Plan entries link to `/frontrunner training {name}` for judging a specific resource; the plan itself never runs training's 6-dimension scoring. `upskill` finds; `training` judges.

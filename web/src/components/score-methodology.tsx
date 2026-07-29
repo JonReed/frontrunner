@@ -1,7 +1,7 @@
 import { ChevronDown, ExternalLink } from "lucide-react";
 
 // Transparency = our differentiator ("why it's a 4.0 for YOU"). The wording is
-// the CANONICAL public text from career-ops.org/methodology + /docs — rendered
+// the canonical scoring text from Frontrunner's tracked mode documentation
 // verbatim, NOT a web reinterpretation of the rubric (whose weights live in the
 // core, modes/_shared.md). Native <details> → no client JS.
 
@@ -28,13 +28,13 @@ export function ScoreMethodology() {
   return (
     <details className="group mt-10 overflow-hidden rounded-2xl border border-border bg-surface/30">
       <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3.5 text-sm font-medium transition-colors hover:bg-surface-hover">
-        How career-ops scored this — and why it&apos;s for <span className="text-landing">you</span>
+        How frontrunner scored this — and why it&apos;s for <span className="text-landing">you</span>
         <ChevronDown className="ml-auto size-4 text-faint transition-transform group-open:rotate-180" />
       </summary>
       <div className="space-y-5 border-t border-border px-5 py-4 text-sm">
         <p className="text-muted">
           Every role is scored <strong className="text-foreground">1.0–5.0</strong> across six dimensions.{" "}
-          <strong className="text-brand">4.0</strong> is the apply / don&apos;t-apply line — below it, career-ops
+          <strong className="text-brand">4.0</strong> is the apply / don&apos;t-apply line — below it, frontrunner
           recommends against applying.
         </p>
         <div>
@@ -61,7 +61,7 @@ export function ScoreMethodology() {
           </ul>
         </div>
         <a
-          href="https://career-ops.org/methodology"
+          href="https://github.com/Furls-Digital/frontrunner/blob/main/modes/_shared.md"
           target="_blank"
           rel="noreferrer"
           className="inline-flex items-center gap-1 text-xs text-brand transition-colors hover:underline"

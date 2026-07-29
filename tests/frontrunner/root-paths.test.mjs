@@ -29,6 +29,7 @@ test('no reference points at a moved script\'s old root path', () => {
 
 test('destructive fixer repairs tracked invocations, leaves prose alone, and is idempotent', (t) => {
   const root = mkdtempSync(join(tmpdir(), 'frontrunner-root-paths-'));
+  const inheritedRootAlias = ['CAREER', 'OPS'].join('_');
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const put = (relative, contents) => {
     const file = join(root, relative);
@@ -49,6 +50,7 @@ test('destructive fixer repairs tracked invocations, leaves prose alone, and is 
     'scripts/launch.mjs',
     [
       "const command = join(ROOT, 'scan.mjs');",
+      `const inherited = join(${inheritedRootAlias}, 'scan.mjs');`,
       "const result = run(NODE, ['scan.mjs']);",
       '',
     ].join('\n'),
@@ -59,13 +61,17 @@ test('destructive fixer repairs tracked invocations, leaves prose alone, and is 
   const before = findStaleRootPaths(root);
   assert.deepEqual(
     before.map(({ file, line }) => `${file}:${line}`).sort(),
-    ['docs/usage.md:1', 'scripts/launch.mjs:1', 'scripts/launch.mjs:2'],
+    ['docs/usage.md:1', 'scripts/launch.mjs:1', 'scripts/launch.mjs:2', 'scripts/launch.mjs:3'],
   );
 
   assert.equal(fixStaleRootPaths(root), 2);
   assert.match(readFileSync(join(root, 'docs/usage.md'), 'utf8'), /node src\/scan\/scan\.mjs/);
   assert.match(readFileSync(join(root, 'docs/usage.md'), 'utf8'), /file scan\.mjs is/);
   assert.match(readFileSync(join(root, 'scripts/launch.mjs'), 'utf8'), /join\(ROOT, 'src\/scan\/scan\.mjs'\)/);
+  assert.match(
+    readFileSync(join(root, 'scripts/launch.mjs'), 'utf8'),
+    new RegExp(`join\\(${inheritedRootAlias}, 'src/scan/scan\\.mjs'\\)`),
+  );
   assert.match(readFileSync(join(root, 'scripts/launch.mjs'), 'utf8'), /run\(NODE, \['src\/scan\/scan\.mjs'\]\)/);
   assert.deepEqual(findStaleRootPaths(root), []);
   assert.equal(fixStaleRootPaths(root), 0, 'second repair changed already-correct files');

@@ -1,6 +1,6 @@
 # Mode: latex-tex — Tailor a user-owned LaTeX CV in place
 
-Opt-in mode for candidates who already maintain a hand-tuned `.tex` CV. **Does not change the global source of truth** — `cv.md` remains the default for evaluations, apply mode, and auto-pipeline. Invoke explicitly via `/career-ops latex-tex`.
+Opt-in mode for candidates who already maintain a hand-tuned `.tex` CV. **Does not change the global source of truth** — `cv.md` remains the default for evaluations, apply mode, and auto-pipeline. Invoke explicitly via `/frontrunner latex-tex`.
 
 ## When to use
 
@@ -16,7 +16,7 @@ Opt-in mode for candidates who already maintain a hand-tuned `.tex` CV. **Does n
 
 Extraction only reads the document body (preamble macro definitions are skipped) and ignores commented-out macro calls — old bullets kept as `%` comments never become editable slots.
 
-Any other layout → stop with the script error and suggest `/career-ops latex` (cv.md → career-ops template).
+Any other layout → stop with the script error and suggest `/frontrunner latex` (cv.md → frontrunner template).
 
 ## Source file resolution
 
@@ -80,5 +80,5 @@ Same as `modes/latex.md` and `modes/pdf.md`:
 
 | Mode | Input | Output |
 |------|-------|--------|
-| `latex` | `cv.md` | career-ops `templates/cv-template.tex` → `.tex` + PDF |
+| `latex` | `cv.md` | frontrunner `templates/cv-template.tex` → `.tex` + PDF |
 | `latex-tex` | user's `resume.tex` | same template shape, tailored prose only → `.tex` + PDF |

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import fs from "node:fs";
 import path from "node:path";
-import { careerOpsRoot } from "@/lib/career-ops";
+import { frontrunnerRoot } from "@/lib/frontrunner";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   // Token-extract instead of replace-then-trim: same slug, and no `-+$`-style
   // pattern that backtracks polynomially on adversarial input (CodeQL).
   const slug = (company.toLowerCase().match(/[a-z0-9]+/g) ?? []).join("-");
-  const dir = path.join(careerOpsRoot(), "output");
+  const dir = path.join(frontrunnerRoot(), "output");
   // Match the slug at a token boundary (delimited by non-alphanumerics) so "Meta"
   // doesn't serve "Metabase"'s tailored CV. The pdf mode names files cv-…-{slug}-….
   const re = new RegExp(`(^|[^a-z0-9])${slug.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^a-z0-9]|$)`, "i");

@@ -1,4 +1,4 @@
-# Custom Instructions -- career-ops
+# Custom Instructions -- frontrunner
 
 <!-- ============================================================
      THIS FILE IS YOURS. It will NEVER be auto-updated.

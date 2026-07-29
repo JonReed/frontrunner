@@ -66,7 +66,7 @@ Para cada pregunta, construir la respuesta según este esquema:
 2. **Bloque G previo**: Si existe un borrador, tomarlo como base y refinarlo
 3. **Tono "Te elijo a ti"**: mismo framework que en el auto-pipeline — confiado, no suplicante
 4. **Especificidad**: citar algo concreto de la oferta visible en pantalla
-5. **career-ops proof point**: incluir en "Información adicional" si existe ese campo
+5. **frontrunner proof point**: incluir en "Información adicional" si existe ese campo
 
 **Campos específicos en formularios hispanohablantes habituales:**
 - **Pretensiones salariales (bruto anual)** -> Horquilla desde `profile.yml`, en EUR (o divisa local), con la indicación "negociable según el paquete global"
@@ -104,7 +104,7 @@ Notas:
 Si el candidato confirma que la candidatura ha sido enviada:
 1. Actualizar el estado a "Applied" con el CLI canónico: `node src/tracker/set-status.mjs <report#> Applied` (no editar la tabla de `applications.md` a mano)
 2. Actualizar el Bloque G del report con las respuestas finales
-3. Sugerir el siguiente paso: `/career-ops contacto` para LinkedIn outreach hacia el hiring manager
+3. Sugerir el siguiente paso: `/frontrunner contacto` para LinkedIn outreach hacia el hiring manager
 
 ## Gestión del desplazamiento
 

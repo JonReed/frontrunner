@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { careerOpsRoot, readApplications } from "@/lib/career-ops";
+import { frontrunnerRoot, readApplications } from "@/lib/frontrunner";
 import type { DiscoveredOffer } from "@/lib/explore";
 
 export const runtime = "nodejs";
@@ -18,7 +18,7 @@ export async function GET(req: Request) {
   const cutoff = Date.now() - days * 86_400_000;
   let rows: string[];
   try {
-    rows = fs.readFileSync(path.join(careerOpsRoot(), "data", "scan-history.tsv"), "utf8").split("\n");
+    rows = fs.readFileSync(path.join(frontrunnerRoot(), "data", "scan-history.tsv"), "utf8").split("\n");
   } catch {
     return Response.json({ offers: [], count: 0 });
   }

@@ -1,6 +1,6 @@
 // @ts-check
 /**
- * config/seeds/vc-portfolios.mjs — VC portfolio seed fetchers for career-ops.
+ * config/seeds/vc-portfolios.mjs — VC portfolio seed fetchers for frontrunner.
  *
  * Pulls public VC portfolio company lists (Y Combinator, Andreessen Horowitz)
  * and emits company entries compatible with the existing ATS scan/discovery
@@ -33,7 +33,7 @@
 export const SLUG_RE = /^[A-Za-z0-9._-]+$/;
 
 const DEFAULT_TIMEOUT_MS = 20_000;
-const DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; career-ops-seeds/1.0)';
+const DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; frontrunner-seeds/1.0)';
 
 /**
  * YC public company API.

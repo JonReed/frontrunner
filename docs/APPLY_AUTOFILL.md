@@ -2,7 +2,7 @@
 
 The `apply` mode interactive assistant helps you fill out applications for job postings. It reads the form questions in your browser and drafts personalized answers based on your profile and the evaluated report.
 
-**CRITICAL RULE: Career-Ops never submits.**
+**CRITICAL RULE: Frontrunner never submits.**
 The agent prepares the responses, selects the options, and types out the text fields. **You always click Submit.** This ensures you have the final say and gives you a chance to review the application before it is sent.
 
 ---

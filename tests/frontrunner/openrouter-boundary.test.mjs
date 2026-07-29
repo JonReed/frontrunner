@@ -201,7 +201,7 @@ test('OpenRouter runner cannot regress to direct HTTP, raw state writes, or upst
   const source = readFileSync(join(ROOT, 'src', 'evaluate', 'openrouter-runner.mjs'), 'utf8');
   assert.doesNotMatch(source, /\b(?:globalThis\.)?fetch\s*\(/u);
   assert.doesNotMatch(source, /\bwriteFileSync\b/u);
-  assert.doesNotMatch(source, /github\.com\/santifer\/career-ops|X-Title['"]?\s*:\s*['"]career-ops/iu);
+  assert.doesNotMatch(source, /github\.com\/santifer\/frontrunner|X-Title['"]?\s*:\s*['"]frontrunner/iu);
   assert.match(source, /requestOpenRouterCompletion/);
   assert.match(source, /addModelsToBlacklist/);
   assert.match(source, /src\/scan\/scan\.mjs/);

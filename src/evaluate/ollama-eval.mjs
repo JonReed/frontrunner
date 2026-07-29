@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * ollama-eval.mjs — Ollama-powered Job Offer Evaluator for career-ops
+ * ollama-eval.mjs — Ollama-powered Job Offer Evaluator for frontrunner
  *
  * Local, free, private evaluator using Frontrunner's mandatory deterministic
  * gate and compact, versioned scoring contract.
@@ -62,7 +62,7 @@ const args = process.argv.slice(2);
 if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
   console.log(`
 ╔══════════════════════════════════════════════════════════════════╗
-║           career-ops — Ollama Evaluator (local / free)          ║
+║           frontrunner — Ollama Evaluator (local / free)          ║
 ╚══════════════════════════════════════════════════════════════════╝
 
   Evaluate a job offer using a local Ollama model instead of Claude.
@@ -293,7 +293,7 @@ try {
 // Display evaluation
 // ---------------------------------------------------------------------------
 console.log('\n' + '═'.repeat(66));
-console.log('  CAREER-OPS EVALUATION — powered by Ollama (' + modelName + ')');
+console.log('  FRONTRUNNER EVALUATION — powered by Ollama (' + modelName + ')');
 console.log('═'.repeat(66) + '\n');
 console.log(evaluationText);
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import fs from "node:fs";
 import path from "node:path";
-import { careerOpsRoot } from "@/lib/career-ops";
+import { frontrunnerRoot } from "@/lib/frontrunner";
 import { canonicalizeStatus } from "@/lib/core/states";
 import { atomicWrite } from "@/lib/core/safe-write";
 
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `not a canonical status: ${status}` }, { status: 400 });
   }
 
-  const file = path.join(careerOpsRoot(), "data", "applications.md");
+  const file = path.join(frontrunnerRoot(), "data", "applications.md");
   let md: string;
   try {
     md = fs.readFileSync(file, "utf8");

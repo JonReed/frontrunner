@@ -131,7 +131,7 @@ export function trackerStatusByNum(content) {
  * response is indistinguishable from one rejected after interviews — middle
  * stages are lower bounds until status-transition logging exists (#1428).
  *
- * This is the canonical funnel definition for career-ops going forward;
+ * This is the canonical funnel definition for frontrunner going forward;
  * dashboard/web consuming this JSON instead of keeping independent copies is
  * a named follow-up in #1604.
  */

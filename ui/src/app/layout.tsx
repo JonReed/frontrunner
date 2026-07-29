@@ -55,12 +55,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </a>
               , on top of{' '}
               <a
-                href="https://github.com/santifer/career-ops"
+                href="https://github.com/Furls-Digital/frontrunner"
                 target="_blank"
                 rel="noreferrer"
                 className="font-medium text-[var(--color-ink-soft)] underline decoration-[var(--color-line-strong)] underline-offset-2 hover:text-[var(--color-act)]"
               >
-                career-ops
+                frontrunner
               </a>
               . Open source, MIT licensed.
             </p>

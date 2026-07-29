@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import { pathToFileURL } from "node:url";
-import { careerOpsRoot, rootScript } from "@/lib/career-ops";
+import { frontrunnerRoot, rootScript } from "@/lib/frontrunner";
 import type { DiscoveredOffer } from "./scan";
 
 /**
@@ -10,7 +10,7 @@ import type { DiscoveredOffer } from "./scan";
  * the CANONICAL writers exported by the core's src/scan/scan.mjs (`appendToPipeline`,
  * `appendToScanHistory`) instead of re-implementing the line format / section
  * markers — single source of truth, per the web↔core contract. We invoke them in
- * a short-lived node process (cwd = the user's career-ops root) so the core's own
+ * a short-lived node process (cwd = the user's frontrunner root) so the core's own
  * code does the writing; the web never owns a parallel copy of that logic.
  *
  * Discovered-but-not-added offers stay "new" (a dry-run scan writes nothing);
@@ -60,7 +60,7 @@ process.stdin.on("end", () => {
 
   return new Promise((resolve) => {
     const child = spawn(process.execPath, ["--input-type=module", "-e", code], {
-      cwd: careerOpsRoot(),
+      cwd: frontrunnerRoot(),
       env: process.env,
     });
     let out = "";

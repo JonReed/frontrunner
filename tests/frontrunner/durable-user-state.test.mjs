@@ -200,7 +200,7 @@ test('destructive cross-process inbox race retains every queued request', async 
       [cli, 'add', `concurrent request ${index}`],
       {
         cwd: ROOT,
-        env: { ...process.env, CAREER_OPS_INBOX: inbox },
+        env: { ...process.env, FRONTRUNNER_INBOX: inbox },
         timeout: 10_000,
       },
     )));

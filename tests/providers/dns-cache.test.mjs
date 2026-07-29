@@ -213,11 +213,11 @@ try {
 
     const patched = run(NODE, ['--input-type=module', '-e', probe]);
     const optedOut = run(NODE, ['--input-type=module', '-e', probe], {
-      env: { ...process.env, CAREER_OPS_NO_DNS_CACHE: '1' },
+      env: { ...process.env, FRONTRUNNER_NO_DNS_CACHE: '1' },
     });
 
     if (patched === 'PATCHED' && optedOut === 'UNPATCHED') {
-      pass('importing the module patches dns.lookup; CAREER_OPS_NO_DNS_CACHE=1 opts out');
+      pass('importing the module patches dns.lookup; FRONTRUNNER_NO_DNS_CACHE=1 opts out');
     } else {
       fail(`patch toggle wrong: default=${patched} optedOut=${optedOut}`);
     }

@@ -10,7 +10,7 @@
  * malformed rows. Both now map columns by header NAME (see #946).
  *
  * These tests provision a throwaway tracker + additions dir via the
- * CAREER_OPS_TRACKER / CAREER_OPS_ADDITIONS env overrides and assert:
+ * FRONTRUNNER_TRACKER / FRONTRUNNER_ADDITIONS env overrides and assert:
  *   1. A 10-column tracker (with Location) merges a new row into the correct
  *      columns — Score/Status are NOT shifted, Location is populated.
  *   2. verify-pipeline reports a clean bill of health on that 10-column tracker.
@@ -45,9 +45,9 @@ function fail(m) { console.error(`FAIL ${m}`); failed++; }
 function runScript(script, args, sandbox) {
   const env = {
     ...process.env,
-    CAREER_OPS_TRACKER: sandbox.tracker,
-    CAREER_OPS_ADDITIONS: sandbox.additions,
-    CAREER_OPS_TRACKER_LOCK: sandbox.lock,
+    FRONTRUNNER_TRACKER: sandbox.tracker,
+    FRONTRUNNER_ADDITIONS: sandbox.additions,
+    FRONTRUNNER_TRACKER_LOCK: sandbox.lock,
   };
   try {
     const stdout = execFileSync(NODE, [join(ROOT, script), ...args], {
@@ -312,7 +312,7 @@ const TSV_NO_LOCATION = '2\t2026-02-02\tGlobex\tManager\tApplied\tN/A\t✅\t—\
 }
 
 // ── Test 8: web read path resolves headers via the SHARED alias table ───────
-// web/src/lib/tracker-table.mjs (behind readApplications() in career-ops.ts)
+// web/src/lib/tracker-table.mjs (behind readApplications() in frontrunner.ts)
 // loads src/tracker/tracker-aliases.json — the same file src/tracker/tracker-parse.mjs exports as
 // HEADER_ALIASES — instead of mirroring it. Passing ROOT here exercises the
 // REAL alias file, so an alias added/renamed there is either honored by the

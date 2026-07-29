@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { companyDomain, companyInitials, monogramHue } from "@/lib/company";
 import { cn } from "@/lib/cn";
 
-const CONFIG_KEY = "career-ops:config";
+const CONFIG_KEY = "frontrunner:config";
 
 // A small company mark: the real favicon on a white tile when logos are enabled
 // and resolvable, otherwise a deterministic colored monogram. The monogram is

@@ -198,7 +198,7 @@ export async function checkLivenessViaApi(url) {
     try {
       json = await fetchJson(apiUrl, {
         method: 'GET',
-        headers: { 'user-agent': 'career-ops-liveness/1.0', accept: 'application/json' },
+        headers: { 'user-agent': 'frontrunner-liveness/1.0', accept: 'application/json' },
         redirect: 'error',
         timeoutMs: timeoutMs || TIMEOUT_MS,
         maxResponseBytes: 2 * 1024 * 1024,

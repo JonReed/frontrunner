@@ -345,7 +345,7 @@ New added to pipeline.md: N
   + {company} | {title} | {query_name}
   ...
 
-→ Run the `pipeline` mode to evaluate the new offers (`/career-ops pipeline` where available, or ask the agent to run `pipeline`).
+→ Run the `pipeline` mode to evaluate the new offers (`/frontrunner pipeline` where available, or ask the agent to run `pipeline`).
 ```
 
 ## Managing careers_url

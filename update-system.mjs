@@ -78,22 +78,22 @@ export function assertOfficialUpdateSource(repositoryUrl) {
 }
 
 // Matches a semver, with or without a leading `v` and an optional
-// Release Please component prefix (e.g. `career-ops-v1.9.0` → `1.9.0`).
+// Release Please component prefix (e.g. `frontrunner-v1.9.0` → `1.9.0`).
 // Anchoring on `(?:^|-)` lets the releases-API fallback parse our tags,
 // which Release Please always prefixes with the component name.
 export const SEMVER_RE = /(?:^|-)v?(\d+\.\d+\.\d+)$/i;
 // 120s: local git commands are normally instant, but a cloud-evicted working
 // tree (iCloud "optimize storage", OneDrive dehydration) can stall a plain
 // `git status` for a minute of pure I/O wait re-materializing files (#1393).
-export const DEFAULT_GIT_TIMEOUT_MS = parsePositiveInt(process.env.CAREER_OPS_GIT_TIMEOUT_MS, 120000);
+export const DEFAULT_GIT_TIMEOUT_MS = parsePositiveInt(process.env.FRONTRUNNER_GIT_TIMEOUT_MS, 120000);
 export const DEFAULT_GIT_FETCH_TIMEOUT_MS = parsePositiveInt(
-  process.env.CAREER_OPS_GIT_FETCH_TIMEOUT_MS,
+  process.env.FRONTRUNNER_GIT_FETCH_TIMEOUT_MS,
   Math.max(DEFAULT_GIT_TIMEOUT_MS, 300000),
 );
-export const NPM_INSTALL_TIMEOUT_MS = parsePositiveInt(process.env.CAREER_OPS_NPM_INSTALL_TIMEOUT_MS, 60000);
-export const PLAYWRIGHT_INSTALL_TIMEOUT_MS = parsePositiveInt(process.env.CAREER_OPS_PLAYWRIGHT_INSTALL_TIMEOUT_MS, 120000);
-export const UPDATE_PATH_CHECKOUT_BUDGET_MS = parsePositiveInt(process.env.CAREER_OPS_UPDATE_PATH_CHECKOUT_BUDGET_MS, 5000);
-export const REEXEC_BUFFER_TIMEOUT_MS = parsePositiveInt(process.env.CAREER_OPS_REEXEC_BUFFER_TIMEOUT_MS, 60000);
+export const NPM_INSTALL_TIMEOUT_MS = parsePositiveInt(process.env.FRONTRUNNER_NPM_INSTALL_TIMEOUT_MS, 60000);
+export const PLAYWRIGHT_INSTALL_TIMEOUT_MS = parsePositiveInt(process.env.FRONTRUNNER_PLAYWRIGHT_INSTALL_TIMEOUT_MS, 120000);
+export const UPDATE_PATH_CHECKOUT_BUDGET_MS = parsePositiveInt(process.env.FRONTRUNNER_UPDATE_PATH_CHECKOUT_BUDGET_MS, 5000);
+export const REEXEC_BUFFER_TIMEOUT_MS = parsePositiveInt(process.env.FRONTRUNNER_REEXEC_BUFFER_TIMEOUT_MS, 60000);
 
 // System layer paths — ONLY these files get updated
 const SYSTEM_PATHS = [
@@ -470,7 +470,7 @@ function timeoutSeconds(timeout) {
 }
 
 function gitTimeoutEnvVar(args) {
-  return args[0] === 'fetch' ? 'CAREER_OPS_GIT_FETCH_TIMEOUT_MS' : 'CAREER_OPS_GIT_TIMEOUT_MS';
+  return args[0] === 'fetch' ? 'FRONTRUNNER_GIT_FETCH_TIMEOUT_MS' : 'FRONTRUNNER_GIT_TIMEOUT_MS';
 }
 
 export function gitIn(root, ...args) {
@@ -1041,12 +1041,12 @@ async function apply() {
 
   const local = localVersion();
   const initialStatusPaths = new Set(gitStatusEntries().map(entry => entry.path));
-  const isReexec = process.env.CAREER_OPS_UPDATE_REEXEC === '1';
+  const isReexec = process.env.FRONTRUNNER_UPDATE_REEXEC === '1';
 
   const lockFile = join(ROOT, '.update-lock');
   let updateLock = null;
   if (isReexec) {
-    updateLock = adoptUpdateLock(lockFile, process.env.CAREER_OPS_UPDATE_LOCK_TOKEN);
+    updateLock = adoptUpdateLock(lockFile, process.env.FRONTRUNNER_UPDATE_LOCK_TOKEN);
   } else {
     try {
       updateLock = acquireUpdateLock(lockFile);
@@ -1062,7 +1062,7 @@ async function apply() {
     // invisible to `git branch` and can be lost if the update aborts.
     // `git stash create` builds a stash object without touching the stash
     // stack, giving a recoverable ref for WIP even if the update fails.
-    const backupBranch = process.env.CAREER_OPS_UPDATE_BACKUP_BRANCH || updateBackupBranchName(local);
+    const backupBranch = process.env.FRONTRUNNER_UPDATE_BACKUP_BRANCH || updateBackupBranchName(local);
     if (!isReexec) {
       try {
         const wip = git('stash', 'create');
@@ -1096,9 +1096,9 @@ async function apply() {
           timeout,
           env: {
             ...process.env,
-            CAREER_OPS_UPDATE_REEXEC: '1',
-            CAREER_OPS_UPDATE_BACKUP_BRANCH: backupBranch,
-            CAREER_OPS_UPDATE_LOCK_TOKEN: updateLock.token,
+            FRONTRUNNER_UPDATE_REEXEC: '1',
+            FRONTRUNNER_UPDATE_BACKUP_BRANCH: backupBranch,
+            FRONTRUNNER_UPDATE_LOCK_TOKEN: updateLock.token,
           },
         });
         return;
@@ -1205,13 +1205,30 @@ async function apply() {
     // Lazy import: keep update-system.mjs self-loading (see the top-of-file
     // note). src/lib/ was just checked out by the update stage above, so the
     // module resolves here even on a pre-#1245 old→new re-exec.
-    const { ensureSkillEntrypoints } = await import('./src/lib/skill-entrypoints.mjs');
+    const {
+      ensureSkillEntrypoints,
+      pruneRetiredSkillEntrypoints,
+      RETIRED_SKILL_ENTRYPOINTS,
+    } = await import('./src/lib/skill-entrypoints.mjs');
     const materializedSkillEntrypoints = ensureSkillEntrypoints(ROOT);
     if (materializedSkillEntrypoints.length > 0) {
       for (const path of materializedSkillEntrypoints) {
         if (!updated.includes(path)) updated.push(path);
       }
       console.log(`Materialized ${materializedSkillEntrypoints.length} skill entrypoint(s) for filesystems without symlink support`);
+    }
+
+    const trackedRetiredSkillEntrypoints = RETIRED_SKILL_ENTRYPOINTS.filter((path) => {
+      try {
+        return gitQuiet('ls-files', '--error-unmatch', '--', path).trim() === path;
+      } catch {
+        return false;
+      }
+    });
+    const prunedSkillEntrypoints = pruneRetiredSkillEntrypoints(ROOT, trackedRetiredSkillEntrypoints);
+    for (const path of prunedSkillEntrypoints) {
+      if (!updated.includes(path)) updated.push(path);
+      console.log(`Pruned retired skill entrypoint: ${path}`);
     }
 
     // 4. Validate: check NO user files were touched.
@@ -1369,10 +1386,6 @@ async function apply() {
     console.log(`\nUpdate complete: v${local} → v${remote}`);
     console.log(`Updated ${updated.length} system paths.`);
     console.log(`Rollback available: node update-system.mjs rollback`);
-
-    console.log('\n-- The CareerOps Manifesto ------------------------------');
-    console.log('A new way of job searching is taking shape. You are');
-    console.log('already practicing it. Read it, sign it if you want to help:');
 
   } finally {
     updateLock?.release();

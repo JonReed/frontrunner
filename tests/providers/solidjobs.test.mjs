@@ -12,7 +12,7 @@ try {
   else fail(`solidjobs.id is ${JSON.stringify(sj.id)}`);
 
   // detect() matches valid SolidJobs API URL
-  const hit = sj.detect({ name: 'SJ', careers_url: 'https://solid.jobs/public-api/offers/it?campaign=career-ops' });
+  const hit = sj.detect({ name: 'SJ', careers_url: 'https://solid.jobs/public-api/offers/it?campaign=frontrunner' });
   if (hit && hit.url) pass('solidjobs.detect() matches valid API URL');
   else fail('solidjobs.detect() should match solid.jobs public-api URL');
 
@@ -52,7 +52,7 @@ try {
     ],
   };
   const parsed = await sj.fetch(
-    { name: 'SolidJobs IT', careers_url: 'https://solid.jobs/public-api/offers/it?campaign=career-ops' },
+    { name: 'SolidJobs IT', careers_url: 'https://solid.jobs/public-api/offers/it?campaign=frontrunner' },
     { transport: 'http', fetchJson: async () => fakeJobs, fetchText: async () => '' },
   );
   if (parsed.length === 2) pass('solidjobs.fetch() returns 2 jobs from mock response');
@@ -73,7 +73,7 @@ try {
   // fetch() falls back to entry.name when j.company is missing
   const noCompanyJobs = { jobs: [{ title: 'Tester', url: 'https://solid.jobs/o/xyz/career-ops', locations: [] }] };
   const fallback = await sj.fetch(
-    { name: 'SolidJobs IT', careers_url: 'https://solid.jobs/public-api/offers/it?campaign=career-ops' },
+    { name: 'SolidJobs IT', careers_url: 'https://solid.jobs/public-api/offers/it?campaign=frontrunner' },
     { transport: 'http', fetchJson: async () => noCompanyJobs, fetchText: async () => '' },
   );
   if (fallback[0].company === 'SolidJobs IT') pass('solidjobs.fetch() falls back to entry.name when j.company missing');
@@ -151,7 +151,7 @@ try {
     let threw = false;
     try {
       await sj.fetch(
-        { name: 'SolidJobs IT', careers_url: 'https://solid.jobs/public-api/offers/it?campaign=career-ops' },
+        { name: 'SolidJobs IT', careers_url: 'https://solid.jobs/public-api/offers/it?campaign=frontrunner' },
         { transport: 'http', fetchJson: async () => resp, fetchText: async () => '' },
       );
     } catch (e) {
@@ -171,7 +171,7 @@ try {
     ],
   };
   const filtered = await sj.fetch(
-    { name: 'SolidJobs IT', careers_url: 'https://solid.jobs/public-api/offers/it?campaign=career-ops' },
+    { name: 'SolidJobs IT', careers_url: 'https://solid.jobs/public-api/offers/it?campaign=frontrunner' },
     { transport: 'http', fetchJson: async () => mixedJobs, fetchText: async () => '' },
   );
   if (filtered.length === 1 && filtered[0].title === 'Has URL') pass('solidjobs.fetch() filters out jobs with empty/missing url');
@@ -180,7 +180,7 @@ try {
   // fetch() handles string locations (non-array)
   const stringLocJobs = { jobs: [{ title: 'Dev', url: 'https://solid.jobs/o/2/career-ops', company: 'X', locations: 'Warsaw' }] };
   const strLoc = await sj.fetch(
-    { name: 'SolidJobs IT', careers_url: 'https://solid.jobs/public-api/offers/it?campaign=career-ops' },
+    { name: 'SolidJobs IT', careers_url: 'https://solid.jobs/public-api/offers/it?campaign=frontrunner' },
     { transport: 'http', fetchJson: async () => stringLocJobs, fetchText: async () => '' },
   );
   if (strLoc[0].location === 'Warsaw') pass('solidjobs.fetch() handles string locations');
@@ -196,7 +196,7 @@ try {
   // fetch() passes redirect:'error' to fetchJson
   let capturedOpts = null;
   await sj.fetch(
-    { name: 'SolidJobs IT', careers_url: 'https://solid.jobs/public-api/offers/it?campaign=career-ops' },
+    { name: 'SolidJobs IT', careers_url: 'https://solid.jobs/public-api/offers/it?campaign=frontrunner' },
     { transport: 'http', fetchJson: async (_url, opts) => { capturedOpts = opts; return { jobs: [] }; }, fetchText: async () => '' },
   );
   if (capturedOpts && capturedOpts.redirect === 'error') pass('solidjobs.fetch() passes redirect:"error" to fetchJson');
@@ -205,7 +205,7 @@ try {
   // fetch() tolerates malformed array members without crashing
   const malformedMembers = { jobs: [null, 7, { title: 'OK', url: 'https://solid.jobs/o/3/career-ops', company: 'Z' }] };
   const safeParsed = await sj.fetch(
-    { name: 'SolidJobs IT', careers_url: 'https://solid.jobs/public-api/offers/it?campaign=career-ops' },
+    { name: 'SolidJobs IT', careers_url: 'https://solid.jobs/public-api/offers/it?campaign=frontrunner' },
     { transport: 'http', fetchJson: async () => malformedMembers, fetchText: async () => '' },
   );
   if (safeParsed.length === 1 && safeParsed[0].url === 'https://solid.jobs/o/3/career-ops') {

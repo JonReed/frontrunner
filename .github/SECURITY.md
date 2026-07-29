@@ -16,7 +16,7 @@ fixed-hour SLA.
 
 ## Supported versions
 
-Security fixes are made on `main`. Older snapshots and upstream career-ops
+Security fixes are made on `main`. Older snapshots and upstream frontrunner
 releases are not maintained by this fork.
 
 ## Scope

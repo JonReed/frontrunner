@@ -19,7 +19,7 @@ contains only a few compatibility entry points. Common commands are exposed via
 | `npm run sync-check` | `src/cv/cv-sync-check.mjs` | Validate CV/profile consistency |
 | `npm run patterns` | `src/analysis/analyze-patterns.mjs` | Analyze tracker outcomes and report patterns |
 | `npm run upskill` | `src/analysis/upskill.mjs` | Aggregate skill-gap map from tracked reports (or `--url-text <url\|file>` for a single-JD targeted gap analysis) |
-| `npm run add` | `src/tracker/add-entry.mjs` | Dedup + transactionally insert a confirmed `/career-ops add` entry into cv.md / article-digest.md; interrupted two-file publication resumes from a contained journal |
+| `npm run add` | `src/tracker/add-entry.mjs` | Dedup + transactionally insert a confirmed `/frontrunner add` entry into cv.md / article-digest.md; interrupted two-file publication resumes from a contained journal |
 | `npm run update:check` | `update-system.mjs check` | Check for official Frontrunner updates |
 | `npm run update` | `update-system.mjs apply` | Apply an official Frontrunner update |
 | `npm run rollback` | `update-system.mjs rollback` | Rollback last update |
@@ -192,7 +192,7 @@ node src/cv/build-cv-latex.mjs --test
 
 ## sync-check
 
-Validates that the career-ops setup is internally consistent: `cv.md` exists and is not too short, `config/profile.yml` exists with required fields, no hardcoded metrics in `modes/_shared.md` or `batch/batch-prompt.md`, and `article-digest.md` freshness (warns if older than 30 days).
+Validates that the frontrunner setup is internally consistent: `cv.md` exists and is not too short, `config/profile.yml` exists with required fields, no hardcoded metrics in `modes/_shared.md` or `batch/batch-prompt.md`, and `article-digest.md` freshness (warns if older than 30 days).
 
 ```bash
 npm run sync-check

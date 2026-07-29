@@ -38,7 +38,7 @@ function makeSandbox() {
   const dir = mkdtempSync(join(tmpdir(), 'co-seed-'));
   const tracker = join(dir, 'applications.md');
   const followups = join(dir, 'follow-ups.md');
-  const lock = join(dir, `career-ops-followups-test-${Math.random().toString(36).slice(2)}.lock`);
+  const lock = join(dir, `frontrunner-followups-test-${Math.random().toString(36).slice(2)}.lock`);
   return { dir, tracker, followups, lock };
 }
 
@@ -62,9 +62,9 @@ function trackerRow(num, date, company, role, score, status, notes) {
 function run(args, sandbox, extraEnv = {}) {
   const env = {
     ...process.env,
-    CAREER_OPS_TRACKER: sandbox.tracker,
-    CAREER_OPS_FOLLOWUPS: sandbox.followups,
-    CAREER_OPS_FOLLOWUPS_LOCK: sandbox.lock,
+    FRONTRUNNER_TRACKER: sandbox.tracker,
+    FRONTRUNNER_FOLLOWUPS: sandbox.followups,
+    FRONTRUNNER_FOLLOWUPS_LOCK: sandbox.lock,
     ...extraEnv,
   };
   try {
@@ -291,7 +291,7 @@ function cleanup(sandbox) {
   writeTracker(sb, [trackerRow(1, '2026-05-01', 'Acme', 'Engineer', '4.0/5', 'Applied', 'Applied 2026-06-20.')]);
   mkdirSync(sb.lock, { recursive: true });
   writeFileSync(join(sb.lock, 'owner.json'), JSON.stringify({ pid: process.pid, token: 'x', startedAt: new Date().toISOString() }));
-  const res = run(['1'], sb, { CAREER_OPS_FOLLOWUPS_LOCK_TIMEOUT_MS: '200' });
+  const res = run(['1'], sb, { FRONTRUNNER_FOLLOWUPS_LOCK_TIMEOUT_MS: '200' });
   if (res.code === 4) pass('9. lock held by live pid → exit 4');
   else fail(`9. lock held by live pid → exit 4 — got ${res.code}\n${res.stdout}${res.stderr}`);
   cleanup(sb);

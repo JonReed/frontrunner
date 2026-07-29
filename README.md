@@ -372,7 +372,7 @@ the sources they configure. Reviewed provider code, local-parser commands,
 the selected model provider, browser/OS compromise, and a hostile
 local user remain outside the remote-job-content sandbox.
 
-See the [full threat model](docs/career-ops-threat-model.md), including the
+See the [full threat model](docs/frontrunner-threat-model.md), including the
 unsafe inherited baseline, abuse cases, residual risks, and implementation
 status. The [local application-service contract](docs/APPLICATION_SERVICE.md)
 documents the fixed operation catalog that local interfaces must use.

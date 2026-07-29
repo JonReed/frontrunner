@@ -18,7 +18,7 @@ import {
 const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
 const MAX_REDIRECTS = 3;
-const DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; career-ops/1.3)';
+const DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; frontrunner/1.3)';
 const NATIVE_FETCH = globalThis.fetch;
 
 function pinnedLookup(addresses) {
@@ -74,7 +74,7 @@ function requestPinned(url, { method, headers, body, signal }, addresses) {
 
 /**
  * Browser-like User-Agent for providers that must clear WAF/CDN bot
- * management blocking the default career-ops UA outright (seen live:
+ * management blocking the default frontrunner UA outright (seen live:
  * Glints' firewall, Geico's Cloudflare-gated Workday tenant). Shared so
  * every provider working around such a block bumps one constant instead
  * of drifting Chrome versions independently per file.

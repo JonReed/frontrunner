@@ -94,7 +94,7 @@ const safe = (s) => String(s).replace(/[^a-zA-Z0-9._-]/g, '-').slice(0, 80);
 
 async function getJson(url) {
   return safeFetchJson(url, {
-    headers: { accept: 'application/json', 'user-agent': 'career-ops/fetch-jds' },
+    headers: { accept: 'application/json', 'user-agent': 'frontrunner/fetch-jds' },
     timeoutMs: 30_000,
     redirect: 'error',
     maxResponseBytes: 8 * 1024 * 1024,

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * invite-match.mjs — Interview-Invite → Tracker Matcher for career-ops
+ * invite-match.mjs — Interview-Invite → Tracker Matcher for frontrunner
  *
  * Recruiter calendar/ATS invite emails frequently name only the company
  * (generic subject lines like "Schedule Your Phone Screen") with no job
@@ -27,10 +27,10 @@ import { join, dirname } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { resolveColumns, parseTrackerRow } from './tracker-parse.mjs';
 
-import { ROOT as CAREER_OPS } from '#paths';
-const APPS_FILE = existsSync(join(CAREER_OPS, 'data/applications.md'))
-  ? join(CAREER_OPS, 'data/applications.md')
-  : join(CAREER_OPS, 'applications.md');
+import { ROOT as FRONTRUNNER } from '#paths';
+const APPS_FILE = existsSync(join(FRONTRUNNER, 'data/applications.md'))
+  ? join(FRONTRUNNER, 'data/applications.md')
+  : join(FRONTRUNNER, 'applications.md');
 
 // --- CLI args ---
 const args = process.argv.slice(2);
@@ -333,7 +333,7 @@ export function analyzeInvite(text, trackerRows = null) {
 // --- Summary mode ---
 function printSummary(result) {
   console.log(`\n${'='.repeat(70)}`);
-  console.log('  Interview Invite Matcher — career-ops');
+  console.log('  Interview Invite Matcher — frontrunner');
   console.log(`${'='.repeat(70)}\n`);
 
   console.log(`  Extracted company: ${result.signals.company || '(not found)'}`);

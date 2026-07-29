@@ -23,26 +23,26 @@ claude   # or codex / qwen / opencode / agy / grok
 for your CV, your details (name, target roles, salary), and sets up the job
 scanner. Nothing to edit by hand: just answer its questions.
 
-If you are using Codex, start the interactive session with `codex`. Slash commands are not guaranteed in Codex, so use the same mode names in a prompt if `/career-ops` is unavailable:
+If you are using Codex, start the interactive session with `codex`. Slash commands are not guaranteed in Codex, so use the same mode names in a prompt if `/frontrunner` is unavailable:
 
 ```text
-Evaluate this JD with career-ops auto-pipeline: https://company.com/jobs/123
-Run the career-ops scan mode.
-Run the career-ops pipeline mode.
-Run the career-ops pdf mode.
-Run the career-ops email mode for the latest evaluated role. Draft only; never sends, submits, or clicks.
-Run the career-ops tracker mode.
+Evaluate this JD with frontrunner auto-pipeline: https://company.com/jobs/123
+Run the frontrunner scan mode.
+Run the frontrunner pipeline mode.
+Run the frontrunner pdf mode.
+Run the frontrunner email mode for the latest evaluated role. Draft only; never sends, submits, or clicks.
+Run the frontrunner tracker mode.
 ```
 
 For one-shot workers or batch tasks in Codex, use `codex exec`. See [docs/CODEX.md](CODEX.md) for the full guide.
 
 ```bash
-codex exec "Evaluate this JD with career-ops auto-pipeline: https://company.com/jobs/123"
-codex exec "Run career-ops scan mode in this repo."
-codex exec "Run career-ops pipeline mode for data/pipeline.md."
-codex exec "Run career-ops pdf mode for the latest evaluated role."
-codex exec "Run career-ops email mode for the latest evaluated role. Draft only; do not send, submit, or click anything."
-codex exec "Run career-ops tracker mode and summarize the current statuses."
+codex exec "Evaluate this JD with frontrunner auto-pipeline: https://company.com/jobs/123"
+codex exec "Run frontrunner scan mode in this repo."
+codex exec "Run frontrunner pipeline mode for data/pipeline.md."
+codex exec "Run frontrunner pdf mode for the latest evaluated role."
+codex exec "Run frontrunner email mode for the latest evaluated role. Draft only; do not send, submit, or click anything."
+codex exec "Run frontrunner tracker mode and summarize the current statuses."
 ```
 
 ### Advanced — clone manually
@@ -73,13 +73,13 @@ npx playwright install chromium
 | Action | How |
 |--------|-----|
 | Evaluate an offer | Paste a URL or JD text |
-| Search for offers | `/career-ops scan` or ask the agent to run `scan` |
-| Process pending URLs | `/career-ops pipeline` or ask the agent to run `pipeline` |
-| Generate a PDF | `/career-ops pdf` or ask the agent to run `pdf` |
-| Draft application email | `/career-ops email` or ask the agent to run `email`; draft-only, never sends, submits, or clicks |
-| Batch evaluate | `/career-ops batch` or use `codex exec "Run career-ops batch mode ..."` |
-| Check tracker status | `/career-ops tracker` or ask the agent to run `tracker` |
-| Fill application form | `/career-ops apply` or ask the agent to run `apply` |
+| Search for offers | `/frontrunner scan` or ask the agent to run `scan` |
+| Process pending URLs | `/frontrunner pipeline` or ask the agent to run `pipeline` |
+| Generate a PDF | `/frontrunner pdf` or ask the agent to run `pdf` |
+| Draft application email | `/frontrunner email` or ask the agent to run `email`; draft-only, never sends, submits, or clicks |
+| Batch evaluate | `/frontrunner batch` or use `codex exec "Run frontrunner batch mode ..."` |
+| Check tracker status | `/frontrunner tracker` or ask the agent to run `tracker` |
+| Fill application form | `/frontrunner apply` or ask the agent to run `apply` |
 
 ## Verify Setup
 

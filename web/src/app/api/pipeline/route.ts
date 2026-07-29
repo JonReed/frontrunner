@@ -1,4 +1,4 @@
-import { pipelineSummary } from "@/lib/career-ops";
+import { pipelineSummary } from "@/lib/frontrunner";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic"; // always read fresh local files

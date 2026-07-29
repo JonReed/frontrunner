@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { resolveCli } from "@/lib/clis";
-import { careerOpsRoot } from "@/lib/career-ops";
+import { frontrunnerRoot } from "@/lib/frontrunner";
 
 // Parse a CV (pasted text or an uploaded PDF) into clean cv.md markdown by running
 // the USER'S OWN CLI headless — the web never ships a heavyweight parser, and the
@@ -19,7 +19,7 @@ export const maxDuration = 300;
 // (exactly how the explore route handles a missing discover.md).
 function readCanonicalMode(): string | null {
   try {
-    return fs.readFileSync(path.join(careerOpsRoot(), "modes", "cv-ingest.md"), "utf8");
+    return fs.readFileSync(path.join(frontrunnerRoot(), "modes", "cv-ingest.md"), "utf8");
   } catch {
     return null;
   }
@@ -28,11 +28,11 @@ function readCanonicalMode(): string | null {
 function ingestPrompt(source: string): string {
   const mode = readCanonicalMode();
   if (mode) {
-    return `${mode}\n\n--- HEADLESS OUTPUT CONTRACT (the career-ops WEB is parsing your stream) ---\nFollow the mode above exactly. You are a PROPOSER running headless: emit ONLY the markdown between <<cv:start>> and <<cv:end>> (own lines, never in a code fence), then one <<cv:seed>>{...} line; or <<cv:error>>{"reason":"unreadable"} if you can't read it. Narrate one short line before <<cv:start>>.\n\n${source}`;
+    return `${mode}\n\n--- HEADLESS OUTPUT CONTRACT (the frontrunner WEB is parsing your stream) ---\nFollow the mode above exactly. You are a PROPOSER running headless: emit ONLY the markdown between <<cv:start>> and <<cv:end>> (own lines, never in a code fence), then one <<cv:seed>>{...} line; or <<cv:error>>{"reason":"unreadable"} if you can't read it. Narrate one short line before <<cv:start>>.\n\n${source}`;
   }
   // Fallback mirrors the canonical docs/examples/cv-example.md format (the SSOT the
   // project ships) so a web-parsed CV is the same shape as a hand-written one.
-  return `You convert a person's CV into clean cv.md markdown that EXACTLY mirrors career-ops's reference format.
+  return `You convert a person's CV into clean cv.md markdown that EXACTLY mirrors frontrunner's reference format.
 
 FORMAT (match exactly; omit a section if the source lacks it; INVENT NOTHING):
 \`# CV -- {Full Name}\`
@@ -81,7 +81,7 @@ export async function POST(req: Request) {
         return Response.json({ error: "PDF upload needs Claude Code — paste your CV text instead." }, { status: 400 });
       }
       const ext = (file.name.match(/\.[a-z0-9]+$/i)?.[0] || ".pdf").toLowerCase();
-      const dir = fs.mkdtempSync(path.join(os.tmpdir(), "career-ops-cv-"));
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), "frontrunner-cv-"));
       tempFile = path.join(dir, `cv${ext}`); // outside the repo, basename-only
       fs.writeFileSync(tempFile, Buffer.from(await file.arrayBuffer()), { mode: 0o600 }); // PII → owner-only
       promptSource = FILE_SRC(tempFile);
@@ -119,7 +119,7 @@ export async function POST(req: Request) {
 
   let child;
   try {
-    child = spawn(binPath, args, { cwd: careerOpsRoot(), env: process.env });
+    child = spawn(binPath, args, { cwd: frontrunnerRoot(), env: process.env });
   } catch (e) {
     if (tempFile) cleanupTemp(tempFile); // never leak the CV temp if spawn throws sync
     return Response.json({ error: e instanceof Error ? e.message : "failed to start the CLI" }, { status: 500 });

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * detect-reposts.mjs — Repost Detector for career-ops
+ * detect-reposts.mjs — Repost Detector for frontrunner
  *
  * Reads data/scan-history.tsv, groups rows by company, fuzzy-matches role
  * titles with roleFuzzyMatch from src/tracker/role-matcher.mjs, and flags any
@@ -28,8 +28,8 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { roleFuzzyMatch } from '../tracker/role-matcher.mjs';
 import { normalizeCompanyName } from '../tracker/invite-match.mjs';
 
-import { ROOT as CAREER_OPS } from '#paths';
-const SCAN_HISTORY_PATH = join(CAREER_OPS, 'data/scan-history.tsv');
+import { ROOT as FRONTRUNNER } from '#paths';
+const SCAN_HISTORY_PATH = join(FRONTRUNNER, 'data/scan-history.tsv');
 const DEFAULT_WINDOW_DAYS = 90;
 
 // --- CLI args ---
@@ -258,7 +258,7 @@ function buildRepostCluster(clusterRows, windowDays) {
 // --- Summary mode ---
 function printSummary(clusters) {
   console.log(`\n${'='.repeat(78)}`);
-  console.log('  Repost Detector — career-ops');
+  console.log('  Repost Detector — frontrunner');
   console.log(`  window: ${windowDays} days | clusters: ${clusters.length}`);
   console.log(`${'='.repeat(78)}\n`);
 

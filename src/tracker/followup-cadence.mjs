@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * followup-cadence.mjs — Follow-up Cadence Tracker for career-ops
+ * followup-cadence.mjs — Follow-up Cadence Tracker for frontrunner
  *
  * Parses applications.md + follow-ups.md, calculates follow-up cadence
  * for active applications, extracts contacts, and flags overdue entries.
@@ -17,12 +17,12 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import yaml from 'js-yaml';
 import { resolveColumns, parseTrackerRow } from './tracker-parse.mjs';
 
-import { ROOT as CAREER_OPS } from '#paths';
-const APPS_FILE = existsSync(join(CAREER_OPS, 'data/applications.md'))
-  ? join(CAREER_OPS, 'data/applications.md')
-  : join(CAREER_OPS, 'applications.md');
-const FOLLOWUPS_FILE = join(CAREER_OPS, 'data/follow-ups.md');
-const PROFILE_FILE = process.env.CAREER_OPS_PROFILE || join(CAREER_OPS, 'config/profile.yml');
+import { ROOT as FRONTRUNNER } from '#paths';
+const APPS_FILE = existsSync(join(FRONTRUNNER, 'data/applications.md'))
+  ? join(FRONTRUNNER, 'data/applications.md')
+  : join(FRONTRUNNER, 'applications.md');
+const FOLLOWUPS_FILE = join(FRONTRUNNER, 'data/follow-ups.md');
+const PROFILE_FILE = process.env.FRONTRUNNER_PROFILE || join(FRONTRUNNER, 'config/profile.yml');
 
 
 // --- CLI args ---
@@ -236,7 +236,7 @@ function extractContacts(notes) {
 }
 
 // --- Resolve report path ---
-export function resolveReportPath(reportField, appsFile = APPS_FILE, repoRoot = CAREER_OPS) {
+export function resolveReportPath(reportField, appsFile = APPS_FILE, repoRoot = FRONTRUNNER) {
   const match = reportField.match(/\]\(([^)]+)\)/);
   if (!match) return null;
   // Report links in the tracker are normalized relative to the tracker file's

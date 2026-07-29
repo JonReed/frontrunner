@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * verify-pipeline.mjs — Health check for career-ops pipeline integrity
+ * verify-pipeline.mjs — Health check for frontrunner pipeline integrity
  *
  * Checks:
  * 1. All statuses are canonical (per states.yml)
@@ -16,7 +16,7 @@
  * 11. Via channel consistency (see #1596)
  * 12. No # value reused across 2+ tracker rows (error — see #1704)
  *
- * Run: node career-ops/verify-pipeline.mjs
+ * Run: node frontrunner/verify-pipeline.mjs
  */
 
 import { readFileSync, readdirSync, existsSync, mkdirSync, unlinkSync, statSync } from 'fs';
@@ -24,23 +24,23 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { looksLikeScoreCell, isSeparatorRow, isHeaderRow, resolveColumns } from './tracker-parse.mjs';
 
-import { ROOT as CAREER_OPS } from '#paths';
+import { ROOT as FRONTRUNNER } from '#paths';
 // Support both layouts: data/applications.md (boilerplate) and applications.md (original).
-// CAREER_OPS_TRACKER overrides the path (used by tests and non-standard layouts).
-const APPS_FILE = process.env.CAREER_OPS_TRACKER
-  ? process.env.CAREER_OPS_TRACKER
-  : existsSync(join(CAREER_OPS, 'data/applications.md'))
-    ? join(CAREER_OPS, 'data/applications.md')
-    : join(CAREER_OPS, 'applications.md');
-const ADDITIONS_DIR = join(CAREER_OPS, 'batch/tracker-additions');
-// CAREER_OPS_REPORTS overrides the reports dir (used by tests, mirrors CAREER_OPS_TRACKER).
-const REPORTS_DIR = process.env.CAREER_OPS_REPORTS || join(CAREER_OPS, 'reports');
-const STATES_FILE = existsSync(join(CAREER_OPS, 'templates/states.yml'))
-  ? join(CAREER_OPS, 'templates/states.yml')
-  : join(CAREER_OPS, 'states.yml');
+// FRONTRUNNER_TRACKER overrides the path (used by tests and non-standard layouts).
+const APPS_FILE = process.env.FRONTRUNNER_TRACKER
+  ? process.env.FRONTRUNNER_TRACKER
+  : existsSync(join(FRONTRUNNER, 'data/applications.md'))
+    ? join(FRONTRUNNER, 'data/applications.md')
+    : join(FRONTRUNNER, 'applications.md');
+const ADDITIONS_DIR = join(FRONTRUNNER, 'batch/tracker-additions');
+// FRONTRUNNER_REPORTS overrides the reports dir (used by tests, mirrors FRONTRUNNER_TRACKER).
+const REPORTS_DIR = process.env.FRONTRUNNER_REPORTS || join(FRONTRUNNER, 'reports');
+const STATES_FILE = existsSync(join(FRONTRUNNER, 'templates/states.yml'))
+  ? join(FRONTRUNNER, 'templates/states.yml')
+  : join(FRONTRUNNER, 'states.yml');
 
 // Ensure required directories exist (fresh setup)
-mkdirSync(join(CAREER_OPS, 'data'), { recursive: true });
+mkdirSync(join(FRONTRUNNER, 'data'), { recursive: true });
 mkdirSync(REPORTS_DIR, { recursive: true });
 
 const CANONICAL_STATUSES = [
@@ -168,7 +168,7 @@ for (const e of entries) {
   const match = e.report.match(/\]\(([^)]+)\)/);
   if (!match) continue;
   const link = match[1];
-  if (!existsSync(join(TRACKER_DIR, link)) && !existsSync(join(CAREER_OPS, link))) {
+  if (!existsSync(join(TRACKER_DIR, link)) && !existsSync(join(FRONTRUNNER, link))) {
     error(`#${e.num}: Report not found: ${link}`);
     brokenReports++;
   }

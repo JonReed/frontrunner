@@ -20,7 +20,7 @@ export const APPLICATION_ANSWERS_HEADING = '## Application Answers';
 const VALID_STATES = new Set(['filled', 'submitted']);
 const MAX_INPUT_BYTES = 1_000_000;
 const MAX_REPORT_BYTES = 4_000_000;
-const ALLOWED_REPORTS_DIR = process.env.CAREER_OPS_REPORTS_DIR || REPORTS_DIR;
+const ALLOWED_REPORTS_DIR = process.env.FRONTRUNNER_REPORTS_DIR || REPORTS_DIR;
 
 function inline(value) {
   return String(value ?? '').replace(/\s+/g, ' ').trim();

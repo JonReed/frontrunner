@@ -1,10 +1,10 @@
-# Contesto condiviso -- career-ops (Italiano)
+# Contesto condiviso -- frontrunner (Italiano)
 
 <!-- ============================================================
      PERSONALIZZAZIONE DI QUESTO FILE
      ============================================================
      Questo file contiene il contesto condiviso per tutte le modalità
-     career-ops in versione italiana. Prima di usare career-ops, DEVI:
+     frontrunner in versione italiana. Prima di usare frontrunner, DEVI:
      1. Compilare config/profile.yml con le tue informazioni personali
      2. Creare cv.md nella cartella principale del progetto (CV in Markdown)
      3. (Opzionale) Creare article-digest.md con i tuoi proof point misurabili

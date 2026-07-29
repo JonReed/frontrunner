@@ -66,7 +66,7 @@ Dla każdego pytania zbuduj odpowiedź według tego schematu:
 2. **Poprzedni Blok G**: Jeśli szkic istnieje, weź go jako bazę i dopracuj
 3. **Ton "To ja wybieram Was"**: ten sam framework co w auto-pipeline -- pewny siebie, nie błagalny
 4. **Konkretność**: zacytuj coś konkretnego z oferty widocznej na ekranie
-5. **career-ops proof point**: dołącz w "Informacje dodatkowe", jeśli takie pole istnieje
+5. **frontrunner proof point**: dołącz w "Informacje dodatkowe", jeśli takie pole istnieje
 
 **Pola specyficzne dla typowych polskich formularzy:**
 - **Oczekiwania płacowe** -> Widełki z `profile.yml`, w PLN, z zaznaczeniem, czy netto czy brutto (oraz UoP/B2B) i dopiskiem "do negocjacji w zależności od całego pakietu"
@@ -104,7 +104,7 @@ Notatki:
 Jeśli kandydat potwierdzi, że aplikacja została wysłana:
 1. Zaktualizuj status na "Applied" kanonicznym CLI: `node src/tracker/set-status.mjs <report#> Applied` (nie edytuj tabeli `applications.md` ręcznie)
 2. Zaktualizuj Blok G reportu finalnymi odpowiedziami
-3. Zasugeruj następny krok: `/career-ops contacto` dla LinkedIn outreach do hiring managera
+3. Zasugeruj następny krok: `/frontrunner contacto` dla LinkedIn outreach do hiring managera
 
 ## Obsługa przewijania
 

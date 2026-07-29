@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
-import { careerOpsRoot, rootScript } from "@/lib/career-ops";
+import { frontrunnerRoot, rootScript } from "@/lib/frontrunner";
 import { writeTempPortals, cleanupTempPortals } from "./portals";
 import { ATS_SOURCES, type DiscoveredOffer, type ExploreFilters, type ScanEvent } from "@/lib/explore";
 
@@ -98,8 +98,8 @@ export function runDiscovery(filters: ExploreFilters, onEvent: (e: ScanEvent) =>
     if (useJson) args.push("--json");
 
     const child = spawn(process.execPath, args, {
-      cwd: careerOpsRoot(),
-      env: { ...process.env, CAREER_OPS_PORTALS: tempPortals },
+      cwd: frontrunnerRoot(),
+      env: { ...process.env, FRONTRUNNER_PORTALS: tempPortals },
     });
 
     const offers: DiscoveredOffer[] = [];

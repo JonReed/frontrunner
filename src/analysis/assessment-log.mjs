@@ -30,10 +30,10 @@ import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { pathToFileURL } from 'url';
 
-import { ROOT as CAREER_OPS } from '#paths';
+import { ROOT as FRONTRUNNER } from '#paths';
 import { mutateFileLocked } from '../lib/locked-file.mjs';
-const LOG_PATH = process.env.CAREER_OPS_ASSESSMENTS
-  || join(CAREER_OPS, 'data/assessments.tsv');
+const LOG_PATH = process.env.FRONTRUNNER_ASSESSMENTS
+  || join(FRONTRUNNER, 'data/assessments.tsv');
 
 const HEADER_COMMENT = [
   '# assessments.tsv — append-only skills-assessment log (user layer). Never rewrite rows.',

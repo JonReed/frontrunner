@@ -19,7 +19,7 @@ import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { safeExternalUrl } from './urls';
 
-/** Repo root: the career-ops checkout this UI lives inside. */
+/** Repo root: the frontrunner checkout this UI lives inside. */
 export const ROOT = join(process.cwd(), '..');
 
 // ---------------------------------------------------------------- types

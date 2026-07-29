@@ -121,7 +121,7 @@ function runPdf(args) {
     // Keep output/ and data/pdf-index.tsv inside the sandbox. Without this the
     // copied script resolves them against the REAL repo root and writes test
     // rows into the user's own manifest.
-    env: { ...process.env, CAREER_OPS_PDF_BASE: sandbox },
+    env: { ...process.env, FRONTRUNNER_PDF_BASE: sandbox },
   });
   return {
     ...result,

@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { careerOpsRoot } from "@/lib/career-ops";
+import { frontrunnerRoot } from "@/lib/frontrunner";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   const note = (body.note || "Followed up").toString().replace(/[\r\n]+/g, " ").trim();
   const line = `- ${today} · ${num}${company} — ${note}\n`;
 
-  const file = path.join(careerOpsRoot(), "data", "follow-ups.md");
+  const file = path.join(frontrunnerRoot(), "data", "follow-ups.md");
   try {
     fs.mkdirSync(path.dirname(file), { recursive: true });
     if (!fs.existsSync(file)) fs.writeFileSync(file, "# Follow-ups\n\n", "utf8");

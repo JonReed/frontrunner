@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { careerOpsRoot, rootScript, trackerCanDelete } from "@/lib/career-ops";
+import { frontrunnerRoot, rootScript, trackerCanDelete } from "@/lib/frontrunner";
 import { isTrackerWriting } from "@/lib/core/run-registry";
 
 export const runtime = "nodejs";
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
 
   if (!trackerCanDelete()) {
     return Response.json(
-      { error: "Removing a tracker row needs a newer career-ops — update to delete rows from here." },
+      { error: "Removing a tracker row needs a newer frontrunner — update to delete rows from here." },
       { status: 400 },
     );
   }
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
       let err = "";
       let child;
       try {
-        child = spawn(process.execPath, args, { cwd: careerOpsRoot(), env: process.env });
+        child = spawn(process.execPath, args, { cwd: frontrunnerRoot(), env: process.env });
       } catch (e) {
         resolve({ code: 1, err: e instanceof Error ? e.message : "failed to start src/tracker/tracker.mjs" });
         return;

@@ -114,7 +114,7 @@ test('concurrent pasted replies retain every bounded candidate exactly once', as
     const email = join(fx.dir, `email-${index}.txt`);
     writeFileSync(email, `Subject: Reply ${index}\nFrom: hr${index}@example.com\n\nBody ${index}`);
     runs.push(run(process.execPath, [PASTE_CLI, '--file', email], {
-      CAREER_OPS_REPLY_CANDIDATES: candidates,
+      FRONTRUNNER_REPLY_CANDIDATES: candidates,
     }));
   }
   const results = await Promise.all(runs);
@@ -174,7 +174,7 @@ test('concurrent assessment events retain every row and one header', async t => 
       '--platform', 'HackerRank',
       '--subject', `Exercise ${index}`,
     ],
-    { CAREER_OPS_ASSESSMENTS: logPath },
+    { FRONTRUNNER_ASSESSMENTS: logPath },
   ));
   const results = await Promise.all(runs);
   assert.equal(results.every(result => result.code === 0), true);

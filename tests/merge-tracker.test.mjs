@@ -2,7 +2,7 @@
 //
 // `validateStatus` is not exported and importing merge-tracker.mjs runs the CLI
 // (top-level lock + merge), so this exercises the real merge path as a CLI
-// integration test via the CAREER_OPS_TRACKER / CAREER_OPS_ADDITIONS env
+// integration test via the FRONTRUNNER_TRACKER / FRONTRUNNER_ADDITIONS env
 // overrides the script already supports for test isolation.
 import { pass, fail, NODE, ROOT } from './helpers.mjs';
 import { join } from 'path';
@@ -34,7 +34,7 @@ function runMerge(additions) {
     execFileSync(NODE, [join(ROOT, 'src/tracker/merge-tracker.mjs')], {
       encoding: 'utf-8',
       timeout: 30000,
-      env: { ...process.env, CAREER_OPS_TRACKER: tracker, CAREER_OPS_ADDITIONS: addsDir },
+      env: { ...process.env, FRONTRUNNER_TRACKER: tracker, FRONTRUNNER_ADDITIONS: addsDir },
     });
     return readFileSync(tracker, 'utf-8');
   } finally {

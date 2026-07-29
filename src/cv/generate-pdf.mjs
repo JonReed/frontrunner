@@ -4,7 +4,7 @@
  * generate-pdf.mjs — HTML → PDF via Playwright
  *
  * Usage:
- *   node career-ops/generate-pdf.mjs <input.html> <output.pdf> [--format=letter|a4] [--report=NNN] [--allow-reorder] [--max-pages=N] [--strict-pages]
+ *   node frontrunner/generate-pdf.mjs <input.html> <output.pdf> [--format=letter|a4] [--report=NNN] [--allow-reorder] [--max-pages=N] [--strict-pages]
  *
  * --report links the generated PDF to its tracker/report number and records
  * the linkage in data/pdf-index.tsv so downstream tools (e.g. the TUI
@@ -41,7 +41,7 @@ import { ROOT } from '#paths';
 // without writing into the user's real output/ and data/pdf-index.tsv.
 // Before src/ existed this file sat in the root and resolved its own
 // dirname, which gave isolation for free — moving it removed that.
-const __dirname = process.env.CAREER_OPS_PDF_BASE || ROOT;
+const __dirname = process.env.FRONTRUNNER_PDF_BASE || ROOT;
 const PDF_PAGE_MARGIN = '0.6in';
 
 // Ensure output directory exists (fresh setup)
@@ -337,7 +337,7 @@ function countRenderedPdfPages(pdfBuffer) {
 
 /**
  * Convert a path to a repo-relative manifest entry, or blank if it is unknown
- * or outside the career-ops repository.
+ * or outside the frontrunner repository.
  *
  * @param {string} pathValue - Absolute or cwd-relative filesystem path.
  * @returns {string} Repo-relative path using forward slashes, or an empty string.
@@ -358,7 +358,7 @@ export function injectPrintPageCss(html, format = 'a4') {
   // hardcoded value would silently win the cascade and make style.margin
   // ineffective (#1837 review). PDF_PAGE_MARGIN is only the fallback for a
   // template that never declares --page-margin at all.
-  const pageStyle = `<style id="career-ops-page-setup">\n@page { size: ${pageSize}; margin: var(--page-margin, ${PDF_PAGE_MARGIN}); }\n</style>`;
+  const pageStyle = `<style id="frontrunner-page-setup">\n@page { size: ${pageSize}; margin: var(--page-margin, ${PDF_PAGE_MARGIN}); }\n</style>`;
 
   if (/<\/head>/i.test(html)) {
     return html.replace(/<\/head>/i, `${pageStyle}\n</head>`);
@@ -376,7 +376,7 @@ export function injectPrintPageCss(html, format = 'a4') {
  * report number to the exact PDF (and its source HTML for regeneration).
  *
  * Columns: report \t pdf \t html \t format \t date — paths relative to the
- * career-ops root with forward slashes. One row per PDF path; when a report
+ * frontrunner root with forward slashes. One row per PDF path; when a report
  * number is given, older rows for that report are dropped too (regenerated
  * CVs supersede stale entries). The file is gitignored: it references
  * gitignored output/ artifacts and is meaningless on another machine.
@@ -451,7 +451,7 @@ async function generatePDF() {
     console.error('This script only converts an already-built HTML file to PDF.');
     console.error('The input HTML is produced by the pdf mode: the agent fills cv-template.html');
     console.error('with content tailored to the specific job (see modes/pdf.md) — there is no');
-    console.error('mechanical markdown-to-HTML step by design. Run `/career-ops pdf` in your AI');
+    console.error('mechanical markdown-to-HTML step by design. Run `/frontrunner pdf` in your AI');
     console.error('CLI to drive the full flow end to end.');
     process.exit(1);
   }
@@ -613,7 +613,7 @@ export async function renderHtmlToPdf(html, outputPath, opts = {}) {
 
   // Write HTML to a temp file in baseDir so page.goto() gives a file://
   // origin that can load local images, fonts, and other resources.
-  const tmpHtmlPath = resolve(baseDir, `.career-ops-render-${randomUUID()}.html`);
+  const tmpHtmlPath = resolve(baseDir, `.frontrunner-render-${randomUUID()}.html`);
   const { writeFile, unlink } = await import('fs/promises');
   await writeFile(tmpHtmlPath, html, 'utf-8');
 

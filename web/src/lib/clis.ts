@@ -2,8 +2,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-// Server-only (node imports). The agnostic runtimes career-ops can delegate to
-// in headless mode (AGENTS.md). Install URLs from career-ops-docs.
+// Server-only (node imports). The agnostic runtimes frontrunner can delegate to
+// in headless mode (AGENTS.md). Install URLs come from the inherited docs UI.
 export type CliSpec = {
   id: string;
   name: string;

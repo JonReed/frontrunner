@@ -106,7 +106,7 @@ When the user accepts one or more suggestions:
 
 ## After the Write
 
-- Suggest `/career-ops scan` — the wider filter only pays off on the next scan.
+- Suggest `/frontrunner scan` — the wider filter only pays off on the next scan.
 - Suggest `upskill` scoped to a Stretch title the user liked, to see the gap
   map between the CV and that next-level target.
 

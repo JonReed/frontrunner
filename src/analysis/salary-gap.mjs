@@ -32,9 +32,9 @@ import { join, dirname } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import yaml from 'js-yaml';
 
-import { ROOT as CAREER_OPS } from '#paths';
-const OBS_PATH = join(CAREER_OPS, 'data/salary-observations.tsv');
-const REPORTS_DIR = join(CAREER_OPS, 'reports');
+import { ROOT as FRONTRUNNER } from '#paths';
+const OBS_PATH = join(FRONTRUNNER, 'data/salary-observations.tsv');
+const REPORTS_DIR = join(FRONTRUNNER, 'reports');
 
 const args = process.argv.slice(2);
 const summaryMode = args.includes('--summary');
@@ -570,7 +570,7 @@ function collectSources() {
 }
 
 function loadProfileDesired() {
-  const profilePath = join(CAREER_OPS, 'config/profile.yml');
+  const profilePath = join(FRONTRUNNER, 'config/profile.yml');
   if (!existsSync(profilePath)) return null;
   try {
     const profile = yaml.load(readFileSync(profilePath, 'utf-8'));

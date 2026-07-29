@@ -32,11 +32,11 @@ function positiveIntegerEnv(name, fallback) {
 export function acquirePipelineLock(pipelinePath, options = {}) {
   return acquireFileLock(pipelinePath, {
     timeoutMs: options.timeoutMs
-      ?? positiveIntegerEnv('CAREER_OPS_PIPELINE_LOCK_TIMEOUT_MS', 8_000),
+      ?? positiveIntegerEnv('FRONTRUNNER_PIPELINE_LOCK_TIMEOUT_MS', 8_000),
     retryMs: options.retryMs
-      ?? positiveIntegerEnv('CAREER_OPS_PIPELINE_LOCK_RETRY_MS', 80),
+      ?? positiveIntegerEnv('FRONTRUNNER_PIPELINE_LOCK_RETRY_MS', 80),
     staleMs: options.staleMs
-      ?? positiveIntegerEnv('CAREER_OPS_PIPELINE_LOCK_STALE_MS', 30_000),
+      ?? positiveIntegerEnv('FRONTRUNNER_PIPELINE_LOCK_STALE_MS', 30_000),
     ownerFields: { pipeline: pipelinePath },
     createTimeoutError: (lockDir, timeoutMs) => new LockTimeoutError(lockDir, timeoutMs),
   });

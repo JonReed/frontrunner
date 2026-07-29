@@ -15,7 +15,7 @@
  *   6. message_id values are unique across appends.
  *   7. parseFileInput / normalizeCandidate work correctly as direct unit imports.
  *
- * Provisions a throwaway candidates file via CAREER_OPS_REPLY_CANDIDATES and a
+ * Provisions a throwaway candidates file via FRONTRUNNER_REPLY_CANDIDATES and a
  * temp dir; never touches the repo's real data/reply-candidates.json.
  */
 
@@ -43,7 +43,7 @@ function tmp(prefix) {
 function runFile(candidatesPath, filePath, extraEnv = {}) {
   return execFileSync(NODE, [CLI, '--file', filePath], {
     cwd: ROOT,
-    env: { ...process.env, CAREER_OPS_REPLY_CANDIDATES: candidatesPath, ...extraEnv },
+    env: { ...process.env, FRONTRUNNER_REPLY_CANDIDATES: candidatesPath, ...extraEnv },
     encoding: 'utf8',
     stdio: ['pipe', 'pipe', 'pipe'],
   });
@@ -189,7 +189,7 @@ console.log('8. interactive (stdin) mode — no --file flag');
   const stdin = 'Interview invite from Acme\nrecruiter@acme.com\nWe would like to schedule a call.\nPlease pick a time.\n';
   const out = execFileSync(NODE, [CLI], {
     cwd: ROOT,
-    env: { ...process.env, CAREER_OPS_REPLY_CANDIDATES: candidates },
+    env: { ...process.env, FRONTRUNNER_REPLY_CANDIDATES: candidates },
     input: stdin,
     encoding: 'utf8',
     stdio: ['pipe', 'pipe', 'pipe'],

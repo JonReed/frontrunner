@@ -58,8 +58,8 @@ import {
   writeFileAtomic, loadCanonicalStates, resolveCanonicalState, normalizeCompany, cell,
 } from './tracker-utils.mjs';
 
-import { ROOT as CAREER_OPS } from '#paths';
-const STATES_FILE = join(CAREER_OPS, 'templates/states.yml');
+import { ROOT as FRONTRUNNER } from '#paths';
+const STATES_FILE = join(FRONTRUNNER, 'templates/states.yml');
 
 const EXIT_OK = 0;
 const EXIT_USAGE = 1;
@@ -180,7 +180,7 @@ if (!newStatus) {
 
 // ── tracker access ───────────────────────────────────────────────
 
-const APPS_FILE = resolveTrackerPath(CAREER_OPS);
+const APPS_FILE = resolveTrackerPath(FRONTRUNNER);
 if (!existsSync(APPS_FILE)) {
   failWith(EXIT_NOT_FOUND, 'no-tracker', `No tracker found at ${APPS_FILE}`);
 }
@@ -249,9 +249,9 @@ let lock = null;
 if (!flags.dryRun) {
   try {
     lock = await acquireTrackerLock(trackerLockDirFor(APPS_FILE), {
-      timeoutMs: Number(process.env.CAREER_OPS_TRACKER_LOCK_TIMEOUT_MS) || 60_000,
-      retryMs: Number(process.env.CAREER_OPS_TRACKER_LOCK_RETRY_MS) || 75,
-      staleMs: Number(process.env.CAREER_OPS_TRACKER_LOCK_STALE_MS) || 10 * 60_000,
+      timeoutMs: Number(process.env.FRONTRUNNER_TRACKER_LOCK_TIMEOUT_MS) || 60_000,
+      retryMs: Number(process.env.FRONTRUNNER_TRACKER_LOCK_RETRY_MS) || 75,
+      staleMs: Number(process.env.FRONTRUNNER_TRACKER_LOCK_STALE_MS) || 10 * 60_000,
       tracker: APPS_FILE,
     });
   } catch (err) {
@@ -392,7 +392,7 @@ if (changed && !flags.dryRun) {
 // Observation trail only: the tracker stays the source of truth for STATE,
 // the ledger records WHEN transitions happened. A failed append is a warning,
 // never a failure — the status write above already succeeded. Sibling of the
-// tracker file so CAREER_OPS_TRACKER redirects (tests, custom layouts) keep
+// tracker file so FRONTRUNNER_TRACKER redirects (tests, custom layouts) keep
 // the ledger next to the tracker it describes. Inside the lock window, so
 // concurrent writers can't interleave lines.
 let statusLogged = false;

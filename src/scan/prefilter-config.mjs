@@ -207,7 +207,7 @@ export function readPrefilterConfig(file) {
 
 export function resolvePrefilterConfigPath({
   root = ROOT,
-  override = process.env.CAREER_OPS_PREFILTER,
+  override = process.env.FRONTRUNNER_PREFILTER,
 } = {}) {
   if (override) return resolve(override);
   const user = join(root, 'config', 'prefilter.yml');

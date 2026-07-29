@@ -28,12 +28,8 @@ import { fileURLToPath } from 'node:url';
 /** Repository root. This file lives at <root>/src/, so up one level. */
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-/**
- * Legacy alias. Roughly half the scripts called the repo root `CAREER_OPS`
- * and half called it `ROOT`; exporting both avoids renaming variables inside
- * 61 files during the migration, which would have made the diff unreviewable.
- */
-export const CAREER_OPS = ROOT;
+/** Product-named alias for modules where it makes call sites clearer. */
+export const FRONTRUNNER = ROOT;
 
 // -- User layer (never auto-updated; see DATA_CONTRACT.md) -------------------
 export const DATA_DIR = join(ROOT, 'data');

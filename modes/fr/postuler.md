@@ -66,7 +66,7 @@ Pour chaque question, construire la reponse selon ce schema :
 2. **Bloc G precedent** : Si un brouillon existe, le prendre comme base et affiner
 3. **Ton "Je vous choisis"** : meme framework que dans l'auto-pipeline -- confiant, pas suppliant
 4. **Specificite** : citer quelque chose de concret de l'offre visible a l'ecran
-5. **career-ops proof point** : inclure dans "Informations complementaires" si un tel champ existe
+5. **frontrunner proof point** : inclure dans "Informations complementaires" si un tel champ existe
 
 **Champs specifiques aux formulaires francais courants :**
 - **Pretentions salariales (brut annuel)** -> Fourchette depuis `profile.yml`, en EUR, avec mention "negociable selon le package global"
@@ -104,7 +104,7 @@ Notes :
 Si le candidat confirme que la candidature est envoyee :
 1. Mettre a jour le statut vers "Applied" via le CLI canonique : `node src/tracker/set-status.mjs <report#> Applied` (ne pas editer la table `applications.md` a la main)
 2. Mettre a jour le Bloc G du report avec les reponses finales
-3. Suggerer l'etape suivante : `/career-ops contacto` pour du LinkedIn outreach vers le hiring manager
+3. Suggerer l'etape suivante : `/frontrunner contacto` pour du LinkedIn outreach vers le hiring manager
 
 ## Gestion du defilement
 

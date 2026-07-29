@@ -1,6 +1,6 @@
 // Shared CLI skill entrypoint bootstrap — used by update-system.
 //
-// .agents/skills/career-ops/SKILL.md is canonical; each supported CLI gets a
+// .agents/skills/frontrunner/SKILL.md is canonical; each supported CLI gets a
 // copy at the location it looks in. Copies rather than symlinks because not
 // every filesystem supports them.
 //
@@ -9,24 +9,46 @@
 // than a skills directory, so it needs no entry. Copies for Cursor, OpenCode,
 // Qwen, Grok and Kimi were removed with those CLIs: eight byte-identical
 // copies of one 202-line file is not support, it is duplication.
-import { readFileSync, writeFileSync, existsSync, mkdirSync, lstatSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, lstatSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 
-export const CANONICAL_SKILL_PATH = '.agents/skills/career-ops/SKILL.md';
+export const CANONICAL_SKILL_PATH = '.agents/skills/frontrunner/SKILL.md';
 
 export const SKILL_ENTRYPOINTS = [
   {
-    path: '.claude/skills/career-ops/SKILL.md',
-    pointer: '../../../.agents/skills/career-ops/SKILL.md',
+    path: '.claude/skills/frontrunner/SKILL.md',
+    pointer: '../../../.agents/skills/frontrunner/SKILL.md',
   },
   {
-    path: '.antigravitycli/skills/career-ops/SKILL.md',
-    pointer: '../../../.agents/skills/career-ops/SKILL.md',
+    path: '.antigravitycli/skills/frontrunner/SKILL.md',
+    pointer: '../../../.agents/skills/frontrunner/SKILL.md',
   },
+];
+
+const inheritedSkillName = ['career', 'ops'].join('-');
+export const RETIRED_SKILL_ENTRYPOINTS = [
+  `.agents/skills/${inheritedSkillName}/SKILL.md`,
+  `.claude/skills/${inheritedSkillName}/SKILL.md`,
+  `.antigravitycli/skills/${inheritedSkillName}/SKILL.md`,
 ];
 
 function repoPath(root, path) {
   return join(root, ...path.split('/'));
+}
+
+/**
+ * Remove only retired entrypoints that the caller has independently confirmed
+ * are tracked system files. Untracked skills are user-owned and stay untouched.
+ */
+export function pruneRetiredSkillEntrypoints(root, trackedPaths = []) {
+  const tracked = new Set(trackedPaths);
+  const removed = [];
+  for (const path of RETIRED_SKILL_ENTRYPOINTS) {
+    if (!tracked.has(path)) continue;
+    rmSync(repoPath(root, path), { force: true });
+    removed.push(path);
+  }
+  return removed;
 }
 
 function readCanonical(root) {

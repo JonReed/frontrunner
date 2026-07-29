@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import fs from "node:fs";
 import { runDiscovery } from "@/lib/core/scan";
-import { rootScript } from "@/lib/career-ops";
+import { rootScript } from "@/lib/frontrunner";
 import { parseExplorePatch, DEFAULT_FILTERS, type DiscoveredOffer, type ScanEvent } from "@/lib/explore";
 
 // Discovery is HTTP-bound across many ATS boards; give it room. It is FREE —

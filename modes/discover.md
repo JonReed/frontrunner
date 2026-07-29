@@ -3,7 +3,7 @@
 ## Purpose
 
 Take a list of companies and resolve each to a scannable ATS board by probing
-the public JSON APIs career-ops already supports — Greenhouse, Ashby, Lever, and
+the public JSON APIs frontrunner already supports — Greenhouse, Ashby, Lever, and
 Workday — via the existing `providers/` layer. Zero LLM tokens, zero auth. A
 company "resolves" when a vendor's board exists AND currently lists ≥1 job.
 Confirmed entries are appended to `portals.yml` `tracked_companies` (deduped,
@@ -41,7 +41,7 @@ reusable tool that feeds the scanner.
   ```
 
 - `portals.yml` — dedupe target and write destination (user layer). Honors the
-  `CAREER_OPS_PORTALS` env override for scratch/testing.
+  `FRONTRUNNER_PORTALS` env override for scratch/testing.
 
 ## Step 1 — Run the script
 
@@ -101,11 +101,11 @@ careers_url) and the unresolved list with reasons. Call out:
   is on Ashby came back unresolved, its slug is likely mixed-case — re-run with
   an explicit `slug:` in the input file (derived slugs are lowercased).
 - **Genuinely unknown**: for a JS-only portal with no ATS API, paste a specific
-  JD into `data/pipeline.md` and run `/career-ops pipeline`.
+  JD into `data/pipeline.md` and run `/frontrunner pipeline`.
 
 ## Step 3 — Handoff
 
-After writing, tell the user to run `/career-ops scan` (or a regional preset
+After writing, tell the user to run `/frontrunner scan` (or a regional preset
 like `eu-fintech`) to pull matching roles from the newly tracked boards.
 
 ## Rules

@@ -54,9 +54,9 @@ function runCli(paths) {
       cwd: ROOT,
       env: {
         ...process.env,
-        CAREER_OPS_CV: paths.cvPath,
-        CAREER_OPS_ARTICLE_DIGEST: paths.articlePath,
-        CAREER_OPS_ADD_ENTRY_JOURNAL: paths.journalPath,
+        FRONTRUNNER_CV: paths.cvPath,
+        FRONTRUNNER_ARTICLE_DIGEST: paths.articlePath,
+        FRONTRUNNER_ADD_ENTRY_JOURNAL: paths.journalPath,
       },
       stdio: ['ignore', 'pipe', 'pipe'],
     });

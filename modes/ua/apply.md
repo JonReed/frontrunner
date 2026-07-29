@@ -108,4 +108,4 @@
 
 1. Оновити статус на "Applied" через канонічний CLI: `node src/tracker/set-status.mjs <report#> Applied` (не редагувати таблицю `data/applications.md` вручну)
 2. Оновити секцію G звіту фінальними відповідями
-3. Запропонувати: `/career-ops contacto` для LinkedIn outreach
+3. Запропонувати: `/frontrunner contacto` для LinkedIn outreach

@@ -9,7 +9,7 @@ const batchStateFile = join(ROOT, 'batch', 'batch-state.tsv');
 const reportsDir = join(ROOT, 'reports');
 
 function usage() {
-  console.log(`career-ops batch tailor — bulk generate tailored CVs for high-scoring batch jobs
+  console.log(`frontrunner batch tailor — bulk generate tailored CVs for high-scoring batch jobs
 
 Usage:
   node src/evaluate/batch-tailor.mjs [--min-score=4.0]

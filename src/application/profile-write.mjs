@@ -47,10 +47,10 @@ import { mutateFileLocked, replaceFileAtomic } from '../lib/locked-file.mjs';
  * exercises this module against the real checkout overwrites the developer's
  * own CV — which has already happened once in this project, with
  * src/cv/generate-pdf.mjs writing into the real data/pdf-index.tsv.
- * CAREER_OPS_PDF_BASE is the precedent this mirrors.
+ * FRONTRUNNER_PDF_BASE is the precedent this mirrors.
  */
 export function profileBase() {
-  return process.env.CAREER_OPS_PROFILE_BASE || ROOT;
+  return process.env.FRONTRUNNER_PROFILE_BASE || ROOT;
 }
 
 export const profilePath = () => join(profileBase(), 'config', 'profile.yml');

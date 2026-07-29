@@ -12,7 +12,7 @@ import yaml from 'js-yaml';
 import { ROOT as __dirname } from '#paths';
 const DEFAULT_TEMPLATES_DIR = resolve(__dirname, 'templates');
 const DEFAULT_PROFILE_PATH =
-  process.env.CAREER_OPS_PROFILE || resolve(__dirname, 'config', 'profile.yml');
+  process.env.FRONTRUNNER_PROFILE || resolve(__dirname, 'config', 'profile.yml');
 
 export const KINDS = {
   cv: {
@@ -68,7 +68,7 @@ export function parseMeta(path) {
   } catch {
     return {};
   }
-  const block = text.match(/<!--\s*career-ops-template\s*([\s\S]*?)-->/);
+  const block = text.match(/<!--\s*frontrunner-template\s*([\s\S]*?)-->/);
   if (!block) return {};
   const meta = {};
   for (const line of block[1].split(/\r?\n/)) {

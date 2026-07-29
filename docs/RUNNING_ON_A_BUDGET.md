@@ -1,14 +1,14 @@
-# Running Career-Ops on a Budget
+# Running Frontrunner on a Budget
 
-Token usage costs and rate limits are the most common bottlenecks when setting up a high-volume job search pipeline. Since Career-Ops processes full job descriptions, evaluates them against your CV across five weighted dimensions, and tailors resumes/cover letters, the context size can grow quickly.
+Token usage costs and rate limits are the most common bottlenecks when setting up a high-volume job search pipeline. Since Frontrunner processes full job descriptions, evaluates them against your CV across five weighted dimensions, and tailors resumes/cover letters, the context size can grow quickly.
 
-Fortunately, **Career-Ops is completely AI-agnostic.** The pipeline relies on the AI coding CLI (or standalone scripts) to process prompt files under `modes/`. This means you can point your CLI to cheaper API providers or local models with **zero code changes** in Career-Ops.
+Fortunately, **Frontrunner is completely AI-agnostic.** The pipeline relies on the AI coding CLI (or standalone scripts) to process prompt files under `modes/`. This means you can point your CLI to cheaper API providers or local models with **zero code changes** in Frontrunner.
 
 ---
 
 ## 1. The Core Concept: Model Agnosticism
 
-Career-Ops is composed of local templates, Markdown prompts, and Node/Playwright scripts. The AI logic is driven entirely by whichever AI coding CLI you run it in (e.g., Claude Code, OpenCode, Qwen CLI, Codex, Antigravity CLI, or Grok Build CLI).
+Frontrunner is composed of local templates, Markdown prompts, and Node/Playwright scripts. The AI logic is driven entirely by whichever AI coding CLI you run it in (e.g., Claude Code, OpenCode, Qwen CLI, Codex, Antigravity CLI, or Grok Build CLI).
 
 By choosing a CLI that supports custom model configurations and routing it to a cheaper API provider or local LLM, you can drastically reduce your pipeline running costs without losing any functionality.
 
@@ -16,7 +16,7 @@ By choosing a CLI that supports custom model configurations and routing it to a 
 
 ## 2. Pick Your Spend Tier
 
-Before diving into CLI configuration, know that career-ops has a built-in knob for controlling evaluation cost: the `spend_tier` setting in [`config/profile.yml`](../config/profile.example.yml). It controls which model tier your CLI uses to evaluate offers — no provider setup required.
+Before diving into CLI configuration, know that frontrunner has a built-in knob for controlling evaluation cost: the `spend_tier` setting in [`config/profile.yml`](../config/profile.example.yml). It controls which model tier your CLI uses to evaluate offers — no provider setup required.
 
 | Tier | Behaviour |
 |------|-----------|
@@ -69,7 +69,7 @@ To configure OpenCode with a custom provider:
 
 > **Kimi the model, not Kimi the CLI.** This recipe runs the Kimi K2.5 *model* through the **OpenCode** CLI. That is a different thing from using the standalone **Kimi CLI** as your host (see [Supported CLIs](SUPPORTED_CLIS.md)). The names collide; the setups don't. Follow the steps below inside OpenCode.
 
-The following configuration was verified with Career-Ops using OpenCode and Moonshot AI's OpenAI-compatible API.
+The following configuration was verified with Frontrunner using OpenCode and Moonshot AI's OpenAI-compatible API.
 
 #### opencode.json
 
@@ -117,7 +117,7 @@ set MOONSHOT_API_KEY=your_api_key
 
 #### Verification
 
-This configuration was verified locally by running a complete Career-Ops evaluation.
+This configuration was verified locally by running a complete Frontrunner evaluation.
 
 Observed during verification:
 
@@ -129,7 +129,7 @@ Observed during verification:
 
 #### Notes
 
-- The measured runtime reflects the complete Career-Ops pipeline (job retrieval, prompt loading, report generation, and tracker updates), not raw model inference latency.
+- The measured runtime reflects the complete Frontrunner pipeline (job retrieval, prompt loading, report generation, and tracker updates), not raw model inference latency.
 - Kimi K2.5 worked correctly with the Moonshot OpenAI-compatible endpoint during verification.
 
 #### Comparison
@@ -169,7 +169,7 @@ When choosing a budget-friendly model, you need strong reasoning capabilities to
 | **Qwen-2.5-Coder (32B / 72B)** | OpenRouter / DeepInfra | ~$0.07 - ~$0.30 | Strong coding and structured reasoning, highly cost-effective. |
 | **GLM-4-Air / GLM-4** | Zhipu AI / OpenRouter | Very Cheap | Reliable multi-turn reasoning and JSON/Markdown generation. |
 | **Gemini 2.5 Flash** | Google AI Studio | Free Tier (15 RPM) | Available via the standalone script `node src/evaluate/gemini-eval.mjs`. Excellent for zero-cost low-volume runs, but subject to rate limits. |
-| **Kimi K2.5** | Moonshot AI | API pricing applies | Verified with OpenCode using the Moonshot OpenAI-compatible endpoint. Produces structured Markdown suitable for Career-Ops evaluations. See the verified OpenCode recipe below. |
+| **Kimi K2.5** | Moonshot AI | API pricing applies | Verified with OpenCode using the Moonshot OpenAI-compatible endpoint. Produces structured Markdown suitable for Frontrunner evaluations. See the verified OpenCode recipe below. |
 
 
 > **Standalone evaluator (no CLI config needed):** every OpenAI-compatible provider above (DeepSeek, Qwen, GLM, Together, Groq, OpenRouter, …) works directly through `node src/evaluate/openai-eval.mjs` — just set a base URL, model, and key:
@@ -188,7 +188,7 @@ When choosing a budget-friendly model, you need strong reasoning capabilities to
 Running a model 100% locally via Ollama is completely free, but it comes with significant tradeoffs:
 
 ### The Size vs. Quality Tradeoff
-- **Avoid Small Models (e.g., 8B parameters)**: Models like Llama 3 8B or Qwen-2.5-Coder 7B are generally **too weak** for Career-Ops. They frequently fail to follow the complex evaluation schemas (A-G blocks), fail to output valid Markdown/JSON structures, or generate low-quality, generic resume customizations.
+- **Avoid Small Models (e.g., 8B parameters)**: Models like Llama 3 8B or Qwen-2.5-Coder 7B are generally **too weak** for Frontrunner. They frequently fail to follow the complex evaluation schemas (A-G blocks), fail to output valid Markdown/JSON structures, or generate low-quality, generic resume customizations.
 - **Minimum Recommended Size**: Use at least a **32B+ or 70B+ model** (such as Qwen 2.5 Coder 32B/72B or Llama 3.1 70B) for reliable scoring and high-quality resume tailoring.
 
 ### Hardware & VRAM Requirements

@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { careerOpsRoot, rootScript } from "@/lib/career-ops";
+import { frontrunnerRoot, rootScript } from "@/lib/frontrunner";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ const STATUS: Record<string, "live" | "empty" | "broken" | "skipped"> = {
 };
 
 export async function GET() {
-  const root = careerOpsRoot();
+  const root = frontrunnerRoot();
   const verifyPortals = rootScript("verify-portals");
   if (!fs.existsSync(verifyPortals)) {
     return Response.json({ available: false, configured: false, companies: [] });

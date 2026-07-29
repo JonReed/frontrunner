@@ -33,7 +33,7 @@ const args = process.argv.slice(2);
 if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
   console.log(`
 ╔══════════════════════════════════════════════════════════════════╗
-║           career-ops — Job Posting Archiver                     ║
+║           frontrunner — Job Posting Archiver                     ║
 ╚══════════════════════════════════════════════════════════════════╝
 
   Save a live job posting as PDF before it disappears.

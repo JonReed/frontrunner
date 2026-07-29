@@ -66,7 +66,7 @@ Para cada pergunta, gerar a resposta seguindo:
 2. **Bloco G anterior**: Se existe um rascunho, usar como base e refinar
 3. **Tom "Estou escolhendo vocês"**: Mesmo framework da auto-pipeline — confiante, não suplicante
 4. **Especificidade**: Referenciar algo concreto do JD visível na tela
-5. **career-ops proof point**: Incluir em "Informações adicionais" se houver campo para isso
+5. **frontrunner proof point**: Incluir em "Informações adicionais" se houver campo para isso
 
 **Campos específicos do mercado brasileiro que aparecem com frequência:**
 - **Pretensão salarial (bruto, mensal ou anual)** → Faixa de `profile.yml`, em BRL, com nota "negociável conforme pacote total"
@@ -104,7 +104,7 @@ Notas:
 Se o candidato confirmar que enviou a candidatura:
 1. Atualizar status para "Applied" com o CLI canônico: `node src/tracker/set-status.mjs <report#> Applied` (não editar a tabela de `applications.md` manualmente)
 2. Atualizar Bloco G do report com as respostas finais
-3. Sugerir próximo passo: `/career-ops contacto` para LinkedIn outreach
+3. Sugerir próximo passo: `/frontrunner contacto` para LinkedIn outreach
 
 ## Scroll handling
 

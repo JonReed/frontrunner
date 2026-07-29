@@ -66,7 +66,7 @@
 2. **이전 블록 G**: 기존 초안이 있으면 base로 가져와 다듬기
 3. **"제가 귀사를 선택합니다" 톤**: auto-pipeline과 같은 framework 사용 -- 자신감 있게, 애원하지 않게
 4. **구체성**: 화면에 보이는 공고 내용 중 구체적인 요소 언급
-5. **career-ops proof point**: "추가 정보" 같은 필드가 있으면 포함
+5. **frontrunner proof point**: "추가 정보" 같은 필드가 있으면 포함
 
 **한국 지원서 폼에서 자주 나오는 필드:**
 - **희망 연봉 / 처우** -> `profile.yml`의 range를 사용. 세전 연봉 기준인지 명확히 쓰고, "전체 보상 패키지에 따라 협의 가능"이라고 덧붙임
@@ -105,7 +105,7 @@ Notes:
 후보자가 지원서를 제출했다고 확인하면:
 1. tracker status 변경은 `data/applications.md`를 직접 수정하지 않습니다. `batch/tracker-additions/`에 `Applied` 상태의 TSV update를 쓰고 `node src/tracker/merge-tracker.mjs`로 병합합니다.
 2. 최종 답변을 report의 블록 G에 업데이트합니다.
-3. 다음 단계로 `/career-ops contacto`를 제안해 hiring manager 또는 recruiter에게 LinkedIn outreach를 할 수 있게 합니다.
+3. 다음 단계로 `/frontrunner contacto`를 제안해 hiring manager 또는 recruiter에게 LinkedIn outreach를 할 수 있게 합니다.
 
 ## 스크롤 처리
 

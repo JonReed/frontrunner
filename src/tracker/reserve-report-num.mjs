@@ -34,7 +34,7 @@ import { ROOT } from '#paths';
 const MAX_SENTINEL_AGE_MS = 4 * 60 * 60 * 1000;
 const MAX_RETRIES = 50;
 const MAX_COUNT = 50;
-const RESERVATION_TOKEN = Symbol('career-ops-report-reservation-token');
+const RESERVATION_TOKEN = Symbol('frontrunner-report-reservation-token');
 
 /** Format a report ID with a minimum width of three digits. */
 export function formatReportNumber(num) {
@@ -46,7 +46,7 @@ export function formatReportNumber(num) {
 
 function reportsDirFor(options = {}) {
   return resolve(options.reportsDir
-    || process.env.CAREER_OPS_REPORTS_DIR
+    || process.env.FRONTRUNNER_REPORTS_DIR
     || join(options.rootDir || ROOT, 'reports'));
 }
 
@@ -163,9 +163,9 @@ export async function reserveReportNumbers(count = 1, options = {}) {
   mkdirSync(reportsDir, { recursive: true });
 
   const lock = await acquireTrackerLock(trackerLockDirFor(trackerPath), {
-    timeoutMs: Number(process.env.CAREER_OPS_TRACKER_LOCK_TIMEOUT_MS) || 60_000,
-    retryMs: Number(process.env.CAREER_OPS_TRACKER_LOCK_RETRY_MS) || 75,
-    staleMs: Number(process.env.CAREER_OPS_TRACKER_LOCK_STALE_MS) || 10 * 60_000,
+    timeoutMs: Number(process.env.FRONTRUNNER_TRACKER_LOCK_TIMEOUT_MS) || 60_000,
+    retryMs: Number(process.env.FRONTRUNNER_TRACKER_LOCK_RETRY_MS) || 75,
+    staleMs: Number(process.env.FRONTRUNNER_TRACKER_LOCK_STALE_MS) || 10 * 60_000,
     tracker: trackerPath,
     ...options.lockOptions,
   });
@@ -226,9 +226,9 @@ export async function releaseReportNumbers(numbers, options = {}) {
 
   const trackerPath = trackerPathFor(options);
   const lock = await acquireTrackerLock(trackerLockDirFor(trackerPath), {
-    timeoutMs: Number(process.env.CAREER_OPS_TRACKER_LOCK_TIMEOUT_MS) || 60_000,
-    retryMs: Number(process.env.CAREER_OPS_TRACKER_LOCK_RETRY_MS) || 75,
-    staleMs: Number(process.env.CAREER_OPS_TRACKER_LOCK_STALE_MS) || 10 * 60_000,
+    timeoutMs: Number(process.env.FRONTRUNNER_TRACKER_LOCK_TIMEOUT_MS) || 60_000,
+    retryMs: Number(process.env.FRONTRUNNER_TRACKER_LOCK_RETRY_MS) || 75,
+    staleMs: Number(process.env.FRONTRUNNER_TRACKER_LOCK_STALE_MS) || 10 * 60_000,
     tracker: trackerPath,
     ...options.lockOptions,
   });
@@ -249,9 +249,9 @@ export async function gcStaleReportReservations(options = {}) {
 
   const trackerPath = trackerPathFor(options);
   const lock = await acquireTrackerLock(trackerLockDirFor(trackerPath), {
-    timeoutMs: Number(process.env.CAREER_OPS_TRACKER_LOCK_TIMEOUT_MS) || 60_000,
-    retryMs: Number(process.env.CAREER_OPS_TRACKER_LOCK_RETRY_MS) || 75,
-    staleMs: Number(process.env.CAREER_OPS_TRACKER_LOCK_STALE_MS) || 10 * 60_000,
+    timeoutMs: Number(process.env.FRONTRUNNER_TRACKER_LOCK_TIMEOUT_MS) || 60_000,
+    retryMs: Number(process.env.FRONTRUNNER_TRACKER_LOCK_RETRY_MS) || 75,
+    staleMs: Number(process.env.FRONTRUNNER_TRACKER_LOCK_STALE_MS) || 10 * 60_000,
     tracker: trackerPath,
     ...options.lockOptions,
   });

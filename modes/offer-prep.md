@@ -44,12 +44,12 @@ It is NOT:
 
 ## Invocation
 
-1. `/career-ops offer-prep {pasted contract text}`
-2. `/career-ops offer-prep {path to PDF or file}` — e.g. a contract dropped
+1. `/frontrunner offer-prep {pasted contract text}`
+2. `/frontrunner offer-prep {path to PDF or file}` — e.g. a contract dropped
    into `data/offers/{company-slug}/`
-3. `/career-ops offer-prep` — ask for the document
+3. `/frontrunner offer-prep` — ask for the document
 4. Proactively: when a tracker row is being set to `Offer`, suggest this mode.
-5. `/career-ops offer-prep reply {company-slug}` — Step 8 on demand: draft
+5. `/frontrunner offer-prep reply {company-slug}` — Step 8 on demand: draft
    the negotiation reply email from an existing prep report.
 
 If the candidate asks "should I sign?": run the mode, and state plainly that

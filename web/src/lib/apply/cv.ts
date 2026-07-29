@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { careerOpsRoot } from "@/lib/career-ops";
+import { frontrunnerRoot } from "@/lib/frontrunner";
 
 /**
  * Locate the tailored CV PDF the real `pdf` mode wrote to output/ for a given
@@ -12,7 +12,7 @@ import { careerOpsRoot } from "@/lib/career-ops";
 export function resolveTailoredCv(company?: string): string | null {
   const c = (company ?? "").trim();
   if (!c) return null;
-  const dir = path.join(careerOpsRoot(), "output");
+  const dir = path.join(frontrunnerRoot(), "output");
   let files: string[];
   try {
     files = fs.readdirSync(dir).filter((f) => f.toLowerCase().endsWith(".pdf"));

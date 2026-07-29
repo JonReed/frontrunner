@@ -24,7 +24,7 @@ import { join, dirname } from 'node:path';
 import { acquirePipelineLock, LockTimeoutError } from '../src/tracker/pipeline-lock.mjs';
 
 function fixtureRoot() {
-  const root = mkdtempSync(join(tmpdir(), 'career-ops-pipeline-lock-'));
+  const root = mkdtempSync(join(tmpdir(), 'frontrunner-pipeline-lock-'));
   mkdirSync(join(root, 'data'), { recursive: true });
   return root;
 }
@@ -67,7 +67,7 @@ test('acquirePipelineLock: configurable timing — the contention timeout is not
 });
 
 test('acquirePipelineLock: creates a missing parent data/ directory instead of throwing ENOENT (fresh install)', async () => {
-  const root = mkdtempSync(join(tmpdir(), 'career-ops-pipeline-lock-fresh-'));
+  const root = mkdtempSync(join(tmpdir(), 'frontrunner-pipeline-lock-fresh-'));
   try {
     // No data/ directory at all — exercise the fresh-install path.
     const p = join(root, 'data', 'pipeline.md');

@@ -43,8 +43,8 @@ import { resolveColumns, parseTrackerRow } from '../tracker/tracker-parse.mjs';
 import { resolveTrackerPath, loadCanonicalStates, resolveCanonicalState } from '../tracker/tracker-utils.mjs';
 import { parseAppliedDate, normalizeStatus } from '../tracker/followup-cadence.mjs';
 
-import { ROOT as CAREER_OPS } from '#paths';
-const STATES_FILE = join(CAREER_OPS, 'templates/states.yml');
+import { ROOT as FRONTRUNNER } from '#paths';
+const STATES_FILE = join(FRONTRUNNER, 'templates/states.yml');
 
 const args = process.argv.slice(2);
 const summaryMode = args.includes('--summary');
@@ -220,7 +220,7 @@ export function computeVelocity(timelines, todayStr) {
 // --- Benchmarks ---
 export function loadBenchmarks(explicitPath) {
   const path = explicitPath
-    || (existsSync(join(CAREER_OPS, 'config/benchmarks.yml')) ? join(CAREER_OPS, 'config/benchmarks.yml') : join(CAREER_OPS, 'templates/benchmarks.yml'));
+    || (existsSync(join(FRONTRUNNER, 'config/benchmarks.yml')) ? join(FRONTRUNNER, 'config/benchmarks.yml') : join(FRONTRUNNER, 'templates/benchmarks.yml'));
   let doc;
   try {
     doc = yaml.load(readFileSync(path, 'utf-8'));
@@ -518,7 +518,7 @@ function selfTest() {
   check(v3.appliedToResponded.censored === 2, 'velocity: censored drops to 2 after row 4 completes');
 
   // -- benchmarks + classification --
-  const bm = loadBenchmarks(join(CAREER_OPS, 'templates/benchmarks.yml')).benchmarks;
+  const bm = loadBenchmarks(join(FRONTRUNNER, 'templates/benchmarks.yml')).benchmarks;
   check(bm.response_rate && Array.isArray(bm.response_rate.range_pct), 'benchmarks: shipped file loads');
   check(bm.days_first_response.range_days[1] === 14, 'benchmarks: first-response window upper bound');
   check(!('time_to_fill' in bm), 'benchmarks: employer-side time_to_fill must not exist');
@@ -663,7 +663,7 @@ function main() {
     process.exit(1);
   }
   const states = loadCanonicalStates(STATES_FILE);
-  const trackerPath = resolveTrackerPath(CAREER_OPS);
+  const trackerPath = resolveTrackerPath(FRONTRUNNER);
   const logPath = join(dirname(trackerPath), 'status-log.tsv');
   const trackerContent = existsSync(trackerPath) ? readFileSync(trackerPath, 'utf-8') : '';
   const logContent = existsSync(logPath) ? readFileSync(logPath, 'utf-8') : '';

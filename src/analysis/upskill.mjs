@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * upskill.mjs — Aggregate skill-gap analyzer for career-ops (#1520, phase 1)
+ * upskill.mjs — Aggregate skill-gap analyzer for frontrunner (#1520, phase 1)
  *
  * Reads the tracker + every linked evaluation report, extracts skill tokens
  * from each report's gaps (Machine Summary hard_stops/soft_gaps + Gap table),
@@ -28,12 +28,12 @@ import { fileURLToPath } from 'url';
 import { load as yamlLoad } from 'js-yaml';
 import { resolveColumns, parseTrackerRow } from '../tracker/tracker-parse.mjs';
 
-import { ROOT as CAREER_OPS } from '#paths';
-const APPS_FILE = existsSync(join(CAREER_OPS, 'data/applications.md'))
-  ? join(CAREER_OPS, 'data/applications.md')
-  : join(CAREER_OPS, 'applications.md');
-const CV_FILE = join(CAREER_OPS, 'cv.md');
-const PROFILE_FILE = join(CAREER_OPS, 'config/profile.yml');
+import { ROOT as FRONTRUNNER } from '#paths';
+const APPS_FILE = existsSync(join(FRONTRUNNER, 'data/applications.md'))
+  ? join(FRONTRUNNER, 'data/applications.md')
+  : join(FRONTRUNNER, 'applications.md');
+const CV_FILE = join(FRONTRUNNER, 'cv.md');
+const PROFILE_FILE = join(FRONTRUNNER, 'config/profile.yml');
 
 // Bump when extraction rules change in a way that would make gap lists from
 // older runs non-comparable. The upskill mode's diff-vs-previous section only
@@ -212,7 +212,7 @@ function analyze(minReports) {
     reportsLinked += 1;
     // Tracker links are normalized relative to the tracker file's directory
     // (see src/tracker/merge-tracker.mjs); resolve against it, with a root-relative fallback.
-    const candidates = [join(dirname(APPS_FILE), linkMatch[1]), join(CAREER_OPS, linkMatch[1])];
+    const candidates = [join(dirname(APPS_FILE), linkMatch[1]), join(FRONTRUNNER, linkMatch[1])];
     const reportPath = candidates.find(p => existsSync(p));
     if (!reportPath) continue;
     reportsRead += 1;
@@ -537,7 +537,7 @@ if (urlTextIdx !== -1 || directUrl) {
     }
     let activeCvFile = CV_FILE;
     if (!existsSync(activeCvFile)) {
-      activeCvFile = join(CAREER_OPS, 'cv-example.md');
+      activeCvFile = join(FRONTRUNNER, 'cv-example.md');
     }
     if (existsSync(activeCvFile)) {
       try { knownTextChunks.push(readFileSync(activeCvFile, 'utf-8')); } catch (e) {}

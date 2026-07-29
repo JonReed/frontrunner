@@ -1,6 +1,6 @@
 # Supported Job Boards
 
-Career-Ops scans job sources through provider modules in `providers/`. Each
+Frontrunner scans job sources through provider modules in `providers/`. Each
 non-helper `*.mjs` file maps to one supported source. Files prefixed with `_`
 are shared helpers and are not loaded as providers.
 

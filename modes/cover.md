@@ -2,8 +2,8 @@
 
 Generates a tailored cover letter for any candidate from a job description.
 Works in two modes:
-- **Slug mode:** `/career-ops cover {slug}` — loads the existing evaluation report draft as a starting point
-- **Paste mode:** `/career-ops cover` or JD pasted directly — starts from scratch
+- **Slug mode:** `/frontrunner cover {slug}` — loads the existing evaluation report draft as a starting point
+- **Paste mode:** `/frontrunner cover` or JD pasted directly — starts from scratch
 
 ---
 
@@ -333,7 +333,7 @@ After the PDF is confirmed, add a brief note:
 
 ## Slug mode specifics
 
-When invoked as `/career-ops cover {slug}`:
+When invoked as `/frontrunner cover {slug}`:
 
 1. Find the matching report in `reports/` by slug
 2. Extract the `## Cover Letter Draft` section — use it as a pre-populated starting point for the draft

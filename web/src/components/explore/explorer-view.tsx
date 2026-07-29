@@ -5,7 +5,7 @@ import { Compass, ChevronDown, RotateCcw, AlertTriangle, Sparkles, Settings } fr
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { instrumentSerif } from "@/lib/fonts";
-import type { Application, InboxJob } from "@/lib/career-ops";
+import type { Application, InboxJob } from "@/lib/frontrunner";
 import { paramsToFilters, paramsToAi, type ExploreFilters } from "@/lib/explore";
 import { FilterBuilder } from "./filter-builder";
 import { DiscoveringState } from "./discovering-state";
@@ -49,7 +49,7 @@ export function ExplorerView({
 
   useEffect(() => {
     try {
-      const id = JSON.parse(localStorage.getItem("career-ops:config") || "{}").cliId || null;
+      const id = JSON.parse(localStorage.getItem("frontrunner:config") || "{}").cliId || null;
       setCli({ id, name: id ? CLI_NAMES[id] || id : undefined });
     } catch {
       setCli({ id: null });
@@ -124,7 +124,7 @@ export function ExplorerView({
 
       {!rootExists && (
         <div className="mb-5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
-          Your career-ops home isn’t set up yet — discovery needs a checkout with a profile to seed from.
+          Your frontrunner home isn’t set up yet — discovery needs a checkout with a profile to seed from.
         </div>
       )}
 
@@ -332,7 +332,7 @@ function CappedBanner({ companiesScanned, companiesAvailable, onRefine }: { comp
 function FailedCard({ msg, onRetry }: { msg: string; onRetry: () => void }) {
   // The scanner-missing 400 (data-only / pre-scan-ats-full checkout) must NOT
   // offer a "Try again" that re-fails forever — give a real next step instead.
-  const scannerMissing = /isn'?t available|data only|complete career-ops checkout|scanner/i.test(msg);
+  const scannerMissing = /isn'?t available|data only|complete frontrunner checkout|scanner/i.test(msg);
   if (scannerMissing) {
     return (
       <div className="rounded-2xl border border-border bg-surface/30 px-6 py-10 text-center">
@@ -341,8 +341,8 @@ function FailedCard({ msg, onRetry }: { msg: string; onRetry: () => void }) {
         </div>
         <h2 className={`${instrumentSerif.className} mt-4 text-2xl text-foreground`}>Discovery needs the full toolkit</h2>
         <p className="mx-auto mt-1.5 max-w-md text-sm text-muted">
-          Your career-ops home looks data-only or is on an older version. The free scanner ships with a complete checkout —
-          update career-ops, or paste a job URL on the pipeline to evaluate it directly.
+          Your frontrunner home looks data-only or is on an older version. The free scanner ships with a complete checkout —
+          update frontrunner, or paste a job URL on the pipeline to evaluate it directly.
         </p>
         <div className="mt-4 flex flex-wrap justify-center gap-2">
           <Link href="/pipeline" className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-2 text-sm font-semibold text-brand-foreground transition hover:brightness-110">

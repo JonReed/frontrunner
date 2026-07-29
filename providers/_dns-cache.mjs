@@ -38,7 +38,7 @@
  *         p.lookup('example.com').then(()=>console.log('promises hit patch:',n>0))"
  *   - Failed resolutions are never cached, so an outage cannot be pinned in.
  *
- * Opt out entirely with `CAREER_OPS_NO_DNS_CACHE=1`.
+ * Opt out entirely with `FRONTRUNNER_NO_DNS_CACHE=1`.
  */
 
 import dns from 'node:dns';
@@ -168,6 +168,6 @@ export function createCachedLookup(realLookup, options = {}) {
   return cachedLookup;
 }
 
-if (process.env.CAREER_OPS_NO_DNS_CACHE !== '1') {
+if (process.env.FRONTRUNNER_NO_DNS_CACHE !== '1') {
   dns.lookup = createCachedLookup(dns.lookup);
 }

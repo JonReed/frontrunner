@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { resolveCli } from "@/lib/clis";
-import { careerOpsRoot, readMemory } from "@/lib/career-ops";
+import { frontrunnerRoot, readMemory } from "@/lib/frontrunner";
 import { assembleDedupContext } from "@/lib/core/discover";
 
 // AI search orchestrates modes/discover.md by running the USER'S configured CLI
@@ -15,7 +15,7 @@ export const maxDuration = 600;
 
 const OUTPUT_CONTRACT = `
 
---- OUTPUT CONTRACT (the career-ops WEB is parsing your stream) ---
+--- OUTPUT CONTRACT (the frontrunner WEB is parsing your stream) ---
 Follow modes/discover.md exactly. You are running headless for the web:
 - You are a PROPOSER — never write a file (Write/Edit/Bash are disabled).
 - Emit each candidate as ONE line, never inside a code fence:
@@ -46,9 +46,9 @@ export async function POST(req: Request) {
   // homegrown prompt. Missing (older core) → graceful 400 so the Scan tab stays usable.
   let mode: string;
   try {
-    mode = fs.readFileSync(path.join(careerOpsRoot(), "modes", "discover.md"), "utf8");
+    mode = fs.readFileSync(path.join(frontrunnerRoot(), "modes", "discover.md"), "utf8");
   } catch {
-    return Response.json({ code: "MODE_MISSING", error: "AI search needs a newer career-ops — update to enable it." }, { status: 400 });
+    return Response.json({ code: "MODE_MISSING", error: "AI search needs a newer frontrunner — update to enable it." }, { status: 400 });
   }
 
   const { lines } = assembleDedupContext();
@@ -75,7 +75,7 @@ export async function POST(req: Request) {
       ]
     : spec.args(prompt);
 
-  const child = spawn(binPath, args, { cwd: careerOpsRoot(), env: process.env });
+  const child = spawn(binPath, args, { cwd: frontrunnerRoot(), env: process.env });
 
   const encoder = new TextEncoder();
   // `closed` + kill timer in the OUTER scope so cancel() can flip `closed` before
