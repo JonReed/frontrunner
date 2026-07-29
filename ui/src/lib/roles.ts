@@ -338,8 +338,17 @@ export async function readReport(reportPath: string): Promise<string | null> {
 function safeReportFile(reportPath: string): string | null {
   if (typeof reportPath !== 'string' || reportPath.length > 300 || !reportPath.endsWith('.md')) return null;
   const reportsRoot = resolve(ROOT, 'reports');
-  const candidate = resolve(ROOT, reportPath);
-  if (!candidate.startsWith(`${reportsRoot}${sep}`) || !existsSync(candidate)) return null;
+
+  // Report links come from the tracker's markdown and are relative to the file
+  // that CONTAINS them — data/applications.md — so they look like
+  // '../reports/001-x.md'. Resolving those against ROOT lands outside the repo
+  // and fails containment, which silently blanked every assessment and every
+  // job-advert link. Try the tracker's own directory first, then ROOT for the
+  // root-level tracker layout.
+  const candidate = [resolve(ROOT, 'data', reportPath), resolve(ROOT, reportPath)].find(
+    (p) => p.startsWith(`${reportsRoot}${sep}`) && existsSync(p),
+  );
+  if (!candidate) return null;
   try {
     const realRoot = realpathSync(reportsRoot);
     const realCandidate = realpathSync(candidate);

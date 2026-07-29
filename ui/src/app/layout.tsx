@@ -25,7 +25,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="min-h-screen">
-        <header className="sticky top-0 z-10 border-b border-[var(--color-line)] bg-[var(--color-paper)]/90 backdrop-blur">
+        <a href="#main" className="skip-link">Skip to content</a>
+        <header className="sticky top-0 z-10 border-b border-[var(--color-line)] bg-[var(--color-paper)]">
           <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
             <Link href="/" className="text-[17px] font-bold tracking-tight">
               Frontrunner
@@ -43,7 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </nav>
           </div>
         </header>
-        <main className="mx-auto max-w-4xl px-6 py-10">{children}</main>
+        <main id="main" className="mx-auto max-w-4xl px-6 py-10">{children}</main>
         {/*
           Footer priorities, in order:
           1. Reassurance. This audience is handing over their entire employment

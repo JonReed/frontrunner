@@ -62,15 +62,23 @@
   --color-attention-wash: #fdf3e7;
 
   /* -- AI actions ------------------------------------------------------
-     A fourth colour, and the only one that earns an exception to the
-     three-colour rule. Anything that spends the user's AI allowance is
-     violet and carries the sparkle mark, so those actions are recognisable
-     as a class before the label is read. Violet is the de facto convention
-     for AI features, so the association arrives with the user. */
-  --color-ai: #6d3fc4;
-  --color-ai-hover: #5a32a6;
-  --color-ai-wash: #f3eefb;
-  --color-ai-line: #d9c9f2;
+     Anything that spends the user's AI allowance is INK — the darkest,
+     heaviest control on the page — and carries the sparkle mark. Two
+     signals, recognisable before the label is read.
+
+     This was violet, on the reasoning that violet is "the AI convention".
+     That reasoning is precisely what produces a generic AI-built look:
+     purple-for-AI is the single most recognised tell of a generated
+     interface, and adopting a convention because it is a convention is how
+     every such product ends up looking identical.
+
+     Ink is better on the merits anyway. It is the heaviest thing on a light
+     page, so the one action that costs something reads as the most
+     deliberate — which is exactly what it is. */
+  --color-ai: #24211e;
+  --color-ai-hover: #100f0e;
+  --color-ai-wash: #f2f0ed;
+  --color-ai-line: #cfc9c2;
 
   --font-sans: 'DM Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
@@ -94,4 +102,33 @@ body { background: var(--color-paper); }
   outline: 2px solid var(--color-act);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* Someone with vestibular sensitivity should not be punished for waiting on a
+   slow job. The spinner is the only motion in the product; when motion is
+   unwelcome it becomes a static ring and the wording carries the progress. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Keyboard users land here first and can jump the navigation. Visually hidden
+   until focused. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 50;
+}
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+  background: var(--color-ink);
+  color: #fff;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
 }
