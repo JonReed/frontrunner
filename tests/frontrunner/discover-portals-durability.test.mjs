@@ -85,7 +85,11 @@ test('destructive cross-process discovery retains every unique board once', asyn
       match(index % unique),
     )),
   );
-  assert.equal(results.every(result => result.code === 0), true);
+  assert.equal(
+    results.every(result => result.code === 0),
+    true,
+    results.filter(result => result.code !== 0).map(result => result.stderr).join('\n'),
+  );
 
   const content = readFileSync(fx.portalsPath, 'utf8');
   const parsed = yaml.load(content);

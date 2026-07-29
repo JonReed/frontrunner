@@ -62,7 +62,15 @@ function removeUnchangedLock(lockDir, identity, ownerToken) {
   if ((owner?.token ?? null) !== ownerToken) return false;
   const finalIdentity = currentLockIdentity(lockDir);
   if (!finalIdentity || !sameLockDirectory(identity, finalIdentity)) return false;
-  rmSync(lockDir, { recursive: true, force: true });
+  try {
+    rmSync(lockDir, { recursive: true, force: true });
+  } catch (error) {
+    // Windows can transiently retain a handle to a directory that another
+    // process has just inspected. The lock is still present, so callers can
+    // safely treat this as contention and retry.
+    if (error?.code === 'EPERM' || error?.code === 'EBUSY') return false;
+    throw error;
+  }
   return true;
 }
 
@@ -137,9 +145,13 @@ export async function acquireFileLock(filePath, options = {}) {
         mkdirSync(recoverGuardDir);
         hasRecoverGuard = true;
       } catch (guardError) {
-        if (guardError?.code !== 'EEXIST') throw guardError;
-        if (lockCanRecover(recoverGuardDir, staleMs)) {
-          rmSync(recoverGuardDir, { recursive: true, force: true });
+        if (!['EEXIST', 'EPERM', 'EBUSY'].includes(guardError?.code)) throw guardError;
+        if (guardError?.code === 'EEXIST' && lockCanRecover(recoverGuardDir, staleMs)) {
+          try {
+            rmSync(recoverGuardDir, { recursive: true, force: true });
+          } catch (recoverError) {
+            if (!['EPERM', 'EBUSY'].includes(recoverError?.code)) throw recoverError;
+          }
         }
       }
 
@@ -155,7 +167,11 @@ export async function acquireFileLock(filePath, options = {}) {
             continue;
           }
         } finally {
-          rmSync(recoverGuardDir, { recursive: true, force: true });
+          try {
+            rmSync(recoverGuardDir, { recursive: true, force: true });
+          } catch (cleanupError) {
+            if (!['EPERM', 'EBUSY'].includes(cleanupError?.code)) throw cleanupError;
+          }
         }
       }
 

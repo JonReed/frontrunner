@@ -101,7 +101,9 @@ test('application-answer publication is atomic and contained under reports', asy
   }, { reportsDir });
   assert.equal(normalized.state, 'submitted');
   assert.match(readFileSync(report, 'utf8'), /## Application Answers/u);
-  assert.equal(statSync(report).mode & 0o777, 0o600);
+  if (process.platform !== 'win32') {
+    assert.equal(statSync(report).mode & 0o777, 0o600);
+  }
 });
 
 test('concurrent pasted replies retain every bounded candidate exactly once', async t => {
@@ -122,7 +124,9 @@ test('concurrent pasted replies retain every bounded candidate exactly once', as
   const stored = JSON.parse(readFileSync(candidates, 'utf8'));
   assert.equal(stored.length, count);
   assert.equal(new Set(stored.map(item => item.subject)).size, count);
-  assert.equal(statSync(candidates).mode & 0o777, 0o600);
+  if (process.platform !== 'win32') {
+    assert.equal(statSync(candidates).mode & 0o777, 0o600);
+  }
   assert.deepEqual(debris(fx.dir), []);
 });
 
@@ -182,7 +186,9 @@ test('concurrent assessment events retain every row and one header', async t => 
   assert.equal(lines.filter(line => line.startsWith('# assessments.tsv')).length, 1);
   assert.equal(lines.filter(line => !line.startsWith('#')).length, count);
   assert.equal(new Set(lines.filter(line => !line.startsWith('#'))).size, count);
-  assert.equal(statSync(logPath).mode & 0o777, 0o600);
+  if (process.platform !== 'win32') {
+    assert.equal(statSync(logPath).mode & 0o777, 0o600);
+  }
   assert.deepEqual(debris(fx.dir), []);
 });
 
