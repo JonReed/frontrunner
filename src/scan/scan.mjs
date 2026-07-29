@@ -31,7 +31,7 @@
  *   node src/scan/scan.mjs --include-blacklisted        # let data/blacklist.md matches through (annotated)
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, existsSync, mkdirSync } from 'fs';
 import { pathToFileURL, fileURLToPath } from 'url';
 import path from 'path';
 import yaml from 'js-yaml';
@@ -51,6 +51,7 @@ import { resolveColumns, parseTrackerRow } from '../tracker/tracker-parse.mjs';
 import { normalizeCompany } from '../tracker/tracker-utils.mjs';
 import { normalizeCompanyName } from '../tracker/invite-match.mjs';
 import { withPipelineLock } from '../tracker/pipeline-lock.mjs';
+import { navigateGuardedPage } from '../security/browser-egress.mjs';
 
 try {
   const { config } = await import('dotenv');
@@ -755,7 +756,8 @@ async function searchForNewUrl(page, offer) {
   if (!domain) return null;
   const query = `"${offer.title}" "${offer.company}" site:${domain}`;
   try {
-    await page.goto(
+    await navigateGuardedPage(
+      page,
       `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`,
       { waitUntil: 'domcontentloaded', timeout: REDISCOVER_TIMEOUT_MS },
     );
@@ -769,7 +771,7 @@ async function searchForNewUrl(page, offer) {
     return null;
   } finally {
     try {
-      await page.goto('about:blank');
+      await page.setContent('');
     } catch {
       /* ignore — best-effort cleanup */
     }

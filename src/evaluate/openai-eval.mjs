@@ -42,6 +42,7 @@ import {
   emitEvaluationExecutionResult,
   evaluationExecutionResult,
 } from './execution-result.mjs';
+import { requestModelJson } from '../security/model-http.mjs';
 
 const tracker = new TokenAccumulator();
 tracker.recordZeroToken('scan');
@@ -288,7 +289,7 @@ let evaluationText;
 let scoring;
 let evaluationUsage;
 try {
-  const res = await fetch(endpoint, {
+  const data = await requestModelJson(endpoint, {
     method: 'POST',
     headers,
     body: JSON.stringify({
@@ -300,22 +301,10 @@ try {
       stream:      false,
       temperature: 0.2,
     }),
-    signal: AbortSignal.timeout(timeoutMs),
+    timeoutMs,
+    maxResponseBytes: 2 * 1024 * 1024,
   });
 
-  if (!res.ok) {
-    const body = await res.text();
-    console.error(`❌  API error: HTTP ${res.status}`);
-    console.error(`    ${body.slice(0, 300)}`);
-    if (res.status === 401 || res.status === 403) {
-      console.error(`    → Check your API key for ${endpointHost}.`);
-    } else if (res.status === 404) {
-      console.error(`    → Check --url (it should include any /v1 segment) and --model id.`);
-    }
-    process.exit(1);
-  }
-
-  const data = await res.json();
   const rawResponse = data.choices?.[0]?.message?.content?.trim();
   const usage = normalizeOpenAIUsage(data.usage);
   evaluationUsage = usage;

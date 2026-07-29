@@ -27,6 +27,12 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { load as yamlLoad } from 'js-yaml';
 import { resolveColumns, parseTrackerRow } from '../tracker/tracker-parse.mjs';
+import { fetchText } from '../../providers/_http.mjs';
+import {
+  createGuardedBrowserContext,
+  navigateGuardedPage,
+} from '../security/browser-egress.mjs';
+import { LIVENESS_CONTEXT_OPTIONS } from '../scan/liveness-browser.mjs';
 
 import { ROOT as FRONTRUNNER } from '#paths';
 const APPS_FILE = existsSync(join(FRONTRUNNER, 'data/applications.md'))
@@ -426,38 +432,6 @@ const urlTextIdx = args.indexOf('--url-text');
 const directUrl = args.find(arg => arg.startsWith('http://') || arg.startsWith('https://'));
 
 // Helper function to enforce egress guard against SSRF (Private/Loopback IPs)
-const dnsCache = new Map();
-
-async function validateUrlSecurity(urlString) {
-  const dns = await import('dns/promises');
-  const url = new URL(urlString.endsWith('.') ? urlString.slice(0, -1) : urlString);
-  const hostname = url.hostname;
-
-  if (hostname === 'localhost' || hostname.endsWith('.local')) {
-    throw new Error('Access denied: Localhost or internal domain target detected.');
-  }
-
-  let addresses;
-  if (dnsCache.has(hostname)) {
-    addresses = dnsCache.get(hostname);
-  } else {
-    addresses = await dns.resolve(hostname).catch(() => []);
-    const lookupRes = await dns.lookup(hostname).catch(() => null);
-    if (lookupRes) addresses.push(lookupRes.address);
-    dnsCache.set(hostname, addresses);
-  }
-
-  for (const ip of addresses) {
-    if (/^(127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|169\.254\.)/.test(ip)) {
-      throw new Error(`Access denied: Egress guard blocked private target IP ${ip}`);
-    }
-    if (ip === '::1' || ip.startsWith('fe80:') || ip.startsWith('fc00:') || ip.startsWith('fd00:')) {
-      throw new Error(`Access denied: Egress guard blocked private target IPv6 ${ip}`);
-    }
-  }
-  return url.toString();
-}
-
 if (urlTextIdx !== -1 || directUrl) {
   (async () => {
     let targetText = '';
@@ -471,36 +445,26 @@ if (urlTextIdx !== -1 || directUrl) {
     if (inputSource.startsWith('http://') || inputSource.startsWith('https://')) {
       let browser;
       try {
-        const secureUrl = await validateUrlSecurity(inputSource);
         const { chromium } = await import('playwright');
         browser = await chromium.launch({ headless: true });
-        const page = await browser.newPage();
-
-        await page.route('**/*', async (route) => {
-          const requestUrl = route.request().url();
-          try {
-            await validateUrlSecurity(requestUrl);
-            await route.continue();
-          } catch (err) {
-            console.error(`Security Violation on Redirect: ${err.message}`);
-            await route.abort('blockedbyclient');
-            process.exit(1);
-          }
+        const context = await createGuardedBrowserContext(browser, {
+          contextOptions: LIVENESS_CONTEXT_OPTIONS,
         });
-
-        await page.goto(secureUrl, { waitUntil: 'networkidle', timeout: 30000 });
+        const page = await context.newPage();
+        await navigateGuardedPage(
+          page,
+          inputSource,
+          { waitUntil: 'networkidle', timeout: 30_000 },
+        );
         targetText = await page.innerText('body');
       } catch (err) {
-        console.warn('Playwright extraction failed or blocked, trying fallback WebFetch...', err.message);
+        console.warn('Playwright extraction failed or blocked, trying bounded HTTP fallback...', err.message);
         try {
-          const secureUrl = await validateUrlSecurity(inputSource);
-          // validateUrlSecurity only vets the initial URL; a redirect could still
-          // steer the fetch at an internal host (SSRF). The Playwright path
-          // re-validates per hop, but this plain fetch must refuse redirects
-          // outright — fail closed rather than follow an unvetted Location (#1851).
-          const res = await fetch(secureUrl, { signal: AbortSignal.timeout(30000), redirect: 'error' });
-          if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-          targetText = await res.text();
+          targetText = await fetchText(inputSource, {
+            timeoutMs: 30_000,
+            redirect: 'error',
+            maxResponseBytes: 2 * 1024 * 1024,
+          });
         } catch (fetchErr) {
           console.error(`Fatal: Failed to fetch JD from URL: ${fetchErr.message}`);
           process.exit(1);

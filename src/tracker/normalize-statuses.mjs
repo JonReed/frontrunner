@@ -11,12 +11,13 @@
  * Run: node frontrunner/normalize-statuses.mjs [--dry-run]
  */
 
-import { readFileSync, copyFileSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import {
   openTrackerTransaction, rebuildRow, resolveTrackerPath,
 } from './tracker-utils.mjs';
+import { copyFileAtomic } from '../lib/locked-file.mjs';
 import { resolveColumns, parseTrackerRow } from './tracker-parse.mjs';
 
 import { ROOT as FRONTRUNNER } from '#paths';
@@ -176,7 +177,7 @@ console.log(`\n📊 ${changes} statuses normalized`);
 if (!DRY_RUN && changes > 0) {
   // Backup first
   const backupPath = `${APPS_FILE}.bak`;
-  copyFileSync(APPS_FILE, backupPath);
+  copyFileAtomic(APPS_FILE, backupPath);
   trackerTransaction.replace(lines.join('\n'));
   console.log(`✅ Written to ${APPS_FILE} (backup: ${backupPath})`);
 } else if (DRY_RUN) {

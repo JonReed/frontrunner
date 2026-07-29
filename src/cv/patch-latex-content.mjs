@@ -13,11 +13,12 @@
  *   { "slots": [...], "patches": [...] }
  */
 
-import { readFile, writeFile, mkdir } from 'fs/promises';
+import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { pathToFileURL } from 'url';
 import { applyPatches } from './latex-content.mjs';
+import { replaceFileAtomic } from '../lib/locked-file.mjs';
 
 async function main() {
   const args = process.argv.slice(2).filter(a => a !== '--help');
@@ -66,11 +67,7 @@ async function main() {
   }
 
   const patched = applyPatches(tex, patches, slots);
-  const outDir = dirname(absOutput);
-  if (!existsSync(outDir)) {
-    await mkdir(outDir, { recursive: true });
-  }
-  await writeFile(absOutput, patched, 'utf-8');
+  replaceFileAtomic(absOutput, patched, { mode: 0o600 });
 
   const report = {
     source: absSource,

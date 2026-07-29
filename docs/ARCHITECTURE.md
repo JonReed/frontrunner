@@ -126,7 +126,14 @@ and atomic rename prevent readers from seeing partial replacements. This
 publisher now also owns the canonical tracker replacement beneath its
 tracker-specific transaction, so standalone tests cannot bypass the user-data
 write barrier and every tracker writer gets the same durable publication
-semantics. The boundary also covers the pending-role pipeline, scanner audit
+semantics. The same boundary owns exclusive creation, atomic copy, atomic move
+and protected deletion. Journal cleanup, report reservation release/GC,
+tracker backups, CV/LaTeX/HTML publication, reverse-ATS cache/digests and
+scanner checkpoint removal therefore cannot escape stale-test protection.
+External LaTeX compilers write only into a private temporary directory; code
+atomically publishes the completed PDF. A source inventory test permits raw
+filesystem mutation only in explicitly listed contained runtime, temporary,
+lock and maintainer modules. The boundary also covers the pending-role pipeline, scanner audit
 files, application job claims, the agent inbox, application-answer sections,
 reply candidates and assessment events. The
 observation-only status transition ledger also uses a validated locked atomic
@@ -212,6 +219,19 @@ then the job manager atomically retains the latest stage across reloads.
 Malformed progress produces one advisory warning and has no execution
 authority. Log-pattern stage detection exists only as a compatibility fallback.
 
+General backend subprocesses use `src/security/subprocess.mjs`. The canonical
+pipeline, Claude evaluation/tailoring, OpenAI-compatible rendering, local
+parser, LaTeX engines, batch tailoring, tracker post-processing and evaluation
+recovery therefore share `shell: false`, bounded argv/stdin/stdout/stderr,
+explicit timeouts and cancellation, and whole-process-tree TERM/KILL cleanup.
+Output observers cannot alter lifecycle decisions. A static capability
+inventory rejects new direct child-process imports outside this boundary and
+the reviewed application protocols. The application service, operation worker,
+health probe and status controller remain separate because their versioned
+stdin/result, owner-death or fixed-auth semantics are stricter than a general
+command runner. The self-loading updater and maintainer path-rewrite utility
+remain explicitly reviewed non-runtime exceptions.
+
 The same controller provides the read side for local interfaces. `list`
 returns bounded job summaries rather than logs or request data; `history`
 returns at most 50 newest-first records after revalidating the complete history
@@ -293,7 +313,9 @@ Frontrunner runtime.
   disposable git repository with ignored user files omitted. A filesystem
   barrier inherited by Node children rejects any attempted write back to the
   original checkout's user layer, so destructive tests cannot mutate a real
-  CV, profile, tracker, report, JD or output artifact.
+  CV, profile, tracker, report, JD or output artifact. Canonical primitive
+  tests cover create/copy/move/delete denial and interrupted-copy preservation;
+  a static production inventory rejects new raw mutation bypasses.
 - `updater-migration-tests.mjs` — enforces the system/user boundary and safe cross-version upgrades.
 - CI: `test` + CodeQL are required; CodeRabbit reviews every PR; Renovate keeps deps current.
 
@@ -402,12 +424,22 @@ The orchestrator manages parallelism, state, retries, and resume.
 
 ## Remote-content security boundary
 
-All core HTTP traffic passes through `providers/_http.mjs`, backed by
+All public runtime HTTP traffic—including providers, discovery seeds,
+enrichment and model APIs—passes through `providers/_http.mjs`, backed by
 `src/security/remote-target-policy.mjs`. The broker blocks local/private
 destinations after DNS resolution and on every redirect, pins the connection to
 the validated address, limits time and bytes, and defaults to rejecting
-redirects. Browser subrequests use the same policy, with Chromium's own final
-DNS connection documented as a residual in the threat model.
+redirects. `src/security/model-http.mjs` adds a deliberately separate,
+loopback-only and no-redirect capability for local model servers.
+
+Every remote Chromium path uses `src/security/browser-egress.mjs`, which
+validates the initial target, all redirects and subresources, and the final
+page URL. Chromium's own final DNS connection remains the residual documented
+in the threat model. A source-inventory regression test rejects new direct
+`fetch`, Node HTTP, `page.goto` or `route` capabilities outside these brokers.
+`update-system.mjs` is the sole runtime exception because it must remain
+self-loading for old-client upgrades; it accepts only Frontrunner's fixed
+official endpoints and applies explicit transfer, process and output limits.
 
 After each adapter returns, `providers/_contract.mjs` treats its result as
 hostile again. Every scanner and probe receives only the closed Job schema:

@@ -35,6 +35,7 @@ import { randomUUID } from 'node:crypto';
 import { readStyleTokens, injectThemeStyle } from './theme-style.mjs';
 import { recordPdfIndex } from './pdf-index-store.mjs';
 import { publishPdfArtifact } from './pdf-artifact-store.mjs';
+import { removeFileProtected, replaceFileAtomic } from '../lib/locked-file.mjs';
 
 import { ROOT } from '#paths';
 
@@ -584,8 +585,6 @@ export async function renderHtmlToPdf(html, outputPath, opts = {}) {
   const reportNum = opts.reportNum || '';
   const inputPath = opts.inputPath || '';
 
-  mkdirSync(dirname(outputPath), { recursive: true });
-
   // Inject the user's theme tokens (config/profile.yml `style:`) as CSS custom
   // properties so the templates' var(--x, <default>) reads pick them up (#1837).
   // No `style:` block → no tokens → byte-identical output. Both the CV path and
@@ -599,8 +598,7 @@ export async function renderHtmlToPdf(html, outputPath, opts = {}) {
   // Write HTML to a temp file in baseDir so page.goto() gives a file://
   // origin that can load local images, fonts, and other resources.
   const tmpHtmlPath = resolve(baseDir, `.frontrunner-render-${randomUUID()}.html`);
-  const { writeFile, unlink } = await import('fs/promises');
-  await writeFile(tmpHtmlPath, html, 'utf-8');
+  replaceFileAtomic(tmpHtmlPath, html, { mode: 0o600 });
 
   const launchBrowser = opts.launchBrowser || ((options) => chromium.launch(options));
   let browser = null;
@@ -673,11 +671,11 @@ export async function renderHtmlToPdf(html, outputPath, opts = {}) {
       });
     }
     // Clean up temp file
-    await unlink(tmpHtmlPath).catch((err) => {
-      if (err?.code !== 'ENOENT') {
-        console.warn(`⚠️  Temporary HTML cleanup failed: ${err.message}`);
-      }
-    });
+    try {
+      removeFileProtected(tmpHtmlPath, { force: true });
+    } catch (err) {
+      console.warn(`⚠️  Temporary HTML cleanup failed: ${err.message}`);
+    }
   }
 }
 

@@ -43,6 +43,8 @@
 @theme {
   /* -- surfaces ------------------------------------------------------- */
   --color-paper: #faf9f7;
+  --color-paper-translucent: rgb(250 249 247 / 92%);
+  --color-paper-deep: #f3f0ec;
   --color-card: #ffffff;
   --color-line: #e8e5e0;
   --color-line-strong: #d6d1c9;
@@ -92,6 +94,11 @@ html {
 }
 
 body { background: var(--color-paper); }
+
+::selection {
+  background: var(--color-act-wash);
+  color: var(--color-ink);
+}
 
 /* Numbers align in columns without switching to a monospace face, which
    would drag the "developer tool" feel back in. */

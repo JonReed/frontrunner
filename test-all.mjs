@@ -52,8 +52,17 @@ function runInDisposableWorkspace() {
     for (const relativePath of listed.stdout.toString('utf8').split('\0').filter(Boolean)) {
       const source = join(ROOT, relativePath);
       const destination = join(sandbox, relativePath);
+      let stat;
+      try {
+        stat = lstatSync(source);
+      } catch (error) {
+        // `git ls-files -c` includes a tracked path deleted in the current
+        // worktree. That deletion is part of the source state under test, not
+        // a reason to resurrect the index copy or crash before QA starts.
+        if (error?.code === 'ENOENT') continue;
+        throw error;
+      }
       mkdirSync(dirname(destination), { recursive: true });
-      const stat = lstatSync(source);
       if (stat.isSymbolicLink()) {
         symlinkSync(readlinkSync(source), destination);
       } else if (stat.isFile()) {
@@ -738,6 +747,7 @@ try {
   const fakePage = ({ status, finalUrl, bodyText, applyControls }) => {
     let evalCall = 0;
     return {
+      async route() {},
       async goto() { return { status: () => status }; },
       async waitForTimeout() {},
       url() { return finalUrl; },
@@ -9171,25 +9181,25 @@ try {
   fail(`openai-eval prompt-cache source test crashed: ${e.message}`);
 }
 
-// ── 44d. gemini-eval — static prefix as systemInstruction (#1709) ────
+// ── 44d. gemini-eval — static prefix as system_instruction (#1709) ────
 // Gemini has no cache_control field; its implicit prefix caching keys on a
-// stable systemInstruction, so the static context must sit there — not inline in
-// contents. Source-level, since gemini-eval runs on import.
-console.log('\n44d. gemini-eval — static prefix as systemInstruction (#1709)');
+// stable system instruction, so the static context must sit there — not inline
+// in contents. Source-level, since gemini-eval runs on import.
+console.log('\n44d. gemini-eval — static prefix as system_instruction (#1709)');
 try {
   const src = readFileSync(join(ROOT, 'src/evaluate/gemini-eval.mjs'), 'utf-8');
-  const usesSystemInstruction = /getGenerativeModel\(\{[\s\S]*?systemInstruction:\s*systemPrompt/.test(src);
+  const usesSystemInstruction = /system_instruction:\s*\{\s*parts:\s*\[\{\s*text:\s*systemPrompt\s*\}\]/.test(src);
   // the per-request call must NOT re-embed the full systemPrompt inline (that
   // would defeat stable-prefix caching and duplicate the context)
-  const noInlinePrefix = !/generateContent\(\[[\s\S]*?\{\s*text:\s*systemPrompt\s*\}/.test(src);
-  const carriesJdTurn = /generateContent\(jobDocument\.prompt\)/.test(src);
+  const noInlinePrefix = !/contents:\s*\[[\s\S]*?text:\s*systemPrompt/.test(src);
+  const carriesJdTurn = /parts:\s*\[\{\s*text:\s*jobDocument\.prompt\s*\}\]/.test(src);
   if (usesSystemInstruction && noInlinePrefix && carriesJdTurn) {
-    pass('gemini-eval moves the static prefix to systemInstruction and sends only the JD turn (#1709)');
+    pass('gemini-eval moves the static prefix to system_instruction and sends only the JD turn (#1709)');
   } else {
-    fail(`gemini-eval systemInstruction wiring: sys=${usesSystemInstruction} noInline=${noInlinePrefix} jd=${carriesJdTurn}`);
+    fail(`gemini-eval system_instruction wiring: sys=${usesSystemInstruction} noInline=${noInlinePrefix} jd=${carriesJdTurn}`);
   }
 } catch (e) {
-  fail(`gemini-eval systemInstruction source test crashed: ${e.message}`);
+  fail(`gemini-eval system_instruction source test crashed: ${e.message}`);
 }
 
 // ── 44e. ollama-eval — temperature must live in options ────────

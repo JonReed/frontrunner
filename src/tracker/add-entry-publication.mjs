@@ -11,12 +11,11 @@ import { createHash } from 'node:crypto';
 import {
   existsSync,
   readFileSync,
-  unlinkSync,
 } from 'node:fs';
 import { basename, resolve } from 'node:path';
 
 import { withFileLock } from '../lib/file-lock.mjs';
-import { replaceFileAtomic } from '../lib/locked-file.mjs';
+import { removeFileProtected, replaceFileAtomic } from '../lib/locked-file.mjs';
 
 const JOURNAL_VERSION = 1;
 const MAX_SOURCE_BYTES = 4_000_000;
@@ -152,7 +151,7 @@ async function replayJournalUnlocked(journalPath, paths, afterStage) {
     await afterStage?.(target.name, journal);
   }
 
-  unlinkSync(journalPath);
+  removeFileProtected(journalPath, { force: true });
   await afterStage?.('complete', journal);
   return journal;
 }

@@ -7,7 +7,6 @@
  * and index the PDF.
  */
 
-import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve, sep } from 'node:path';
@@ -16,6 +15,10 @@ import { pathToFileURL } from 'node:url';
 import { ROOT } from '#paths';
 import { replaceFileAtomic } from '../lib/locked-file.mjs';
 import { frameUntrustedJobText } from '../security/job-document.mjs';
+import {
+  runBoundedSubprocess,
+  runCheckedSubprocess,
+} from '../security/subprocess.mjs';
 import {
   TAILORING_JSON_SCHEMA,
   buildTailoringSystemPrompt,
@@ -70,13 +73,33 @@ export function buildTailorClaudeArgs(systemPrompt, model = '') {
   return args;
 }
 
-export function tailorCv({
+function defaultModelRun(command, args, options) {
+  return runBoundedSubprocess(command, args, {
+    cwd: options.cwd,
+    input: options.input,
+    timeoutMs: options.timeout,
+    maxStdoutBytes: options.maxBuffer,
+    maxStderrBytes: Math.min(options.maxBuffer, 512 * 1024),
+  });
+}
+
+async function defaultCodeRun(command, args, options) {
+  const result = await runCheckedSubprocess(command, args, {
+    cwd: options.cwd,
+    timeoutMs: 120_000,
+    maxStdoutBytes: 2 * 1024 * 1024,
+    maxStderrBytes: 2 * 1024 * 1024,
+  });
+  return result.stdout;
+}
+
+export async function tailorCv({
   url,
   report,
   tracker,
   model = '',
-  runModel = spawnSync,
-  runCode = execFileSync,
+  runModel = defaultModelRun,
+  runCode = defaultCodeRun,
 } = {}) {
   const jd = cachedJdFor(url);
   if (!jd) {
@@ -91,7 +114,7 @@ export function tailorCv({
   const systemPrompt = buildTailoringSystemPrompt({ cv, profile, proof });
 
   console.log('Reading the cached job description');
-  const child = runModel('claude', buildTailorClaudeArgs(systemPrompt, model), {
+  const child = await runModel('claude', buildTailorClaudeArgs(systemPrompt, model), {
     cwd: ROOT,
     input: document.prompt,
     encoding: 'utf8',
@@ -121,20 +144,20 @@ export function tailorCv({
     const payloadFile = join(scratch, 'payload.json');
     const renderedHtml = join(scratch, 'rendered.html');
     writeFileSync(payloadFile, JSON.stringify(payload), { encoding: 'utf8', mode: 0o600 });
-    const template = runCode(process.execPath, [join(ROOT, 'src/cv/cv-templates.mjs'), 'resolve', 'cv'], {
+    const template = (await runCode(process.execPath, [join(ROOT, 'src/cv/cv-templates.mjs'), 'resolve', 'cv'], {
       cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
-    }).trim().split('\n').at(-1);
+    })).trim().split('\n').at(-1);
     console.log('Laying out your CV');
-    runCode(process.execPath, [join(ROOT, 'src/cv/build-cv-html.mjs'), payloadFile, renderedHtml, template], {
+    await runCode(process.execPath, [join(ROOT, 'src/cv/build-cv-html.mjs'), payloadFile, renderedHtml, template], {
       cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'],
     });
     console.log('Checking every claim against your CV');
-    runCode(process.execPath, [join(ROOT, 'src/cv/verify-cv-facts.mjs'), renderedHtml], {
+    await runCode(process.execPath, [join(ROOT, 'src/cv/verify-cv-facts.mjs'), renderedHtml], {
       cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'],
     });
     replaceFileAtomic(html, readFileSync(renderedHtml, 'utf8'), { mode: 0o600 });
     console.log('Building the PDF');
-    runCode(process.execPath, [
+    await runCode(process.execPath, [
       join(ROOT, 'src/cv/generate-pdf.mjs'), html, pdf,
       `--format=${payload.page_format}`, `--report=${reportNum}`,
     ], { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -160,7 +183,7 @@ function value(args, flag) {
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
   try {
     const args = process.argv.slice(2);
-    tailorCv({
+    await tailorCv({
       url: value(args, '--url'),
       report: value(args, '--report'),
       tracker: value(args, '--tracker'),

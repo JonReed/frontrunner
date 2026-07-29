@@ -11,7 +11,6 @@ import {
   realpathSync,
   readFileSync,
 } from 'node:fs';
-import { spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { dirname, join, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -42,6 +41,7 @@ import {
   emitApplicationProgress,
 } from '../application/progress.mjs';
 import { publishPipelineFile } from './pipeline-files.mjs';
+import { runCheckedSubprocess } from '../security/subprocess.mjs';
 
 export class PipelineRunBusyError extends FileLockTimeoutError {
   constructor(lockDir, timeoutMs) {
@@ -141,23 +141,24 @@ function readLocalDescription(url) {
   return text ? { text } : { error: 'local JD file is empty' };
 }
 
-function defaultRun(command, args, options = {}) {
+async function defaultRun(command, args, options = {}) {
   const resultChannel = options.resultChannel === true;
-  const result = spawnSync(command, args, {
+  const result = await runCheckedSubprocess(command, args, {
     cwd: ROOT,
-    encoding: 'utf8',
+    timeoutMs: 10 * 60 * 1000,
+    maxStdoutBytes: 2 * 1024 * 1024,
+    maxStderrBytes: 2 * 1024 * 1024,
+    extraPipes: resultChannel ? 1 : 0,
     env: resultChannel
       ? { ...process.env, [EVALUATION_RESULT_FD_ENV]: '3' }
       : process.env,
-    stdio: resultChannel
-      ? ['inherit', 'inherit', 'inherit', 'pipe']
-      : options.capture ? 'pipe' : 'inherit',
+    onStdout: options.capture ? undefined : chunk => process.stdout.write(chunk),
+    onStderr: options.capture ? undefined : chunk => process.stderr.write(chunk),
   });
-  if (result.error) throw result.error;
-  if (result.status !== 0) {
-    throw new Error(`${command} ${args.join(' ')} exited ${result.status}${result.stderr ? `: ${result.stderr.trim()}` : ''}`);
-  }
-  return result;
+  return {
+    ...result,
+    output: resultChannel ? { 3: result.extraOutput[0] } : {},
+  };
 }
 
 export async function runPipelineEvaluations({ engine, kept, jdsDir, run = defaultRun }) {
@@ -189,20 +190,20 @@ export async function runPipelineEvaluations({ engine, kept, jdsDir, run = defau
     try {
       let processResult;
       if (engine === 'claude' || engine === 'batch') {
-        processResult = run(
+        processResult = await run(
           process.execPath,
           [join(ROOT, 'src/evaluate/claude-eval.mjs'), '--file', file, '--url', role.url],
           { resultChannel: true },
         );
       } else if (engine === 'openrouter') {
-        processResult = run(
+        processResult = await run(
           process.execPath,
           [join(ROOT, 'src/evaluate/openrouter-runner.mjs'), 'evaluate', '--file', file],
           { resultChannel: true },
         );
       } else {
         const evaluator = engine === 'gemini' ? 'gemini-eval.mjs' : 'openai-eval.mjs';
-        processResult = run(
+        processResult = await run(
           process.execPath,
           [join(ROOT, 'src/evaluate', evaluator), '--file', file],
           { resultChannel: true },

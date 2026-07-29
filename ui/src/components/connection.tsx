@@ -43,7 +43,7 @@ export function ConnectionBanner({ health }: { health: Health }) {
   if (health.signedIn) return null;
 
   return (
-    <div className="mb-8 rounded-xl border border-[var(--color-attention)] bg-[var(--color-attention-wash)] p-5">
+    <div className="mb-8 rounded-2xl border border-[var(--color-attention)] bg-[var(--color-attention-wash)] p-5">
       <p className="font-semibold text-[var(--color-attention)]">
         {health.installed ? 'Claude Code is not signed in' : 'Claude Code is not installed'}
       </p>
@@ -98,7 +98,7 @@ export function ConnectionDetail({ health }: { health: Health }) {
   return (
     <>
       <h2 className="mb-2 text-base font-bold tracking-tight">What runs your AI actions</h2>
-      <section className="mb-8 rounded-xl border border-[var(--color-line)] bg-[var(--color-card)] px-5 py-2">
+      <section className="mb-8 rounded-2xl border border-[var(--color-line)] bg-[var(--color-card)] px-5 py-2 shadow-[0_1px_2px_rgb(26_25_23/0.03)]">
         <dl>
           {rows.map(([label, value]) => (
             <div

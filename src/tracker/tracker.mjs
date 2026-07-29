@@ -34,7 +34,7 @@
  * so the index can never serve stale reads.
  */
 
-import { readFileSync, copyFileSync, existsSync, mkdirSync, statSync } from 'fs';
+import { readFileSync, existsSync, mkdirSync, statSync } from 'fs';
 import { createHash } from 'crypto';
 import { dirname, resolve, join } from 'path';
 import { pathToFileURL } from 'url';
@@ -43,6 +43,7 @@ import { resolveColumns } from './tracker-parse.mjs';
 import {
   canonicalizeTrackerPath, openTrackerTransaction, writeFileAtomic,
 } from './tracker-utils.mjs';
+import { copyFileAtomic } from '../lib/locked-file.mjs';
 
 const MD_PATH = process.env.FRONTRUNNER_TRACKER || 'data/applications.md';
 const DB_PATH = process.env.FRONTRUNNER_TRACKER_DB
@@ -481,7 +482,7 @@ async function exportMd(args) {
     // Never silently clobber — whatever was there is backed up first.
     const writeTarget = writesTracker ? trackerPath : outPath;
     if (existsSync(writeTarget)) {
-      copyFileSync(writeTarget, writeTarget + '.bak');
+      copyFileAtomic(writeTarget, writeTarget + '.bak');
       console.error(`Existing ${outPath} backed up to ${outPath}.bak`);
     }
     if (trackerTransaction) trackerTransaction.replace(out);

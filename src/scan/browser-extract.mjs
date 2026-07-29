@@ -37,6 +37,10 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import yaml from 'js-yaml';
 import { LIVENESS_CONTEXT_OPTIONS, rejectPrivateOrInvalid } from './liveness-browser.mjs';
 import { assertSafeRemoteUrl, resolvePublicAddresses } from '../security/remote-target-policy.mjs';
+import {
+  createGuardedBrowserContext,
+  navigateGuardedPage,
+} from '../security/browser-egress.mjs';
 
 import { ROOT as FRONTRUNNER } from '#paths';
 const DEFAULT_TIMEOUT_MS = 15_000;
@@ -221,21 +225,17 @@ async function main() {
   let browser;
   try {
     browser = await chromium.launch({ headless: true });
-    const context = await browser.newContext(LIVENESS_CONTEXT_OPTIONS);
-    // Block every request (main navigation, redirect hop, or subresource) to a
-    // private/loopback/link-local or non-http(s) host. Guarding only the initial
-    // URL isn't enough once we return page CONTENT: a server-side redirect could
-    // otherwise steer the browser at internal infrastructure (SSRF).
-    await context.route('**/*', async (route) => {
-      try {
-        await assertSafeRemoteUrl(route.request().url(), { resolveHostname });
-        return route.continue();
-      } catch {
-        return route.abort('blockedbyclient');
-      }
+    const context = await createGuardedBrowserContext(browser, {
+      contextOptions: LIVENESS_CONTEXT_OPTIONS,
+      resolveHostname,
     });
     const page = await context.newPage();
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout });
+    await navigateGuardedPage(
+      page,
+      url,
+      { waitUntil: 'domcontentloaded', timeout },
+      { resolveHostname },
+    );
     await page.waitForTimeout(HYDRATION_WAIT_MS); // let SPAs hydrate
 
     // Belt-and-suspenders: never emit content read from a private final URL.

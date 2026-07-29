@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFile, writeFile, stat } from 'fs/promises';
+import { readFile, stat } from 'fs/promises';
 import { existsSync } from 'fs';
 import { resolve, dirname, basename, join } from 'path';
 import { fileURLToPath } from 'url';
@@ -8,6 +8,7 @@ import { tmpdir } from 'os';
 import { escapeLatex, sanitizeUrl } from './latex-escape.mjs';
 import { resolveTemplate } from './cv-templates.mjs';
 import { stripEmptySections } from './cv-sections-core.mjs';
+import { removeFileProtected, replaceFileAtomic } from '../lib/locked-file.mjs';
 
 import { ROOT as __dirname } from '#paths';
 const TEMPLATE_PATH = resolve(__dirname, 'templates', 'cv-template.tex');
@@ -158,7 +159,7 @@ async function main() {
     mkdirSync(outDir, { recursive: true });
   }
 
-  await writeFile(absOutput, template, 'utf-8');
+  replaceFileAtomic(absOutput, template, { mode: 0o600 });
 
   const fileInfo = await stat(absOutput);
   const sizeKB = (fileInfo.size / 1024).toFixed(1);
@@ -226,7 +227,7 @@ async function runSelfTest() {
   const testOutput = join(tmpdir(), 'build-cv-latex-test.tex');
   const raw = JSON.stringify(sample, null, 2);
   const tmpInput = join(tmpdir(), 'build-cv-latex-test-input.json');
-  await writeFile(tmpInput, raw, 'utf-8');
+  replaceFileAtomic(tmpInput, raw, { mode: 0o600 });
 
   const absInput = resolve(tmpInput);
   const absOutput = resolve(testOutput);
@@ -276,7 +277,7 @@ async function runSelfTest() {
     mkdirSync(outDir, { recursive: true });
   }
 
-  await writeFile(absOutput, template, 'utf-8');
+  replaceFileAtomic(absOutput, template, { mode: 0o600 });
 
   const fileInfo = await stat(absOutput);
   const sizeKB = (fileInfo.size / 1024).toFixed(1);
@@ -301,12 +302,8 @@ async function runSelfTest() {
 
   console.log(JSON.stringify(report, null, 2));
 
-  await import('fs/promises').then(fs =>
-    Promise.all([
-      fs.rm(tmpInput).catch(() => {}),
-      fs.rm(testOutput).catch(() => {}),
-    ])
-  );
+  removeFileProtected(tmpInput, { force: true });
+  removeFileProtected(testOutput, { force: true });
 
   process.exit(0);
 }

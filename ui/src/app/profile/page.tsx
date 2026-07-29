@@ -20,6 +20,7 @@ import { readHealth } from '@/lib/health';
 import { ConnectionDetail } from '@/components/connection';
 
 export const dynamic = 'force-dynamic';
+export const metadata = { title: 'My details' };
 
 /**
  * Label above value on a phone, beside it on a laptop.
@@ -46,13 +47,13 @@ export default async function ProfilePage() {
   return (
     <>
       <div className="mb-8">
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight">My details</h1>
+        <h1 className="text-[30px] font-bold leading-tight tracking-[-0.025em] sm:text-[34px]">My details</h1>
         <p className="mt-1 text-[15px] text-[var(--color-ink-soft)]">
           Every role is judged against this. The better it describes you, the better the matches.
         </p>
       </div>
 
-      <section className="mb-8 rounded-xl border border-[var(--color-line)] bg-[var(--color-card)] px-5 py-2">
+      <section className="mb-9 rounded-2xl border border-[var(--color-line)] bg-[var(--color-card)] px-5 py-2 shadow-[0_1px_2px_rgb(26_25_23/0.03)] sm:px-6">
         <dl>
           <Row label="Name" value={p.name ?? NOT_SET} />
           <Row label="Email" value={p.email ?? NOT_SET} />
@@ -60,8 +61,8 @@ export default async function ProfilePage() {
         </dl>
       </section>
 
-      <h2 className="mb-2 text-base font-bold tracking-tight">What you are looking for</h2>
-      <section className="mb-8 rounded-xl border border-[var(--color-line)] bg-[var(--color-card)] px-5 py-2">
+      <h2 className="mb-2.5 text-[17px] font-bold tracking-tight">What you are looking for</h2>
+      <section className="mb-9 rounded-2xl border border-[var(--color-line)] bg-[var(--color-card)] px-5 py-2 shadow-[0_1px_2px_rgb(26_25_23/0.03)] sm:px-6">
         <dl>
           <Row
             label="Target roles"
@@ -89,8 +90,8 @@ export default async function ProfilePage() {
 
       <ConnectionDetail health={health} />
 
-      <h2 className="mb-2 text-base font-bold tracking-tight">Your CV</h2>
-      <section className="mb-8 rounded-xl border border-[var(--color-line)] bg-[var(--color-card)] px-5 py-2">
+      <h2 className="mb-2.5 text-[17px] font-bold tracking-tight">Your CV</h2>
+      <section className="mb-9 rounded-2xl border border-[var(--color-line)] bg-[var(--color-card)] px-5 py-2 shadow-[0_1px_2px_rgb(26_25_23/0.03)] sm:px-6">
         <dl>
           <Row
             label="Status"

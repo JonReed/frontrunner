@@ -7,7 +7,6 @@
  * Deterministic code validates the response and writes reports/tracker rows.
  */
 
-import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -27,6 +26,17 @@ import {
   evaluationExecutionResult,
   normalizeEvaluatorUsage,
 } from './execution-result.mjs';
+import { runBoundedSubprocess } from '../security/subprocess.mjs';
+
+function defaultClaudeRun(command, args, options) {
+  return runBoundedSubprocess(command, args, {
+    cwd: options.cwd,
+    input: options.input,
+    timeoutMs: options.timeout,
+    maxStdoutBytes: options.maxBuffer,
+    maxStderrBytes: Math.min(options.maxBuffer, 512 * 1024),
+  });
+}
 
 function readOptional(file, fallback) {
   return existsSync(file) ? readFileSync(file, 'utf8').trim() : fallback;
@@ -67,7 +77,7 @@ export async function runClaudeEvaluation({
   reportNumber = null,
   sourceUrl = null,
   save = true,
-  run = spawnSync,
+  run = defaultClaudeRun,
 } = {}) {
   const document = frameUntrustedJobText(jdText);
   if (!document.text) throw new Error('job description is empty');
@@ -85,7 +95,7 @@ export async function runClaudeEvaluation({
     languageInstruction: outputLanguageInstruction(parseOutputLanguage(profileYml)),
   });
 
-  const child = run('claude', buildClaudeArgs({ systemPrompt, model }), {
+  const child = await run('claude', buildClaudeArgs({ systemPrompt, model }), {
     cwd: ROOT,
     input: document.prompt,
     encoding: 'utf8',

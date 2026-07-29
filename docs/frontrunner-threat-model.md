@@ -19,7 +19,7 @@ merges cannot quietly reintroduce it.
 | Boundary | Status | Enforcement |
 |---|---|---|
 | Privileged JD-facing agents and document generation | Fixed | Claude uses safe mode, `--tools ""`, strict MCP isolation and no session persistence; Claude and OpenAI-compatible tailoring share a closed, versioned JSON contract and deterministic renderer |
-| Central SSRF/redirect policy | Fixed and connection-pinned for shared provider/JD HTTP; browser fallback retains Chromium DNS TOCTOU residual | `src/security/remote-target-policy.mjs`, `providers/_http.mjs`, `src/scan/liveness-browser.mjs` |
+| Universal outbound-network boundary | Fixed and connection-pinned for public HTTP; browser fallback retains Chromium DNS TOCTOU residual | `providers/_http.mjs` brokers providers, seeds, enrichment and public models; `src/security/model-http.mjs` isolates loopback models; `src/security/browser-egress.mjs` guards every remote Chromium navigation, redirect and subresource; CI inventories direct capabilities; the self-loading updater is a fixed-source, size-bounded exception |
 | Response/JD/output bounds | Fixed | streaming byte caps in `_http.mjs`; 24K-character JD cap; scoring string/cardinality limits |
 | OpenRouter transport and fallback state | Fixed | fixed brokered endpoints, bounded model/response contracts, Frontrunner attribution, and locked atomic blacklist merge |
 | Prompt-injection authority | Fixed | hostile-data framing plus zero-tool models; detection remains telemetry only |
@@ -27,15 +27,17 @@ merges cannot quietly reintroduce it.
 | UI exposure/action boundary | Fixed for intended local deployment | listener pinned to `127.0.0.1`; non-local Host/Origin rejected |
 | UI filesystem traversal | Fixed | strict job IDs plus canonical report/output containment |
 | Generated HTML active content | Fixed | escaped deterministic builder plus sandbox CSP on previews |
-| Provider supply-chain capability audit | Fixed for core adapters; residual reviewed-code trust | regression test forbids direct fetch and child-process imports; `local-parser` remains an explicit operator-configured exception |
+| Provider supply-chain capability audit | Fixed for core adapters; residual reviewed-code trust | regression tests forbid direct fetch and child-process imports; the operator-configured `local-parser` keeps its restricted in-repository interpreter/script contract but now executes through the canonical supervisor |
 | Job-source result integrity | Fixed | `providers/_contract.mjs` enforces one closed, bounded Job schema after every provider fetch; every scanner and probe path is inventory-tested against bypass |
 | Local backend operation boundary | Fixed | versioned exact-key requests, fixed operation catalog, `shell: false`, bounded events/results, whole-process-tree cancellation/timeouts including the anonymous read-only auth probe, ownership-pipe orphan termination after controller death, atomic paid-job claims, marker-based cross-process cancellation, and strict age-gated cleanup of private crash debris in `src/application/` |
-| Durable local user state | Fixed for tracker, scanner audit, pipeline files and whole-run coordination, JD cache publication, application jobs, agent inbox, application answers, reply candidates, assessment events, portal discovery and confirmed candidate-source additions | owner-verified cross-process file locks, durable temporary writes and atomic same-directory replacement in `src/lib/file-lock.mjs` and `src/lib/locked-file.mjs`; the canonical pipeline holds one lease through evaluation, JD publishers merge a bounded cache under one lock, report mutations are path-contained, hostile reply/portal records are bounded, and joint CV/proof-point publication is journaled with before-state conflict detection |
+| Universal subprocess boundary | Fixed | `src/security/subprocess.mjs` owns shell-free launch, bounded argv/stdin/stdout/stderr, timeout/cancellation and TERM/KILL process-tree cleanup for pipeline, model CLI, parser, compiler, renderer, tracker and recovery children; destructive tests prove shell text is inert, floods are stopped and descendants cannot outlive timeout; CI inventories direct capabilities |
+| Durable local user state | Fixed for tracker, scanner audit, pipeline files and whole-run coordination, JD cache publication, application jobs, agent inbox, application answers, reply candidates, assessment events, portal discovery, generated documents and confirmed candidate-source additions | owner-verified cross-process file locks plus protected create/replace/copy/move/delete primitives in `src/lib/locked-file.mjs`; test processes fail closed on the real user layer, CI inventories raw mutation bypasses, external LaTeX output is isolated in a temporary directory, the canonical pipeline holds one lease through evaluation, JD publishers merge a bounded cache under one lock, report mutations are path-contained, hostile reply/portal records are bounded, and joint CV/proof-point publication is journaled with before-state conflict detection |
 | Evaluation publication integrity | Fixed | every evaluator uses a bounded, path-derived write-ahead journal; report and tracker publication replay idempotently after crash or merge failure |
 | Inherited privileged web runtime | Removed from reachable product surface | `web` package start commands fail closed; request-wide proxy returns `410 Gone` even when Next.js is launched directly |
 
 The regression suite destructively tests private/metadata targets, private DNS
-answers, redirect revalidation, oversized bodies, hostile JD framing,
+answers, browser subresources and final redirects, loopback/public model
+capability separation, redirect revalidation, oversized bodies, hostile JD framing,
 schema-output flooding, zero-tool Claude arguments, loopback binding and raw
 HTML sink removal. Application-job tests also race simultaneous paid requests,
 inject malformed state and oversized output, simulate orphan recovery, cancel
@@ -325,13 +327,15 @@ flowchart LR
 
 ## Implemented central architecture
 
-1. **Implemented:** add `src/security/remote-target-policy.mjs` and use it from both the shared
-   HTTP broker and every Playwright route. It must validate scheme, hostname,
-   every resolved address, every redirect hop, ports, timeouts and response
-   budgets.
-2. **Partially implemented:** make `providers/_http.mjs` the only network capability available to core
-   providers. Provider modules declare destination patterns and parsers; they
-   cannot call global `fetch`, spawn processes, or launch browsers.
+1. **Implemented:** `src/security/remote-target-policy.mjs` supplies one policy
+   to the shared HTTP broker and `src/security/browser-egress.mjs`. It validates
+   scheme, hostname, every resolved address, every redirect/subrequest, ports,
+   timeouts and response budgets.
+2. **Implemented:** `providers/_http.mjs` is the only public HTTP capability for
+   providers, discovery seeds, enrichment and public model APIs. Local model
+   access is isolated in `src/security/model-http.mjs`; core providers cannot
+   call global `fetch`, spawn processes or launch browsers. A static capability
+   inventory makes additions fail CI.
 3. **Implemented for every model boundary:** `src/security/job-document.mjs`
    produces bounded normalized text, a content hash, truncation state and
    instruction-like telemetry. Canonical URL/provider metadata stays in the

@@ -94,6 +94,7 @@ export const NPM_INSTALL_TIMEOUT_MS = parsePositiveInt(process.env.FRONTRUNNER_N
 export const PLAYWRIGHT_INSTALL_TIMEOUT_MS = parsePositiveInt(process.env.FRONTRUNNER_PLAYWRIGHT_INSTALL_TIMEOUT_MS, 120000);
 export const UPDATE_PATH_CHECKOUT_BUDGET_MS = parsePositiveInt(process.env.FRONTRUNNER_UPDATE_PATH_CHECKOUT_BUDGET_MS, 5000);
 export const REEXEC_BUFFER_TIMEOUT_MS = parsePositiveInt(process.env.FRONTRUNNER_REEXEC_BUFFER_TIMEOUT_MS, 60000);
+const UPDATE_CHECK_MAX_BYTES = 2 * 1024 * 1024;
 
 // System layer paths — ONLY these files get updated
 const SYSTEM_PATHS = [
@@ -950,8 +951,19 @@ function curlGet(url, extraArgs = []) {
   return new Promise((resolve) => {
     execFile(
       'curl',
-      ['--silent', '--fail', '--max-time', '10', ...extraArgs, url],
-      { encoding: 'utf-8', timeout: 12000 },
+      [
+        '--silent',
+        '--fail',
+        '--max-time', '10',
+        '--max-filesize', String(UPDATE_CHECK_MAX_BYTES),
+        ...extraArgs,
+        url,
+      ],
+      {
+        encoding: 'utf-8',
+        timeout: 12000,
+        maxBuffer: UPDATE_CHECK_MAX_BYTES,
+      },
       (error, stdout) => {
         if (error) {
           resolve(null);
@@ -1001,7 +1013,9 @@ async function check() {
   if (releaseRaw !== null) {
     try {
       const release = JSON.parse(releaseRaw);
-      changelog = release.body || '';
+      changelog = typeof release.body === 'string'
+        ? release.body.slice(0, 64 * 1024)
+        : '';
       const rawTag = String(release.tag_name || '').trim();
       const match = rawTag.match(SEMVER_RE);
       releaseVersion = match ? match[1] : '';

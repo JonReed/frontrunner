@@ -25,9 +25,10 @@
 //   is found the built-in fallback builder is used, preserving full backward
 //   compatibility.
 
-import { readFile, writeFile, stat, mkdir } from 'fs/promises';
+import { readFile, stat } from 'fs/promises';
 import { existsSync, readFileSync } from 'fs';
 import { resolve, dirname, basename, join, extname, isAbsolute } from 'path';
+import { removeFileProtected, replaceFileAtomic } from '../lib/locked-file.mjs';
 import { fileURLToPath } from 'url';
 import { tmpdir } from 'os';
 import { stripEmptySections } from './cv-sections-core.mjs';
@@ -588,9 +589,7 @@ function countBullets(payload) {
 }
 
 async function writeAndReport(html, absOutput, payload, extra = {}) {
-  const outDir = dirname(absOutput);
-  if (!existsSync(outDir)) await mkdir(outDir, { recursive: true });
-  await writeFile(absOutput, html, 'utf-8');
+  replaceFileAtomic(absOutput, html, { mode: 0o600 });
 
   const fileInfo = await stat(absOutput);
   const report = {
@@ -867,7 +866,7 @@ async function runSelfTest() {
   const absOutput = resolve(join(tmpdir(), 'build-cv-html-test.html'));
   await writeAndReport(html, absOutput, sample, { status: 'self-test-passed' });
 
-  await import('fs/promises').then(fs => fs.rm(absOutput).catch(() => {}));
+  removeFileProtected(absOutput, { force: true });
   process.exit(0);
 }
 

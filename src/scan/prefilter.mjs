@@ -49,6 +49,7 @@ import { pathToFileURL } from 'node:url';
 
 import { ROOT } from '#paths';
 import { MAX_JOB_DOCUMENT_CHARS } from '../security/job-document.mjs';
+import { assertTestUserDataWriteAllowed } from '../lib/test-user-data-policy.mjs';
 import { loadPrefilterRules } from './prefilter-config.mjs';
 const argv = process.argv.slice(2);
 const hasFlag = (f) => argv.includes(f);
@@ -215,6 +216,10 @@ function loadJdIndex(dir) {
 }
 
 function atomicWriteBatch(entries) {
+  // This legacy two-file transaction has its own rollback protocol. Apply the
+  // universal stale-test barrier to every final destination before creating
+  // any temporary or backup file; transaction replacement is a later slice.
+  for (const { file } of entries) assertTestUserDataWriteAllowed(file);
   const token = `${process.pid}-${randomUUID()}`;
   const staged = entries.map(({ file, contents }, index) => ({
     file,

@@ -14,15 +14,16 @@
  * Run: node frontrunner/merge-tracker.mjs [--dry-run] [--verify]
  */
 
-import { readFileSync, readdirSync, mkdirSync, renameSync, existsSync } from 'fs';
+import { readFileSync, readdirSync, mkdirSync, existsSync } from 'fs';
 import { join, basename, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { execFileSync } from 'child_process';
 import { normalizeReportLink as normalizeLink } from './tracker-links.mjs';
 import { roleFuzzyMatch } from './role-matcher.mjs';
 import { parsePdfIndex } from '../../find.mjs';
 import { LEGACY_COLMAP, detectColumns, resolveScoreStatus, normalizeVia, SEPARATOR_ROW_RE } from './tracker-parse.mjs';
 import { resolveTrackerPath, trackerLockDirFor, acquireTrackerLock, writeFileAtomic, normalizeCompany, cell } from './tracker-utils.mjs';
+import { moveFileAtomic } from '../lib/locked-file.mjs';
+import { runCheckedSubprocess } from '../security/subprocess.mjs';
 
 import { ROOT as FRONTRUNNER } from '#paths';
 // Support both layouts: data/applications.md (boilerplate) and applications.md
@@ -766,7 +767,7 @@ if (!DRY_RUN) {
   // Move processed files to merged/
   if (!existsSync(MERGED_DIR)) mkdirSync(MERGED_DIR, { recursive: true });
   for (const file of tsvFiles) {
-    renameSync(join(ADDITIONS_DIR, file), join(MERGED_DIR, file));
+    moveFileAtomic(join(ADDITIONS_DIR, file), join(MERGED_DIR, file));
   }
   console.log(`\n✅ Moved ${tsvFiles.length} TSVs to merged/`);
 }
@@ -778,7 +779,16 @@ trackerLock.release();
 // Sync PDF flags (idempotent; uses its own lock/transaction)
 if (!DRY_RUN) {
   try {
-    execFileSync('node', [join(FRONTRUNNER, 'src/tracker/sync-pdf-flags.mjs')], { stdio: 'inherit' });
+    await runCheckedSubprocess(process.execPath, [
+      join(FRONTRUNNER, 'src/tracker/sync-pdf-flags.mjs'),
+    ], {
+      cwd: FRONTRUNNER,
+      timeoutMs: 30_000,
+      maxStdoutBytes: 512 * 1024,
+      maxStderrBytes: 512 * 1024,
+      onStdout: chunk => process.stdout.write(chunk),
+      onStderr: chunk => process.stderr.write(chunk),
+    });
   } catch (e) {
     console.warn(`⚠️  Failed to sync PDF flags: ${e.message}`);
   }
@@ -788,8 +798,17 @@ if (!DRY_RUN) {
 if (VERIFY && !DRY_RUN) {
   console.log('\n--- Running verification ---');
   try {
-    execFileSync('node', [join(FRONTRUNNER, 'src/tracker/verify-pipeline.mjs')], { stdio: 'inherit' });
+    await runCheckedSubprocess(process.execPath, [
+      join(FRONTRUNNER, 'src/tracker/verify-pipeline.mjs'),
+    ], {
+      cwd: FRONTRUNNER,
+      timeoutMs: 30_000,
+      maxStdoutBytes: 2 * 1024 * 1024,
+      maxStderrBytes: 512 * 1024,
+      onStdout: chunk => process.stdout.write(chunk),
+      onStderr: chunk => process.stderr.write(chunk),
+    });
   } catch (e) {
-    process.exit(1);
+    process.exitCode = 1;
   }
 }

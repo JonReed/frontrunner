@@ -6,6 +6,15 @@ This document defines which files belong to the **system** (auto-updatable) and 
 
 These files contain your personal data, customizations, and work product. Updates will NEVER modify them.
 
+Runtime mutations to this layer must use `src/lib/locked-file.mjs` (or a
+domain transaction built on it) for protected create, replace, copy, move and
+delete operations. Test processes fail closed before touching the real user
+layer, even if a stale or misspelled fixture override makes production code
+fall back to the checkout. CI inventories raw filesystem mutators so a new
+bypass cannot be introduced silently. External document compilers work in
+temporary directories and publish only complete artifacts through this
+boundary.
+
 | File | Purpose |
 |------|---------|
 | `cv.md` | Your CV in markdown |

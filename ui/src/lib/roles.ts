@@ -202,8 +202,13 @@ export function classify(r: Base): Pick<Role, 'stage' | 'readiness' | 'nextActio
 
   // Evaluated, or anything else not yet sent.
   const score = r.score ?? 0;
+  const explicitStages = [...r.notes.matchAll(/\[frontrunner-stage:(triage|prepare|ready)\]/gu)];
+  const explicitStage = explicitStages.at(-1)?.[1];
 
-  if (score >= 4.0 && r.hasPdf) {
+  if (
+    explicitStage === 'ready' && r.hasPdf
+    || score >= 4.0 && r.hasPdf && explicitStage !== 'triage' && explicitStage !== 'prepare'
+  ) {
     return {
       stage: 'ready',
       readiness: 'ready-to-send',
@@ -212,7 +217,7 @@ export function classify(r: Base): Pick<Role, 'stage' | 'readiness' | 'nextActio
     };
   }
 
-  if (score >= 4.0) {
+  if (explicitStage === 'prepare' || score >= 4.0 && explicitStage !== 'triage') {
     // Free: read why it scored well. The CV is offered on the role page once
     // they have decided they want it.
     return {
@@ -223,7 +228,7 @@ export function classify(r: Base): Pick<Role, 'stage' | 'readiness' | 'nextActio
     };
   }
 
-  if (score >= 3.0) {
+  if (explicitStage === 'triage' || score >= 3.0) {
     return {
       stage: 'triage',
       readiness: 'needs-decision',

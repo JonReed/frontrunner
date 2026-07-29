@@ -13,11 +13,13 @@
  * Requires: tectonic (preferred) or pdflatex on PATH.
  */
 
-import { readFile, writeFile, stat, copyFile, rm } from 'fs/promises';
+import { readFile, stat } from 'fs/promises';
 import { resolve, basename, dirname, join } from 'path';
-import { execFileSync } from 'child_process';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdtempSync, rmSync } from 'fs';
 import { fileURLToPath, pathToFileURL } from 'url';
+import { tmpdir } from 'os';
+import { replaceFileAtomic } from '../lib/locked-file.mjs';
+import { runCheckedSubprocess } from '../security/subprocess.mjs';
 
 const MIN_SECTIONS = 4;
 
@@ -126,15 +128,14 @@ export async function compileLatexFile(absPath, content, outputPath, compileOnly
   const defaultPdf = join(texDir, `${texBase}.pdf`);
   const targetPdf = outputPath ? resolve(outputPath) : defaultPdf;
 
-  const targetDir = dirname(targetPdf);
-  if (!existsSync(targetDir)) {
-    mkdirSync(targetDir, { recursive: true });
-  }
-
   let engine = null;
   for (const candidate of ['tectonic', 'pdflatex']) {
     try {
-      execFileSync(candidate, ['--version'], { stdio: 'pipe' });
+      await runCheckedSubprocess(candidate, ['--version'], {
+        timeoutMs: 10_000,
+        maxStdoutBytes: 256 * 1024,
+        maxStderrBytes: 256 * 1024,
+      });
       engine = candidate;
       break;
     } catch { /* not found */ }
@@ -148,79 +149,82 @@ export async function compileLatexFile(absPath, content, outputPath, compileOnly
 
   report.engine = engine;
 
-  let compilePath = absPath;
-  if (engine === 'tectonic') {
-    const patched = content
-      .replace(/\\pdfgentounicode\s*=\s*\d+[^\n]*\n?/g, '')
-      .replace(/\\input\{glyphtounicode\}[^\n]*\n?/g, '');
-    compilePath = join(texDir, `${texBase}._tectonic.tex`);
-    await writeFile(compilePath, patched, 'utf-8');
-  }
-
+  // Compilers create PDFs, logs and auxiliary files themselves, outside our
+  // JavaScript mutation boundary. Keep every compiler-owned write in a private
+  // temporary directory and publish only the finished PDF atomically.
+  const compileDir = mkdtempSync(join(tmpdir(), 'frontrunner-latex-'));
   try {
+    let compilePath = absPath;
     if (engine === 'tectonic') {
-      execFileSync('tectonic', ['--outdir', texDir, compilePath], {
-        cwd: texDir,
-        stdio: 'pipe',
-        timeout: 120_000,
-      });
-    } else {
-      const pdflatexArgs = [
-        '-no-shell-escape',
-        '-interaction=nonstopmode',
-        '-halt-on-error',
-        `-output-directory=${texDir}`,
-        absPath,
-      ];
-      execFileSync('pdflatex', pdflatexArgs, { cwd: texDir, stdio: 'pipe', timeout: 120_000 });
-      execFileSync('pdflatex', pdflatexArgs, { cwd: texDir, stdio: 'pipe', timeout: 120_000 });
+      const patched = content
+        .replace(/\\pdfgentounicode\s*=\s*\d+[^\n]*\n?/g, '')
+        .replace(/\\input\{glyphtounicode\}[^\n]*\n?/g, '');
+      compilePath = join(compileDir, `${texBase}.tex`);
+      replaceFileAtomic(compilePath, patched, { mode: 0o600 });
     }
 
-    report.compiled = true;
-  } catch (err) {
-    const logPath = join(texDir, `${texBase}.log`);
-    let latexError = err.message;
     try {
-      const log = await readFile(logPath, 'utf-8');
-      const errorLines = log.split('\n').filter(l => l.startsWith('!'));
-      if (errorLines.length > 0) {
-        latexError = errorLines.join('\n');
+      if (engine === 'tectonic') {
+        await runCheckedSubprocess('tectonic', ['--outdir', compileDir, compilePath], {
+          cwd: texDir,
+          timeoutMs: 120_000,
+          maxStdoutBytes: 2 * 1024 * 1024,
+          maxStderrBytes: 2 * 1024 * 1024,
+        });
+      } else {
+        const pdflatexArgs = [
+          '-no-shell-escape',
+          '-interaction=nonstopmode',
+          '-halt-on-error',
+          `-output-directory=${compileDir}`,
+          absPath,
+        ];
+        const compileOptions = {
+          cwd: texDir,
+          timeoutMs: 120_000,
+          maxStdoutBytes: 2 * 1024 * 1024,
+          maxStderrBytes: 2 * 1024 * 1024,
+        };
+        await runCheckedSubprocess('pdflatex', pdflatexArgs, compileOptions);
+        await runCheckedSubprocess('pdflatex', pdflatexArgs, compileOptions);
       }
-    } catch { /* no log */ }
 
-    report.compiled = false;
-    report.compileError = latexError;
-  }
-
-  if (report.compiled) {
-    const compileBase = basename(compilePath, '.tex');
-    const compiledPdf = join(texDir, `${compileBase}.pdf`);
-
-    try {
-      await copyFile(compiledPdf, targetPdf);
-      if (resolve(compiledPdf) !== resolve(targetPdf)) {
-        await rm(compiledPdf).catch(() => {});
-      }
-
-      const pdfStat = await stat(targetPdf);
-      report.pdf = {
-        path: targetPdf,
-        sizeKB: parseFloat((pdfStat.size / 1024).toFixed(1)),
-      };
+      report.compiled = true;
     } catch (err) {
-      report.postCompileError = `Failed to finalize PDF: ${err.message}`;
+      const logPath = join(compileDir, `${texBase}.log`);
+      let latexError = err.message;
+      try {
+        const log = await readFile(logPath, 'utf-8');
+        const errorLines = log.split('\n').filter(l => l.startsWith('!'));
+        if (errorLines.length > 0) {
+          latexError = errorLines.join('\n');
+        }
+      } catch { /* no log */ }
+
+      report.compiled = false;
+      report.compileError = latexError;
     }
 
-    const auxExts = ['.aux', '.log', '.out', '.fls', '.fdb_latexmk', '.synctex.gz'];
-    for (const ext of auxExts) {
-      await rm(join(texDir, `${compileBase}${ext}`)).catch(() => {});
+    if (report.compiled) {
+      const compiledPdf = join(compileDir, `${texBase}.pdf`);
+
+      try {
+        replaceFileAtomic(targetPdf, await readFile(compiledPdf), { mode: 0o600 });
+
+        const pdfStat = await stat(targetPdf);
+        report.pdf = {
+          path: targetPdf,
+          sizeKB: parseFloat((pdfStat.size / 1024).toFixed(1)),
+        };
+      } catch (err) {
+        report.postCompileError = `Failed to finalize PDF: ${err.message}`;
+      }
     }
-    if (engine === 'tectonic') {
-      await rm(compilePath).catch(() => {});
-    }
+
+    return report;
+  } finally {
+    rmSync(compileDir, { recursive: true, force: true });
   }
-
-  return report;
 }
 
 async function main() {

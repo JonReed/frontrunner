@@ -18,7 +18,7 @@
 
 import {
   existsSync, mkdirSync, readFileSync, readdirSync, realpathSync,
-  statSync, unlinkSync, writeFileSync,
+  statSync,
 } from 'fs';
 import { randomUUID } from 'crypto';
 import { dirname, join, resolve } from 'path';
@@ -29,6 +29,7 @@ import {
 import {
   acquireTrackerLock, canonicalizeTrackerPath, resolveTrackerPath, trackerLockDirFor,
 } from './tracker-utils.mjs';
+import { createFileExclusive, removeFileProtected } from '../lib/locked-file.mjs';
 
 import { ROOT } from '#paths';
 const MAX_SENTINEL_AGE_MS = 4 * 60 * 60 * 1000;
@@ -104,11 +105,11 @@ function sentinelPath(reportsDir, num) {
 function claimSlot(reportsDir, num, occupied, token) {
   if (occupied.has(num)) return false;
   try {
-    writeFileSync(sentinelPath(reportsDir, num), JSON.stringify({
+    createFileExclusive(sentinelPath(reportsDir, num), JSON.stringify({
       pid: process.pid,
       token,
       created_at: new Date().toISOString(),
-    }), { flag: 'wx' });
+    }));
     return true;
   } catch (err) {
     if (err?.code === 'EEXIST') return false;
@@ -128,7 +129,7 @@ function releaseSlot(reportsDir, num, { token, force = false } = {}) {
   const sentinel = sentinelPath(reportsDir, num);
   try {
     if (!force && readSentinelOwner(sentinel)?.token !== token) return false;
-    unlinkSync(sentinel);
+    removeFileProtected(sentinel);
     return true;
   } catch (err) {
     if (err?.code === 'ENOENT') return false;
@@ -266,7 +267,7 @@ export async function gcStaleReportReservations(options = {}) {
         if (now - statSync(fullPath).mtimeMs > maxAgeMs) {
           const owner = readSentinelOwner(fullPath);
           if (owner?.pid && processIsAlive(owner.pid)) continue;
-          unlinkSync(fullPath);
+          removeFileProtected(fullPath);
           removed++;
           process.stderr.write(`reserve-report-num: GC stale sentinel ${name}\n`);
         }

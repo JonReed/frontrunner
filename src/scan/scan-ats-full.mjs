@@ -30,7 +30,7 @@
  *   node src/scan/scan-ats-full.mjs --help               # print this usage block and exit
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync, unlinkSync } from 'fs';
+import { readFileSync, existsSync, mkdirSync, statSync } from 'fs';
 import { pathToFileURL } from 'url';
 import { createHash } from 'crypto';
 import path from 'path';
@@ -46,8 +46,7 @@ import workday from '../../providers/workday.mjs';
 import icims from '../../providers/icims.mjs';
 import { buildTitleFilter, buildLocationFilter, buildContentFilter, matchedTitleKeywords, loadSeenUrls, normalizeUrlForDedup, appendToPipeline, appendToScanHistory, loadBlacklist } from './scan.mjs';
 import { SEED_SOURCES, toPortalEntry } from '../../config/seeds/vc-portfolios.mjs';
-import { replaceFileAtomic } from '../lib/locked-file.mjs';
-import { assertTestUserDataWriteAllowed } from '../lib/test-user-data-policy.mjs';
+import { removeFileProtected, replaceFileAtomic } from '../lib/locked-file.mjs';
 import { normalizeCompany } from '../tracker/tracker-utils.mjs';
 
 // ── Config ──────────────────────────────────────────────────────────
@@ -130,8 +129,7 @@ export function writeCheckpoint(cp, file = CHECKPOINT_PATH, writeOptions = {}) {
 
 export function removeCheckpoint(file = CHECKPOINT_PATH) {
   if (!existsSync(file)) return false;
-  assertTestUserDataWriteAllowed(file);
-  unlinkSync(file);
+  removeFileProtected(file);
   return true;
 }
 
@@ -345,7 +343,6 @@ function parseArgs(argv) {
 //   'empty' — no data at all (no cache, fetch failed/non-array)
 // The status lets callers (and --json) distinguish a degraded scan from an empty one.
 async function loadCompanyList(name, url) {
-  mkdirSync(CACHE_DIR, { recursive: true });
   const cacheFile = path.join(CACHE_DIR, `${name}.json`);
   if (existsSync(cacheFile)) {
     const ageHours = (Date.now() - statSync(cacheFile).mtimeMs) / 3_600_000;
@@ -356,7 +353,7 @@ async function loadCompanyList(name, url) {
   try {
     const data = await fetchJson(url, { timeoutMs: 30_000 });
     if (Array.isArray(data)) {
-      writeFileSync(cacheFile, JSON.stringify(data), 'utf-8');
+      replaceFileAtomic(cacheFile, JSON.stringify(data), { mode: 0o600 });
       return { list: data, status: 'ok' };
     }
   } catch (err) {
@@ -968,7 +965,6 @@ async function main() {
 
     if (opts.mdOut) {
       try {
-        mkdirSync(opts.mdOut, { recursive: true });
         const digest = [
           `# Reverse ATS Scan — ${date}`,
           `> ${offers.length} jobs | since ${opts.sinceDays}d | ${opts.liveness ? 'liveness ✓' : 'no liveness check'}`,
@@ -979,7 +975,7 @@ async function main() {
           }),
           '',
         ].join('\n');
-        writeFileSync(path.join(opts.mdOut, `${date}.md`), digest, 'utf-8');
+        replaceFileAtomic(path.join(opts.mdOut, `${date}.md`), digest, { mode: 0o600 });
         log(`Markdown digest saved to ${path.join(opts.mdOut, `${date}.md`)}`);
       } catch (err) {
         console.error(`⚠️  Could not write markdown digest: ${err.message}`);

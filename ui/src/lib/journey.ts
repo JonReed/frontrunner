@@ -32,12 +32,9 @@ export const JOURNEY: JourneyStep[] = [
   { key: 'triage', short: 'Deciding', hint: 'Worth a look' },
   { key: 'prepare', short: 'Preparing', hint: 'Needs a CV' },
   { key: 'ready', short: 'Ready', hint: 'Go apply' },
-  { key: 'applied', short: 'Applied', hint: 'Waiting' },
-  { key: 'active', short: 'In process', hint: 'They replied' },
+  { key: 'applied', short: 'Applied', hint: 'Waiting for reply' },
+  { key: 'active', short: 'In process', hint: 'Reply received' },
 ];
-
-/** Board columns: the spine without `inbox`, which has its own screen. */
-export const BOARD_COLUMNS = JOURNEY.filter((s) => s.key !== 'inbox');
 
 export function stepIndex(stage: Stage): number {
   return JOURNEY.findIndex((s) => s.key === stage);

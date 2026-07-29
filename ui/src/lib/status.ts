@@ -6,8 +6,9 @@
  * over stdin. The controller validates, and the write itself goes through
  * src/tracker/set-status.mjs — the project's single canonical tracker writer.
  *
- * A request names a role number and one of three states. It can never name a
- * path, a flag, or an arbitrary tracker cell.
+ * A move names a role number and one of five states. Undo names only the role;
+ * the backend derives the previous state from its own bounded marker. Neither
+ * request can name a path, a flag, or an arbitrary tracker cell.
  */
 
 import { spawn } from 'node:child_process';
@@ -18,8 +19,8 @@ const STATUS_CONTROL = join(ROOT, 'src', 'application', 'status-control.mjs');
 const RESPONSE_LIMIT = 64 * 1024;
 const RESPONSE_TIMEOUT_MS = 25_000;
 
-/** The three the interface can honestly know. Mirrors UI_STATES in the controller. */
-export type UiState = 'Applied' | 'Discarded' | 'SKIP';
+/** States represented by honest user-observed workflow actions. */
+export type UiState = 'Evaluated' | 'Applied' | 'Responded' | 'Discarded' | 'SKIP';
 
 function controllerError(stderr: string, fallback: string): string {
   try {
@@ -32,6 +33,14 @@ function controllerError(stderr: string, fallback: string): string {
 }
 
 export function setRoleStatus(roleNum: number, state: UiState, note?: string): Promise<void> {
+  return invokeStatusControl({ version: '1', action: 'set', roleNum, state, note });
+}
+
+export function restoreRoleStatus(roleNum: number): Promise<void> {
+  return invokeStatusControl({ version: '1', action: 'restore', roleNum });
+}
+
+function invokeStatusControl(payload: object): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [STATUS_CONTROL], {
       cwd: ROOT,
@@ -74,6 +83,6 @@ export function setRoleStatus(roleNum: number, state: UiState, note?: string): P
       fail('The tracker did not respond in time.');
     }, RESPONSE_TIMEOUT_MS);
 
-    child.stdin.end(JSON.stringify({ version: '1', action: 'set', roleNum, state, note }));
+    child.stdin.end(JSON.stringify(payload));
   });
 }

@@ -172,6 +172,30 @@ able to say why.
 
 ---
 
+## Identity and product shell
+
+**The mark is three lanes and one leader.** It also reads as an F at favicon
+size, but it is not a generic initial in a coloured tile. The product narrows
+many possible roles into a few worth pursuing; the mark is that idea reduced
+to one shape. Keep it in ink, with blue reserved for the leading point.
+
+**The shell is quiet and persistent.** The wordmark and four destinations sit
+in a translucent paper header on larger screens. Active navigation uses a
+simple ink rule, not a filled pill competing with the page. On phones the same
+four destinations use familiar line icons and short labels in a fixed bottom
+bar. Never introduce a hamburger while there are only four destinations.
+
+**Depth describes layers, not importance.** White surfaces may use a
+one-or-two-pixel neutral shadow to separate them from paper. Menus and the
+desktop sticky action surface may cast a deeper shadow because they sit above
+other content. Do not give every card a dramatic shadow.
+
+**Rounded corners belong to surfaces.** Main surfaces use the same 16px
+radius; controls use 8px. Mixing many radii makes the interface feel assembled
+from unrelated components.
+
+---
+
 ## Type
 
 **One family: DM Sans.** Bundled locally, so no network request and it works
@@ -217,11 +241,16 @@ each screen carries the same six-step rail:
 
 > Found · Deciding · Preparing · Ready · Applied · In process
 
-It is the **same rail everywhere** — identical segments, labels and placement.
-Only the caption underneath changes, because only the caption has different
-information to give: a role page names that role's position (*Step 3 of 6:
-Preparing — then Ready*), a list page gives the total (*262 roles across the
-process*).
+It is the **same rail everywhere** — identical stations, labels and placement.
+It sits above the page title because it is navigation one level above the
+screen being viewed. List-page counts need no explanatory sentence underneath;
+the labels already say what each number counts. A role page still names that
+role's exact position (*Step 3 of 6: Preparing — then Ready*).
+
+The stations sit on one continuous neutral lane. Filled blue stations describe
+a single role's past, a blue ring is its present, and neutral rings are what
+comes next. On population views the count under each station is the primary
+signal; colour is not used to imply that a pile of roles is progress.
 
 List pages briefly used a different treatment — bordered cards that scrolled
 sideways on a phone. Two visual languages for the one concept the product is
@@ -243,6 +272,27 @@ imply the end is reachable by effort alone, and most roles stop at "Applied".
 And `closed` is **not a seventh step**; it is an exit from any point, and
 drawing it on the spine would tell someone job hunting that rejection is the
 destination.
+
+**Closed is outside the spine, but never hidden.** My applications links to a
+separate Closed list. Removing a role clears the live workflow without deleting
+its assessment or CV, and the role can be restored. The process model stays
+honest without making a reversible decision feel destructive.
+
+**Status words describe observable events.** Applied means the application was
+sent and is waiting for an employer response. In process begins only when the
+employer has replied; the row then keeps the more specific tracker status such
+as Responded, Interview or Offer.
+
+**One next action per row.** The visible control says what the person is
+deciding — *I want to pursue this* — rather than describing an internal state
+transition. Backwards moves and *Not for me* sit in a small secondary menu.
+Preparing rows say what remains: CV needed, CV building, or job advert
+unavailable.
+
+**Changes leave a short undo window.** A successful move replaces the row with
+the result and an Undo action before the list refreshes. Found-stage removals
+mark the pipeline entry dismissed rather than deleting its source line, so the
+same guarantee applies before evaluation.
 
 **Next up is sorted by readiness, then by match.** Not by date, not by score
 alone. The product exists to get applications out, so the top row is always
@@ -283,9 +333,19 @@ a tap on every move through what is by design a four-step workflow. The bottom
 bar keeps all four visible and in thumb reach. On a laptop, where they fit,
 they stay inline in the header.
 
-**The board stacks, it does not wrap.** At two columns the five stages run
-1 2 / 3 4 / 5, which puts the last stage under the third and destroys the
-progression the layout exists to show. One stage per row keeps the order.
+**Sticky action surfaces are desktop-only.** A phone already gives up space to
+the bottom navigation. Pinning a second tall surface above it obscures too much
+of the assessment someone is meant to read before acting, so role actions stay
+in document flow on small screens.
+
+**Stages are lists, not a miniature Kanban board.** Selecting a step in the
+rail opens the same list-shaped page filtered to that step. The unfiltered My
+applications page stacks those lists in process order. This keeps job cards
+wide enough to read and makes the process rail the one navigation model.
+
+**Large source lists have ordinary filters.** Everything found can be narrowed
+by title, company and location. The page title does not repeat a total that
+combines live and ruled-out roles; each section owns and explains its count.
 
 ---
 

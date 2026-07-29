@@ -32,6 +32,7 @@ import {
   renderEvaluationReport,
 } from './scoring-contract.mjs';
 import { saveEvaluation } from './save-evaluation.mjs';
+import { isLoopbackModelUrl, requestModelJson } from '../security/model-http.mjs';
 
 const tracker = new TokenAccumulator();
 tracker.recordZeroToken('scan');
@@ -164,14 +165,13 @@ function readFile(path, label) {
 // A remote URL would silently exfiltrate private data.
 // ---------------------------------------------------------------------------
 {
-  let hostname;
   try {
-    hostname = new URL(baseUrl).hostname;
+    new URL(baseUrl);
   } catch {
     console.error(`❌  Invalid OLLAMA_BASE_URL: "${baseUrl}"`);
     process.exit(1);
   }
-  const isLoopback = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+  const isLoopback = isLoopbackModelUrl(baseUrl);
   if (!isLoopback && process.env.OLLAMA_ALLOW_REMOTE !== '1') {
     console.error(`
 ❌  Remote Ollama endpoint detected: ${baseUrl}
@@ -185,14 +185,20 @@ function readFile(path, label) {
 `);
     process.exit(1);
   }
+  if (!isLoopback && new URL(baseUrl).protocol !== 'https:') {
+    console.error(`❌  Remote Ollama endpoints must use HTTPS: ${baseUrl}`);
+    process.exit(1);
+  }
 }
 
 // ---------------------------------------------------------------------------
 // Check Ollama is reachable before burning time on prompt assembly
 // ---------------------------------------------------------------------------
 try {
-  const probe = await fetch(`${baseUrl}/api/tags`, { signal: AbortSignal.timeout(5_000) });
-  if (!probe.ok) throw new Error(`HTTP ${probe.status}`);
+  await requestModelJson(`${baseUrl}/api/tags`, {
+    timeoutMs: 5_000,
+    maxResponseBytes: 2 * 1024 * 1024,
+  });
 } catch (err) {
   console.error(`
 ❌  Ollama not reachable at ${baseUrl}
@@ -243,7 +249,7 @@ console.log(`🤖  Calling Ollama (${modelName})... this may take a minute.\n`);
 let evaluationText;
 let scoring;
 try {
-  const res = await fetch(endpoint, {
+  const data = await requestModelJson(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -259,17 +265,10 @@ try {
       // (matching the openai/gemini engines) by putting it where Ollama reads it.
       options: { temperature: 0.2, num_ctx: 32768 },
     }),
-    signal: AbortSignal.timeout(timeoutMs),
+    timeoutMs,
+    maxResponseBytes: 2 * 1024 * 1024,
   });
 
-  if (!res.ok) {
-    const body = await res.text();
-    console.error(`❌  Ollama API error: HTTP ${res.status}`);
-    console.error(`    ${body.slice(0, 300)}`);
-    process.exit(1);
-  }
-
-  const data = await res.json();
   const rawResponse = data.choices?.[0]?.message?.content?.trim();
   const usage = normalizeOpenAIUsage(data.usage);
   tracker.record('evaluation', usage);

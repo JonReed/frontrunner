@@ -2,9 +2,9 @@
 
 import { readFileSync, existsSync, readdirSync } from 'fs';
 import { resolve, join } from 'path';
-import { spawnSync } from 'child_process';
 
 import { ROOT } from '#paths';
+import { runBoundedSubprocess } from '../security/subprocess.mjs';
 const batchStateFile = join(ROOT, 'batch', 'batch-state.tsv');
 const reportsDir = join(ROOT, 'reports');
 
@@ -81,10 +81,21 @@ for (let i = 0; i < toProcess.length; i++) {
     '--tracker', job.id,
   ];
 
-  const res = spawnSync(process.execPath, tailorArgs, { cwd: ROOT, stdio: 'inherit' });
-  if (res.error) {
-    console.error(`Error running secure CV tailoring: ${res.error.message}`);
-  } else if (res.status !== 0) {
+  let res;
+  try {
+    res = await runBoundedSubprocess(process.execPath, tailorArgs, {
+      cwd: ROOT,
+      timeoutMs: 10 * 60 * 1000,
+      maxStdoutBytes: 2 * 1024 * 1024,
+      maxStderrBytes: 2 * 1024 * 1024,
+      onStdout: chunk => process.stdout.write(chunk),
+      onStderr: chunk => process.stderr.write(chunk),
+    });
+  } catch (error) {
+    console.error(`Error running secure CV tailoring: ${error.message}`);
+    continue;
+  }
+  if (res.status !== 0) {
     console.error(`Worker exited with status ${res.status}`);
   } else {
     console.log(`✅ Finished tailoring for Report ${job.reportNum}`);

@@ -48,6 +48,7 @@ import {
   emitEvaluationExecutionResult,
   evaluationExecutionResult,
 } from './execution-result.mjs';
+import { requestModelJson } from '../security/model-http.mjs';
 
 // ---------------------------------------------------------------------------
 // Bootstrap: load .env before anything else
@@ -58,8 +59,6 @@ try {
 } catch {
   // dotenv is optional — fall back to process.env if not installed
 }
-
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // ---------------------------------------------------------------------------
 // Paths
@@ -100,7 +99,7 @@ if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
   SETUP
     1. Get a free API key at https://aistudio.google.com/apikey
     2. Add GEMINI_API_KEY=<your-key> to .env
-    3. Run: npm install   (installs @google/generative-ai + dotenv)
+    3. Run: npm install   (installs the runtime dependencies)
 
   EXAMPLES
     node src/evaluate/gemini-eval.mjs "We are looking for a Senior AI Engineer..."
@@ -207,35 +206,55 @@ console.log(`📊  Compact scoring contract: ~${Math.ceil(systemPrompt.length / 
 // ---------------------------------------------------------------------------
 console.log(`🤖  Calling Gemini (${modelName})... this may take 30-60 seconds.\n`);
 
-const genAI = new GoogleGenerativeAI(apiKey);
 // Prompt caching (#1709) — engine 3 of the four, adapted to Gemini's shape.
 // Gemini has no `cache_control` field; its lever is the large static prefix
-// (shared + oferta + cv) being a stable `systemInstruction` rather than the first
-// turn of `contents` — that's what its 2.5 models cache implicitly across
-// back-to-back requests. So the static context moves to `systemInstruction` and
-// generateContent() carries only the per-JD user turn. The prompt text is
-// unchanged — just where it sits in the request.
-const model = genAI.getGenerativeModel({
-  model: modelName,
-  systemInstruction: systemPrompt,
-  generationConfig: {
-    temperature: 0.2,
-    maxOutputTokens: 4096,
-  },
-});
+// (shared + oferta + cv) being a stable `system_instruction` rather than the
+// first turn of `contents` — that's what its models cache implicitly across
+// back-to-back requests. So the static context moves to `system_instruction` and
+// `contents` carries only the per-JD user turn. The prompt text is unchanged.
+if (!/^[a-z0-9][a-z0-9._-]{0,127}$/iu.test(modelName)) {
+  console.error(`❌  Invalid Gemini model id: ${modelName}`);
+  process.exit(1);
+}
+const geminiEndpoint =
+  `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent`;
 
 let evaluationText;
 let scoringResult;
 let evaluationUsage;
 try {
-  const result = await model.generateContent(jobDocument.prompt);
-  scoringResult = parseScoringResponse(result.response.text());
+  const data = await requestModelJson(geminiEndpoint, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-goog-api-key': apiKey,
+    },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: systemPrompt }] },
+      contents: [{
+        role: 'user',
+        parts: [{ text: jobDocument.prompt }],
+      }],
+      generationConfig: {
+        temperature: 0.2,
+        maxOutputTokens: 4096,
+      },
+    }),
+    timeoutMs: 300_000,
+    maxResponseBytes: 2 * 1024 * 1024,
+  });
+  const responseText = data.candidates?.[0]?.content?.parts
+    ?.map(part => typeof part?.text === 'string' ? part.text : '')
+    .join('')
+    .trim();
+  if (!responseText) throw new Error('Gemini returned an empty response');
+  scoringResult = parseScoringResponse(responseText);
   evaluationText = renderEvaluationReport(scoringResult);
   const usage = {
-    prompt_tokens: result.response.usageMetadata?.promptTokenCount ?? 0,
-    completion_tokens: result.response.usageMetadata?.candidatesTokenCount ?? 0,
-    total_tokens: result.response.usageMetadata?.totalTokenCount ?? 0,
-    cached_tokens: result.response.usageMetadata?.cachedContentTokenCount ?? 0
+    prompt_tokens: data.usageMetadata?.promptTokenCount ?? 0,
+    completion_tokens: data.usageMetadata?.candidatesTokenCount ?? 0,
+    total_tokens: data.usageMetadata?.totalTokenCount ?? 0,
+    cached_tokens: data.usageMetadata?.cachedContentTokenCount ?? 0
   };
   evaluationUsage = usage;
   tracker.record('evaluation', usage);

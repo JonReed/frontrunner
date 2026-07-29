@@ -10,8 +10,9 @@
  * Run: node career-ops/dedup-tracker.mjs [--dry-run]
  */
 
-import { readFileSync, copyFileSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, existsSync, mkdirSync } from 'fs';
 import { dirname } from 'path';
+import { copyFileAtomic } from '../lib/locked-file.mjs';
 import { fileURLToPath } from 'url';
 import {
   openTrackerTransaction, rebuildRow, resolveTrackerPath,
@@ -422,7 +423,7 @@ console.log(`\n📊 ${removed} duplicates removed`);
 
 if (!DRY_RUN && removed > 0) {
   const backupPath = `${APPS_FILE}.bak`;
-  copyFileSync(APPS_FILE, backupPath);
+  copyFileAtomic(APPS_FILE, backupPath);
   trackerTransaction.replace(lines.join('\n'));
   console.log(`✅ Written to ${APPS_FILE} (backup: ${backupPath})`);
 } else if (DRY_RUN) {

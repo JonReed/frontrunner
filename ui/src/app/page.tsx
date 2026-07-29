@@ -74,7 +74,7 @@ function ActionButton({ role }: { role: Role }) {
  */
 function RoleRow({ role }: { role: Role }) {
   return (
-    <li className="flex flex-col items-stretch gap-3 border-b border-[var(--color-line)] px-5 py-4 last:border-0 sm:flex-row sm:items-center sm:gap-4">
+    <li className="flex flex-col items-stretch gap-3 border-b border-[var(--color-line)] px-5 py-4 transition last:border-0 hover:bg-[var(--color-paper)] sm:flex-row sm:items-center sm:gap-4 sm:px-6">
       <div className="w-full min-w-0 flex-1 sm:w-auto">
         <div className="truncate text-[15px] font-semibold">{role.company}</div>
         {/* Wraps on a phone, truncates on a laptop where the row is a row. */}
@@ -116,12 +116,12 @@ function RoleRow({ role }: { role: Role }) {
 function Band({ title, blurb, roles }: { title: string; blurb: string; roles: Role[] }) {
   if (roles.length === 0) return null;
   return (
-    <section className="mb-10">
-      <h2 className="text-base font-bold tracking-tight">
-        {title} <span className="tabular font-normal text-[var(--color-ink-faint)]">{roles.length}</span>
+    <section className="mb-11">
+      <h2 className="flex items-baseline gap-2 text-[17px] font-bold tracking-tight">
+        {title} <span className="tabular rounded-full bg-[var(--color-paper-deep)] px-2 py-0.5 text-xs font-semibold text-[var(--color-ink-soft)]">{roles.length}</span>
       </h2>
       <p className="mb-3 mt-0.5 text-sm text-[var(--color-ink-soft)]">{blurb}</p>
-      <ul className="overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-card)]">
+      <ul className="overflow-hidden rounded-2xl border border-[var(--color-line)] bg-[var(--color-card)] shadow-[0_1px_2px_rgb(26_25_23/0.035)]">
         {roles.map((r) => (
           <RoleRow key={r.num} role={r} />
         ))}
@@ -134,7 +134,7 @@ function Headline({ ready, nearly }: { ready: number; nearly: number }) {
   if (ready > 0) {
     return (
       <>
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight">
+        <h1 className="text-[30px] font-bold leading-tight tracking-[-0.025em] sm:text-[34px]">
           {ready} {ready === 1 ? 'application is' : 'applications are'} ready to send
         </h1>
         <p className="mt-1 text-[15px] text-[var(--color-ink-soft)]">
@@ -146,7 +146,7 @@ function Headline({ ready, nearly }: { ready: number; nearly: number }) {
   if (nearly > 0) {
     return (
       <>
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight">
+        <h1 className="text-[30px] font-bold leading-tight tracking-[-0.025em] sm:text-[34px]">
           {nearly} strong {nearly === 1 ? 'match' : 'matches'} to look at
         </h1>
         <p className="mt-1 text-[15px] text-[var(--color-ink-soft)]">
@@ -157,7 +157,7 @@ function Headline({ ready, nearly }: { ready: number; nearly: number }) {
   }
   return (
     <>
-      <h1 className="text-[28px] font-bold leading-tight tracking-tight">You are all caught up</h1>
+      <h1 className="text-[30px] font-bold leading-tight tracking-[-0.025em] sm:text-[34px]">You are all caught up</h1>
       <p className="mt-1 text-[15px] text-[var(--color-ink-soft)]">
         Nothing is waiting on you right now.
       </p>
@@ -186,20 +186,20 @@ export default async function NextUpPage() {
 
   return (
     <>
+      <PipelineOverview counts={stageCounts} />
+
       {/*
-        No "247 more roles found" line here any more. The rail below opens with
+        No "247 more roles found" line here any more. The rail above opens with
         that same count, labelled and linked, so saying it twice was the
         interface repeating itself — and the sentence version led with a
         backlog, which is the wrong first thing to tell someone whose next
         action is sitting further down the page.
       */}
-      <div className="mb-7">
+      <div className="mb-9">
         <Headline ready={counts.readyToSend} nearly={counts.oneStepAway} />
       </div>
 
       <ConnectionBanner health={health} />
-
-      <PipelineOverview counts={stageCounts} />
 
       {actionable.length === 0 ? (
         /*
@@ -210,7 +210,7 @@ export default async function NextUpPage() {
           scan they do not need to run. What is true depends on whether the
           scanner has found anything yet.
         */
-        <div className="rounded-xl border border-dashed border-[var(--color-line-strong)] bg-[var(--color-card)] p-12 text-center">
+        <div className="rounded-2xl border border-dashed border-[var(--color-line-strong)] bg-[var(--color-card)] p-12 text-center">
           <p className="font-medium">Nothing needs your attention.</p>
           <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
             {counts.inbox > 0 ? (

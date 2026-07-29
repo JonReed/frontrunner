@@ -13,12 +13,11 @@ import {
   lstatSync,
   mkdirSync,
   readFileSync,
-  unlinkSync,
 } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 import { withFileLock } from '../lib/file-lock.mjs';
-import { replaceFileAtomic } from '../lib/locked-file.mjs';
+import { removeFileProtected, replaceFileAtomic } from '../lib/locked-file.mjs';
 import {
   cvPath,
   cvVersionFilename,
@@ -182,7 +181,7 @@ async function replayJournalUnlocked(publication, options = {}) {
       }
       await options.afterStage?.('target', entry, index);
     }
-    unlinkSync(publication.file);
+    removeFileProtected(publication.file, { force: true });
     await options.afterStage?.('complete', publication);
     return publication;
   });
@@ -284,7 +283,7 @@ export async function publishProfileSave(save, options = {}) {
         replaceFileAtomic(entry.target, entry.content, { mode: 0o600 });
         await options.afterStage?.('target', entry, index);
       }
-      unlinkSync(file);
+      removeFileProtected(file, { force: true });
       await options.afterStage?.('complete', publication);
       return publication;
     });

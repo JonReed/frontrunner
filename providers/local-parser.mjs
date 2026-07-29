@@ -1,13 +1,10 @@
 // @ts-check
 /** @typedef {import('./_types.js').Provider} Provider */
 
-import { execFile } from 'child_process';
 import { realpathSync } from 'fs';
 import { resolve, sep } from 'path';
 import { fileURLToPath } from 'url';
-import { promisify } from 'util';
-
-const execFileAsync = promisify(execFile);
+import { runCheckedSubprocess } from '../src/security/subprocess.mjs';
 
 const LOCAL_PARSER_TIMEOUT_MS = 20_000;
 const LOCAL_PARSER_MAX_BUFFER_BYTES = 2_000_000;
@@ -163,11 +160,11 @@ async function runLocalParser(entry) {
 
   // cwd is pinned to the project root so a relative script arg resolves to the
   // same file resolveInvocation() validated, regardless of the caller's cwd.
-  const { stdout } = await execFileAsync(command, args, {
+  const { stdout } = await runCheckedSubprocess(command, args, {
     cwd: PROJECT_ROOT,
-    timeout,
-    maxBuffer,
-    windowsHide: true,
+    timeoutMs: timeout,
+    maxStdoutBytes: maxBuffer,
+    maxStderrBytes: 256 * 1024,
   });
 
   let payload;

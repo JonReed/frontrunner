@@ -6,19 +6,18 @@
  * lose the tracker handoff or reuse the report number for different content.
  */
 
-import { execFileSync } from 'node:child_process';
 import {
   existsSync,
   readFileSync,
   readdirSync,
-  unlinkSync,
 } from 'node:fs';
 import { basename, join } from 'node:path';
 
 import { ROOT } from '#paths';
 import { withFileLock } from '../lib/file-lock.mjs';
-import { replaceFileAtomic } from '../lib/locked-file.mjs';
+import { removeFileProtected, replaceFileAtomic } from '../lib/locked-file.mjs';
 import { resolveTrackerPath } from '../tracker/tracker-utils.mjs';
+import { runCheckedSubprocess } from '../security/subprocess.mjs';
 
 const JOURNAL_VERSION = 1;
 const MAX_JOURNAL_BYTES = 1_500_000;
@@ -101,18 +100,22 @@ function trackerContainsPublication(rootDir, publication) {
     && line.includes(publication.filename));
 }
 
-function mergeTrackerDefault(rootDir) {
+async function mergeTrackerDefault(rootDir) {
   const trackerPath = resolveTrackerPath(rootDir);
-  return execFileSync(process.execPath, [join(rootDir, 'src', 'tracker', 'merge-tracker.mjs')], {
+  const result = await runCheckedSubprocess(process.execPath, [
+    join(rootDir, 'src', 'tracker', 'merge-tracker.mjs'),
+  ], {
     cwd: rootDir,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
+    timeoutMs: 120_000,
+    maxStdoutBytes: 2 * 1024 * 1024,
+    maxStderrBytes: 2 * 1024 * 1024,
     env: {
       ...process.env,
       FRONTRUNNER_TRACKER: trackerPath,
       FRONTRUNNER_ADDITIONS: join(rootDir, 'batch', 'tracker-additions'),
     },
   });
+  return result.stdout;
 }
 
 async function replayJournal(journalPath, {
@@ -142,7 +145,7 @@ async function replayJournal(journalPath, {
       }
     }
 
-    unlinkSync(journalPath);
+    removeFileProtected(journalPath, { force: true });
     await afterStage?.('complete', publication);
     return publication;
   });

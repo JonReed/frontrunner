@@ -131,6 +131,39 @@ export async function readJob(id: string): Promise<Job | null> {
   return isJob(value) ? value : null;
 }
 
+export async function listRunningCvRoleNums(): Promise<Set<number>> {
+  let value;
+  try {
+    value = await invokeJobControl({
+      version: '1',
+      action: 'list',
+      operation: 'cv.build',
+      status: 'running',
+      limit: 50,
+    });
+  } catch {
+    return new Set();
+  }
+  if (
+    !value
+    || typeof value !== 'object'
+    || !Array.isArray((value as { jobs?: unknown }).jobs)
+  ) {
+    return new Set();
+  }
+  const roles = new Set<number>();
+  for (const item of (value as { jobs: unknown[] }).jobs) {
+    if (
+      item
+      && typeof item === 'object'
+      && Number.isSafeInteger((item as { roleNum?: unknown }).roleNum)
+    ) {
+      roles.add(Number((item as { roleNum: number }).roleNum));
+    }
+  }
+  return roles;
+}
+
 /**
  * Start a tailored-CV build.
  *

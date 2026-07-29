@@ -4,6 +4,7 @@ import {
   existsSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
@@ -13,6 +14,12 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import test from 'node:test';
 
 import { ROOT } from '#paths';
+import {
+  copyFileAtomic,
+  createFileExclusive,
+  moveFileAtomic,
+  removeFileProtected,
+} from '../../src/lib/locked-file.mjs';
 import { isRealUserDataPath } from '../../src/lib/test-user-data-policy.mjs';
 
 const PROFILE_CONTROL = fileURLToPath(
@@ -22,6 +29,7 @@ const BARRIER = fileURLToPath(
   new URL('../test-user-data-write-barrier.mjs', import.meta.url),
 );
 const LEGACY_PROFILE_BASE = ['CAREER', 'OPS', 'PROFILE', 'BASE'].join('_');
+const PROTECTED_ROOT = process.env.FRONTRUNNER_TEST_PROTECTED_ROOT || ROOT;
 const REAL_USER_PATHS = [
   join(ROOT, 'cv.md'),
   join(ROOT, 'config', 'profile.yml'),
@@ -130,6 +138,78 @@ test('the barrier permits writes inside an explicit temporary fixture', () => {
     const file = join(fixture, 'cv.md');
     writeFileSync(file, '# Isolated\n');
     assert.equal(readFileSync(file, 'utf8'), '# Isolated\n');
+  } finally {
+    rmSync(fixture, { recursive: true, force: true });
+  }
+});
+
+test('destructive barrier: every canonical mutation primitive refuses the real user layer', () => {
+  const protectedPaths = [
+    join(PROTECTED_ROOT, 'cv.md'),
+    join(PROTECTED_ROOT, 'config', 'profile.yml'),
+    join(PROTECTED_ROOT, 'cv-versions', '01-focused.md'),
+  ];
+  const before = snapshot(protectedPaths);
+  const source = join(PROTECTED_ROOT, 'cv.md');
+  const destination = join(PROTECTED_ROOT, 'output', 'must-never-exist.md');
+  const reservation = join(PROTECTED_ROOT, 'reports', '999999-RESERVED.md');
+
+  for (const operation of [
+    () => createFileExclusive(reservation, 'unsafe'),
+    () => copyFileAtomic(source, destination),
+    () => moveFileAtomic(source, destination),
+    () => removeFileProtected(source),
+  ]) {
+    assert.throws(operation, error => error?.code === 'TEST_USER_DATA_WRITE_BLOCKED');
+  }
+
+  assert.equal(existsSync(destination), false);
+  assert.equal(existsSync(reservation), false);
+  assertUnchanged(before);
+});
+
+test('canonical create/copy/move/remove primitives work inside a temporary fixture', () => {
+  const fixture = mkdtempSync(join(tmpdir(), 'frontrunner-protected-fs-'));
+  try {
+    const source = join(fixture, 'source.txt');
+    const copy = join(fixture, 'nested', 'copy.txt');
+    const moved = join(fixture, 'moved.txt');
+
+    createFileExclusive(source, 'original\n');
+    assert.throws(
+      () => createFileExclusive(source, 'replacement\n'),
+      error => error?.code === 'EEXIST',
+    );
+    copyFileAtomic(source, copy);
+    assert.equal(readFileSync(copy, 'utf8'), 'original\n');
+    moveFileAtomic(copy, moved, { overwrite: false });
+    assert.equal(existsSync(copy), false);
+    assert.equal(readFileSync(moved, 'utf8'), 'original\n');
+    assert.equal(removeFileProtected(moved), true);
+    assert.equal(removeFileProtected(moved, { force: true }), false);
+  } finally {
+    rmSync(fixture, { recursive: true, force: true });
+  }
+});
+
+test('failure injection during an atomic copy preserves the previous destination', () => {
+  const fixture = mkdtempSync(join(tmpdir(), 'frontrunner-protected-copy-'));
+  try {
+    const source = join(fixture, 'source.txt');
+    const destination = join(fixture, 'destination.txt');
+    writeFileSync(source, 'replacement\n');
+    writeFileSync(destination, 'original\n');
+
+    assert.throws(
+      () => copyFileAtomic(source, destination, {
+        afterWrite() {
+          throw new Error('injected copy interruption');
+        },
+      }),
+      /injected copy interruption/u,
+    );
+    assert.equal(readFileSync(destination, 'utf8'), 'original\n');
+    assert.deepEqual(readdirSync(fixture).sort(), ['destination.txt', 'source.txt']);
   } finally {
     rmSync(fixture, { recursive: true, force: true });
   }

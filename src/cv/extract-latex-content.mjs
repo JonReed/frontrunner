@@ -12,11 +12,12 @@
  *   node src/cv/extract-latex-content.mjs <source.tex> --out manifest.json
  */
 
-import { readFile, writeFile } from 'fs/promises';
+import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import { resolve, basename } from 'path';
 import { pathToFileURL } from 'url';
 import { buildManifest } from './latex-content.mjs';
+import { replaceFileAtomic } from '../lib/locked-file.mjs';
 
 async function main() {
   const args = process.argv.slice(2).filter(a => a !== '--help');
@@ -51,7 +52,7 @@ async function main() {
   const json = JSON.stringify(manifest, null, 2);
 
   if (outPath) {
-    await writeFile(resolve(outPath), json, 'utf-8');
+    replaceFileAtomic(resolve(outPath), json, { mode: 0o600 });
   }
   console.log(json);
   process.exit(manifest.supported ? 0 : 1);

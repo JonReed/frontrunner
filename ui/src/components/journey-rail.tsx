@@ -28,26 +28,37 @@ import type { Stage } from '@/lib/roles';
 /** Where each step's roles can be seen. */
 const HREF: Record<SpineStage, string> = {
   inbox: '/found',
-  triage: '/applications',
-  prepare: '/applications',
-  ready: '/applications',
-  applied: '/applications',
-  active: '/applications',
+  triage: '/applications?stage=triage',
+  prepare: '/applications?stage=prepare',
+  ready: '/applications?stage=ready',
+  applied: '/applications?stage=applied',
+  active: '/applications?stage=active',
 };
 
-function Segment({
-  filled,
-  current,
+function Station({
+  state,
 }: {
-  filled: boolean;
-  current: boolean;
+  state: 'past' | 'current' | 'populated' | 'empty';
 }) {
-  const tone = current
-    ? 'bg-[var(--color-act)]'
-    : filled
-      ? 'bg-[var(--color-act)]/35'
-      : 'bg-[var(--color-line)]';
-  return <span className={`block h-1 rounded-full ${tone}`} aria-hidden="true" />;
+  if (state === 'current') {
+    return (
+      <span
+        className="relative z-[1] block size-4 rounded-full border-[4px] border-[var(--color-card)] bg-[var(--color-act)] ring-2 ring-[var(--color-act)]"
+        aria-hidden="true"
+      />
+    );
+  }
+  const tone = state === 'past'
+    ? 'border-[var(--color-act)] bg-[var(--color-act)]'
+    : state === 'populated'
+      ? 'border-[var(--color-ink-soft)] bg-[var(--color-card)]'
+      : 'border-[var(--color-line-strong)] bg-[var(--color-card)]';
+  return (
+    <span
+      className={`relative z-[1] block size-3 rounded-full border-2 ${tone}`}
+      aria-hidden="true"
+    />
+  );
 }
 
 /**
@@ -70,28 +81,35 @@ export function RoleJourney({ stage, status }: { stage: Stage; status?: string }
 
   return (
     <nav aria-label="Where this role is" className="w-full">
-      <ol className="flex gap-1.5">
+      <ol className="relative flex before:absolute before:left-[8.333%] before:right-[8.333%] before:top-[7px] before:h-px before:bg-[var(--color-line-strong)]">
         {JOURNEY.map((s, i) => (
           <li key={s.key} className="min-w-0 flex-1">
-            <Segment filled={i < here} current={i === here} />
-            {/*
-              Labels are laptop-only. Six of them across 375px would each get
-              about 55px and truncate to noise, so on a phone the sentence
-              below the rail carries the same information in words.
-            */}
-            <span
-              className={`mt-1.5 hidden truncate text-[11px] sm:block ${
-                i === here
-                  ? 'font-semibold text-[var(--color-ink)]'
-                  : 'text-[var(--color-ink-faint)]'
-              }`}
+            <Link
+              href={HREF[s.key]}
+              aria-label={`Show ${s.short} roles`}
+              aria-current={i === here ? 'step' : undefined}
+              className="group flex flex-col items-center"
             >
-              {s.short}
-            </span>
+              <Station state={i === here ? 'current' : i < here ? 'past' : 'empty'} />
+              {/*
+                Labels are laptop-only. Six of them across 375px would each get
+                about 55px and truncate to noise, so on a phone the sentence
+                below the rail carries the same information in words.
+              */}
+              <span
+                className={`mt-2 hidden w-full truncate text-center text-[11px] transition group-hover:text-[var(--color-act)] sm:block ${
+                  i === here
+                    ? 'font-semibold text-[var(--color-ink)]'
+                    : 'text-[var(--color-ink-faint)]'
+                }`}
+              >
+                {s.short}
+              </span>
+            </Link>
           </li>
         ))}
       </ol>
-      <p className="mt-2 text-sm text-[var(--color-ink-soft)] sm:mt-2.5">
+      <p className="mt-3 text-sm text-[var(--color-ink-soft)]">
         <span className="font-semibold text-[var(--color-ink)]">
           Step {here + 1} of {JOURNEY.length}: {JOURNEY[here].short}
         </span>
@@ -114,8 +132,7 @@ export function RoleJourney({ stage, status }: { stage: Stage; status?: string }
  *
  * Six columns rather than a horizontal scroll, so nothing is hidden off the
  * edge. The number carries the information and is always visible; the label
- * appears from `sm` up, where there is room for a word under a 60px column.
- * On a phone the caption underneath names the whole thing instead.
+ * names it at every width.
  */
 export function PipelineOverview({
   counts,
@@ -124,10 +141,9 @@ export function PipelineOverview({
   counts: Partial<Record<SpineStage, number>>;
   active?: SpineStage;
 }) {
-  const total = JOURNEY.reduce((sum, s) => sum + (counts[s.key] ?? 0), 0);
   return (
-    <nav aria-label="The whole process" className="mb-8">
-      <ol className="flex gap-1.5">
+    <nav aria-label="The whole process" className="mb-9 rounded-2xl border border-[var(--color-line)] bg-[var(--color-card)] px-3 py-4 shadow-[0_1px_2px_rgb(26_25_23/0.03)] sm:px-5">
+      <ol className="relative flex before:absolute before:left-[8.333%] before:right-[8.333%] before:top-[7px] before:h-px before:bg-[var(--color-line-strong)]">
         {JOURNEY.map((s) => {
           const n = counts[s.key] ?? 0;
           const isHere = active === s.key;
@@ -136,11 +152,13 @@ export function PipelineOverview({
               <Link
                 href={HREF[s.key]}
                 aria-current={isHere ? 'step' : undefined}
-                className="group block"
+                className={`group flex flex-col items-center rounded-lg px-0.5 pb-1 pt-0 transition ${
+                  isHere ? 'bg-[var(--color-act-wash)]' : 'hover:bg-[var(--color-paper)]'
+                }`}
               >
-                <Segment filled={n > 0 && !isHere} current={isHere} />
+                <Station state={isHere ? 'current' : n > 0 ? 'populated' : 'empty'} />
                 <span
-                  className={`tabular mt-1.5 block text-[15px] font-semibold leading-none transition group-hover:text-[var(--color-act)] ${
+                  className={`tabular mt-2 block text-[17px] font-bold leading-none tracking-tight transition group-hover:text-[var(--color-act)] ${
                     n === 0 ? 'text-[var(--color-ink-faint)]' : 'text-[var(--color-ink)]'
                   }`}
                 >
@@ -153,7 +171,9 @@ export function PipelineOverview({
                   count, and "247 9 5 1 0 0" on its own is a puzzle. They wrap
                   rather than truncate — two short lines beat "In proces…".
                 */}
-                <span className="mt-1 block text-[10px] leading-tight text-[var(--color-ink-faint)] sm:text-[11px]">
+                <span className={`mt-1 block text-center text-[10px] leading-tight sm:text-[11px] ${
+                  isHere ? 'font-semibold text-[var(--color-act)]' : 'text-[var(--color-ink-faint)]'
+                }`}>
                   {s.short}
                 </span>
               </Link>
@@ -161,12 +181,6 @@ export function PipelineOverview({
           );
         })}
       </ol>
-      <p className="mt-2 text-sm text-[var(--color-ink-soft)] sm:mt-2.5">
-        <span className="font-semibold text-[var(--color-ink)]">
-          {total.toLocaleString()} {total === 1 ? 'role' : 'roles'}
-        </span>{' '}
-        across the process, from found to answered.
-      </p>
     </nav>
   );
 }

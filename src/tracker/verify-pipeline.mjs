@@ -19,10 +19,11 @@
  * Run: node frontrunner/verify-pipeline.mjs
  */
 
-import { readFileSync, readdirSync, existsSync, mkdirSync, unlinkSync, statSync } from 'fs';
+import { readFileSync, readdirSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { looksLikeScoreCell, isSeparatorRow, isHeaderRow, resolveColumns } from './tracker-parse.mjs';
+import { gcStaleReportReservations } from './reserve-report-num.mjs';
 
 import { ROOT as FRONTRUNNER } from '#paths';
 // Support both layouts: data/applications.md (boilerplate) and applications.md (original).
@@ -224,25 +225,11 @@ if (boldScores === 0) ok('No bold in scores');
 // number is claimed.  If the process crashed before writing the real report
 // and deleting the sentinel it will linger.  Sentinels older than 4 h are
 // stale; remove them here so they don't skew the next slot allocation.
-const SENTINEL_MAX_AGE_MS = 4 * 60 * 60 * 1000;
-let staleSentinels = 0;
-if (existsSync(REPORTS_DIR)) {
-  const now = Date.now();
-  for (const name of readdirSync(REPORTS_DIR)) {
-    if (!name.endsWith('-RESERVED.md')) continue;
-    const full = join(REPORTS_DIR, name);
-    try {
-      const { mtimeMs } = statSync(full);
-      if (now - mtimeMs > SENTINEL_MAX_AGE_MS) {
-        unlinkSync(full);
-        warn(`Removed stale reservation sentinel: ${name}`);
-        staleSentinels++;
-      }
-    } catch {
-      // Already gone between readdir and stat — fine.
-    }
-  }
-}
+const staleSentinels = await gcStaleReportReservations({
+  reportsDir: REPORTS_DIR,
+  trackerPath: APPS_FILE,
+});
+if (staleSentinels > 0) warn(`Removed ${staleSentinels} stale reservation sentinel(s)`);
 if (staleSentinels === 0) ok('No stale reservation sentinels');
 
 // --- Check 9: Duplicate reports for the same company+role (#1425) ---

@@ -27,9 +27,9 @@ import { readFileSync, readdirSync, existsSync, writeFileSync, mkdtempSync, rmSy
 import { join, dirname } from 'path';
 import { tmpdir } from 'os';
 import { fileURLToPath } from 'url';
-import { spawnSync } from 'child_process';
 
 import { ROOT } from '#paths';
+import { runCheckedSubprocess } from '../security/subprocess.mjs';
 const GOLDEN_DIR = join(ROOT, 'evals', 'golden');
 
 // ---------------------------------------------------------------------------
@@ -135,7 +135,7 @@ function parseSummary(text) {
  * @param {{id: string, jd: string}} testCase - The golden case being run.
  * @returns {string} Raw model output (expected to contain a SCORE_SUMMARY block).
  */
-function getCompletion(testCase) {
+async function getCompletion(testCase) {
   if (mode === 'replay') {
     // Slash-form provider ids (e.g. "deepseek/deepseek-chat") must not become
     // path separators, or the fixture lands in a phantom subdirectory. Sanitize
@@ -152,12 +152,14 @@ function getCompletion(testCase) {
   try {
     const jdFile = join(dir, 'jd.txt');
     writeFileSync(jdFile, testCase.jd);
-    const res = spawnSync(process.execPath,
+    const res = await runCheckedSubprocess(process.execPath,
       [join(ROOT, 'src/evaluate/openai-eval.mjs'), '--file', jdFile, '--model', model, '--no-save'],
-      { encoding: 'utf8', env: process.env, timeout: 360000 });
-    if (res.status !== 0) {
-      throw new Error(`openai-eval.mjs exited ${res.status}: ${(res.stderr || '').slice(0, 200)}`);
-    }
+      {
+        env: process.env,
+        timeoutMs: 360_000,
+        maxStdoutBytes: 2 * 1024 * 1024,
+        maxStderrBytes: 512 * 1024,
+      });
     return res.stdout || '';
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -220,7 +222,7 @@ for (const tc of cases) {
   const t0 = Date.now();
   let parsed;
   try {
-    parsed = parseSummary(getCompletion(tc));
+    parsed = parseSummary(await getCompletion(tc));
   } catch (err) {
     console.log(`  ❌ ${tc.id}: ${err.message}`);
     deltas.push(NaN);

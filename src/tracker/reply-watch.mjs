@@ -20,6 +20,7 @@ import { resolveColumns, parseTrackerRow } from './tracker-parse.mjs';
 import {
   openTrackerTransaction, rebuildRow, resolveTrackerPath,
 } from './tracker-utils.mjs';
+import { runCheckedSubprocess } from '../security/subprocess.mjs';
 
 import { ROOT as __dirname } from '#paths';
 const DEFAULT_CANDIDATES_PATH = path.join(__dirname, 'data', 'reply-candidates.json');
@@ -335,10 +336,17 @@ Usage:
 
       // Sync tracker DB if tracker.mjs exists
       try {
-        const { execSync } = await import('child_process');
-        execSync('node src/tracker/tracker.mjs sync', { stdio: 'ignore' });
+        await runCheckedSubprocess(process.execPath, [
+          path.join(__dirname, 'src', 'tracker', 'tracker.mjs'),
+          'sync',
+        ], {
+          cwd: __dirname,
+          timeoutMs: 30_000,
+          maxStdoutBytes: 256 * 1024,
+          maxStderrBytes: 256 * 1024,
+        });
         console.log('Synced database index (applications.db).');
-      } catch (e) {
+      } catch {
         // ignore
       }
     } else {

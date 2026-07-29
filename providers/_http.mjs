@@ -161,6 +161,13 @@ async function fetchWithTimeout(
     // (this froze full-directory sweeps silently — 20 workers all stuck on
     // stalled reads with the abort timer already cleared).
     return await consume(res, maxResponseBytes);
+  } catch (error) {
+    if (controller.signal.aborted && error?.name === 'AbortError') {
+      const timeoutError = new Error(`HTTP request timed out after ${timeoutMs}ms`);
+      timeoutError.name = 'TimeoutError';
+      throw timeoutError;
+    }
+    throw error;
   } finally {
     clearTimeout(timer);
   }

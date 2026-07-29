@@ -14,6 +14,7 @@ import test from 'node:test';
 
 import { ROOT } from '#paths';
 import {
+  buildRestoreStatusArgs,
   buildSetStatusArgs,
   main,
   runSetStatus,
@@ -38,7 +39,7 @@ test('status control accepts only an honest bounded tracker decision', () => {
     roleNum: 42,
     state: 'Applied',
     note: 'sent via referral',
-  }, new Set(['Applied', 'Discarded', 'SKIP']));
+  }, new Set(['Evaluated', 'Applied', 'Responded', 'Discarded', 'SKIP']));
   assert.deepEqual(request, {
     version: '1',
     action: 'set',
@@ -47,6 +48,15 @@ test('status control accepts only an honest bounded tracker decision', () => {
     note: 'sent via referral',
   });
   assert.equal(Object.isFrozen(request), true);
+
+  for (const state of ['Evaluated', 'Responded']) {
+    assert.equal(validateStatusRequest({
+      version: '1',
+      action: 'set',
+      roleNum: 42,
+      state,
+    }, new Set(['Evaluated', 'Responded'])).state, state);
+  }
 
   for (const hostile of [
     null,
@@ -60,7 +70,7 @@ test('status control accepts only an honest bounded tracker decision', () => {
   ]) {
     assert.throws(() => validateStatusRequest(
       hostile,
-      new Set(['Applied', 'Discarded', 'SKIP']),
+      new Set(['Evaluated', 'Applied', 'Responded', 'Discarded', 'SKIP']),
     ));
   }
 });
@@ -79,6 +89,38 @@ test('status control builds one fixed canonical writer invocation', () => {
     '--note',
     'sent via referral',
   ]);
+});
+
+test('status restore derives the prior state from the tracker, not the request', (t) => {
+  const fixture = mkdtempSync(join(tmpdir(), 'frontrunner-status-restore-'));
+  t.after(() => rmSync(fixture, { recursive: true, force: true }));
+  const tracker = join(fixture, 'applications.md');
+  writeFileSync(tracker, `# Applications Tracker
+
+| # | Date | Company | Role | Score | Status | PDF | Report | Notes |
+|---|------|---------|------|-------|--------|-----|--------|-------|
+| 42 | 2026-07-29 | Acme | Director | 4.2/5 | Discarded | ❌ | — | [frontrunner-before:Interview:active] |
+`);
+  const previous = process.env.FRONTRUNNER_TRACKER;
+  process.env.FRONTRUNNER_TRACKER = tracker;
+  try {
+    assert.deepEqual(
+      validateStatusRequest({ version: '1', action: 'restore', roleNum: 42 }),
+      { version: '1', action: 'restore', roleNum: 42 },
+    );
+    assert.deepEqual(
+      buildRestoreStatusArgs(42, new Set(['Interview'])),
+      [
+        join(ROOT, 'src', 'tracker', 'set-status.mjs'),
+        '42',
+        'Interview',
+        '--json',
+      ],
+    );
+  } finally {
+    if (previous === undefined) delete process.env.FRONTRUNNER_TRACKER;
+    else process.env.FRONTRUNNER_TRACKER = previous;
+  }
 });
 
 test('an already-cancelled status request never launches the tracker writer', async () => {

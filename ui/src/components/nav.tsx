@@ -11,13 +11,37 @@ import { usePathname } from 'next/navigation';
  * there, and what does it know about me. The labels answer those directly.
  */
 export const NAV = [
-  { href: '/', label: 'Next up' },
-  { href: '/applications', label: 'My applications' },
+  { href: '/', label: 'Next up', mobileLabel: 'Today', icon: 'home' },
+  { href: '/applications', label: 'My applications', mobileLabel: 'Applications', icon: 'roles' },
   // Not "Find roles": nothing is found here, the scanner already did that.
   // This is where its results sit, assessed and ruled out alike.
-  { href: '/found', label: 'Everything found' },
-  { href: '/profile', label: 'My details' },
-];
+  { href: '/found', label: 'Everything found', mobileLabel: 'Found', icon: 'search' },
+  { href: '/profile', label: 'My details', mobileLabel: 'Profile', icon: 'profile' },
+] as const;
+
+function NavIcon({ name }: { name: (typeof NAV)[number]['icon'] }) {
+  const common = {
+    width: 20,
+    height: 20,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.8,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    'aria-hidden': true,
+  };
+  if (name === 'home') {
+    return <svg {...common}><path d="m4 11 8-7 8 7v9H4Z" /><path d="M9 20v-6h6v6" /></svg>;
+  }
+  if (name === 'roles') {
+    return <svg {...common}><rect x="4" y="6" width="16" height="14" rx="2" /><path d="M9 6V4h6v2M4 11h16M10 11v2h4v-2" /></svg>;
+  }
+  if (name === 'search') {
+    return <svg {...common}><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4 4" /></svg>;
+  }
+  return <svg {...common}><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-4 3-6 7-6s6.3 2 7 6" /></svg>;
+}
 
 function isActive(pathname: string, href: string) {
   return href === '/' ? pathname === '/' : pathname.startsWith(href);
@@ -49,7 +73,7 @@ export function HeaderNav() {
   const pathname = usePathname();
   if (isSetup(pathname)) return null;
   return (
-    <nav aria-label="Main" className="hidden gap-1 text-sm sm:flex">
+    <nav aria-label="Main" className="hidden items-center gap-5 text-sm sm:flex">
       {NAV.map((n) => (
         <Link
           key={n.href}
@@ -57,8 +81,8 @@ export function HeaderNav() {
           aria-current={isActive(pathname, n.href) ? 'page' : undefined}
           className={
             isActive(pathname, n.href)
-              ? 'rounded-lg bg-[var(--color-card)] px-3 py-1.5 font-semibold text-[var(--color-ink)]'
-              : 'rounded-lg px-3 py-1.5 font-medium text-[var(--color-ink-soft)] transition hover:bg-[var(--color-card)] hover:text-[var(--color-ink)]'
+              ? 'relative py-2 font-semibold text-[var(--color-ink)] after:absolute after:inset-x-0 after:-bottom-[14px] after:h-0.5 after:rounded-full after:bg-[var(--color-ink)]'
+              : 'py-2 font-medium text-[var(--color-ink-soft)] transition hover:text-[var(--color-ink)]'
           }
         >
           {n.label}
@@ -74,7 +98,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--color-line)] bg-[var(--color-paper)] sm:hidden"
+      className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--color-line)] bg-[color:var(--color-paper-translucent)] backdrop-blur-md sm:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <ul className="flex">
@@ -85,13 +109,14 @@ export function BottomNav() {
               <Link
                 href={n.href}
                 aria-current={active ? 'page' : undefined}
-                className={`flex min-h-[52px] items-center justify-center px-1 text-center text-[13px] leading-tight ${
+                className={`flex min-h-[58px] flex-col items-center justify-center gap-0.5 px-1 text-center text-[11px] leading-tight ${
                   active
-                    ? 'font-semibold text-[var(--color-ink)] shadow-[inset_0_2px_0_0_var(--color-act)]'
+                    ? 'font-semibold text-[var(--color-act)]'
                     : 'font-medium text-[var(--color-ink-soft)]'
                 }`}
               >
-                {n.label}
+                <NavIcon name={n.icon} />
+                {n.mobileLabel}
               </Link>
             </li>
           );

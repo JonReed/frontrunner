@@ -123,6 +123,13 @@ prefilter before model evaluation.
   process-result channel, separate from human output. The pipeline aggregates
   reported usage, explicitly counts evaluations whose provider omitted it, and
   never estimates missing live-run tokens from prose.
+- **One supervised subprocess boundary:** pipeline stages, model CLIs, local
+  parsers, CV renderers, LaTeX engines, tracker maintenance and evaluation
+  recovery all launch without a shell through one bounded supervisor. It caps
+  argv, stdin, stdout and stderr; enforces timeouts and cancellation; and reaps
+  the complete process tree with TERM/KILL escalation. CI inventories direct
+  child-process imports, while the application service retains its stricter
+  versioned operation/owner-death protocol.
 - **Transactional profile saves:** a UI save spanning the canonical CV,
   additional CV versions and profile fields is preflighted as one decision,
   serialized across processes and protected by a private write-ahead journal.
@@ -144,10 +151,17 @@ prefilter before model evaluation.
   before a browser. Playwright is reserved for providers that cannot answer
   through a structured endpoint, and fallback text is cached rather than
   fetched again by the evaluator.
-- **Bounded model transport:** OpenRouter model discovery and completions use
-  fixed endpoints through the same DNS-pinned, size-limited HTTP broker as job
-  ingestion. Responses cross a closed content/usage boundary, while failed
-  models are persisted with locked atomic merge semantics across processes.
+- **One outbound-network boundary:** providers, discovery seeds, enrichment and
+  public model APIs all use the same DNS-pinned, redirect-aware, time- and
+  size-bounded HTTP broker. Every remote Playwright navigation—including
+  redirects and subresources—crosses one browser egress guard. Local model
+  servers use a separate loopback-only, no-redirect capability; CI rejects new
+  direct network or browser-navigation paths. The self-loading updater is the
+  sole fixed-source exception and caps both downloads and output buffers.
+- **Bounded model transport:** OpenAI-compatible, OpenRouter, Ollama and Gemini
+  calls share that broker and a closed response boundary; Gemini no longer
+  needs a privileged vendor SDK. Failed OpenRouter models are persisted with
+  locked atomic merge semantics across processes.
 - **One job-source result contract:** all built-in sources cross the same
   runtime boundary after fetching. It rejects unsafe URLs and malformed records, removes unknown
   fields, bounds job counts and every retained field, caps aggregate
@@ -188,6 +202,14 @@ prefilter before model evaluation.
   Follow-up scheduling now uses that shared owner-verified transaction boundary
   too, so simultaneous status changes retain every pin and a killed writer
   cannot truncate or replace the user's follow-up history.
+- **Tests cannot become data-deletion tools:** production creation, replacement,
+  copy, move and deletion of user files cross one fail-closed filesystem
+  boundary. During tests it rejects the real CV, profile, tracker, reports,
+  JDs and generated output before any mutation begins. A CI inventory rejects
+  new raw filesystem writers outside a small, documented set of contained
+  runtime/temp/system modules. LaTeX engines run in a private temporary
+  directory, so their PDF, log and auxiliary writes never occur beside a
+  user-owned `.tex` file.
 - **Transactional evaluation publication:** every model provider uses one
   journaled report-to-tracker publisher. If the process, machine, or tracker
   merge fails after model tokens have already been spent, the next evaluation
@@ -205,7 +227,8 @@ prefilter before model evaluation.
   in a disposable repository containing the current system source but no
   ignored user files; a process-wide write barrier additionally prevents test
   children from reaching the original CV, profile, tracker, reports, JDs or
-  generated output.
+  generated output. Destructive tests exercise create, overwrite, atomic-copy,
+  move and delete denial and verify the original bytes remain unchanged.
 - **Upstream-compatible data:** the CV, profile, reports, tracker, provider
   ecosystem, and scoring scale remain compatible with career-ops.
 

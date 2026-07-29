@@ -24,6 +24,8 @@
  *   const companies = await fetchYCCompanies();
  */
 
+import { fetchJson, fetchText } from '../../providers/_http.mjs';
+
 // ── Constants ────────────────────────────────────────────────────────
 
 /**
@@ -33,7 +35,6 @@
 export const SLUG_RE = /^[A-Za-z0-9._-]+$/;
 
 const DEFAULT_TIMEOUT_MS = 20_000;
-const DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; frontrunner-seeds/1.0)';
 
 /**
  * YC public company API.
@@ -47,33 +48,6 @@ const YC_API_URL = 'https://api.ycombinator.com/v0.1/companies?page=1&per_page=1
  * The portfolio is a publicly accessible HTML page listing all portfolio companies.
  */
 const A16Z_PORTFOLIO_URL = 'https://a16z.com/portfolio/';
-
-// ── HTTP helper (local — avoids importing providers/_http.mjs to keep config/seeds/ self-contained) ──
-
-/**
- * Minimal fetch wrapper with timeout + user-agent header.
- *
- * @param {string} url
- * @param {{ timeoutMs?: number }} [opts]
- * @returns {Promise<Response>}
- */
-async function fetchWithTimeout(url, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(url, {
-      headers: { 'user-agent': DEFAULT_USER_AGENT },
-      signal: controller.signal,
-    });
-    if (!res.ok) {
-      const snippet = await res.text().catch(() => '').then(t => t.slice(0, 200));
-      throw new Error(`HTTP ${res.status}${snippet ? ': ' + snippet.replace(/\s+/g, ' ').trim() : ''}`);
-    }
-    return res;
-  } finally {
-    clearTimeout(timer);
-  }
-}
 
 // ── Shared types (JSDoc only — no runtime cost) ──────────────────────
 
@@ -323,8 +297,11 @@ export async function fetchYCCompanies({ timeoutMs = DEFAULT_TIMEOUT_MS, maxPage
     const url = `https://api.ycombinator.com/v0.1/companies?page=${page}&per_page=1000`;
     let payload;
     try {
-      const res = await fetchWithTimeout(url, { timeoutMs });
-      payload = await res.json();
+      payload = await fetchJson(url, {
+        timeoutMs,
+        redirect: 'error',
+        maxResponseBytes: 4 * 1024 * 1024,
+      });
     } catch (err) {
       if (page === 1) throw new Error(`vc-portfolios: YC API fetch failed — ${err.message}`);
       break; // Partial data is fine after page 1.
@@ -361,8 +338,11 @@ export async function fetchYCCompanies({ timeoutMs = DEFAULT_TIMEOUT_MS, maxPage
 export async function fetchA16zCompanies({ timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
   let html;
   try {
-    const res = await fetchWithTimeout(A16Z_PORTFOLIO_URL, { timeoutMs });
-    html = await res.text();
+    html = await fetchText(A16Z_PORTFOLIO_URL, {
+      timeoutMs,
+      redirect: 'error',
+      maxResponseBytes: 4 * 1024 * 1024,
+    });
   } catch (err) {
     throw new Error(`vc-portfolios: a16z portfolio fetch failed — ${err.message}`);
   }

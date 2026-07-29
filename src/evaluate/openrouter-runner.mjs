@@ -21,7 +21,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execFileSync } from 'node:child_process';
 import readline from 'node:readline';
 import yaml from 'js-yaml';
 import { outputLanguageInstruction, parseOutputLanguage } from '../lib/profile-language.mjs';
@@ -36,6 +35,7 @@ import {
   renderEvaluationReport,
 } from './scoring-contract.mjs';
 import { frameUntrustedJobText } from '../security/job-document.mjs';
+import { runCheckedSubprocess } from '../security/subprocess.mjs';
 import {
   fetchOpenRouterModels,
   requestOpenRouterCompletion,
@@ -384,9 +384,13 @@ async function cmdScan() {
   tracker.recordZeroToken('scan');
   tracker.recordZeroToken('evaluation');
   tracker.recordZeroToken('pdf payload');
-  execFileSync(process.execPath, [path.join(__dirname, 'src/scan/scan.mjs')], {
+  await runCheckedSubprocess(process.execPath, [path.join(__dirname, 'src/scan/scan.mjs')], {
     cwd: __dirname,
-    stdio: 'inherit',
+    timeoutMs: 10 * 60 * 1000,
+    maxStdoutBytes: 2 * 1024 * 1024,
+    maxStderrBytes: 2 * 1024 * 1024,
+    onStdout: chunk => process.stdout.write(chunk),
+    onStderr: chunk => process.stderr.write(chunk),
   });
 }
 

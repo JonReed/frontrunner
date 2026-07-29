@@ -16,16 +16,16 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs';
-import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { ROOT } from '#paths';
-import { readBodyLimited } from '../../providers/_http.mjs';
 import { replaceFileAtomic } from '../lib/locked-file.mjs';
 import { outputLanguageInstruction, parseOutputLanguage } from '../lib/profile-language.mjs';
 import { frameUntrustedJobText } from '../security/job-document.mjs';
+import { requestModelJson } from '../security/model-http.mjs';
+import { runCheckedSubprocess } from '../security/subprocess.mjs';
 import {
   MAX_TAILORING_RESPONSE_BYTES,
   buildTailoringSystemPrompt,
@@ -123,43 +123,44 @@ export async function requestTailoringPayload({
   jobPrompt,
   reportPrompt,
   timeoutMs = DEFAULT_TIMEOUT_MS,
-  fetchImpl = globalThis.fetch,
+  fetchImpl,
 }) {
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1) {
     throw new Error('OPENAI_TIMEOUT_MS must be a positive integer');
   }
   const headers = { 'content-type': 'application/json' };
   if (apiKey) headers.authorization = `Bearer ${apiKey}`;
-  const response = await fetchImpl(endpoint, {
-    method: 'POST',
-    headers,
-    redirect: 'error',
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        {
-          role: 'user',
-          content: `${reportPrompt}\n\n${jobPrompt}\n\nReturn only the required tailoring JSON.`,
-        },
-      ],
-      max_tokens: 8192,
-      stream: false,
-      temperature: 0.2,
-    }),
-    signal: AbortSignal.timeout(timeoutMs),
-  });
-  if (!response.ok) {
-    const body = await readBodyLimited(response, 64 * 1024).catch(() => '');
-    const detail = safeDiagnostic(body);
-    throw new Error(`OpenAI-compatible endpoint returned HTTP ${response.status}${detail ? `: ${detail}` : ''}`);
-  }
-  const envelopeText = await readBodyLimited(response, MAX_API_ENVELOPE_BYTES);
   let envelope;
   try {
-    envelope = JSON.parse(envelopeText);
-  } catch {
-    throw new Error('OpenAI-compatible endpoint returned invalid JSON');
+    envelope = await requestModelJson(endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          {
+            role: 'user',
+            content: `${reportPrompt}\n\n${jobPrompt}\n\nReturn only the required tailoring JSON.`,
+          },
+        ],
+        max_tokens: 8192,
+        stream: false,
+        temperature: 0.2,
+      }),
+      timeoutMs,
+      maxResponseBytes: MAX_API_ENVELOPE_BYTES,
+      fetchImpl,
+    });
+  } catch (error) {
+    if (Number.isInteger(error?.status)) {
+      const detail = safeDiagnostic(error.body);
+      throw new Error(`OpenAI-compatible endpoint returned HTTP ${error.status}${detail ? `: ${detail}` : ''}`);
+    }
+    if (/not valid JSON/u.test(error?.message ?? '')) {
+      throw new Error('OpenAI-compatible endpoint returned invalid JSON');
+    }
+    throw error;
   }
   const raw = envelope?.choices?.[0]?.message?.content;
   if (typeof raw !== 'string' || !raw.trim()) {
@@ -178,8 +179,16 @@ export async function runOpenAiTailoring({
   baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
   apiKey = process.env.OPENAI_API_KEY || '',
   timeoutMs = Number(process.env.OPENAI_TIMEOUT_MS || DEFAULT_TIMEOUT_MS),
-  fetchImpl = globalThis.fetch,
-  runCode = execFileSync,
+  fetchImpl,
+  runCode = async (command, args, options) => {
+    const result = await runCheckedSubprocess(command, args, {
+      cwd: options.cwd,
+      timeoutMs: 120_000,
+      maxStdoutBytes: 2 * 1024 * 1024,
+      maxStderrBytes: 2 * 1024 * 1024,
+    });
+    return result.stdout;
+  },
   rootDir = ROOT,
 } = {}) {
   if (!jdPath || !reportPath) throw new Error('--jd and --report are required');
@@ -224,17 +233,17 @@ export async function runOpenAiTailoring({
     const payloadFile = join(scratch, 'payload.json');
     const renderedFile = join(scratch, 'rendered.html');
     writeFileSync(payloadFile, JSON.stringify(payload), { encoding: 'utf8', mode: 0o600 });
-    const template = runCode(
+    const template = (await runCode(
       process.execPath,
       [join(rootDir, 'src/cv/cv-templates.mjs'), 'resolve', 'cv'],
       { cwd: rootDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
-    ).trim().split('\n').at(-1);
-    runCode(
+    )).trim().split('\n').at(-1);
+    await runCode(
       process.execPath,
       [join(rootDir, 'src/cv/build-cv-html.mjs'), payloadFile, renderedFile, template],
       { cwd: rootDir, stdio: ['ignore', 'pipe', 'pipe'] },
     );
-    runCode(
+    await runCode(
       process.execPath,
       [join(rootDir, 'src/cv/verify-cv-facts.mjs'), renderedFile],
       { cwd: rootDir, stdio: ['ignore', 'pipe', 'pipe'] },

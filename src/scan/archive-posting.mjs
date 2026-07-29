@@ -18,12 +18,17 @@
 
 import { chromium } from 'playwright';
 import { readFile } from 'fs/promises';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 import { ROOT } from '#paths';
 import { publishPdfArtifact } from '../cv/pdf-artifact-store.mjs';
+import {
+  createGuardedBrowserContext,
+  navigateGuardedPage,
+} from '../security/browser-egress.mjs';
+import { LIVENESS_CONTEXT_OPTIONS } from './liveness-browser.mjs';
 const JDS_DIR = join(ROOT, 'jds');
 const PIPELINE_PATH = join(ROOT, 'data', 'pipeline.md');
 
@@ -203,13 +208,17 @@ async function extractPipelineEntries() {
 
 // ── Core archive function ────────────────────────────────────────────────────
 
-async function archiveUrl(browser, url, { company: companyHint, role: roleHint } = {}) {
+async function archiveUrl(context, url, { company: companyHint, role: roleHint } = {}) {
   console.log(`\n🔗  ${url}`);
 
-  const page = await browser.newPage();
+  const page = await context.newPage();
 
   try {
-    const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    const response = await navigateGuardedPage(
+      page,
+      url,
+      { waitUntil: 'domcontentloaded', timeout: 30_000 },
+    );
     const httpStatus = response?.status() ?? 0;
 
     // Give SPAs (Ashby, Lever, Workday) time to hydrate
@@ -240,8 +249,6 @@ async function archiveUrl(browser, url, { company: companyHint, role: roleHint }
     const reference = `local:jds/${filename}`;
 
     console.log(`   Output:  jds/${filename}`);
-
-    mkdirSync(JDS_DIR, { recursive: true });
 
     const pdfBuffer = await page.pdf({
       format: 'a4',
@@ -305,9 +312,12 @@ async function main() {
     // Sequential — project convention: never Playwright in parallel
     const browser = await chromium.launch({ headless: true });
     try {
+      const context = await createGuardedBrowserContext(browser, {
+        contextOptions: LIVENESS_CONTEXT_OPTIONS,
+      });
       for (const { url, company, role } of targets) {
         try {
-          const result = await archiveUrl(browser, url, { company, role });
+          const result = await archiveUrl(context, url, { company, role });
           results.push(result);
         } catch (err) {
           console.error(`   ❌  Failed: ${err.message.split('\n')[0]}`);

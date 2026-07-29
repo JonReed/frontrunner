@@ -26,7 +26,7 @@ test('OpenAI and Gemini evaluators keep the per-role JD out of their system prom
     const promptBuild = source.match(/const systemPrompt = buildScoringPrompt\(\{([\s\S]*?)\n\}\);/)?.[1] ?? '';
     assert.ok(promptBuild, `${file}: scoring prompt construction not found`);
     assert.doesNotMatch(promptBuild, /\bjdText\b/, `${file}: JD leaked into cacheable system prompt`);
-    assert.match(source, /content: jobDocument\.prompt|generateContent\(jobDocument\.prompt\)/, `${file}: framed JD is not a separate user turn`);
+    assert.match(source, /content: jobDocument\.prompt|text: jobDocument\.prompt/, `${file}: framed JD is not a separate user turn`);
   }
 });
 

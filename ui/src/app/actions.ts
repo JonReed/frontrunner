@@ -10,8 +10,9 @@
 import { readTracker } from '@/lib/roles';
 import { startCvBuild, type Job } from '@/lib/jobs';
 import { saveProfile, type ProfileSave } from '@/lib/profile-save';
-import { setRoleStatus, type UiState } from '@/lib/status';
+import { restoreRoleStatus, setRoleStatus, type UiState } from '@/lib/status';
 import { startConnect, invalidateHealth, readHealth } from '@/lib/health';
+import { removeInboxUrl, restoreInboxUrl } from '@/lib/inbox';
 import { revalidatePath } from 'next/cache';
 
 /**
@@ -63,22 +64,43 @@ export async function buildCv(roleNum: number): Promise<Job | { error: string }>
 /**
  * Record what happened to a role.
  *
- * Two decisions the interface can honestly know: the user sent this one, or
- * they do not want it. Everything else in templates/states.yml — Responded,
- * Interview, Offer, Hired — depends on what an employer did, which no button
- * here can observe.
+ * These are bounded user-observed changes: deciding to prepare, sending an
+ * application, seeing that the employer replied, or deciding not to continue.
+ * Offer and Hired remain unavailable because a generic stage control cannot
+ * honestly infer either outcome.
  *
  * Without this the workflow had no ending: Frontrunner built a CV, sent the
  * user to the company's site, and never learned the outcome, so a sent
  * application sat in "Ready to send" forever.
  */
-export async function recordOutcome(
+export type WorkflowDestination = 'triage' | 'prepare' | 'ready' | 'applied' | 'active' | 'closed';
+
+const DESTINATION: Record<WorkflowDestination, { state: UiState; note?: string }> = {
+  triage: { state: 'Evaluated', note: '[frontrunner-stage:triage]' },
+  prepare: { state: 'Evaluated', note: '[frontrunner-stage:prepare]' },
+  ready: { state: 'Evaluated', note: '[frontrunner-stage:ready]' },
+  applied: { state: 'Applied', note: 'Applied — recorded in Frontrunner' },
+  active: { state: 'Responded', note: 'Employer replied — recorded in Frontrunner' },
+  closed: { state: 'Discarded', note: 'Not pursuing' },
+};
+
+export async function moveRole(
   roleNum: number,
-  state: UiState,
-  note?: string,
+  destination: WorkflowDestination,
 ): Promise<{ ok: true } | { error: string }> {
   try {
-    await setRoleStatus(roleNum, state, note);
+    if (!Number.isSafeInteger(roleNum) || roleNum <= 0 || !Object.hasOwn(DESTINATION, destination)) {
+      return { error: 'That is not a valid role move.' };
+    }
+    const role = (await readTracker()).find((candidate) => candidate.num === roleNum);
+    if (!role) return { error: 'That role is no longer in your tracker.' };
+    const move = DESTINATION[destination];
+    // A unique marker makes a real move repeatable after Undo. set-status is
+    // intentionally idempotent for identical notes, so a timeless marker
+    // would otherwise leave an older stage marker as the last one.
+    const before = `[frontrunner-before:${role.status}:${role.stage}:${Date.now()}]`;
+    const note = move.note ? `${before}; ${move.note}` : before;
+    await setRoleStatus(roleNum, move.state, note);
     // Every screen reads the tracker, so all of them are now stale.
     for (const path of ['/', '/applications', '/found', `/role/${roleNum}`]) {
       revalidatePath(path);
@@ -96,6 +118,57 @@ export async function recordOutcome(
       return { error: 'That role is no longer in your tracker.' };
     }
     return { error: detail || 'That could not be saved. Nothing was changed.' };
+  }
+}
+
+export async function undoRoleMove(
+  roleNum: number,
+): Promise<{ ok: true } | { error: string }> {
+  try {
+    if (!Number.isSafeInteger(roleNum) || roleNum <= 0) {
+      return { error: 'That is not a valid role.' };
+    }
+    await restoreRoleStatus(roleNum);
+    for (const path of ['/', '/applications', '/found', `/role/${roleNum}`]) {
+      revalidatePath(path);
+    }
+    return { ok: true };
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : '';
+    return { error: detail || 'That change could not be undone.' };
+  }
+}
+
+export async function removePendingRole(
+  url: string,
+): Promise<{ ok: true } | { error: string }> {
+  try {
+    await removeInboxUrl(url);
+    revalidatePath('/');
+    revalidatePath('/found');
+    revalidatePath('/applications');
+    return { ok: true };
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : '';
+    if (/lock|busy/iu.test(detail)) {
+      return { error: 'The Found list is being written by something else. Wait a moment, then try again.' };
+    }
+    return { error: detail || 'That role could not be removed.' };
+  }
+}
+
+export async function undoPendingRole(
+  url: string,
+): Promise<{ ok: true } | { error: string }> {
+  try {
+    await restoreInboxUrl(url);
+    revalidatePath('/');
+    revalidatePath('/found');
+    revalidatePath('/applications');
+    return { ok: true };
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : '';
+    return { error: detail || 'That role could not be restored.' };
   }
 }
 

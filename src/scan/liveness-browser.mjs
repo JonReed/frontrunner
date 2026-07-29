@@ -7,10 +7,10 @@
 
 import { classifyLiveness } from './liveness-core.mjs';
 import {
-  assertSafeRemoteUrl,
   inspectRemoteUrl,
   resolvePublicAddresses,
 } from '../security/remote-target-policy.mjs';
+import { navigateGuardedPage } from '../security/browser-egress.mjs';
 
 const NAVIGATE_TIMEOUT_MS = 15_000;
 const HYDRATION_WAIT_MS = 2_000;
@@ -89,28 +89,25 @@ export async function checkUrlLiveness(
   if (page) {
     page._blockedByGuard = null;
   }
-  if (page && typeof page.route === 'function' && !page._routeInterceptorRegistered) {
-    page._routeInterceptorRegistered = true;
-    await page.route('**/*', async (route) => {
-      const requestUrl = route.request().url();
-      const errGuard = rejectPrivateOrInvalid(requestUrl);
-      if (errGuard) {
-        console.warn(`Blocked request to restricted destination: ${requestUrl}`);
-        page._blockedByGuard = errGuard;
-        return route.abort('blockedbyclient');
-      }
-      try {
-        await assertSafeRemoteUrl(requestUrl, { resolveHostname });
-        return route.continue();
-      } catch (err) {
-        console.warn(`Blocked request to restricted destination (DNS): ${requestUrl} - ${err.message}`);
-        page._blockedByGuard = { code: 'blocked_host', reason: err.message };
-        return route.abort('blockedbyclient');
-      }
-    });
-  }
   try {
-    const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: NAVIGATE_TIMEOUT_MS });
+    const response = await navigateGuardedPage(
+      page,
+      url,
+      { waitUntil: 'domcontentloaded', timeout: NAVIGATE_TIMEOUT_MS },
+      {
+        resolveHostname,
+        onBlocked(blocked) {
+          console.warn(`Blocked request to restricted destination: ${blocked.url} - ${blocked.reason}`);
+          page._blockedByGuard = {
+            // Liveness exposes one stable public outcome for all egress-policy
+            // failures; the detailed broker reason still distinguishes a
+            // literal host block from a DNS-resolved private address.
+            code: 'blocked_host',
+            reason: blocked.reason,
+          };
+        },
+      },
+    );
     const status = response?.status() ?? 0;
 
     // Give SPAs (Ashby, Lever, Workday) time to hydrate. extraSettleMs adds slack
