@@ -209,7 +209,13 @@ prefilter before model evaluation.
   new raw filesystem writers outside a small, documented set of contained
   runtime/temp/system modules. LaTeX engines run in a private temporary
   directory, so their PDF, log and auxiliary writes never occur beside a
-  user-owned `.tex` file.
+  user-owned `.tex` file. The complete suite also runs from a disposable Git
+  copy with its own HOME, temp/config/cache directories, fixed locale and
+  timezone, and no inherited credentials, proxies or user `NODE_OPTIONS`.
+  Process-wide barriers fail any accidental fetch, HTTP, socket or DNS egress,
+  while a static gate rejects browser launches and network-command escapes.
+  Provider, updater and browser coverage uses injected fixtures, so a green run
+  is independent of live services and locally installed browsers.
 - **Transactional evaluation publication:** every model provider uses one
   journaled report-to-tracker publisher. If the process, machine, or tracker
   merge fails after model tokens have already been spent, the next evaluation

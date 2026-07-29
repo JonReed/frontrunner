@@ -219,8 +219,12 @@ export function createHeadedPageProvider(chromium) {
 // blocked by an anti-bot wall. The headed result wins when it actually sees the
 // page; if the retry is still blocked (or no headed page is available) the
 // original uncertain result is kept — we never upgrade a block to expired.
-export async function checkUrlLivenessWithFallback(page, url, { getHeadedPage } = {}) {
-  const first = await checkUrlLiveness(page, url);
+export async function checkUrlLivenessWithFallback(
+  page,
+  url,
+  { getHeadedPage, resolveHostname } = {},
+) {
+  const first = await checkUrlLiveness(page, url, { resolveHostname });
   if (!getHeadedPage || !isChallengeResult(first)) {
     return first;
   }
@@ -228,7 +232,10 @@ export async function checkUrlLivenessWithFallback(page, url, { getHeadedPage } 
   if (!headedPage) {
     return first;
   }
-  const second = await checkUrlLiveness(headedPage, url, { extraSettleMs: 3_000 });
+  const second = await checkUrlLiveness(headedPage, url, {
+    extraSettleMs: 3_000,
+    resolveHostname,
+  });
   if (isChallengeResult(second)) {
     return { ...second, reason: `${second.reason} (headed retry also blocked)` };
   }

@@ -20,7 +20,7 @@ import { chromium } from 'playwright';
 import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 
 import { ROOT } from '#paths';
 import { publishPdfArtifact } from '../cv/pdf-artifact-store.mjs';
@@ -31,12 +31,14 @@ import {
 import { LIVENESS_CONTEXT_OPTIONS } from './liveness-browser.mjs';
 const JDS_DIR = join(ROOT, 'jds');
 const PIPELINE_PATH = join(ROOT, 'data', 'pipeline.md');
+const DIRECT = process.argv[1]
+  && import.meta.url === pathToFileURL(process.argv[1]).href;
 
 // ── CLI parsing ──────────────────────────────────────────────────────────────
 
 const args = process.argv.slice(2);
 
-if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
+if (DIRECT && (args.length === 0 || args[0] === '--help' || args[0] === '-h')) {
   console.log(`
 ╔══════════════════════════════════════════════════════════════════╗
 ║           frontrunner — Job Posting Archiver                     ║
@@ -97,7 +99,7 @@ for (let i = 0; i < args.length; i++) {
   }
 }
 
-if (!pipelineMode && !targetUrl) {
+if (DIRECT && !pipelineMode && !targetUrl) {
   console.error('No URL provided. Run with --help for usage.');
   process.exit(1);
 }
@@ -208,7 +210,11 @@ async function extractPipelineEntries() {
 
 // ── Core archive function ────────────────────────────────────────────────────
 
-async function archiveUrl(context, url, { company: companyHint, role: roleHint } = {}) {
+export async function archiveUrl(
+  context,
+  url,
+  { company: companyHint, role: roleHint, resolveHostname } = {},
+) {
   console.log(`\n🔗  ${url}`);
 
   const page = await context.newPage();
@@ -218,6 +224,7 @@ async function archiveUrl(context, url, { company: companyHint, role: roleHint }
       page,
       url,
       { waitUntil: 'domcontentloaded', timeout: 30_000 },
+      { resolveHostname },
     );
     const httpStatus = response?.status() ?? 0;
 
@@ -353,7 +360,9 @@ async function main() {
   if (failed > 0) process.exit(1);
 }
 
-main().catch(err => {
-  console.error('❌  Fatal:', err.message);
-  process.exit(1);
-});
+if (DIRECT) {
+  main().catch(err => {
+    console.error('❌  Fatal:', err.message);
+    process.exit(1);
+  });
+}

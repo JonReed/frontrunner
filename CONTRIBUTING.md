@@ -130,9 +130,16 @@ node test-all.mjs --only providers/themuse   # Run just one provider's test(s)
 `test-all.mjs` copies the current tracked and untracked system source into a
 disposable git repository before executing any test. Ignored user data is never
 copied. Every Node child also inherits a filesystem barrier that rejects writes
-back to the original checkout's user layer. Tests should still use temporary
-fixtures explicitly; the outer isolation is the final safety boundary when a
-fixture override is missing or stale.
+back to the original checkout's user layer and an outbound-network barrier that
+rejects fetch, HTTP, sockets and DNS. A static gate rejects browser launches and
+network command escapes from the suite. The runner supplies a private HOME,
+temporary directory, Git config and package/browser caches; it does not inherit
+credentials, proxies, user configuration or `NODE_OPTIONS`. Live services and
+a locally installed browser must never determine whether a test runs. Inject
+transports, resolvers and browser-page fixtures instead. Missing declared
+dependencies are failures, not conditional skips. Tests should still use
+temporary fixtures explicitly; the outer isolation is the final safety boundary
+when a fixture override is missing or stale.
 
 **Adding a test for a new scanner provider:** add one file at
 `tests/providers/{name}.test.mjs` — it's auto-discovered (`tests/**/*.test.mjs`),

@@ -975,8 +975,9 @@ function curlGet(url, extraArgs = []) {
   });
 }
 
-async function check() {
+export async function check(options = {}) {
   assertOfficialUpdateSource(CANONICAL_REPO);
+  const get = options.get ?? curlGet;
 
   // Respect dismiss flag
   if (existsSync(join(ROOT, '.update-dismissed'))) {
@@ -993,8 +994,8 @@ async function check() {
   // sandbox (see curlGet() above for rationale).  Two sources are tried;
   // both failing is the only true-offline signal.
   const [rawVersion, releaseRaw] = await Promise.all([
-    curlGet(RAW_VERSION_URL),
-    curlGet(RELEASES_API, [
+    get(RAW_VERSION_URL),
+    get(RELEASES_API, [
       '--header', 'Accept: application/vnd.github.v3+json',
       '--header', 'User-Agent: frontrunner-update-checker',
     ]),

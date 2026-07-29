@@ -141,7 +141,10 @@ node src/tracker/verify-pipeline.mjs       # tracker integrity
 
 Run `test-all.mjs` after ANY file move. Its failures are often misleading: a
 broken `tests/helpers.mjs` makes every command return null and reports dozens
-of unrelated files as having "syntax errors".
+of unrelated files as having "syntax errors". The full runner is hermetic: it
+scrubs host credentials and configuration, uses a private HOME/temp tree, and
+blocks outbound network while rejecting browser launches. Tests must inject
+remote and browser fixtures; never weaken or bypass those barriers.
 
 ## Gotchas that have cost real time
 

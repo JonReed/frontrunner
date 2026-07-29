@@ -41,10 +41,56 @@ import { pass, fail, warn, run, fileExists, finish, ROOT, NODE, getBash, toBashP
 function runInDisposableWorkspace() {
   const sandbox = mkdtempSync(join(tmpdir(), 'frontrunner-test-workspace-'));
   try {
+    const testHome = join(sandbox, '.test-home');
+    const testTmp = join(sandbox, '.test-tmp');
+    const xdgConfig = join(testHome, '.config');
+    const xdgCache = join(testHome, '.cache');
+    const emptyGitConfig = join(testHome, '.gitconfig');
+    for (const directory of [testHome, testTmp, xdgConfig, xdgCache]) {
+      mkdirSync(directory, { recursive: true });
+    }
+    writeFileSync(
+      emptyGitConfig,
+      '[init]\n\tdefaultBranch = main\n[commit]\n\tgpgSign = false\n',
+      'utf8',
+    );
+
+    // Deliberately do not spread process.env. Tests must not vary with or leak
+    // the operator's API keys, proxies, cloud credentials, HOME configuration,
+    // locale, package caches, or NODE_OPTIONS preload hooks.
+    const pathKey = Object.keys(process.env)
+      .find(name => name.toLowerCase() === 'path') ?? 'PATH';
+    const executablePath = process.env[pathKey] ?? '';
+    const cleanEnv = {
+      [pathKey]: executablePath,
+      HOME: testHome,
+      USERPROFILE: testHome,
+      XDG_CONFIG_HOME: xdgConfig,
+      XDG_CACHE_HOME: xdgCache,
+      TMPDIR: testTmp,
+      TMP: testTmp,
+      TEMP: testTmp,
+      TZ: 'UTC',
+      LANG: 'C.UTF-8',
+      LC_ALL: 'C.UTF-8',
+      USER: 'frontrunner-test',
+      USERNAME: 'frontrunner-test',
+      CI: '1',
+      GIT_CONFIG_NOSYSTEM: '1',
+      GIT_CONFIG_GLOBAL: emptyGitConfig,
+      GIT_TERMINAL_PROMPT: '0',
+      npm_config_cache: join(xdgCache, 'npm'),
+      PLAYWRIGHT_BROWSERS_PATH: join(xdgCache, 'playwright'),
+      FRONTRUNNER_TEST_HERMETIC: '1',
+    };
+    for (const name of ['SystemRoot', 'WINDIR', 'COMSPEC', 'PATHEXT', 'SHELL']) {
+      if (process.env[name]) cleanEnv[name] = process.env[name];
+    }
+
     const listed = spawnSync(
       'git',
       ['ls-files', '-z', '-co', '--exclude-standard'],
-      { cwd: ROOT, encoding: 'buffer', maxBuffer: 16 * 1024 * 1024 },
+      { cwd: ROOT, env: cleanEnv, encoding: 'buffer', maxBuffer: 16 * 1024 * 1024 },
     );
     if (listed.status !== 0) {
       throw new Error(`could not inventory test source: ${String(listed.stderr ?? '')}`);
@@ -79,9 +125,16 @@ function runInDisposableWorkspace() {
         'commit', '-qm', 'isolated test source',
       ],
     ]) {
-      const result = spawnSync('git', args, { cwd: sandbox, encoding: 'utf8' });
+      const result = spawnSync('git', args, { cwd: sandbox, env: cleanEnv, encoding: 'utf8' });
       if (result.status !== 0) {
         throw new Error(`could not prepare disposable test repository: ${result.stderr}`);
+      }
+      if (args[0] === 'init') {
+        writeFileSync(
+          join(sandbox, '.git', 'info', 'exclude'),
+          '.test-home/\n.test-tmp/\n',
+          'utf8',
+        );
       }
     }
     // Dependencies are runtime-only links, added after the disposable commit
@@ -97,17 +150,20 @@ function runInDisposableWorkspace() {
     const barrierImport = pathToFileURL(
       join(sandbox, 'tests', 'test-user-data-write-barrier.mjs'),
     ).href;
-    const inheritedNodeOptions = process.env.NODE_OPTIONS?.trim();
-    const nodeOptions = inheritedNodeOptions?.includes(barrierImport)
-      ? inheritedNodeOptions
-      : [inheritedNodeOptions, `--import=${barrierImport}`].filter(Boolean).join(' ');
+    const networkBarrierImport = pathToFileURL(
+      join(sandbox, 'tests', 'test-hermetic-network-barrier.mjs'),
+    ).href;
+    const nodeOptions = [
+      `--import=${barrierImport}`,
+      `--import=${networkBarrierImport}`,
+    ].join(' ');
     const result = spawnSync(
       process.execPath,
       [join(sandbox, 'test-all.mjs'), ...process.argv.slice(2)],
       {
         cwd: sandbox,
         env: {
-          ...process.env,
+          ...cleanEnv,
           FRONTRUNNER_TEST_SANDBOX: '1',
           FRONTRUNNER_TEST_PROTECTED_ROOT: ROOT,
           NODE_OPTIONS: nodeOptions,
@@ -323,7 +379,6 @@ const scripts = [
   // default portals.yml because end-user workspaces often have a real user-layer
   // portals file that would trigger a live remote sweep during tests.
   { name: 'src/scan/verify-portals.mjs --file .tmp-test-missing-portals.yml', expectExit: 0 },
-  { name: 'update-system.mjs check', expectExit: 0 },
   { name: 'src/scan/archive-posting.mjs --help', expectExit: 0 },
 ];
 
@@ -767,6 +822,7 @@ try {
     bodyText: 'Administrator SAP Utilities. '.repeat(20),
     applyControls: ['Apply for this job'],
   });
+  const publicResolver = async () => ['93.184.216.34'];
 
   if (isChallengeResult({ result: 'uncertain', code: 'bot_challenge' }) &&
       isChallengeResult({ result: 'uncertain', code: 'access_blocked' }) &&
@@ -779,6 +835,7 @@ try {
 
   const fellBackToActive = await checkUrlLivenessWithFallback(challengePage(), URL, {
     getHeadedPage: async () => livePage(),
+    resolveHostname: publicResolver,
   });
   if (fellBackToActive.result === 'active') {
     pass('Headed fallback recovers a challenge-blocked page as active');
@@ -786,7 +843,9 @@ try {
     fail(`Headed fallback did not recover page: ${fellBackToActive.result} (${fellBackToActive.code})`);
   }
 
-  const noProvider = await checkUrlLivenessWithFallback(challengePage(), URL, {});
+  const noProvider = await checkUrlLivenessWithFallback(challengePage(), URL, {
+    resolveHostname: publicResolver,
+  });
   if (noProvider.result === 'uncertain' && noProvider.code === 'bot_challenge') {
     pass('No fallback provider keeps the original challenge result');
   } else {
@@ -795,6 +854,7 @@ try {
 
   const stillBlocked = await checkUrlLivenessWithFallback(challengePage(), URL, {
     getHeadedPage: async () => challengePage(),
+    resolveHostname: publicResolver,
   });
   if (stillBlocked.result === 'uncertain' && stillBlocked.code === 'bot_challenge'
       && /headed retry also blocked/.test(stillBlocked.reason)) {
@@ -805,6 +865,7 @@ try {
 
   const noHeadedAvailable = await checkUrlLivenessWithFallback(challengePage(), URL, {
     getHeadedPage: async () => null, // headed launch failed (no display)
+    resolveHostname: publicResolver,
   });
   if (noHeadedAvailable.result === 'uncertain' && noHeadedAvailable.code === 'bot_challenge') {
     pass('Headless-only environment degrades to original challenge result');
@@ -1662,13 +1723,13 @@ for (const header of ['podsumowanie zawodowe', 'doświadczenie zawodowe', 'wyksz
   }
 }
 
-// src\/cv\/generate-pdf.mjs imports playwright at module scope; degrade to a warning
-// rather than crashing the suite where it is not installed.
-let pdfModule = null;
+// Playwright is a declared runtime dependency. Missing it is a broken test
+// environment, not permission to silently reduce behavioral coverage.
+let pdfModule;
 try {
   pdfModule = await import(pathToFileURL(join(ROOT, 'src/cv/generate-pdf.mjs')).href);
 } catch (e) {
-  warn(`Cannot import src/cv/generate-pdf.mjs (${e.code || e.message}) — skipping behavioral section-order tests`);
+  fail(`Cannot import required src/cv/generate-pdf.mjs dependency: ${e.code || e.message}`);
 }
 
 if (pdfModule) {
@@ -4417,58 +4478,47 @@ run(NODE, ['src/scan/archive-posting.mjs', '--company=Acme']) === null
   ? pass('--company without URL: exits non-zero')
   : fail('--company without URL: should exit non-zero');
 
-// live render: gated behind Playwright executable availability
-let hasBrowser = false;
+// Deterministic render integration: the browser page and PDF bytes are local
+// fixtures. This exercises navigation hardening, metadata extraction and the
+// crash-safe PDF publisher without depending on Chromium or a live job board.
 try {
-  const { chromium } = await import('playwright');
-  hasBrowser = existsSync(chromium.executablePath());
-} catch { /* playwright not installed */ }
-
-if (!hasBrowser) {
-  warn('archive render skipped — no Playwright browser in env');
-} else {
-  let liveJobUrl = null;
-  try {
-    const res = await fetch('https://boards-api.greenhouse.io/v1/boards/anthropic/jobs?content=false');
-    const { jobs } = await res.json();
-    const candidate = jobs?.[0]?.absolute_url ?? null;
-    if (candidate) {
-      const u = new URL(candidate);
-      const allowed = new Set(['boards.greenhouse.io', 'job-boards.greenhouse.io']);
-      if (u.protocol === 'https:' && allowed.has(u.hostname)) liveJobUrl = candidate;
-    }
-  } catch { /* offline — degrade gracefully */ }
-
-  if (!liveJobUrl) {
-    warn('archive render skipped — Greenhouse API unreachable');
+  const { archiveUrl } = await import(
+    `${pathToFileURL(join(ROOT, 'src/scan/archive-posting.mjs')).href}?hermetic-archive=1`
+  );
+  const fakePdf = Buffer.concat([
+    Buffer.from('%PDF-1.7\n', 'ascii'),
+    Buffer.alloc(64 * 1024, 0x20),
+  ]);
+  let closed = false;
+  const page = {
+    async route() {},
+    async goto() { return { status: () => 200 }; },
+    async waitForTimeout() {},
+    async title() { return 'Staff Engineer at Fixture Co'; },
+    async $eval() { return 'Staff Engineer'; },
+    async pdf() { return fakePdf; },
+    async close() { closed = true; },
+    url() { return 'https://93.184.216.34/jobs/fixture'; },
+  };
+  const result = await archiveUrl(
+    { async newPage() { return page; } },
+    'https://93.184.216.34/jobs/fixture',
+    {
+      company: 'Fixture Co',
+      role: 'Staff Engineer',
+      resolveHostname: async () => ['93.184.216.34'],
+    },
+  );
+  const pdf = join(ROOT, 'jds', result.filename);
+  const bytes = readFileSync(pdf);
+  if (closed && bytes.length === fakePdf.length && bytes.subarray(0, 5).toString('ascii') === '%PDF-') {
+    pass(`fixture archive: complete PDF published locally (${(bytes.length / 1024).toFixed(0)} KB)`);
   } else {
-    const JDS_DIR = join(ROOT, 'jds');
-    const startedAt = Date.now();
-    const archiveOut = run('node', ['src/scan/archive-posting.mjs', liveJobUrl], { timeout: 60000 });
-
-    if (archiveOut === null) {
-      fail('live archive: script exited non-zero on live URL');
-    } else {
-      pass('live archive: exited 0');
-
-      const recent = existsSync(JDS_DIR)
-        ? readdirSync(JDS_DIR)
-            .filter(f => f.endsWith('.pdf'))
-            .filter(f => statSync(join(JDS_DIR, f)).mtimeMs >= startedAt)
-        : [];
-
-      if (recent.length === 0) {
-        fail('live archive: no PDF written to jds/ during test run');
-      } else {
-        const pdf = join(JDS_DIR, recent[0]);
-        const { size } = statSync(pdf);
-        size > 50 * 1024
-          ? pass(`live archive: PDF has real content (${(size / 1024).toFixed(0)} KB)`)
-          : fail(`live archive: PDF suspiciously small — likely empty page (${size} bytes)`);
-        unlinkSync(pdf);
-      }
-    }
+    fail('fixture archive: page cleanup or published bytes were incomplete');
   }
+  unlinkSync(pdf);
+} catch (error) {
+  fail(`fixture archive failed: ${error.message}`);
 }
 
 // ── 13. LOCATION FILTER — always_allow tier ───────────────────────
@@ -7853,7 +7903,7 @@ console.log('\n15. Tracker derived index (sync/query/export round-trip)');
 
 const sqliteAvailable = run(NODE, ['--no-warnings', '-e', "import('node:sqlite').then(()=>process.exit(0),()=>process.exit(1))"]) !== null;
 if (!sqliteAvailable) {
-  warn('node:sqlite unavailable (Node < 22.5) — tracker index tests skipped');
+  fail('node:sqlite unavailable — install the Node version required by package.json; tracker index coverage cannot be skipped');
 } else {
   try {
     const idxTmp = mkdtempSync(join(tmpdir(), 'frontrunner-index-'));

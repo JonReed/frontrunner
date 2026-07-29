@@ -308,14 +308,20 @@ Frontrunner runtime.
 
 ## Quality gates
 
-- `test-all.mjs` — the full suite (500+ checks across scoring, scan, tracker,
+- `test-all.mjs` — the full suite (2,200+ checks across scoring, scan, tracker,
   PDF, security, updater). It executes the exact current system source in a
-  disposable git repository with ignored user files omitted. A filesystem
-  barrier inherited by Node children rejects any attempted write back to the
-  original checkout's user layer, so destructive tests cannot mutate a real
-  CV, profile, tracker, report, JD or output artifact. Canonical primitive
-  tests cover create/copy/move/delete denial and interrupted-copy preservation;
-  a static production inventory rejects new raw mutation bypasses.
+  disposable git repository with ignored user files omitted, a private
+  HOME/temp/config/cache tree, fixed timezone and locale, and no inherited
+  credentials, proxies or user `NODE_OPTIONS`. Filesystem and outbound-network
+  barriers inherited by every Node child reject writes back to the original
+  checkout and reject fetch, HTTP, socket and DNS egress. A static gate rejects
+  browser launches and network-command escapes from the suite. Destructive tests
+  therefore cannot mutate real user data or silently reach a live service.
+  Provider, updater, archive and browser behavior uses injected fixtures, and
+  missing declared dependencies fail rather than reducing coverage. Canonical
+  primitive tests cover create/copy/move/delete denial and interrupted-copy
+  preservation; static inventories reject new raw mutation or live-network
+  bypasses.
 - `updater-migration-tests.mjs` — enforces the system/user boundary and safe cross-version upgrades.
 - CI: `test` + CodeQL are required; CodeRabbit reviews every PR; Renovate keeps deps current.
 

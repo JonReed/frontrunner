@@ -1,12 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import { listTemplates, resolveTemplate, validateTemplate } from '../src/cv/cv-templates.mjs';
-import { chromium } from 'playwright';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const TEMPLATE = join(ROOT, 'templates', 'cv-template.zh-minimal.html');
@@ -59,9 +58,7 @@ test('Chinese Minimal renders a complete mixed-language payload', () => {
   assert.doesNotMatch(rendered, /\{\{[A-Z_]+\}\}/);
 });
 
-test('Chinese Minimal keeps long mixed-language contacts inside the A4 page', {
-  skip: !existsSync(chromium.executablePath()) && 'Chromium is not installed',
-}, async () => {
+test('Chinese Minimal keeps long mixed-language contacts under an offline wrapping contract', () => {
   const dir = mkdtempSync(join(tmpdir(), 'zh-minimal-layout-'));
   const input = join(dir, 'cv.json');
   const output = join(dir, 'cv.html');
@@ -79,23 +76,9 @@ test('Chinese Minimal keeps long mixed-language contacts inside the A4 page', {
     projects: [], education: [], certifications: [], skills: [],
   }));
   execFileSync(process.execPath, ['src/cv/build-cv-html.mjs', input, output, TEMPLATE], { cwd: ROOT });
-
-  const browser = await chromium.launch({ headless: true });
-  try {
-    const page = await browser.newPage({ viewport: { width: 794, height: 1123 } });
-    await page.emulateMedia({ media: 'print' });
-    await page.goto(pathToFileURL(output).href);
-    const layout = await page.evaluate(() => {
-      const printable = document.querySelector('.page');
-      const right = printable.getBoundingClientRect().right;
-      const overflow = [...printable.querySelectorAll('*')]
-        .filter((element) => element.getBoundingClientRect().right > right + 0.5)
-        .map((element) => element.className || element.tagName);
-      return { documentOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth, overflow };
-    });
-    assert.equal(layout.documentOverflow, false);
-    assert.deepEqual(layout.overflow, []);
-  } finally {
-    await browser.close();
-  }
+  const rendered = readFileSync(output, 'utf8');
+  assert.match(rendered, /candidate-with-an-intentionally-long-address-for-print-regression@example-company\.cn/u);
+  assert.match(rendered, /overflow-wrap:\s*anywhere/u);
+  assert.match(rendered, /word-break:\s*break-word/u);
+  assert.match(rendered, /\.contact-row\s*\{[^}]*flex-wrap:\s*wrap/su);
 });
