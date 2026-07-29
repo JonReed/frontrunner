@@ -1,17 +1,10 @@
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
-
-const here = dirname(fileURLToPath(import.meta.url));
-
 /** @type {import('next').NextConfig} */
 export default {
-  // The UI reads the career-ops checkout one level up (tracker, reports,
-  // generated CVs). Nothing from there is bundled — server code reads it at
-  // request time — but file tracing needs to know the wider root exists.
-  outputFileTracingRoot: resolve(here, '..'),
-
-  // ...and Turbopack needs to be told the PROJECT root separately, or it
-  // infers it from outputFileTracingRoot, looks for next/package.json up
-  // there, fails to find it, and dev refuses to start.
-  turbopack: { root: here },
+  // The local server reads tracker, report, and generated-CV files from the
+  // parent checkout at request time. They are not bundled, so file tracing
+  // stays scoped normally. Pinning Turbopack to Next's selected project cwd
+  // avoids it treating the root package-lock.json as a monorepo declaration.
+  turbopack: {
+    root: process.cwd(),
+  },
 };

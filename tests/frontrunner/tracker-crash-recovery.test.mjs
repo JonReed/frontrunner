@@ -5,13 +5,13 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import test from 'node:test';
 
 import { openTrackerTransaction } from '../../src/tracker/tracker-utils.mjs';
 
-const TRACKER_UTILS_URL = pathToFileURL(
-  new URL('../../src/tracker/tracker-utils.mjs', import.meta.url).pathname,
+const TRACKER_UTILS_URL = new URL(
+  '../../src/tracker/tracker-utils.mjs',
+  import.meta.url,
 ).href;
 
 function child(code, env) {
@@ -34,6 +34,16 @@ function fixture() {
   return { dir, tracker, lockDir };
 }
 
+function assertForcedTermination(result) {
+  if (process.platform === 'win32') {
+    // Windows does not report POSIX signal names through ChildProcess.close;
+    // process.kill(..., 'SIGKILL') is observed as a non-zero exit instead.
+    assert.notEqual(result.exitCode, 0, result.stderr);
+    return;
+  }
+  assert.equal(result.signal, 'SIGKILL', result.stderr);
+}
+
 test('a crash after the temporary write preserves the original tracker and the next writer recovers', async () => {
   const { dir, tracker, lockDir } = fixture();
   try {
@@ -46,7 +56,7 @@ test('a crash after the temporary write preserves the original tracker and the n
       tx.replace('partial replacement\\n');
     `, { TEST_TRACKER: tracker, TEST_LOCK: lockDir });
 
-    assert.equal(result.signal, 'SIGKILL', result.stderr);
+    assertForcedTermination(result);
     assert.equal(readFileSync(tracker, 'utf8'), 'original\n');
     assert.equal(existsSync(lockDir), true, 'the crash should leave a realistic orphaned lock');
     assert.equal(
@@ -83,7 +93,7 @@ test('a crash after atomic replacement leaves a complete commit and a recoverabl
       tx.replace('committed before crash\\n');
     `, { TEST_TRACKER: tracker, TEST_LOCK: lockDir });
 
-    assert.equal(result.signal, 'SIGKILL', result.stderr);
+    assertForcedTermination(result);
     assert.equal(readFileSync(tracker, 'utf8'), 'committed before crash\n');
 
     const tx = await openTrackerTransaction(tracker, {

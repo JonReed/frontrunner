@@ -5,13 +5,15 @@ body:
   - type: markdown
     attributes:
       value: |
-        > ⚠️ **Privacy first.** career-ops runs locally. **Never** paste your CV, scan results, pipeline data, job listings, or other personal info — issues are **public forever**. Keep your data on your machine; share only sanitized snippets.
+        > **Privacy first.** Frontrunner runs locally. Never paste your CV, scan
+        > results, pipeline data, private job listings, credentials, or other
+        > personal information. Share only sanitized examples.
   - type: checkboxes
     id: coc
     attributes:
       label: Code of Conduct
       options:
-        - label: I agree to follow the [Code of Conduct](https://github.com/santifer/career-ops/blob/main/CODE_OF_CONDUCT.md)
+        - label: I agree to follow the [Code of Conduct](https://github.com/Furls-Digital/frontrunner/blob/main/CODE_OF_CONDUCT.md)
           required: true
   - type: checkboxes
     id: search
@@ -42,7 +44,7 @@ body:
         - Evaluation / Scoring
         - PDF Generation
         - Portal Scanner
-        - Dashboard TUI
+        - Local web UI
         - Batch Processing
         - Language / i18n
         - Documentation

@@ -288,6 +288,7 @@ const SYSTEM_PATHS = [
   '.editorconfig',
   '.github/',
   'package.json',
+  'package-lock.json',
   'src/cv/build-cv-latex.mjs',
   'src/cv/build-cv-html.mjs',
   'src/cv/cv-sections-core.mjs',

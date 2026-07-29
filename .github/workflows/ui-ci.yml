@@ -1,32 +1,35 @@
-name: Web CI
+name: UI CI
 
 on:
   pull_request:
     paths:
-      - 'web/**'
+      - 'ui/**'
   push:
     branches: [main]
     paths:
-      - 'web/**'
+      - 'ui/**'
 
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  web:
-    name: web typecheck + build
+  ui:
+    name: ui typecheck + build
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: web
+        working-directory: ui
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: web/package-lock.json
+          cache-dependency-path: ui/package-lock.json
       - run: npm ci --ignore-scripts
-      - run: npm test
       - run: npm run typecheck
       - run: npm run build

@@ -102,6 +102,8 @@ data/model-blacklist.json
 career-dashboard
 career-dashboard.exe
 package-lock.json
+!package-lock.json
+!ui/package-lock.json
 !web/package-lock.json
 
 # Playwright MCP server run artifacts (ephemeral, machine-local)

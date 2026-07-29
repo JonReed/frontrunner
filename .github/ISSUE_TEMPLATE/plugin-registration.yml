@@ -1,5 +1,5 @@
 name: Plugin registration
-description: Register your career-ops-plugin-<name> repo so it can be listed as an approved community plugin
+description: Propose a community plugin for security review
 labels: ["plugin-submission", "area:plugins"]
 body:
   - type: markdown
@@ -7,13 +7,14 @@ body:
       value: |
         > ⚠️ **Privacy first.** Never paste your CV, scan results, or other personal data — issues are **public forever**.
 
-        This issue becomes your plugin's **home** (its changelog + compatibility/quarantine board). After it's filed, open a **registry PR** (the plugin template can do this for you on a release tag) to actually list it. See [docs/PLUGINS.md](https://github.com/santifer/career-ops/blob/main/docs/PLUGINS.md).
+        After filing this issue, open a registry PR containing one pinned plugin
+        entry. See [docs/PLUGINS.md](https://github.com/Furls-Digital/frontrunner/blob/main/docs/PLUGINS.md).
   - type: checkboxes
     id: coc
     attributes:
       label: Code of Conduct
       options:
-        - label: I agree to follow the [Code of Conduct](https://github.com/santifer/career-ops/blob/main/CODE_OF_CONDUCT.md)
+        - label: I agree to follow the [Code of Conduct](https://github.com/Furls-Digital/frontrunner/blob/main/CODE_OF_CONDUCT.md)
           required: true
   - type: input
     id: repo

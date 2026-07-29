@@ -46,14 +46,16 @@
           - modes/ja/**
           - modes/ru/**
 
-  - changed-files:
-      - any-glob-to-any-file:
-
 "📦 dependencies":
   - changed-files:
       - any-glob-to-any-file:
           - package.json
           - package-lock.json
+          - ui/package.json
+          - ui/package-lock.json
+          - web/package.json
+          - web/package-lock.json
+          - scaffolder/package.json
 
 "⚙️ ci":
   - changed-files:
