@@ -217,7 +217,7 @@ The checked-in 8-role, 3-board fixture currently produces:
 | Measure | inherited flow | Frontrunner | Change |
 |---|---:|---:|---:|
 | Description HTTP calls | 8 | 3 | −62.5% |
-| Approximate model input tokens | 276,854 | 21,441 | −92.3% |
+| Approximate model input tokens | 276,870 | 21,441 | −92.3% |
 | Approximate model output tokens | 17,125 | 3,123 | −81.8% |
 | Roles reaching the model | 8 | 8 | 100% pass rate |
 | False rejects at score ≥3.0 | — | 0 | — |

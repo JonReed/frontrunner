@@ -14,6 +14,7 @@ import { spawn } from 'node:child_process';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { Readable } from 'node:stream';
+import { fileURLToPath } from 'node:url';
 
 import {
   APPLICATION_RUN_ID_ENV,
@@ -28,7 +29,7 @@ import {
 } from '../../src/application/run-history.mjs';
 import { main as applicationMain } from '../../src/application/run.mjs';
 
-const worker = new URL('../fixtures/run-history-worker.mjs', import.meta.url);
+const worker = fileURLToPath(new URL('../fixtures/run-history-worker.mjs', import.meta.url));
 
 function fixture(t) {
   const dir = mkdtempSync(join(tmpdir(), 'frontrunner-run-history-'));
@@ -51,7 +52,7 @@ function record(index, overrides = {}) {
 function runWorker(file, prefix, count) {
   return new Promise(resolve => {
     const child = spawn(process.execPath, [
-      worker.pathname,
+      worker,
       file,
       prefix,
       String(count),

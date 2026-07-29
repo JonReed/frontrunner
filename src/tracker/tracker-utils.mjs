@@ -278,7 +278,16 @@ export async function acquireTrackerLock(lockDir, options = {}) {
         // few synchronous filesystem calls, so the ordinary stale threshold
         // safely distinguishes an orphan from current contention.
         if (guardErr?.code === 'EEXIST' && lockCanRecover(recoverGuardDir, staleMs)) {
-          rmSync(recoverGuardDir, { recursive: true, force: true });
+          try {
+            rmSync(recoverGuardDir, { recursive: true, force: true });
+          } catch (recoverErr) {
+            // Windows can transiently deny removal while another process or
+            // filesystem observer still has the directory open. Treat that as
+            // ordinary contention and retry instead of failing the mutation.
+            if (recoverErr?.code !== 'EPERM' && recoverErr?.code !== 'EBUSY') {
+              throw recoverErr;
+            }
+          }
         }
       }
 
@@ -384,7 +393,9 @@ export async function acquireTrackerLock(lockDir, options = {}) {
           // A concurrent Windows filesystem observer can transiently hold a
           // just-created directory. Leaving the guard is safe: its stale
           // recovery path will clear it on a later attempt.
-          if (guardCleanupErr?.code !== 'EPERM') throw guardCleanupErr;
+          if (guardCleanupErr?.code !== 'EPERM' && guardCleanupErr?.code !== 'EBUSY') {
+            throw guardCleanupErr;
+          }
         }
       }
     }
