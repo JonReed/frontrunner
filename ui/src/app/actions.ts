@@ -10,6 +10,8 @@
 import { readTracker } from '@/lib/roles';
 import { startCvBuild, type Job } from '@/lib/jobs';
 import { saveProfile, type ProfileSave } from '@/lib/profile-save';
+import { setRoleStatus, type UiState } from '@/lib/status';
+import { revalidatePath } from 'next/cache';
 
 /**
  * Save setup answers, or an edit from My details — the same operation at
@@ -54,5 +56,44 @@ export async function buildCv(roleNum: number): Promise<Job | { error: string }>
       return { error: 'The secure CV builder is busy. Wait a moment, then try again.' };
     }
     return { error: 'The secure CV builder could not start. Wait a moment, then try again.' };
+  }
+}
+
+/**
+ * Record what happened to a role.
+ *
+ * Two decisions the interface can honestly know: the user sent this one, or
+ * they do not want it. Everything else in templates/states.yml — Responded,
+ * Interview, Offer, Hired — depends on what an employer did, which no button
+ * here can observe.
+ *
+ * Without this the workflow had no ending: Frontrunner built a CV, sent the
+ * user to the company's site, and never learned the outcome, so a sent
+ * application sat in "Ready to send" forever.
+ */
+export async function recordOutcome(
+  roleNum: number,
+  state: UiState,
+  note?: string,
+): Promise<{ ok: true } | { error: string }> {
+  try {
+    await setRoleStatus(roleNum, state, note);
+    // Every screen reads the tracker, so all of them are now stale.
+    for (const path of ['/', '/applications', '/found', `/role/${roleNum}`]) {
+      revalidatePath(path);
+    }
+    return { ok: true };
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : '';
+    if (/ambiguous|candidate/iu.test(detail)) {
+      return { error: 'More than one tracker row matches this role, so nothing was changed. Open data/applications.md to resolve the duplicate.' };
+    }
+    if (/lock|busy/iu.test(detail)) {
+      return { error: 'The tracker is being written by something else. Wait a moment, then try again.' };
+    }
+    if (/not found|no row/iu.test(detail)) {
+      return { error: 'That role is no longer in your tracker.' };
+    }
+    return { error: detail || 'That could not be saved. Nothing was changed.' };
   }
 }

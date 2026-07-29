@@ -22,6 +22,7 @@ import { Match } from '@/components/match';
 import { BuildCv } from '@/components/build-cv';
 import { CvLinks } from '@/components/cv-links';
 import { RoleJourney } from '@/components/journey-rail';
+import { Outcome } from '@/components/outcome';
 
 export const dynamic = 'force-dynamic';
 
@@ -129,6 +130,15 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
           </p>
         </div>
       )}
+
+      {/*
+        Outcome is a normal block, not part of the sticky bar. The sticky bar
+        is the one AI action; nesting a second card inside it would make a
+        floating panel tall enough to cover the assessment it sits over.
+      */}
+      <div className="mb-8">
+        <Outcome roleNum={role.num} stage={role.stage} />
+      </div>
 
       {/*
         The AI action sits at the BOTTOM, after the reasons to want it, and is
