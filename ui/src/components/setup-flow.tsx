@@ -28,9 +28,21 @@
  * setting it up is the wrong first impression.
  */
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
+import { saveDetails } from '@/app/actions';
 
 const STEPS = ['Your CV', 'About you', 'What you want', 'Finish'] as const;
+
+/**
+ * The working pattern goes into compensation.location_flexibility as prose,
+ * because that is the field the evaluation modes already read. Inventing a new
+ * key would mean nothing downstream understood the answer.
+ */
+const REMOTE_LABEL: Record<string, string> = {
+  remote: 'Remote',
+  hybrid: 'Hybrid',
+  onsite: 'On site',
+};
 
 /**
  * One CV. Most people arrive with several.
@@ -279,6 +291,9 @@ export function SetupFlow() {
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<SetupDraft>(EMPTY);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
   const set = <K extends keyof SetupDraft>(k: K, v: SetupDraft[K]) =>
     setDraft((d) => ({ ...d, [k]: v }));
 
@@ -296,6 +311,50 @@ export function SetupFlow() {
 
   const removeCv = (id: string) =>
     setDraft((d) => ({ ...d, otherCvs: d.otherCvs.filter((c) => c.id !== id) }));
+
+  /**
+   * Write everything, then leave setup for good.
+   *
+   * A full page navigation rather than a client route change: the whole app
+   * reads these files on the server, and every screen behind this one was
+   * rendered when they did not exist.
+   *
+   * Empty answers are omitted rather than sent as blanks. Someone who skipped
+   * the salary question has not asked for their salary target to be cleared,
+   * and a first run should never write an empty string over a template's
+   * documented default.
+   */
+  const save = () => {
+    setSaving(true);
+    setError(null);
+    const fields: Record<string, string | string[]> = {};
+    const put = (key: string, value: string) => {
+      if (value.trim()) fields[key] = value.trim();
+    };
+    put('candidate.full_name', draft.fullName);
+    put('candidate.email', draft.email);
+    put('candidate.location', draft.location);
+    put('location.city', draft.location);
+    put('compensation.target_range', draft.salaryTarget);
+    put('compensation.location_flexibility', REMOTE_LABEL[draft.remote] ?? '');
+
+    const roles = draft.targetRoles.split('\n').map((r) => r.trim()).filter(Boolean);
+    if (roles.length > 0) fields['target_roles.primary'] = roles;
+
+    const versions = draft.otherCvs
+      .filter((c) => c.text.trim())
+      .map((c) => ({ label: c.label, text: c.text }));
+
+    startTransition(async () => {
+      const result = await saveDetails({ fields, cv: draft.cv, versions });
+      if ('error' in result) {
+        setError(result.error);
+        setSaving(false);
+        return;
+      }
+      window.location.href = '/';
+    });
+  };
 
   // The CV is the only hard gate. Everything else can be filled in later from
   // My details, and blocking on it would be inventing work.
@@ -578,19 +637,24 @@ export function SetupFlow() {
             ))}
           </dl>
 
-          {/*
-            The seam. Writing user-layer files is a backend operation and goes
-            through src/application/ per the project rules, so this flow
-            collects and reviews but does not yet write. Stated plainly rather
-            than shown as a button that silently does nothing.
-          */}
-          <div className="rounded-xl border border-dashed border-[var(--color-line-strong)] bg-[var(--color-card)] p-5">
-            <p className="font-semibold">Saving is not connected yet</p>
-            <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
-              This flow collects and checks your answers. Writing them to disk goes through the
-              backend’s file operations, which is the next piece of work.
-            </p>
-          </div>
+          {error && (
+            <div className="mb-4 rounded-xl border border-[var(--color-attention)] bg-[var(--color-attention-wash)] p-4">
+              <p className="font-semibold text-[var(--color-attention)]">That did not save</p>
+              <p className="mt-0.5 text-sm text-[var(--color-ink-soft)]">{error}</p>
+              <p className="mt-2 text-sm text-[var(--color-ink-soft)]">
+                Your answers are still here — nothing was lost.
+              </p>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={save}
+            disabled={saving}
+            className="w-full cursor-pointer rounded-lg bg-[var(--color-act)] px-5 py-3 text-[15px] font-semibold text-white transition hover:bg-[var(--color-act-hover)] disabled:cursor-not-allowed disabled:bg-[var(--color-line-strong)] sm:w-auto"
+          >
+            {saving ? 'Saving…' : 'Save and start'}
+          </button>
         </section>
       )}
 
