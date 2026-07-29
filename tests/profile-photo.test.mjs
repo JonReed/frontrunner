@@ -48,7 +48,7 @@ test('absolute local image is validated and inlined', () => {
 });
 
 test('project-relative image is validated and inlined', () => {
-  const { html } = render(payload('docs/logo.png', 'square'));
+  const { html } = render(payload('tests/fixtures/pixel.png', 'square'));
   assert.match(html, /class="cv-photo cv-photo--square"/);
   assert.match(html, /src="data:image\/png;base64,/);
 });
@@ -81,7 +81,7 @@ test('valid data URL remains supported', () => {
 test('missing, unsupported, and invalid-style photos fail clearly', () => {
   const cases = [
     [payload('does-not-exist.png'), /not found or unreadable/],
-    [payload('docs/roadmap-phases.jpg', 'hexagon'), /Unsupported profile photo style/],
+    [payload('tests/fixtures/pixel.png', 'hexagon'), /Unsupported profile photo style/],
     [payload('docs/file.svg'), /Unsupported profile photo format/],
   ];
   for (const [value, expected] of cases) {
