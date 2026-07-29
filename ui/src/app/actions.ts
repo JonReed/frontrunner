@@ -11,6 +11,7 @@ import { readTracker } from '@/lib/roles';
 import { startCvBuild, type Job } from '@/lib/jobs';
 import { saveProfile, type ProfileSave } from '@/lib/profile-save';
 import { setRoleStatus, type UiState } from '@/lib/status';
+import { startConnect, invalidateHealth, readHealth } from '@/lib/health';
 import { revalidatePath } from 'next/cache';
 
 /**
@@ -96,4 +97,23 @@ export async function recordOutcome(
     }
     return { error: detail || 'That could not be saved. Nothing was changed.' };
   }
+}
+
+/**
+ * Start signing the Claude CLI in, and report whether it is done yet.
+ *
+ * Two actions rather than one long-running call: the browser flow takes as
+ * long as the user takes, so `connect` launches it and `checkConnected` is
+ * polled from the client. Neither ever sees a credential — the CLI opens the
+ * user's own browser and writes to their own keychain.
+ */
+export async function connectEngine(): Promise<{ started: boolean }> {
+  invalidateHealth();
+  return startConnect();
+}
+
+export async function checkConnected(): Promise<{ signedIn: boolean }> {
+  invalidateHealth();
+  const health = await readHealth();
+  return { signedIn: health.signedIn };
 }

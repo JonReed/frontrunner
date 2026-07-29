@@ -124,3 +124,44 @@ function readHealthUncached(): Promise<Health> {
     child.stdin.end(JSON.stringify({ version: '1', action: 'read' }));
   });
 }
+
+/**
+ * Ask the backend to start `claude auth login`.
+ *
+ * Returns as soon as the CLI has been launched — the browser flow that follows
+ * belongs to the user and takes as long as it takes. Callers poll readHealth()
+ * for the result rather than waiting on this.
+ */
+export function startConnect(): Promise<{ started: boolean }> {
+  return new Promise((resolve) => {
+    let child;
+    try {
+      child = spawn(process.execPath, [HEALTH_CONTROL], {
+        cwd: ROOT, shell: false, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'],
+      });
+    } catch {
+      resolve({ started: false });
+      return;
+    }
+    let stdout = '';
+    const done = (v: { started: boolean }) => { clearTimeout(timer); resolve(v); };
+    child.stdout.on('data', (c: Buffer) => { stdout += c.toString().slice(0, 4096); });
+    child.stderr.on('data', () => {});
+    child.once('error', () => done({ started: false }));
+    child.once('close', () => {
+      try {
+        const parsed = JSON.parse(stdout.split('\n')[0] ?? '') as { started?: unknown };
+        done({ started: parsed.started === true });
+      } catch {
+        done({ started: false });
+      }
+    });
+    const timer = setTimeout(() => { child.kill('SIGTERM'); done({ started: false }); }, RESPONSE_TIMEOUT_MS);
+    child.stdin.end(JSON.stringify({ version: '1', action: 'connect' }));
+  });
+}
+
+/** Force the next readHealth() to re-check, used right after a sign-in attempt. */
+export function invalidateHealth(): void {
+  cached = null;
+}

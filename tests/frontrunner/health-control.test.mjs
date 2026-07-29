@@ -10,14 +10,26 @@
  */
 
 import assert from 'node:assert/strict';
+import {
+  existsSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { spawn as nodeSpawn } from 'node:child_process';
 import { EventEmitter } from 'node:events';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { PassThrough } from 'node:stream';
 import test from 'node:test';
 
+import { ROOT } from '#paths';
 import {
   validateHealthRequest,
   summariseAuth,
   notInstalled,
   readAuthStatus,
+  startSignIn,
 } from '../../src/application/health-control.mjs';
 
 /** Minimal stand-in for a spawned child. */
@@ -48,10 +60,28 @@ test('accepts only a read request at the current version', () => {
   assert.throws(() => validateHealthRequest([]), /plain object/);
 });
 
-test('there is no sign-in action — authentication is not ours to start', () => {
-  for (const action of ['login', 'signin', 'auth', 'setup', 'write']) {
+test('only read and connect are actions — nothing else', () => {
+  for (const action of ['login', 'signin', 'auth', 'setup', 'write', 'logout']) {
     assert.throws(() => validateHealthRequest({ version: '1', action }), /unsupported/, action);
   }
+  assert.equal(validateHealthRequest({ version: '1', action: 'connect' }).action, 'connect');
+});
+
+test('sign-in argv is fixed, detached, and never uses a shell', () => {
+  let captured = null;
+  startSignIn({ spawn: (cmd, args, opts) => { captured = { cmd, args, opts }; return { unref() {} }; } });
+  assert.equal(captured.cmd, 'claude');
+  // --claudeai is explicit rather than assumed: the alternative (--console)
+  // puts the user on API billing instead of their subscription.
+  assert.deepEqual(captured.args, ['auth', 'login', '--claudeai']);
+  assert.equal(captured.opts.shell, false);
+  assert.equal(captured.opts.detached, true);
+  assert.equal(captured.opts.stdio, 'ignore');
+});
+
+test('a missing CLI makes sign-in report failure rather than throw', () => {
+  const result = startSignIn({ spawn: () => { throw new Error('ENOENT'); } });
+  assert.deepEqual(result, { started: false });
 });
 
 test('summarise keeps only the fields the interface needs', () => {
@@ -117,7 +147,11 @@ test('a non-zero exit that still returns JSON is believed', async () => {
 });
 
 test('a hung CLI resolves on a timeout instead of hanging the page', async () => {
-  const status = await readAuthStatus({ spawn: () => fakeChild(), timeoutMs: 30 });
+  const status = await readAuthStatus({
+    spawn: () => fakeChild(),
+    timeoutMs: 30,
+    terminationGraceMs: 1,
+  });
   assert.deepEqual(status, notInstalled());
 });
 
@@ -126,4 +160,87 @@ test('a spawn that throws synchronously is handled', async () => {
     spawn: () => { throw new Error('EPERM'); },
   });
   assert.deepEqual(status, notInstalled());
+});
+
+test('an already-cancelled health request never launches the CLI', async () => {
+  const controller = new AbortController();
+  controller.abort();
+  let launched = 0;
+  const status = await readAuthStatus({
+    signal: controller.signal,
+    spawn() { launched++; },
+  });
+  assert.deepEqual(status, notInstalled());
+  assert.equal(launched, 0);
+});
+
+test('hostile auth output stops the complete process tree', async () => {
+  const child = new EventEmitter();
+  child.pid = 4321;
+  child.stdout = new PassThrough();
+  child.stderr = new PassThrough();
+  const signals = [];
+  const statusPromise = readAuthStatus({
+    spawn() {
+      queueMicrotask(() => child.stdout.write('😀'.repeat(20 * 1024)));
+      return child;
+    },
+    platform: 'linux',
+    processKill(pid, signal) {
+      signals.push({ pid, signal });
+    },
+    terminationGraceMs: 1,
+    timeoutMs: 5_000,
+  });
+
+  assert.deepEqual(await statusPromise, notInstalled());
+  assert.deepEqual(signals, [
+    { pid: -4321, signal: 'SIGTERM' },
+    { pid: -4321, signal: 'SIGKILL' },
+  ]);
+});
+
+test('destructive timeout kills auth-probe descendants before they mutate state', {
+  skip: process.platform === 'win32',
+}, async t => {
+  const fixture = mkdtempSync(join(tmpdir(), 'frontrunner-health-tree-'));
+  t.after(() => rmSync(fixture, { recursive: true, force: true }));
+  const parentScript = join(fixture, 'parent.mjs');
+  const marker = join(fixture, 'late-auth-probe-write');
+  const grandchildCode = `
+    process.on('SIGTERM', () => {});
+    setTimeout(
+      () => require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'unsafe'),
+      450,
+    );
+    setInterval(() => {}, 1_000);
+  `;
+  writeFileSync(parentScript, `
+    import { spawn } from 'node:child_process';
+    spawn(process.execPath, ['-e', ${JSON.stringify(grandchildCode)}], {
+      stdio: 'ignore',
+    });
+    setInterval(() => {}, 1_000);
+  `);
+
+  let spawnOptions;
+  const status = await readAuthStatus({
+    timeoutMs: 150,
+    terminationGraceMs: 100,
+    spawn(_command, _args, options) {
+      spawnOptions = options;
+      return nodeSpawn(process.execPath, [parentScript], options);
+    },
+  });
+  assert.deepEqual(status, notInstalled());
+  assert.equal(spawnOptions.shell, false);
+  assert.equal(spawnOptions.detached, true);
+  assert.equal(spawnOptions.cwd, ROOT);
+
+  await new Promise(resolve => setTimeout(resolve, 550));
+  assert.equal(
+    existsSync(marker),
+    false,
+    'an auth-probe descendant survived after the health check reported failure',
+  );
 });

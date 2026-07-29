@@ -15,14 +15,16 @@
  *   <ConnectionDetail> — always, on My details, where someone goes to ask
  *     what the tool knows and what it is using.
  *
- * The fix is a terminal command, and this is a product whose promise is that
- * you never need one. That tension is resolved by being specific rather than
- * apologetic: one command, copyable, with what it does. Pretending we can fix
- * it from here would be worse — signing someone in is their decision and their
- * browser, not something a local web page should initiate.
+ * When the CLI is installed but signed out, this offers a button rather than a
+ * command. Claude Code and the Claude desktop app keep separate credentials
+ * (anthropics/claude-code#62206), so someone can sign into the app, use it to
+ * install Frontrunner, and still have an unauthenticated CLI — which makes
+ * this the state most new users land in, not a rare one. The command is kept
+ * as a fallback in the stuck case, never as the first instruction.
  */
 
 import type { Health } from '@/lib/health';
+import { ConnectButton } from './connect-button';
 
 const FIX = {
   install: 'https://claude.ai/code',
@@ -49,8 +51,8 @@ export function ConnectionBanner({ health }: { health: Health }) {
         {health.installed ? (
           <>
             Everything else works — scores, reports and your tracker are all here. Building a
-            tailored CV needs the connection, so run <Command>{FIX.signIn}</Command> in a
-            terminal once and it will keep working.
+            tailored CV needs the connection. Signing into the Claude app does not sign in the
+            command-line tool Frontrunner uses, so this is a separate one-off.
           </>
         ) : (
           <>
@@ -67,6 +69,11 @@ export function ConnectionBanner({ health }: { health: Health }) {
           </>
         )}
       </p>
+      {health.installed && (
+        <div className="mt-4">
+          <ConnectButton />
+        </div>
+      )}
     </div>
   );
 }
@@ -108,7 +115,8 @@ export function ConnectionDetail({ health }: { health: Health }) {
         <p className="-mt-6 mb-8 text-sm text-[var(--color-ink-soft)]">
           {health.installed ? (
             <>
-              Run <Command>{FIX.signIn}</Command> once in a terminal to connect it.
+              Signing into the Claude app does not sign in the command-line tool Frontrunner
+              uses — they keep separate credentials, so this is a separate one-off.
             </>
           ) : (
             <>
@@ -125,6 +133,11 @@ export function ConnectionDetail({ health }: { health: Health }) {
             </>
           )}
         </p>
+      )}
+      {!health.signedIn && health.installed && (
+        <div className="-mt-4 mb-8">
+          <ConnectButton />
+        </div>
       )}
     </>
   );
