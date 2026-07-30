@@ -10,6 +10,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import {
   applicationArtifactPaths,
@@ -107,7 +108,9 @@ test('concurrent decision writes remain complete, private and schema-valid', asy
   assert.equal(record.schema_version, 1);
   assert.ok(['reuse', 'reuse-with-edits'].includes(record.decision));
   assert.equal(record.recorded_at, '2026-07-30T12:00:00.000Z');
-  assert.equal(lstatSync(paths.decision.reuse).mode & 0o777, 0o600);
+  if (process.platform !== 'win32') {
+    assert.equal(lstatSync(paths.decision.reuse).mode & 0o777, 0o600);
+  }
 });
 
 test('decision validation fails before replacing an existing record', async t => {
@@ -131,7 +134,7 @@ test('decision validation fails before replacing an existing record', async t =>
 
 test('CLI rejects arbitrary output roots instead of writing outside workspace', () => {
   const result = spawnSync(process.execPath, [
-    MODULE.pathname,
+    fileURLToPath(MODULE),
     '--report', '7',
     '--company', 'Acme',
     '--role', 'Engineer',
