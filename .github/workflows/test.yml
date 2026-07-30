@@ -37,8 +37,8 @@ jobs:
         with:
           node-version: '24'
           cache: npm
-      # Skip the postinstall (npx playwright install chromium); the tests
-      # never launch a browser, so the ~170 MB download is pure CI overhead.
+      # CI never executes dependency lifecycle scripts. Browser installation is
+      # an explicit command and the hermetic suite never launches a browser.
       - run: npm ci --ignore-scripts
       # This is intentionally the same command as the versioned pre-commit
       # hook. Keep the local and hosted merge gates behind one entry point.

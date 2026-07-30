@@ -811,6 +811,20 @@ export function installUpdatedDependencies(root = ROOT, options = {}) {
   return installed;
 }
 
+/**
+ * Install the pinned Playwright browser through the repository's local npm
+ * script. This cannot resolve or download a different npm package via npx.
+ */
+export function installPlaywrightBrowser(root = ROOT, options = {}) {
+  const run = options.run ?? execFileSync;
+  const timeout = options.timeout ?? PLAYWRIGHT_INSTALL_TIMEOUT_MS;
+  run('npm', ['run', 'browser:install', '--silent'], {
+    cwd: root,
+    timeout,
+    stdio: options.stdio ?? 'ignore',
+  });
+}
+
 function processIsAlive(pid) {
   if (!Number.isInteger(pid) || pid <= 0) return false;
   try {
@@ -1336,20 +1350,18 @@ async function apply() {
       for (const failure of error.failures ?? [error.message]) console.error(`  ${failure}`);
       revertPaths(updated, initialStatusPaths);
       throw new Error(
-        'Update aborted because dependencies could not be installed. Run npm install in the reported directory before retrying.',
+        'Update aborted because dependencies could not be installed. Run npm ci in the reported directory before retrying.',
         { cause: error },
       );
     }
 
-    // 5b. Ensure Playwright browser binary is up to date after npm install
+    // 5b. Ensure the pinned Playwright browser binary is up to date after the
+    // locked dependency installation. This explicit local script cannot ask
+    // npx to resolve a different package.
     try {
-      execFileSync('npx', ['playwright', 'install', 'chromium'], {
-        cwd: ROOT,
-        timeout: PLAYWRIGHT_INSTALL_TIMEOUT_MS,
-        stdio: 'ignore',
-      });
+      installPlaywrightBrowser(ROOT);
     } catch {
-      console.log('playwright install skipped (run manually: npx playwright install chromium)');
+      console.log('playwright install skipped (run manually: npm run browser:install)');
     }
 
     // 6. Commit the update
