@@ -204,7 +204,7 @@ export function CvIngest({ onSaved }: { onSaved?: () => void }) {
             </button>
             <input ref={fileRef} type="file" accept=".pdf,.md,.markdown,.txt,.docx" hidden onChange={(e) => e.target.files?.[0] && ingestFile(e.target.files[0])} />
             <span className="inline-flex items-center gap-1 text-[11px] text-faint">
-              <Lock className="size-3" /> Stays on your machine. Parsed by your own AI.
+              <Lock className="size-3" /> Stored on your machine. Processed by your selected AI.
             </span>
             <button
               type="button"

@@ -87,7 +87,9 @@ export function ConfigForm() {
     <div className="mx-auto max-w-2xl px-6 py-10">
       <h1 className="font-display text-2xl tracking-tight text-landing">Config</h1>
       <p className="mt-1 text-sm text-muted">
-        Run frontrunner on your own AI, right on your computer. Your CV and data never leave your machine.
+        Run frontrunner through your selected AI, with working files stored on
+        your computer. Model-backed actions send relevant context to that
+        provider.
       </p>
 
       {/* Engine mode */}

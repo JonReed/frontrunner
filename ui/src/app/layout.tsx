@@ -22,13 +22,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       {/* Bottom padding on mobile clears the fixed nav bar. */}
       <body className="min-h-screen pb-[64px] sm:pb-0">
         <a href="#main" className="skip-link">Skip to content</a>
-        <header className="sticky top-0 z-10 border-b border-[var(--color-line)] bg-[color:var(--color-paper-translucent)] backdrop-blur-md">
-          <div className="mx-auto flex h-[68px] max-w-5xl items-center justify-between px-5 sm:px-6">
+        <header className="app-header sticky top-0 z-10 border-b border-[var(--color-line)] bg-[color:var(--color-paper-translucent)] backdrop-blur-md">
+          <div className="mx-auto flex h-[74px] max-w-6xl items-center justify-between px-5 sm:px-7">
             <Brand />
             <HeaderNav />
           </div>
         </header>
-        <main id="main" className="mx-auto max-w-5xl px-5 py-8 sm:px-6 sm:py-11">{children}</main>
+        <main id="main" className="app-shell mx-auto max-w-6xl px-5 py-9 sm:px-7 sm:py-14">{children}</main>
         {/*
           Footer priorities, in order:
           1. Reassurance. This audience is handing over their entire employment
@@ -38,12 +38,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
              UI while the upstream project appears only in a README would
              undercut the honesty of calling this a fork. Both or neither.
         */}
-        <footer className="mx-auto max-w-5xl px-5 pb-10 sm:px-6">
+        <footer className="mx-auto max-w-6xl px-5 pb-10 sm:px-7">
           <div className="flex flex-col gap-3 border-t border-[var(--color-line)] pt-5 text-xs leading-relaxed text-[var(--color-ink-faint)] sm:flex-row sm:items-start sm:justify-between">
             <div>
             <p className="font-medium text-[var(--color-ink-soft)]">
-              Your files stay on this computer. AI actions send only relevant,
-              bounded context to your selected model provider.
+              Your working files live on this computer. AI actions send only
+              relevant, bounded context to your selected model provider.
             </p>
             <p className="mt-1.5">
               Built by{' '}

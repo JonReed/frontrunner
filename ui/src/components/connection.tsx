@@ -98,7 +98,7 @@ export function ConnectionDetail({ health }: { health: Health }) {
   return (
     <>
       <h2 className="mb-2 text-base font-bold tracking-tight">What runs your AI actions</h2>
-      <section className="mb-8 rounded-2xl border border-[var(--color-line)] bg-[var(--color-card)] px-5 py-2 shadow-[0_1px_2px_rgb(26_25_23/0.03)]">
+      <section className="paper-surface mb-8 rounded-2xl border px-5 py-2">
         <dl>
           {rows.map(([label, value]) => (
             <div

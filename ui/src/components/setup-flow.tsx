@@ -391,7 +391,13 @@ export function SetupFlow() {
   const canAdvance = step === 0 ? draft.cv.trim().length > 40 : true;
 
   return (
-    <div className="mx-auto max-w-xl">
+    <div className="onboarding-shell mx-auto max-w-2xl">
+      <div className="onboarding-material" aria-hidden="true">
+        <span className="onboarding-material__mark">
+          <i />
+          <b>✓</b>
+        </span>
+      </div>
       {/*
         The welcome copy earns its place once, on the first screen, and then
         gets out of the way. Repeated above every step it took a third of a
@@ -399,7 +405,8 @@ export function SetupFlow() {
         thing they need is the question, not the preamble.
       */}
       <div className="mb-9">
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight">
+        <p className="page-eyebrow">Welcome to Frontrunner</p>
+        <h1 className="editorial-title">
           {step === 0 ? 'Let us get you set up' : 'Setting up'}
         </h1>
         {step === 0 && (
@@ -422,8 +429,8 @@ export function SetupFlow() {
             to check before continuing.
           </p>
           <p className="mt-3 text-sm text-[var(--color-ink-faint)]">
-            It is saved as a file on this computer and never uploaded. Parts of it are sent to
-            your AI provider only when you ask for a tailored CV.
+            The import is processed in this browser and saved as a file on this computer. Relevant
+            parts are sent to your AI provider when you use model-backed assessment or tailoring.
           </p>
 
           <div className="mt-6">

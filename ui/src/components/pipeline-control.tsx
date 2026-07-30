@@ -160,7 +160,7 @@ export function PipelineControl({
   }
 
   return (
-    <section className="mb-9 rounded-2xl border border-[var(--color-line)] bg-[var(--color-paper-deep)] px-5 py-5 sm:px-6">
+    <section className="pipeline-surface mb-9 rounded-2xl border px-5 py-5 sm:px-6">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-[17px] font-bold tracking-tight">

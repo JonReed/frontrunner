@@ -67,7 +67,9 @@ preparation for answering it, not the answer.
 - Identify company + role; match to the tracker row and evaluation report if
   they exist (`workspace/applications/tracker.md`, `workspace/reports/evaluations/`).
 - Store or keep the contract in `workspace/applications/offers/{company-slug}/` (gitignored —
-  contracts are PII and never leave the machine).
+  contracts are PII and must not be sent to websites or research tools; the
+  selected model provider still processes the bounded contract context needed
+  for this mode).
 
 **Extraction gate:** before any analysis, quote back the document's
 section headings and the first clause, and state the section/page count. The

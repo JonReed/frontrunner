@@ -104,4 +104,6 @@ that's already there, so the command is idempotent.
 - One entry per run. To add several, run `add` per item.
 - If the fetch fails or the page has no usable content, say so and stop — never
   synthesize an entry from nothing.
-- Personal data (the CV itself) stays local; the fetch only reads public sources.
+- The fetch sends no CV or profile data to the public source; it requests only
+  the supplied public URL. The agent running this mode may already process CV
+  context through its selected model provider.

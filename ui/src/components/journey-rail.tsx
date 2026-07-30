@@ -142,7 +142,15 @@ export function PipelineOverview({
   active?: SpineStage;
 }) {
   return (
-    <nav aria-label="The whole process" className="mb-9 rounded-2xl border border-[var(--color-line)] bg-[var(--color-card)] px-3 py-4 shadow-[0_1px_2px_rgb(26_25_23/0.03)] sm:px-5">
+    <nav aria-label="The whole process" className="pipeline-surface mb-11 rounded-[22px] border px-3 py-4 sm:px-6 sm:py-5">
+      <div className="mb-4 flex items-center justify-between gap-4 px-1">
+        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-ink-soft)]">
+          Your search
+        </span>
+        <span className="hidden text-xs text-[var(--color-ink-faint)] sm:block">
+          From everything found to conversations in progress
+        </span>
+      </div>
       <ol className="relative flex before:absolute before:left-[8.333%] before:right-[8.333%] before:top-[7px] before:h-px before:bg-[var(--color-line-strong)]">
         {JOURNEY.map((s) => {
           const n = counts[s.key] ?? 0;

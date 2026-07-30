@@ -76,7 +76,7 @@ function ActionButton({ role }: { role: Role }) {
  */
 function RoleRow({ role, followup }: { role: Role; followup?: Followup }) {
   return (
-    <li className="flex flex-col items-stretch gap-3 border-b border-[var(--color-line)] px-5 py-4 transition last:border-0 hover:bg-[var(--color-paper)] sm:flex-row sm:items-center sm:gap-4 sm:px-6">
+    <li className="product-row flex flex-col items-stretch gap-3 border-b border-[var(--color-line)] px-5 py-4 transition last:border-0 hover:bg-[var(--color-paper)] sm:flex-row sm:items-center sm:gap-4 sm:px-6">
       <div className="w-full min-w-0 flex-1 sm:w-auto">
         <div className="truncate text-[15px] font-semibold">{role.company}</div>
         {/* Wraps on a phone, truncates on a laptop where the row is a row. */}
@@ -134,7 +134,7 @@ function Band({
         {title} <span className="tabular rounded-full bg-[var(--color-paper-deep)] px-2 py-0.5 text-xs font-semibold text-[var(--color-ink-soft)]">{roles.length}</span>
       </h2>
       <p className="mb-3 mt-0.5 text-sm text-[var(--color-ink-soft)]">{blurb}</p>
-      <ul className="overflow-hidden rounded-2xl border border-[var(--color-line)] bg-[var(--color-card)] shadow-[0_1px_2px_rgb(26_25_23/0.035)]">
+      <ul className="product-list rounded-2xl border">
         {roles.map((r) => (
           <RoleRow key={r.num} role={r} followup={followups.get(r.num)} />
         ))}
@@ -147,7 +147,7 @@ function Headline({ due, ready, nearly }: { due: number; ready: number; nearly: 
   if (due > 0) {
     return (
       <>
-        <h1 className="text-[30px] font-bold leading-tight tracking-[-0.025em] sm:text-[34px]">
+        <h1 className="editorial-title">
           {due} {due === 1 ? 'follow-up needs' : 'follow-ups need'} your attention
         </h1>
         <p className="mt-1 text-[15px] text-[var(--color-ink-soft)]">
@@ -159,7 +159,7 @@ function Headline({ due, ready, nearly }: { due: number; ready: number; nearly: 
   if (ready > 0) {
     return (
       <>
-        <h1 className="text-[30px] font-bold leading-tight tracking-[-0.025em] sm:text-[34px]">
+        <h1 className="editorial-title">
           {ready} {ready === 1 ? 'application is' : 'applications are'} ready to send
         </h1>
         <p className="mt-1 text-[15px] text-[var(--color-ink-soft)]">
@@ -171,7 +171,7 @@ function Headline({ due, ready, nearly }: { due: number; ready: number; nearly: 
   if (nearly > 0) {
     return (
       <>
-        <h1 className="text-[30px] font-bold leading-tight tracking-[-0.025em] sm:text-[34px]">
+        <h1 className="editorial-title">
           {nearly} strong {nearly === 1 ? 'match' : 'matches'} to look at
         </h1>
         <p className="mt-1 text-[15px] text-[var(--color-ink-soft)]">
@@ -182,7 +182,7 @@ function Headline({ due, ready, nearly }: { due: number; ready: number; nearly: 
   }
   return (
     <>
-      <h1 className="text-[30px] font-bold leading-tight tracking-[-0.025em] sm:text-[34px]">You are all caught up</h1>
+      <h1 className="editorial-title">You are all caught up</h1>
       <p className="mt-1 text-[15px] text-[var(--color-ink-soft)]">
         Nothing is waiting on you right now.
       </p>
@@ -233,6 +233,7 @@ export default async function NextUpPage() {
         action is sitting further down the page.
       */}
       <div className="mb-9">
+        <p className="page-eyebrow">Next up</p>
         <Headline due={dueRoles.length} ready={counts.readyToSend} nearly={counts.oneStepAway} />
       </div>
 
@@ -247,7 +248,7 @@ export default async function NextUpPage() {
           scan they do not need to run. What is true depends on whether the
           scanner has found anything yet.
         */
-        <div className="rounded-2xl border border-dashed border-[var(--color-line-strong)] bg-[var(--color-card)] p-12 text-center">
+        <div className="paper-surface rounded-2xl border border-dashed p-12 text-center">
           <p className="font-medium">Nothing needs your attention.</p>
           <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
             {counts.inbox > 0 ? (
