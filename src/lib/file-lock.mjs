@@ -117,6 +117,9 @@ export async function acquireFileLock(filePath, options = {}) {
     let createdIdentity;
     let createdDirectory = false;
     try {
+      if (typeof options.beforeMkdir === 'function') {
+        await options.beforeMkdir(lockDir);
+      }
       mkdirSync(lockDir);
       createdDirectory = true;
       createdIdentity = statSync(lockDir);
@@ -130,6 +133,18 @@ export async function acquireFileLock(filePath, options = {}) {
       }
     } catch (error) {
       if (createdDirectory && ['ENOENT', 'EINVAL'].includes(error?.code)) {
+        if (Date.now() >= deadline) {
+          const createTimeoutError = options.createTimeoutError
+            ?? ((dir, timeout) => new FileLockTimeoutError(dir, timeout));
+          throw createTimeoutError(lockDir, timeoutMs);
+        }
+        await sleep(retryMs);
+        continue;
+      }
+      // Windows may briefly report EPERM/EBUSY when another process has just
+      // removed this directory but the OS still retains a handle to it. This
+      // is bounded contention, not a permanent acquisition failure.
+      if (['EPERM', 'EBUSY'].includes(error?.code)) {
         if (Date.now() >= deadline) {
           const createTimeoutError = options.createTimeoutError
             ?? ((dir, timeout) => new FileLockTimeoutError(dir, timeout));

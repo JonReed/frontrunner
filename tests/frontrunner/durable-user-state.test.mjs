@@ -47,6 +47,29 @@ test('file-lock timing options reject values that can busy-loop or disable timeo
   );
 });
 
+test('file-lock retries transient Windows directory contention locally', async t => {
+  const fixture = mkdtempSync(join(tmpdir(), 'frontrunner-lock-transient-'));
+  t.after(() => rmSync(fixture, { recursive: true, force: true }));
+  const target = join(fixture, 'state.tsv');
+  let attempts = 0;
+
+  const lock = await acquireFileLock(target, {
+    timeoutMs: 500,
+    retryMs: 1,
+    beforeMkdir() {
+      attempts += 1;
+      if (attempts !== 1) return;
+      const error = new Error('injected transient Windows directory contention');
+      error.code = 'EPERM';
+      throw error;
+    },
+  });
+
+  assert.equal(attempts, 2);
+  lock.release();
+  assert.equal(existsSync(`${target}.lock`), false);
+});
+
 test('dead-owner file locks recover while live owners are never stolen', async () => {
   const fixture = mkdtempSync(join(tmpdir(), 'frontrunner-lock-recovery-'));
   const target = join(fixture, 'state.tsv');
