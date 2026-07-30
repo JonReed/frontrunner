@@ -10,6 +10,7 @@ import {
   closeSync,
   constants,
   fstatSync,
+  lstatSync,
   openSync,
   readFileSync,
 } from 'node:fs';
@@ -26,11 +27,28 @@ function validateMaxBytes(maxBytes) {
   }
 }
 
+function supportsNoFollow() {
+  return typeof constants.O_NOFOLLOW === 'number' && process.platform !== 'win32';
+}
+
 function readFlags() {
-  const noFollow = typeof constants.O_NOFOLLOW === 'number' && process.platform !== 'win32'
-    ? constants.O_NOFOLLOW
-    : 0;
-  return constants.O_RDONLY | noFollow;
+  return constants.O_RDONLY | (supportsNoFollow() ? constants.O_NOFOLLOW : 0);
+}
+
+function validatePathIdentity(file, descriptorStat, beforeStat, label) {
+  if (!beforeStat) return;
+  const afterStat = lstatSync(file);
+  const unsafeType = !beforeStat.isFile() || !afterStat.isFile()
+    || beforeStat.isSymbolicLink() || afterStat.isSymbolicLink();
+  const changed = (
+    beforeStat.dev !== descriptorStat.dev
+    || beforeStat.ino !== descriptorStat.ino
+    || afterStat.dev !== descriptorStat.dev
+    || afterStat.ino !== descriptorStat.ino
+  );
+  if (unsafeType || changed) {
+    throw fail(label, 'must be a stable regular file, not a symbolic link');
+  }
 }
 
 export function readBoundedRegularFileWithStatSync(
@@ -45,8 +63,17 @@ export function readBoundedRegularFileWithStatSync(
   validateMaxBytes(maxBytes);
   let descriptor;
   try {
+    // Windows does not expose O_NOFOLLOW. Check the reparse-point type before
+    // opening, then compare it with both the descriptor and the path after the
+    // open. Reading remains descriptor-based, so later path replacement cannot
+    // redirect the bytes being consumed.
+    const beforeStat = supportsNoFollow() ? null : lstatSync(file);
+    if (beforeStat?.isSymbolicLink() || (beforeStat && !beforeStat.isFile())) {
+      throw fail(label, 'must not be a symbolic link');
+    }
     descriptor = openSync(file, readFlags());
     const stat = fstatSync(descriptor);
+    validatePathIdentity(file, stat, beforeStat, label);
     if (!stat.isFile() || stat.size > maxBytes) {
       throw fail(label, `must be a regular file no larger than ${String(maxBytes)} bytes`);
     }

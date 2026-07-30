@@ -84,10 +84,8 @@ test('bounded file reads reject oversized files and final-component symlinks', t
     }
     throw error;
   }
-  if (process.platform !== 'win32') {
-    assert.throws(
-      () => readBoundedRegularFileSync(link, { maxBytes: 5, label: 'fixture' }),
-      /must not be a symbolic link/iu,
-    );
-  }
+  assert.throws(
+    () => readBoundedRegularFileSync(link, { maxBytes: 5, label: 'fixture' }),
+    /symbolic link/iu,
+  );
 });
