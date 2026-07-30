@@ -330,7 +330,10 @@ Frontrunner runtime.
   preservation; static inventories reject new raw mutation or live-network
   bypasses.
 - `updater-migration-tests.mjs` — enforces the system/user boundary and safe cross-version upgrades.
-- CI: `test` + CodeQL are required; CodeRabbit reviews every PR; Renovate keeps deps current.
+- CI: protected `main` requires the three-OS `test` matrix, UI build, CodeQL,
+  dependency review and private-data guard. GitHub enforces full-SHA Action
+  pinning and allows only GitHub-owned Actions; Dependabot keeps npm and Action
+  dependencies current.
 
 ## Where to start reading
 

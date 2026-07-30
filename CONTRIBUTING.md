@@ -43,6 +43,13 @@ process, response-time promise or implied path to repository access.
 5. Run the checks below.
 6. Open a PR against `Furls-Digital/frontrunner`.
 
+`main` is a protected trunk: changes arrive through short-lived pull requests,
+not direct pushes. The complete test matrix, UI build, CodeQL, dependency
+review and private-data guard must pass before a linear squash or rebase merge.
+Merged branches are deleted automatically. The sole-maintainer model does not
+add a ceremonial approval requirement, but it does not bypass the automated
+gates.
+
 ## What to Contribute
 
 - New anonymous providers under `providers/`, including parser fixtures.
