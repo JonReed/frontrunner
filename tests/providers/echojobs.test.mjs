@@ -39,13 +39,53 @@ try {
     fail(`normalizeEchojobsJob => ${JSON.stringify(n)}`);
   }
 
-  // remote fallback when no listed place
+  // Remote and hybrid must remain distinguishable so a Hybrid block rule is
+  // enforceable even when the feed has no location.
   const remote = normalizeEchojobsJob({ title: 'X', url: 'https://jobs.lever.co/x/1', locations: [], remote_type: 'remote' });
   const hybrid = normalizeEchojobsJob({ title: 'X', url: 'https://jobs.lever.co/x/2', remote_type: 'hybrid' });
-  if (remote?.location === 'Remote' && hybrid?.location === 'Remote') {
-    pass('normalizeEchojobsJob falls back to "Remote" for a placeless remote OR hybrid role');
+  if (remote?.location === 'Remote' && hybrid?.location === 'Hybrid') {
+    pass('normalizeEchojobsJob preserves placeless Remote and Hybrid work models');
   } else {
     fail(`remote/hybrid fallback => ${JSON.stringify([remote?.location, hybrid?.location])}`);
+  }
+
+  const hybridWithCity = normalizeEchojobsJob({
+    title: 'X',
+    url: 'https://jobs.lever.co/x/3',
+    locations: ['Berlin'],
+    remote_type: 'hybrid',
+  });
+  const hybridSpelledOut = normalizeEchojobsJob({
+    title: 'X',
+    url: 'https://jobs.lever.co/x/4',
+    locations: ['Berlin (Hybrid)'],
+    remote_type: ' Hybrid ',
+  });
+  const placedRemote = normalizeEchojobsJob({
+    title: 'X',
+    url: 'https://jobs.lever.co/x/5',
+    locations: ['Berlin'],
+    remote_type: 'remote',
+  });
+  const placelessOnsite = normalizeEchojobsJob({
+    title: 'X',
+    url: 'https://jobs.lever.co/x/6',
+    remote_type: 'on_site',
+  });
+  if (
+    hybridWithCity?.location === 'Berlin · Hybrid'
+    && hybridSpelledOut?.location === 'Berlin (Hybrid)'
+    && placedRemote?.location === 'Berlin'
+    && placelessOnsite?.location === ''
+  ) {
+    pass('normalizeEchojobsJob adds exactly one Hybrid marker without inventing other locations');
+  } else {
+    fail(`work-model location preservation => ${JSON.stringify({
+      hybridWithCity: hybridWithCity?.location,
+      hybridSpelledOut: hybridSpelledOut?.location,
+      placedRemote: placedRemote?.location,
+      placelessOnsite: placelessOnsite?.location,
+    })}`);
   }
 
   // company fallback to the entry name

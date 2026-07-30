@@ -33,6 +33,7 @@
     "img-to-pdf": "node src/cv/img-to-pdf.mjs",
     "cover-letter": "node src/cv/generate-cover-letter.mjs --payload",
     "cv:verify-facts": "node src/cv/verify-cv-facts.mjs",
+    "application:artifacts": "node src/cv/application-artifacts.mjs",
     "sync-check": "node src/cv/cv-sync-check.mjs",
     "update:check": "node update-system.mjs check",
     "update:test": "node tests/updater-migration-tests.mjs",

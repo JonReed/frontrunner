@@ -13,6 +13,7 @@ import test from 'node:test';
 
 import {
   APPLICATIONS_FILE,
+  APPLICATION_DOCUMENTS_DIR,
   CV_FILE,
   JDS_DIR,
   OUTPUT_DIR,
@@ -31,6 +32,7 @@ import {
 test('every canonical private path is owned by the one workspace boundary', () => {
   for (const file of [
     APPLICATIONS_FILE,
+    APPLICATION_DOCUMENTS_DIR,
     CV_FILE,
     JDS_DIR,
     OUTPUT_DIR,

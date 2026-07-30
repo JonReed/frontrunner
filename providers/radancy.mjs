@@ -19,9 +19,10 @@
 // host-based (branded domains), so tenants are wired with an explicit
 // `provider: radancy` + a search-jobs `api:`/`careers_url`.
 
-const MAX_PAGES = 200; // safety cap (~15/page ⇒ up to ~3000 postings)
-const MAX_JOBS = 2000; // cap total postings pulled
+const MAX_PAGES = 200;
+const DEFAULT_MAX_JOBS = 2000;
 const PAGE_DELAY_MS = 150; // polite pacing — full walks are >100 sequential requests
+const FRAGMENT_RECORDS_PER_PAGE = 100;
 
 // Minimal HTML entity decoder — mirrors the other HTML-scraping providers.
 const NAMED_ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
@@ -61,10 +62,97 @@ export function resolveListUrl(entry) {
 }
 
 /**
+ * Build the lightweight JSON-fragment URL used by TalentBrew's own client.
+ * Deliberately omit SearchFiltersModuleName: including it attaches a large
+ * facet blob to every response.
+ */
+export function buildFragmentUrl(listUrl, page, recordsPerPage = FRAGMENT_RECORDS_PER_PAGE) {
+  const query = new URLSearchParams({
+    ActiveFacetID: '0',
+    CurrentPage: String(page),
+    RecordsPerPage: String(recordsPerPage),
+    Distance: '50',
+    RadiusUnitType: '0',
+    Keywords: '',
+    Location: '',
+    ShowRadius: 'False',
+    IsPagination: 'True',
+    CustomFacetName: '',
+    FacetTerm: '',
+    FacetType: '0',
+    SearchResultsModuleName: 'Search Results',
+    SortCriteria: '0',
+    SortDirection: '0',
+    SearchType: '5',
+  });
+  return `${listUrl}/results?${query.toString()}`;
+}
+
+export function readFragmentTotals(html) {
+  if (typeof html !== 'string') return { totalResults: null, totalPages: null };
+  const numberFrom = (pattern) => {
+    const match = html.match(pattern);
+    if (!match) return null;
+    const value = Number(match[1]);
+    return Number.isSafeInteger(value) && value >= 0 ? value : null;
+  };
+  return {
+    totalResults: numberFrom(/data-total-results="(\d+)"/u),
+    totalPages: numberFrom(/data-total-pages="(\d+)"/u),
+  };
+}
+
+/**
+ * Parse legacy TalentBrew rows where the job anchor is the row and carries
+ * data-job-id. Attribute order is intentionally not assumed.
+ */
+export function parseLegacyResults(html, origin) {
+  if (typeof html !== 'string') return [];
+  const out = [];
+  const seen = new Set();
+  for (const anchor of html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/giu)) {
+    const attrs = anchor[1];
+    const inner = anchor[2];
+    const idMatch = attrs.match(/data-job-id="([^"]+)"/iu);
+    const hrefMatch = attrs.match(/href="([^"]+)"/iu);
+    if (!idMatch || !hrefMatch) continue;
+    const href = decodeEntities(hrefMatch[1]);
+    if (!/\/job\//u.test(href) || seen.has(idMatch[1])) continue;
+    const heading = inner.match(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/iu);
+    const title = clean(
+      heading ? heading[1] : inner.replace(/<span[\s\S]*?<\/span>/giu, ' '),
+    );
+    if (!title) continue;
+    let url;
+    try {
+      url = new URL(href, origin).href;
+    } catch {
+      continue;
+    }
+    const location = inner.match(
+      /class="[^"]*job-location[^"]*"[^>]*>([\s\S]*?)<\/span>/iu,
+    );
+    seen.add(idMatch[1]);
+    out.push({
+      id: idMatch[1],
+      title,
+      url,
+      location: location ? clean(location[1]) : '',
+    });
+  }
+  return out;
+}
+
+/**
  * Parse one search-results page into raw {id, title, url, location} records.
  * @param {string} html @param {string} origin
  */
 export function parseResults(html, origin) {
+  const modern = parseModernResults(html, origin);
+  return modern.length > 0 ? modern : parseLegacyResults(html, origin);
+}
+
+export function parseModernResults(html, origin) {
   if (typeof html !== 'string') return [];
   const out = [];
   const seen = new Set();
@@ -100,6 +188,11 @@ function resolveMaxPages(entry) {
   return MAX_PAGES;
 }
 
+function resolveMaxJobs(entry) {
+  const value = entry?.max_jobs;
+  return Number.isSafeInteger(value) && value > 0 ? value : DEFAULT_MAX_JOBS;
+}
+
 /** @type {Provider} */
 export default {
   id: 'radancy',
@@ -117,8 +210,73 @@ export default {
 
     const wait = (ms) => (ctx.sleep ? ctx.sleep(ms) : new Promise((r) => setTimeout(r, ms)));
     const maxPages = resolveMaxPages(entry);
+    const maxJobs = resolveMaxJobs(entry);
     const jobs = [];
     const seen = new Set();
+
+    // Prefer the compact JSON results fragment. Unsupported tenants or malformed
+    // responses fall back to the existing HTML walk without losing coverage.
+    if (typeof ctx.fetchJson === 'function') {
+      try {
+        const first = await ctx.fetchJson(buildFragmentUrl(listUrl, 1), {
+          headers: {
+            accept: 'application/json',
+            'x-requested-with': 'XMLHttpRequest',
+          },
+        });
+        const firstHtml = typeof first?.results === 'string' ? first.results : '';
+        const firstRows = firstHtml ? parseResults(firstHtml, origin) : [];
+        if (firstRows.length > 0) {
+          const { totalResults, totalPages } = readFragmentTotals(firstHtml);
+          const lastPage = Math.min(totalPages ?? maxPages, maxPages);
+          const appendFresh = (rows) => {
+            let fresh = 0;
+            for (const row of rows) {
+              if (seen.has(row.id)) continue;
+              seen.add(row.id);
+              fresh++;
+              jobs.push({
+                title: row.title,
+                url: row.url,
+                company: entry.name,
+                location: row.location,
+              });
+            }
+            return fresh;
+          };
+          appendFresh(firstRows);
+
+          for (let page = 2; page <= lastPage && jobs.length < maxJobs; page++) {
+            await wait(PAGE_DELAY_MS);
+            let rows;
+            try {
+              const json = await ctx.fetchJson(buildFragmentUrl(listUrl, page), {
+                headers: {
+                  accept: 'application/json',
+                  'x-requested-with': 'XMLHttpRequest',
+                },
+              });
+              const fragment = typeof json?.results === 'string' ? json.results : '';
+              rows = fragment ? parseResults(fragment, origin) : [];
+            } catch {
+              break;
+            }
+            if (rows.length === 0 || appendFresh(rows) === 0) break;
+          }
+
+          const returned = Math.min(jobs.length, maxJobs);
+          if (totalResults !== null && returned < totalResults) {
+            console.error(
+              `⚠️  radancy: ${entry.name} truncated at ${returned} of ${totalResults} postings`
+              + ' — raise max_jobs/max_pages on this entry for more',
+            );
+          }
+          return jobs.slice(0, maxJobs);
+        }
+      } catch {
+        // Fall through to the bounded HTML transport.
+      }
+    }
 
     for (let page = 1; page <= maxPages; page++) {
       if (page > 1) await wait(PAGE_DELAY_MS);
@@ -140,8 +298,8 @@ export default {
       }
       // No new ids → the server clamped ?p= to the last page (or looped). Stop.
       if (fresh === 0) break;
-      if (jobs.length >= MAX_JOBS) break;
+      if (jobs.length >= maxJobs) break;
     }
-    return jobs.slice(0, MAX_JOBS);
+    return jobs.slice(0, maxJobs);
   },
 };

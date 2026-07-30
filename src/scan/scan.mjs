@@ -233,15 +233,28 @@ export function locationHintFromUrl(url) {
   return segment.replace(/[-_+]+/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
-// `url` is optional. Callers that omit it get the original location-only
-// semantics, which is what the existing unit tests exercise.
+// A title can carry the only reliable remote signal while a provider reports
+// the hiring office as its structured location. Keep the marker strict:
+// "Remote Sensing" is a domain, while "- Remote" and "Remote in Texas" are
+// work arrangements. Explicit negation always wins.
+export const REMOTE_TITLE_RE = /(?<![a-z])remote(?=$|\s*[^a-z\s]|\s+in\b)/u;
+export const REMOTE_NEGATED_RE = /\b(?:non|not|no)[^a-z]*remote/u;
+
+export function titleSignalsRemote(title) {
+  if (typeof title !== 'string' || title.trim() === '') return false;
+  const lower = title.toLowerCase();
+  return !REMOTE_NEGATED_RE.test(lower) && REMOTE_TITLE_RE.test(lower);
+}
+
+// `url` and `title` are optional. Callers that omit them retain the original
+// location-only semantics.
 export function buildLocationFilter(locationFilter) {
   if (!locationFilter) return () => true;
   const alwaysAllow = compileLocationKeywordList(locationFilter.always_allow);
   const allow = compileLocationKeywordList(locationFilter.allow);
   const block = compileLocationKeywordList(locationFilter.block);
 
-  return (location, url) => {
+  return (location, url, title) => {
     const lower = typeof location === 'string' ? location.trim().toLowerCase() : '';
     const hint = locationHintFromUrl(url);
     // Nothing to judge on either field → pass (don't penalize missing data).
@@ -253,7 +266,10 @@ export function buildLocationFilter(locationFilter) {
     if (alwaysAllow.length > 0 && alwaysAllow.some(matches)) return true;
     if (block.length > 0 && block.some(matches)) return false;
     if (allow.length === 0) return true;
-    return allow.some(matches);
+    if (allow.some(matches)) return true;
+    // This rescue runs after the block check, so a title can never override an
+    // explicitly prohibited location.
+    return titleSignalsRemote(title);
   };
 }
 
@@ -2043,7 +2059,7 @@ async function main() {
           totalFilteredTier++;
           continue;
         }
-        if (!locationFilter(job.location, job.url)) {
+        if (!locationFilter(job.location, job.url, job.title)) {
           totalFilteredLocation++;
           continue;
         }

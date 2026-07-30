@@ -7,7 +7,12 @@ import { pathToFileURL } from 'url';
 console.log('\nProvider — DNS cache');
 
 try {
-  const { createCachedLookup, isResolverFailure } = await import(
+  const {
+    createCachedLookup,
+    createTokenBucket,
+    isResolverFailure,
+    lookupsPerMinFromEnv,
+  } = await import(
     pathToFileURL(join(ROOT, 'providers/_dns-cache.mjs')).href
   );
 
@@ -145,6 +150,102 @@ try {
       fail(`option variants collapsed into ${resolver.calls.length} key(s), expected 3`);
     }
     resolver.flush();
+  }
+
+  // --- token-bucket pacing is FIFO and deterministic ---
+  {
+    let clock = 0;
+    const timers = [];
+    const admitted = [];
+    const bucket = createTokenBucket({
+      ratePerMin: 60,
+      capacity: 2,
+      now: () => clock,
+      setTimer: (fn, ms) => timers.push({ fn, ms }),
+    });
+    bucket.take(() => admitted.push('a'));
+    bucket.take(() => admitted.push('b'));
+    bucket.take(() => admitted.push('c'));
+    bucket.take(() => admitted.push('d'));
+    const initial = [...admitted];
+    const firstWait = timers.shift();
+    clock += firstWait?.ms ?? 0;
+    firstWait?.fn();
+    const secondWait = timers.shift();
+    clock += secondWait?.ms ?? 0;
+    secondWait?.fn();
+    const stats = bucket.stats();
+    if (
+      JSON.stringify(initial) === JSON.stringify(['a', 'b'])
+      && JSON.stringify(admitted) === JSON.stringify(['a', 'b', 'c', 'd'])
+      && bucket.pending === 0
+      && stats.delayed === 2
+      && stats.waitedMs === 3_000
+    ) {
+      pass('DNS token bucket admits the burst then releases queued lookups FIFO');
+    } else {
+      fail(`DNS token bucket result = ${JSON.stringify({ initial, admitted, pending: bucket.pending, stats })}`);
+    }
+  }
+
+  // --- pacing charges only distinct uncached resolver leaders ---
+  {
+    let clock = 0;
+    const timers = [];
+    const resolver = mkResolver();
+    const lookup = createCachedLookup(resolver, {
+      lookupsPerMin: 60,
+      burst: 1,
+      now: () => clock,
+      setTimer: (fn, ms) => timers.push({ fn, ms }),
+    });
+
+    const first = lookupOnce(lookup, 'one.example');
+    const firstDuplicate = lookupOnce(lookup, 'one.example');
+    const second = lookupOnce(lookup, 'two.example');
+    const beforeRelease = resolver.calls.map(call => call.hostname);
+    resolver.flush();
+    await Promise.all([first, firstDuplicate]);
+
+    const timer = timers.shift();
+    clock += timer?.ms ?? 0;
+    timer?.fn();
+    const afterRelease = resolver.calls.map(call => call.hostname);
+    resolver.flush();
+    await second;
+
+    if (
+      JSON.stringify(beforeRelease) === JSON.stringify(['one.example'])
+      && JSON.stringify(afterRelease) === JSON.stringify(['two.example'])
+      && lookup.pacingStats().delayed === 1
+    ) {
+      pass('DNS pacing charges one token per distinct uncached lookup and preserves coalescing');
+    } else {
+      fail(`DNS pacing/coalescing = ${JSON.stringify({ beforeRelease, afterRelease, stats: lookup.pacingStats() })}`);
+    }
+  }
+
+  // --- environment parsing fails safe ---
+  {
+    const realError = console.error;
+    console.error = () => {};
+    let values;
+    try {
+      values = [
+        lookupsPerMinFromEnv({}),
+        lookupsPerMinFromEnv({ FRONTRUNNER_DNS_LOOKUPS_PER_MIN: '800' }),
+        lookupsPerMinFromEnv({ FRONTRUNNER_DNS_LOOKUPS_PER_MIN: '0' }),
+        lookupsPerMinFromEnv({ FRONTRUNNER_DNS_LOOKUPS_PER_MIN: '-1' }),
+        lookupsPerMinFromEnv({ FRONTRUNNER_DNS_LOOKUPS_PER_MIN: 'oops' }),
+      ];
+    } finally {
+      console.error = realError;
+    }
+    if (JSON.stringify(values) === JSON.stringify([400, 800, 0, 400, 400])) {
+      pass('FRONTRUNNER_DNS_LOOKUPS_PER_MIN accepts safe rates and fails closed to the default');
+    } else {
+      fail(`DNS pacing env values = ${JSON.stringify(values)}`);
+    }
   }
 
   // --- resolver-level failures are told apart from NXDOMAIN ---

@@ -39,6 +39,8 @@
  *   - Failed resolutions are never cached, so an outage cannot be pinned in.
  *
  * Opt out entirely with `FRONTRUNNER_NO_DNS_CACHE=1`.
+ * `FRONTRUNNER_DNS_LOOKUPS_PER_MIN` caps uncached resolver calls (default
+ * 400; 0 disables pacing while retaining caching).
  */
 
 import dns from 'node:dns';
@@ -83,6 +85,83 @@ const DEFAULT_MAX_ENTRIES = 512;
 // resolver otherwise feeds (see #2229), short enough that a resolver coming
 // back is picked up almost immediately.
 const DEFAULT_NEGATIVE_TTL_MS = 30_000;
+const DEFAULT_LOOKUPS_PER_MIN = 400;
+const DEFAULT_BURST = 20;
+const MAX_TIMER_MS = 2_147_483_647;
+
+/**
+ * FIFO token bucket used to pace distinct, uncached hostname lookups. Clock
+ * and timer injection keep the behavior deterministic and network-free in
+ * tests.
+ */
+export function createTokenBucket(options = {}) {
+  const ratePerMin = options.ratePerMin ?? DEFAULT_LOOKUPS_PER_MIN;
+  const capacity = options.capacity ?? DEFAULT_BURST;
+  const now = options.now ?? Date.now;
+  const setTimer = options.setTimer ?? setTimeout;
+  if (!Number.isFinite(ratePerMin) || ratePerMin <= 0) {
+    throw new RangeError(`ratePerMin must be a finite number > 0, got ${ratePerMin}`);
+  }
+  if (!Number.isFinite(capacity) || capacity < 1) {
+    throw new RangeError(`capacity must be a finite number >= 1, got ${capacity}`);
+  }
+
+  const tokensPerMs = ratePerMin / 60_000;
+  let tokens = capacity;
+  let lastRefill = now();
+  const queue = [];
+  let timerPending = false;
+  let delayed = 0;
+  let waitedMs = 0;
+
+  function refill() {
+    const current = now();
+    tokens = Math.min(capacity, tokens + (current - lastRefill) * tokensPerMs);
+    lastRefill = current;
+  }
+
+  function schedule() {
+    if (timerPending || queue.length === 0) return;
+    timerPending = true;
+    const waitMs = Math.ceil((1 - tokens) / tokensPerMs);
+    setTimer(pump, Math.min(MAX_TIMER_MS, Math.max(1, waitMs)));
+  }
+
+  function pump() {
+    timerPending = false;
+    refill();
+    try {
+      while (queue.length > 0 && tokens >= 1) {
+        tokens -= 1;
+        const { fn, queuedAt } = queue.shift();
+        delayed++;
+        waitedMs += now() - queuedAt;
+        fn();
+      }
+    } finally {
+      schedule();
+    }
+  }
+
+  return {
+    take(fn) {
+      refill();
+      if (queue.length === 0 && tokens >= 1) {
+        tokens -= 1;
+        fn();
+        return;
+      }
+      queue.push({ fn, queuedAt: now() });
+      schedule();
+    },
+    get pending() {
+      return queue.length;
+    },
+    stats() {
+      return { delayed, waitedMs };
+    },
+  };
+}
 
 /**
  * Build a caching wrapper around a callback-style `dns.lookup`.
@@ -102,6 +181,15 @@ export function createCachedLookup(realLookup, options = {}) {
   const negativeTtlMs = options.negativeTtlMs ?? DEFAULT_NEGATIVE_TTL_MS;
   const maxEntries = options.maxEntries ?? DEFAULT_MAX_ENTRIES;
   const now = options.now ?? Date.now;
+  const lookupsPerMin = options.lookupsPerMin ?? DEFAULT_LOOKUPS_PER_MIN;
+  const bucket = lookupsPerMin > 0
+    ? createTokenBucket({
+      ratePerMin: lookupsPerMin,
+      capacity: options.burst ?? DEFAULT_BURST,
+      now,
+      setTimer: options.setTimer,
+    })
+    : null;
 
   /** @type {Map<string, { expires: number, args: any[] }>} */
   const cache = new Map();
@@ -136,7 +224,9 @@ export function createCachedLookup(realLookup, options = {}) {
     }
     inflight.set(key, [callback]);
 
-    realLookup(hostname, opts, (err, ...rest) => {
+    // Keep the key in `inflight` while waiting for a token. Concurrent callers
+    // for the same hostname coalesce and therefore spend only one token.
+    const resolve = () => realLookup(hostname, opts, (err, ...rest) => {
       const callbacks = inflight.get(key) ?? [];
       inflight.delete(key);
 
@@ -156,6 +246,8 @@ export function createCachedLookup(realLookup, options = {}) {
 
       for (const cb of callbacks) cb(err, ...rest);
     });
+    if (bucket) bucket.take(resolve);
+    else resolve();
   }
 
   // dns.lookup carries an internal symbol telling util.promisify which
@@ -165,9 +257,35 @@ export function createCachedLookup(realLookup, options = {}) {
     cachedLookup[sym] = realLookup[sym];
   }
 
+  cachedLookup.pacingStats = () =>
+    (bucket ? bucket.stats() : { delayed: 0, waitedMs: 0 });
+
   return cachedLookup;
 }
 
+export function lookupsPerMinFromEnv(env = process.env) {
+  const raw = env.FRONTRUNNER_DNS_LOOKUPS_PER_MIN;
+  if (raw === undefined || String(raw).trim() === '') return DEFAULT_LOOKUPS_PER_MIN;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < 0) {
+    console.error(
+      `⚠ FRONTRUNNER_DNS_LOOKUPS_PER_MIN=${raw} is invalid; `
+      + `using ${DEFAULT_LOOKUPS_PER_MIN} lookups/min`,
+    );
+    return DEFAULT_LOOKUPS_PER_MIN;
+  }
+  return value;
+}
+
+let patched = null;
+
+export function dnsPacingStats() {
+  return patched?.pacingStats?.() ?? { delayed: 0, waitedMs: 0 };
+}
+
 if (process.env.FRONTRUNNER_NO_DNS_CACHE !== '1') {
-  dns.lookup = createCachedLookup(dns.lookup);
+  patched = createCachedLookup(dns.lookup, {
+    lookupsPerMin: lookupsPerMinFromEnv(),
+  });
+  dns.lookup = patched;
 }

@@ -241,19 +241,28 @@ test('run history refuses to replace a symbolic-link target', async t => {
   assert.equal(readFileSync(target, 'utf8'), 'do not replace\n');
 });
 
-test('destructive concurrent writers retain every completed run', async t => {
+test('destructive concurrent writers retain every completed run across repeated contention', async t => {
   const { file } = fixture(t);
-  const results = await Promise.all([
-    runWorker(file, 'alpha', 25),
-    runWorker(file, 'bravo', 25),
-    runWorker(file, 'charlie', 25),
-    runWorker(file, 'delta', 25),
-  ]);
-  assert.deepEqual(results.map(result => result.code), [0, 0, 0, 0], results.map(result => result.stderr).join('\n'));
+  const prefixes = ['alpha', 'bravo', 'charlie', 'delta'];
+  for (let batch = 0; batch < 2; batch++) {
+    const results = await Promise.all(prefixes.map(prefix =>
+      runWorker(file, `${prefix}-${String(batch)}`, 25)));
+    assert.deepEqual(
+      results.map(result => result.code),
+      [0, 0, 0, 0],
+      results.map(result => result.stderr).join('\n'),
+    );
+  }
 
   const records = readFileSync(file, 'utf8').trim().split('\n').map(JSON.parse);
-  assert.equal(records.length, 100);
-  assert.equal(new Set(records.map(item => item.runId)).size, 100);
+  const expected = new Set(Array.from({ length: 2 }, (_, batch) =>
+    prefixes.flatMap(prefix =>
+      Array.from({ length: 25 }, (_, index) => `${prefix}-${String(batch)}-${String(index)}`)))
+    .flat());
+  const actual = new Set(records.map(item => item.runId));
+  assert.deepEqual([...expected].filter(runId => !actual.has(runId)), []);
+  assert.equal(records.length, expected.size);
+  assert.equal(actual.size, expected.size);
 });
 
 test('application and pipeline adapters expose useful counts without hostile content', () => {

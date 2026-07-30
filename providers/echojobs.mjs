@@ -41,6 +41,10 @@ function resolveMaxPages(entry) {
   return DEFAULT_MAX_PAGES;
 }
 
+// Avoid a doubled work-model marker when the board already includes it in the
+// location ("Berlin (Hybrid)", "Hybrid - London").
+const HYBRID_MARKER = /\bhybrid\b/iu;
+
 /**
  * Normalize a single EchoJobs feed item. Exported for tests.
  *
@@ -50,8 +54,9 @@ function resolveMaxPages(entry) {
  *               host (NOT echojobs.io), used as the dedup key. Non-https/malformed
  *               URLs drop the item.
  *   - company:  `company_name`, falling back to the portal entry name, then "EchoJobs".
- *   - location: the joined `locations` array; falls back to "Remote" when the
- *               posting has no listed place but `remote_type` is remote/hybrid.
+ *   - location: the joined `locations` array, with " · Hybrid" appended for a
+ *               hybrid role. Placeless hybrid and remote roles fall back to
+ *               "Hybrid" and "Remote" respectively, keeping them filterable.
  *   - postedAt: `posted_at` (already epoch ms) when a positive finite number.
  *
  * @param {any} j
@@ -90,7 +95,16 @@ export function normalizeEchojobsJob(j, fallbackCompany) {
       .map((l) => l.trim())
       .join(', ');
   }
-  if (!location && (j.remote_type === 'remote' || j.remote_type === 'hybrid')) location = 'Remote';
+  const remoteType = typeof j.remote_type === 'string'
+    ? j.remote_type.trim().toLowerCase()
+    : '';
+  if (remoteType === 'hybrid') {
+    if (!HYBRID_MARKER.test(location)) {
+      location = [location, 'Hybrid'].filter(Boolean).join(' · ');
+    }
+  } else if (!location && remoteType === 'remote') {
+    location = 'Remote';
+  }
 
   /** @type {{ title: string, url: string, company: string, location: string, postedAt?: number }} */
   const job = { title, url, company, location };

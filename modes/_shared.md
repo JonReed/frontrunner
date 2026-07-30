@@ -70,7 +70,7 @@ Block G covers posting legitimacy separately. The global score is 1-5:
 | Comp | Salary vs market (5=top quartile, 1=well below) |
 | Cultural signals | Company culture, growth, stability, remote policy |
 | Red flags | Blockers, warnings (negative adjustments) |
-| **Global** | Weighted average of above |
+| **Global** | Holistic judgment integrating the dimensions above (no arithmetic formula) |
 
 **Score interpretation:**
 - 4.5+ → Strong match, recommend applying immediately

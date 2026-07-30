@@ -35,6 +35,8 @@ const TERMINAL_STATUS_PRIORITY = Object.freeze({
 const OPERATION_RE = /^[a-z][a-z0-9.-]{0,79}$/u;
 const RUN_ID_RE = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u;
 const PIPELINE_STAGE_SET = new Set(PIPELINE_STAGES);
+const WRITE_SETTLE_DELAYS_MS = Object.freeze([10]);
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 function assertSafeHistoryWriteTarget(file) {
   if (existsSync(file) && lstatSync(file).isSymbolicLink()) {
@@ -245,44 +247,60 @@ export async function writeRunHistory(value, options = {}) {
   }
   const record = normalizeRunHistoryRecord(value);
 
-  assertSafeHistoryWriteTarget(file);
-  await mutateFileLocked(file, (content) => {
+  const mutateHistory = async ({ restoreOnly = false } = {}) => {
     assertSafeHistoryWriteTarget(file);
-    const records = parseHistory(content);
-    const existingIndex = records.findIndex(item =>
-      item.runId === record.runId && item.operation === record.operation);
-    if (existingIndex >= 0) {
-      const existing = records[existingIndex];
-      records.splice(existingIndex, 1);
-      records.push(normalizeRunHistoryRecord({
-        ...existing,
-        ...record,
-        status: mergeTerminalStatus(existing.status, record.status),
-        counts: record.counts ?? existing.counts,
-        usage: record.usage ?? existing.usage,
-        stages: record.stages ?? existing.stages,
-      }));
-    } else {
-      records.push(record);
-    }
-    records.splice(0, Math.max(0, records.length - maxRecords));
-    while (records.length > 1) {
-      const serialized = `${records.map(item => JSON.stringify(item)).join('\n')}\n`;
-      if (Buffer.byteLength(serialized) <= maxBytes) return serialized;
-      records.shift();
-    }
-    const serialized = `${JSON.stringify(records[0])}\n`;
-    if (Buffer.byteLength(serialized) > maxBytes) {
-      throw new Error('run history record exceeds the configured byte limit');
-    }
-    return serialized;
-  }, {
-    lockOptions: options.lockOptions,
-    writeOptions: {
-      mode: 0o600,
-      ...options.writeOptions,
-    },
-  });
+    await mutateFileLocked(file, (content) => {
+      assertSafeHistoryWriteTarget(file);
+      const records = parseHistory(content);
+      const existingIndex = records.findIndex(item =>
+        item.runId === record.runId && item.operation === record.operation);
+      if (restoreOnly && existingIndex >= 0) return content;
+      if (restoreOnly && records.length >= maxRecords) return content;
+      if (existingIndex >= 0) {
+        const existing = records[existingIndex];
+        records.splice(existingIndex, 1);
+        records.push(normalizeRunHistoryRecord({
+          ...existing,
+          ...record,
+          status: mergeTerminalStatus(existing.status, record.status),
+          counts: record.counts ?? existing.counts,
+          usage: record.usage ?? existing.usage,
+          stages: record.stages ?? existing.stages,
+        }));
+      } else {
+        records.push(record);
+      }
+      records.splice(0, Math.max(0, records.length - maxRecords));
+      while (records.length > 1) {
+        const serialized = `${records.map(item => JSON.stringify(item)).join('\n')}\n`;
+        if (Buffer.byteLength(serialized) <= maxBytes) return serialized;
+        records.shift();
+      }
+      const serialized = `${JSON.stringify(records[0])}\n`;
+      if (Buffer.byteLength(serialized) > maxBytes) {
+        throw new Error('run history record exceeds the configured byte limit');
+      }
+      return serialized;
+    }, {
+      lockOptions: options.lockOptions,
+      writeOptions: {
+        mode: 0o600,
+        ...options.writeOptions,
+      },
+    });
+  };
+
+  await mutateHistory();
+
+  // Atomic directory locks are the primary exclusion mechanism. A short
+  // read-back window adds defense in depth for filesystems that transiently
+  // expose a just-removed lock directory as absent to more than one process.
+  // Only restore a missing record while the history is below its retention
+  // cap; a full history may have legitimately evicted this older write.
+  for (const delayMs of WRITE_SETTLE_DELAYS_MS) {
+    await sleep(delayMs);
+    await mutateHistory({ restoreOnly: true });
+  }
   return record;
 }
 

@@ -7,9 +7,19 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 
-import { acquireUpdateLock, adoptUpdateLock } from '../../update-system.mjs';
+import {
+  acquireUpdateLock,
+  adoptUpdateLock,
+  shellQuotePath,
+} from '../../update-system.mjs';
 
 const UPDATER_URL = new URL('../../update-system.mjs', import.meta.url).href;
+
+test('recovery commands shell-quote literal update paths', () => {
+  assert.equal(shellQuotePath('docs/file with spaces.md'), "'docs/file with spaces.md'");
+  assert.equal(shellQuotePath('docs/$HOME.md'), "'docs/$HOME.md'");
+  assert.equal(shellQuotePath("docs/maintainer's guide.md"), "'docs/maintainer'\\''s guide.md'");
+});
 
 function spawnLockHolder(lockFile) {
   const proc = spawn(process.execPath, ['--input-type=module', '-e', `

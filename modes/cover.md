@@ -276,6 +276,14 @@ Fill the resolved template's `{{...}}` placeholders. A non-zero exit means the n
 
 Only after explicit user approval.
 
+Before rendering, run the shared candidate-fact validator against the assembled
+cover-letter HTML. It checks metric claims plus explicitly asserted employers,
+titles and tools against `workspace/profile/cv.md`,
+`workspace/profile/article-digest.md`, and the optional
+`workspace/profile/cv-facts.json` allowlist. A `block` verdict stops rendering;
+`warn_phrases` remain advisory. Add real evidence to the trusted profile files
+or a verified allowlist exception rather than weakening the gate.
+
 Assemble the JSON payload:
 
 ```json

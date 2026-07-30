@@ -20,6 +20,7 @@ import { fileURLToPath, pathToFileURL } from "url";
 import { parseArgs } from "util";
 import { resolveTemplate } from "./cv-templates.mjs";
 import { readBoundedRegularFileSync } from "../lib/safe-file-read.mjs";
+import { assertFacts } from "./verify-cv-facts.mjs";
 
 const OUTPUT_ROOT = OUTPUT_DIR;
 
@@ -178,6 +179,10 @@ export function buildHtml(payload, templatePath) {
   return html.replace(/\{\{[A-Z_]+\}\}/g, (token) => replacements[token] ?? token);
 }
 
+export function validateCoverLetterHtml(html, options = {}) {
+  return assertFacts(html, { label: "cover letter", ...options });
+}
+
 async function main() {
   const { values: args } = parseArgs({
     options: {
@@ -227,13 +232,20 @@ Usage:
     payload.output_path = safeOutputPath(payload.output_path);
   }
 
-  mkdirSync(OUTPUT_ROOT, { recursive: true });
-
-  // Imported lazily so buildHtml can be used (and tested) without Playwright.
-  const { renderHtmlToPdf } = await import("./generate-pdf.mjs");
-
   try {
     const html = buildHtml(payload);
+    const factCheck = validateCoverLetterHtml(html);
+    if (factCheck.verdict === "warn") {
+      console.error("Candidate fact check warning: cover letter");
+      for (const phrase of factCheck.warnings) {
+        console.error(`  - advisory phrase: ${phrase}`);
+      }
+    }
+
+    // Validate before loading Chromium or creating an output directory. A
+    // blocking claim must leave no misleading artifact behind.
+    mkdirSync(OUTPUT_ROOT, { recursive: true });
+    const { renderHtmlToPdf } = await import("./generate-pdf.mjs");
     const outputPath = resolve(payload.output_path);
     await renderHtmlToPdf(html, outputPath, {
       format: args.format || "a4",
