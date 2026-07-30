@@ -120,10 +120,41 @@ export function parseDate(dateStr) {
 // "APPLIED ..."). Prefer that so cadence reflects when the application actually
 // went out, not when the role was evaluated. Returns the first such date, or
 // null when the notes don't carry one (caller falls back to the date column).
-export function parseAppliedDate(notes) {
+export function parseAppliedDate(notes, options = {}) {
   if (!notes) return null;
-  const m = String(notes).match(/\bapplied\s+(\d{4}-\d{2}-\d{2})/i);
-  return m ? m[1] : null;
+  const requireValid = options.requireValidCalendarDate === true;
+  for (const match of String(notes).matchAll(
+    /\bapplied\s+~?(\d{4}-\d{2}-\d{2})(?![\w-])/giu,
+  )) {
+    if (!requireValid || isRealCalendarDate(match[1])) return match[1];
+  }
+  return null;
+}
+
+export function isRealCalendarDate(iso) {
+  if (!/^\d{4}-\d{2}-\d{2}$/u.test(String(iso ?? ''))) return false;
+  const [year, month, day] = iso.split('-').map(Number);
+  if (month < 1 || month > 12 || day < 1) return false;
+  const date = new Date(0);
+  date.setUTCFullYear(year, month - 1, day);
+  date.setUTCHours(0, 0, 0, 0);
+  return (
+    date.getUTCFullYear() === year
+    && date.getUTCMonth() === month - 1
+    && date.getUTCDate() === day
+  );
+}
+
+export function resolveAppliedDate(app) {
+  const notesDate = parseAppliedDate(app?.notes, {
+    requireValidCalendarDate: true,
+  });
+  return notesDate
+    ? { appliedDate: notesDate, appDateSource: 'notes' }
+    : {
+        appliedDate: app?.date ?? null,
+        appDateSource: 'evaluation-date-fallback',
+      };
 }
 
 /**
@@ -227,20 +258,92 @@ export function resolveNextOverride(override, lastFollowupDate) {
 }
 
 // --- Extract contacts from notes ---
-function extractContacts(notes) {
+const EMAIL_RE = /[\w.-]+@[\w.-]+\.\w+/gu;
+const OUTREACH_PREFIX_RE = /\b(?:recruiter|hiring manager|messaged|contacted|emailed|called|reached out to|spoke with|outreach)\b[\s(:-]*/giu;
+const PERSON_NAME_RE = /^(\p{Lu}[\p{L}\p{M}]*(?:[-'’]\p{L}[\p{L}\p{M}]*)?(?:\s+\p{Lu}[\p{L}\p{M}]*(?:[-'’]\p{L}[\p{L}\p{M}]*)?){0,3})/u;
+
+function splitStatements(notes) {
+  return String(notes)
+    .split(/[;\n]+|\.\s+(?=\p{Lu})/gu)
+    .filter(statement => statement.trim());
+}
+
+function outreachNames(statement) {
+  const names = [];
+  for (const prefix of statement.matchAll(OUTREACH_PREFIX_RE)) {
+    const tail = statement.slice((prefix.index ?? 0) + prefix[0].length);
+    const name = tail.match(PERSON_NAME_RE)?.[1]?.trim();
+    if (name) names.push(name);
+  }
+  return names;
+}
+
+function detectChannel(statement, hasEmail = false) {
+  if (/\blinkedin\b/iu.test(statement)) return 'linkedin';
+  if (/\bphone\b|\bcalled\b/iu.test(statement)) return 'phone';
+  if (/\bemail(?:ed)?\b/iu.test(statement) || hasEmail) return 'email';
+  return null;
+}
+
+export function extractContacts(notes) {
   if (!notes) return [];
+  const byEmail = new Map();
+  const byName = new Map();
   const contacts = [];
-  const emailRegex = /[\w.-]+@[\w.-]+\.\w+/g;
-  const emails = notes.match(emailRegex) || [];
-  for (const email of emails) {
-    // Try to extract name before email: "Emailed Name at" or "contact: Name"
-    let name = null;
-    const beforeEmail = notes.substring(0, notes.indexOf(email));
-    const nameMatch = beforeEmail.match(/(?:Emailed|emailed|contact[:\s]+|to\s+)([A-Z][a-z]+ ?[A-Z]?[a-z]*)\s*(?:at|@|$)/i);
-    if (nameMatch) name = nameMatch[1].trim();
-    contacts.push({ email, name });
+
+  const add = ({ name = null, email = null, channel = null }) => {
+    const emailKey = email?.toLowerCase() ?? null;
+    const nameKey = name?.toLocaleLowerCase() ?? null;
+    const emailContact = emailKey ? byEmail.get(emailKey) : null;
+    const nameContact = nameKey ? byName.get(nameKey) : null;
+
+    if (emailContact && nameContact && emailContact !== nameContact) {
+      emailContact.name ||= nameContact.name;
+      emailContact.email ||= nameContact.email;
+      emailContact.channel ||= nameContact.channel;
+      const index = contacts.indexOf(nameContact);
+      if (index !== -1) contacts.splice(index, 1);
+      for (const [key, value] of byEmail) {
+        if (value === nameContact) byEmail.set(key, emailContact);
+      }
+      for (const [key, value] of byName) {
+        if (value === nameContact) byName.set(key, emailContact);
+      }
+    }
+
+    const existing = emailContact || nameContact;
+    if (existing) {
+      existing.name ||= name;
+      existing.email ||= email;
+      existing.channel ||= channel;
+      if (existing.email) byEmail.set(existing.email.toLowerCase(), existing);
+      if (existing.name) byName.set(existing.name.toLocaleLowerCase(), existing);
+      return;
+    }
+
+    const contact = { name, email, channel };
+    contacts.push(contact);
+    if (emailKey) byEmail.set(emailKey, contact);
+    if (nameKey) byName.set(nameKey, contact);
+  };
+
+  for (const statement of splitStatements(notes)) {
+    const emails = statement.match(EMAIL_RE) ?? [];
+    const names = outreachNames(statement);
+    if (emails.length === 0 && names.length === 0) continue;
+    const channel = detectChannel(statement, emails.length > 0);
+    if (emails.length === 1 && names.length === 1) {
+      add({ name: names[0], email: emails[0], channel });
+      continue;
+    }
+    for (const email of emails) add({ email, channel });
+    for (const name of names) add({ name, channel });
   }
   return contacts;
+}
+
+export function contactLabel(contact) {
+  return contact?.email || contact?.name || '-';
 }
 
 // --- Resolve report path ---
@@ -328,7 +431,7 @@ export function analyzeFromContent(trackerContent, followupsContent = '') {
     if (!ACTIONABLE_STATUSES.includes(normalized)) continue;
 
     // Prefer the "Applied YYYY-MM-DD" date from notes; fall back to the column.
-    const appliedDate = parseAppliedDate(app.notes) || app.date;
+    const { appliedDate, appDateSource } = resolveAppliedDate(app);
     const cadenceDate = parseStatusDate(app.notes, normalized) || appliedDate;
     const appDate = parseDate(cadenceDate);
     if (!appDate) continue;
@@ -369,6 +472,7 @@ export function analyzeFromContent(trackerContent, followupsContent = '') {
       num: app.num,
       date: app.date,
       appliedDate,
+      appDateSource,
       cadenceDate,
       company: app.company,
       // Intermediary channel (#1596): agency name when the application went
@@ -453,7 +557,7 @@ function printSummary(result) {
   for (const e of entries) {
     const urgLabel = urgencyIcon[e.urgency] || e.urgency;
     const nextStr = e.nextFollowupDate || '-';
-    const contactStr = e.contacts.length > 0 ? e.contacts[0].email : '-';
+    const contactStr = e.contacts.length > 0 ? contactLabel(e.contacts[0]) : '-';
     console.log(
       '  ' +
       String(e.num).padEnd(5) +

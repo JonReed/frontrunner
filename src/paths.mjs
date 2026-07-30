@@ -44,6 +44,7 @@ export const STATE_DIR = join(WORKSPACE_DIR, '.state');
 export const REPORTS_DIR = join(WORKSPACE_DIR, 'reports', 'evaluations');
 export const ANALYSIS_REPORTS_DIR = join(WORKSPACE_DIR, 'reports', 'analysis');
 export const OUTPUT_DIR = join(WORKSPACE_DIR, 'documents');
+export const APPLICATION_DOCUMENTS_DIR = join(OUTPUT_DIR, 'applications');
 export const JDS_DIR = join(WORKSPACE_DIR, 'jobs', 'descriptions');
 export const INTERVIEW_PREP_DIR = join(WORKSPACE_DIR, 'interviews');
 export const CV_VERSIONS_DIR = join(PROFILE_DIR, 'cv-versions');

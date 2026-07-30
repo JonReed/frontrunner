@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * verify-cv-facts.mjs — Guard generated CVs against invented metrics.
+ * verify-cv-facts.mjs — Guard candidate-facing documents against invented facts.
  *
  * Usage:
  *   node src/cv/verify-cv-facts.mjs <generated-cv.html|md|tex>
@@ -9,16 +9,35 @@
  *   node src/cv/verify-cv-facts.mjs --self-test
  */
 
-import { existsSync, readFileSync } from 'fs';
+import { existsSync } from 'fs';
 import { isAbsolute, join, dirname, basename } from 'path';
 import { fileURLToPath } from 'url';
 
-import { ROOT } from '#paths';
-const DEFAULT_SOURCES = ['workspace/profile/cv.md', 'workspace/profile/article-digest.md'];
-const DEFAULT_CONFIG = join(ROOT, 'config', 'cv-facts.json');
+import {
+  ARTICLE_DIGEST_FILE,
+  CV_FILE,
+  PROFILE_DIR,
+} from '#paths';
+import { readBoundedRegularFileSync } from '../lib/safe-file-read.mjs';
+
+const DEFAULT_SOURCES = [CV_FILE, ARTICLE_DIGEST_FILE];
+const DEFAULT_CONFIG = join(PROFILE_DIR, 'cv-facts.json');
+const MAX_SOURCE_BYTES = 2 * 1024 * 1024;
+const MAX_CONFIG_BYTES = 64 * 1024;
+const MAX_TARGET_BYTES = 10 * 1024 * 1024;
+const TOOL_PROSE_WORDS = new Set([
+  'a', 'an', 'and', 'at', 'built', 'by', 'containerized', 'deployment',
+  'deployments', 'for', 'from', 'in', 'of', 'on', 'production', 'project',
+  'team', 'the', 'to', 'using', 'with',
+]);
+const TOOL_PHRASE_PATTERN = /^(?=.{1,80}$)[\p{L}\p{N}.][\p{L}\p{N}+#./-]*(?:\s+[\p{L}\p{N}.][\p{L}\p{N}+#./-]*){0,2}$/u;
 
 function readIfExists(path) {
-  return existsSync(path) ? readFileSync(path, 'utf-8') : '';
+  return readBoundedRegularFileSync(path, {
+    maxBytes: MAX_SOURCE_BYTES,
+    allowMissing: true,
+    label: 'candidate fact source',
+  }) ?? '';
 }
 
 function stripMarkup(text) {
@@ -40,6 +59,50 @@ function stripMarkup(text) {
 
 function normalizeClaim(claim) {
   return claim.toLowerCase().replace(/[,\s]+/g, ' ').trim();
+}
+
+function normalizeFact(value) {
+  return normalizeClaim(value).replace(/[.;:,]+$/g, '').trim();
+}
+
+function isLikelyTool(value) {
+  const normalized = normalizeFact(value);
+  const words = normalized.split(' ');
+  if (!normalized || words.length > 3 || words.some(word => TOOL_PROSE_WORDS.has(word))) {
+    return false;
+  }
+  return TOOL_PHRASE_PATTERN.test(value.trim());
+}
+
+/**
+ * Extract only explicitly asserted employers, job titles and tools.
+ *
+ * Deliberately narrow grammar avoids treating arbitrary prose as a claim.
+ * Unknown lowercase tools still fail closed once introduced by "using",
+ * "built with", or another explicit technology marker.
+ */
+function factClaims(text) {
+  const clean = stripMarkup(text);
+  const claims = [];
+  const patterns = [
+    ['employer', /\b(?:worked at|joined|employer\s*:\s*|company\s*:\s*)\s*([\p{L}\p{N}][\p{L}\p{N}&.'’/-]*(?:\s+(?!(?:as|to|where)\b)[\p{L}\p{N}][\p{L}\p{N}&.'’/-]*){0,4})/giu],
+    ['title', /\b(?:served as|worked as|title\s*:\s*|role\s*:\s*)\s*(?:an?\s+|the\s+)?([\p{L}\p{N}][\p{L}\p{N}+#/-]*(?:\s+(?!at\b)[\p{L}\p{N}][\p{L}\p{N}+#/-]*){0,5})|\b(?:worked at|joined)\s+[\p{L}\p{N}][\p{L}\p{N}&.'’/-]*(?:\s+(?!as\b)[\p{L}\p{N}][\p{L}\p{N}&.'’/-]*){0,4}\s+as\s+(?:an?\s+|the\s+)?([\p{L}\p{N}][\p{L}\p{N}+#/-]*(?:\s+(?!at\b)[\p{L}\p{N}][\p{L}\p{N}+#/-]*){0,5})/giu],
+    ['tool', /\b(?:using|built with|worked with|technologies?\s*:\s*|tech stack\s*:\s*)([^.;\n]+?)(?=\s+\b(?:for|to|across|while)\b|[.;\n]|$)/giu],
+  ];
+
+  for (const [kind, pattern] of patterns) {
+    for (const match of clean.matchAll(pattern)) {
+      const toolText = kind === 'tool' ? match[1].trim() : '';
+      const rawValues = kind === 'tool'
+        ? (/^the\s+/i.test(toolText) ? [] : toolText.split(/,|\band\b|\bwith\b|\bin\b/i))
+        : [match[1] || match[2]];
+      for (const raw of rawValues) {
+        const value = normalizeFact(raw);
+        if (value && (kind !== 'tool' || isLikelyTool(raw))) claims.push({ kind, value });
+      }
+    }
+  }
+  return claims;
 }
 
 // Countable nouns a CV routinely attaches a number to. Kept explicit rather
@@ -118,9 +181,19 @@ function metricClaims(text) {
 }
 
 function loadConfig(path) {
-  if (!existsSync(path)) return { allow_metrics: [], forbidden_phrases: [] };
-  const config = JSON.parse(readFileSync(path, 'utf-8'));
-  for (const key of ['allow_metrics', 'forbidden_phrases']) {
+  if (!existsSync(path)) {
+    return {
+      allow_metrics: [],
+      allow_facts: [],
+      forbidden_phrases: [],
+      warn_phrases: [],
+    };
+  }
+  const config = JSON.parse(readBoundedRegularFileSync(path, {
+    maxBytes: MAX_CONFIG_BYTES,
+    label: 'candidate fact config',
+  }));
+  for (const key of ['allow_metrics', 'allow_facts', 'forbidden_phrases', 'warn_phrases']) {
     if (config[key] == null) {
       config[key] = [];
     } else if (!Array.isArray(config[key])) {
@@ -132,6 +205,16 @@ function loadConfig(path) {
 
 function resolveInputPath(path) {
   return isAbsolute(path) ? path : join(process.cwd(), path);
+}
+
+function sourceContainsFact(sourceText, value) {
+  const escaped = value
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    .replace(/\s+/g, '\\s+');
+  return new RegExp(
+    `(?:^|[^\\p{L}\\p{N}+#/-])${escaped}(?=$|[^\\p{L}\\p{N}+#/-])`,
+    'iu',
+  ).test(sourceText);
 }
 
 /**
@@ -153,7 +236,68 @@ function auditClaims(targetText, sourceText, config = {}) {
   return { invented, forbidden };
 }
 
-export { metricClaims, stripMarkup, normalizeClaim, auditClaims };
+/**
+ * Run the canonical fact gate against the trusted candidate source files.
+ */
+function verifyFacts(targetText, options = {}) {
+  const sourcePaths = options.sourcePaths ?? DEFAULT_SOURCES;
+  const configPath = options.configPath ?? DEFAULT_CONFIG;
+  const sourceText = sourcePaths
+    .map(path => readIfExists(resolveInputPath(path)))
+    .join('\n');
+  const config = loadConfig(resolveInputPath(configPath));
+  const { invented, forbidden } = auditClaims(targetText, sourceText, config);
+  const normalizedSource = normalizeFact(stripMarkup(sourceText));
+  const allowedFacts = new Set(config.allow_facts.map(normalizeFact));
+  const unsupportedFacts = factClaims(targetText)
+    .filter(({ value }) => !sourceContainsFact(normalizedSource, value) && !allowedFacts.has(value))
+    .filter((claim, index, claims) => (
+      claims.findIndex(other => other.kind === claim.kind && other.value === claim.value) === index
+    ));
+  const cleanTarget = stripMarkup(targetText).toLowerCase();
+  const warnings = config.warn_phrases
+    .filter(Boolean)
+    .filter(phrase => cleanTarget.includes(String(phrase).toLowerCase()));
+  return {
+    verdict: invented.length || unsupportedFacts.length || forbidden.length
+      ? 'block'
+      : warnings.length ? 'warn' : 'pass',
+    invented,
+    unsupportedFacts,
+    forbidden,
+    warnings,
+  };
+}
+
+function assertFacts(targetText, options = {}) {
+  const result = verifyFacts(targetText, options);
+  if (result.verdict !== 'block') return result;
+  const details = [];
+  if (result.invented.length) {
+    details.push(`metric-like claims absent from sources: ${result.invented.join(', ')}`);
+  }
+  if (result.unsupportedFacts.length) {
+    details.push(`non-metric facts absent from sources: ${
+      result.unsupportedFacts.map(({ kind, value }) => `${kind}=${value}`).join(', ')
+    }`);
+  }
+  if (result.forbidden.length) {
+    details.push(`forbidden phrases found: ${result.forbidden.join(', ')}`);
+  }
+  throw new Error(
+    `Fact check failed${options.label ? ` for ${options.label}` : ''}: ${details.join('; ')}`,
+  );
+}
+
+export {
+  assertFacts,
+  auditClaims,
+  factClaims,
+  metricClaims,
+  normalizeClaim,
+  stripMarkup,
+  verifyFacts,
+};
 
 // ── Self-test ────────────────────────────────────────────────────────
 
@@ -320,9 +464,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     if (!targetArg || args.includes('--help') || args.includes('-h')) {
       console.log(`Usage: node src/cv/verify-cv-facts.mjs <generated-cv> [--source path] [--config path]
 
-Checks generated CV text for metric-like claims that are absent from source files.
+Checks candidate-facing text for unsupported metrics and explicitly asserted
+employers, job titles and tools that are absent from trusted source files.
 Default sources: workspace/profile/cv.md, workspace/profile/article-digest.md
-Default config:  workspace/profile/cv-facts.json (optional)`);
+Default config: workspace/profile/cv-facts.json (optional)`);
       process.exit(targetArg ? 0 : 1);
     }
 
@@ -333,20 +478,35 @@ Default config:  workspace/profile/cv-facts.json (optional)`);
     }
 
     const sources = sourceArgs.length > 0 ? sourceArgs : DEFAULT_SOURCES;
-    const sourceText = sources.map(path => readIfExists(resolveInputPath(path))).join('\n');
-    const targetText = readFileSync(targetPath, 'utf-8');
-    let config;
+    const targetText = readBoundedRegularFileSync(targetPath, {
+      maxBytes: MAX_TARGET_BYTES,
+      label: 'generated candidate document',
+    });
+    let result;
     try {
-      config = loadConfig(resolveInputPath(configPath));
+      result = verifyFacts(targetText, {
+        sourcePaths: sources,
+        configPath: resolveInputPath(configPath),
+      });
     } catch (err) {
       console.error(`ERROR: invalid config: ${err.message}`);
       process.exit(1);
     }
 
-    const { invented, forbidden } = auditClaims(targetText, sourceText, config);
+    const {
+      invented,
+      unsupportedFacts,
+      forbidden,
+      warnings,
+    } = result;
 
-    if (invented.length === 0 && forbidden.length === 0) {
+    if (result.verdict === 'pass') {
       console.log(`CV fact check passed: ${basename(targetPath)}`);
+      process.exit(0);
+    }
+    if (result.verdict === 'warn') {
+      console.error(`CV fact check warning: ${basename(targetPath)}`);
+      for (const phrase of warnings) console.error(`  - advisory phrase: ${phrase}`);
       process.exit(0);
     }
 
@@ -354,6 +514,12 @@ Default config:  workspace/profile/cv-facts.json (optional)`);
     if (invented.length > 0) {
       console.error('\nMetric-like claims absent from sources:');
       for (const claim of invented) console.error(`  - ${claim}`);
+    }
+    if (unsupportedFacts.length > 0) {
+      console.error('\nNon-metric facts absent from sources:');
+      for (const { kind, value } of unsupportedFacts) {
+        console.error(`  - ${kind}: ${value}`);
+      }
     }
     if (forbidden.length > 0) {
       console.error('\nForbidden phrases found:');

@@ -25,6 +25,13 @@ the interactive agent and do not construct a render payload by hand.
 5. Report the generated PDF path. If the fact gate or page check fails, surface
    the exact error; never bypass either gate or edit the generated HTML.
 
+For repeated applications, backend code may compare the current and previous
+bounded cached JDs with `src/cv/jd-similarity.mjs`. A reuse recommendation is
+only a deterministic optimization: a seniority mismatch forces regeneration,
+and code records any decision in the contained application bundle resolved by
+`src/cv/application-artifacts.mjs`. Never ask a model to decide artifact paths,
+accept an output-root override, or overwrite a prior CV version.
+
 For an OpenAI-compatible provider use `src/evaluate/openai-tailor.mjs`; it uses
 the same bounded tailoring contract and deterministic renderer. The schema and
 template material below document that code-owned boundary for maintainers.

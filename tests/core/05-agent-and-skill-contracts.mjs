@@ -639,6 +639,7 @@ try {
   const {
     buildLocationFilter,
     locationHintFromUrl,
+    titleSignalsRemote,
     buildContentFilter,
     buildPostingAgeFilter,
     buildPostedDateFilter,
@@ -907,6 +908,25 @@ try {
     pass('URL hint is boundary-matched as well (Indianapolis URL survives, India URL does not)');
   } else {
     fail('URL hint must use the same word-boundary matching as the location string');
+  }
+
+  // A provider may report an office city while the title carries the only
+  // remote signal. The title can widen allow, but never override block.
+  const remoteTitleFilter = buildLocationFilter({
+    allow: ['remote', 'united states'],
+    block: ['india'],
+  });
+  if (
+    remoteTitleFilter('Las Vegas, Nevada', '', 'Program Manager - Remote') === true
+    && remoteTitleFilter('Bengaluru, India', '', 'Program Manager - Remote') === false
+    && remoteTitleFilter('Las Vegas, Nevada', '', 'Remote Sensing Program Manager') === false
+    && remoteTitleFilter('Las Vegas, Nevada', '', 'Not—Remote') === false
+    && titleSignalsRemote('Remote in Missouri') === true
+    && titleSignalsRemote('Non‑Remote') === false
+  ) {
+    pass('title-stated remote widens allow without bypassing blocks, compounds, or negation');
+  } else {
+    fail('title-stated remote location rescue violated its conservative boundary');
   }
 
   if (

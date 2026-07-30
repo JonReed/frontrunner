@@ -48,7 +48,9 @@ final call.
   compensation before model evaluation.
 - **Evaluate** plausible roles against your CV, goals, and constraints.
 - **Prepare** a tailored CV, cover letter, outreach, and interview material
-  using only supported claims.
+  using only supported claims. A deterministic gate blocks unsupported
+  metrics, employers, job titles, and tools before a CV or cover-letter PDF is
+  rendered.
 - **Track** applications, replies, documents, follow-ups, and outcomes in one
   workflow.
 
@@ -72,7 +74,7 @@ The checked-in 8-role, 3-board fixture currently produces:
 | Measure | inherited flow | Frontrunner | Change |
 |---|---:|---:|---:|
 | Description HTTP calls | 8 | 3 | −62.5% |
-| Approximate model input tokens | 286,302 | 21,441 | −92.5% |
+| Approximate model input tokens | 286,398 | 21,441 | −92.5% |
 | Approximate model output tokens | 17,125 | 3,123 | −81.8% |
 | Roles reaching the model | 8 | 8 | 100% pass rate |
 | False rejects at score ≥3.0 | — | 0 | — |

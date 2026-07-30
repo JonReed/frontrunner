@@ -77,6 +77,17 @@ export function assertOfficialUpdateSource(repositoryUrl) {
   return parsed.href;
 }
 
+/**
+ * Quote one literal path for a copy-pasteable POSIX-shell recovery command.
+ *
+ * This is display-only: updater subprocesses continue to receive argument
+ * arrays through execFile. Single quotes prevent spaces, substitutions and
+ * metacharacters in a checked-out path from changing the recovery command.
+ */
+export function shellQuotePath(value) {
+  return `'${String(value).replace(/'/g, `'\\''`)}'`;
+}
+
 // Matches a semver, with or without a leading `v` and an optional
 // Release Please component prefix (e.g. `frontrunner-v1.9.0` → `1.9.0`).
 // Anchoring on `(?:^|-)` lets the releases-API fallback parse our tags,
@@ -165,6 +176,8 @@ const SYSTEM_PATHS = [
   'AGENTS.md',
   'GEMINI.md',
   'src/cv/generate-pdf.mjs',
+  'src/cv/application-artifacts.mjs',
+  'src/cv/jd-similarity.mjs',
   'src/cv/pdf-artifact-store.mjs',
   'src/cv/pdf-index-store.mjs',
   'src/cv/theme-style.mjs',
@@ -1399,7 +1412,7 @@ async function apply() {
 
       if (commitFailed) {
         const allTargetPaths = [...pathsToStage, ...materializedSkillEntrypoints];
-        const pathspec = allTargetPaths.map(p => `"${p}"`).join(' ');
+        const pathspec = allTargetPaths.map(shellQuotePath).join(' ');
         throw new Error(
           `Update commit failed (files may be staged but not committed).\n` +
           `    Error: ${e.message.split('\n')[0]}\n` +

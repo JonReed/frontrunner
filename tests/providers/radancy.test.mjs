@@ -7,7 +7,14 @@ console.log('\nProvider — radancy (TalentBrew SSR search-results parser)');
 try {
   const radancyModule = await import(pathToFileURL(join(ROOT, 'providers/radancy.mjs')).href);
   const radancy = radancyModule.default;
-  const { resolveListUrl: radListUrl, parseResults } = radancyModule;
+  const {
+    resolveListUrl: radListUrl,
+    parseResults,
+    parseLegacyResults,
+    parseModernResults,
+    buildFragmentUrl,
+    readFragmentTotals,
+  } = radancyModule;
 
   if (radancy.id === 'radancy') pass('radancy.id is "radancy"');
   else fail(`radancy.id is ${JSON.stringify(radancy.id)}`);
@@ -85,6 +92,133 @@ try {
   const dupJobs = await radancy.fetch({ name: 'Munich Re', api: 'https://careers.munichre.com/en/search-jobs' }, dupCtx);
   if (dupJobs.length === 2 && dupCalls === 2) pass('radancy.fetch() stops when a page brings only already-seen ids (fresh === 0), without appending duplicates');
   else fail(`radancy.fetch() duplicate-page stop wrong: ${dupJobs.length} jobs after ${dupCalls} calls`);
+
+  const legacy = `
+    <section id="search-results" data-total-results="2" data-total-pages="1">
+      <li>
+        <a href="/job/acton/patient-service-representative/34088/98479156752"
+           data-job-id="98479156752">
+          <h2>Patient Service Representative</h2>
+          <span class="job-id job-info">1062355</span>
+          <span class="job-location 1">Acton, Massachusetts</span>
+        </a>
+        <button class="js-save-job-btn" data-job-id="98479156752"></button>
+      </li>
+      <li>
+        <a data-job-id="98187357488"
+           href="/job/eden-prairie/principal-architect/34088/98187357488">
+          <h2>Principal Architect &amp; Integration</h2>
+          <span class="job-location">Eden Prairie, Minnesota</span>
+        </a>
+      </li>
+    </section>`;
+
+  const legacyRows = parseLegacyResults(legacy, 'https://careers.example.com');
+  if (
+    legacyRows.length === 2
+    && legacyRows[0]?.title === 'Patient Service Representative'
+    && legacyRows[0]?.location === 'Acton, Massachusetts'
+    && legacyRows[1]?.title === 'Principal Architect & Integration'
+  ) {
+    pass('radancy.parseLegacyResults() handles legacy anchors without counting save buttons');
+  } else {
+    fail(`radancy.parseLegacyResults() legacy rows = ${JSON.stringify(legacyRows)}`);
+  }
+  if (
+    parseModernResults(legacy, 'https://careers.example.com').length === 0
+    && parseResults(legacy, 'https://careers.example.com').length === 2
+  ) {
+    pass('radancy.parseResults() falls back from modern to legacy markup');
+  } else {
+    fail('radancy.parseResults() legacy fallback failed');
+  }
+  if (
+    parseLegacyResults(`${legacy}${legacy}`, 'https://careers.example.com').length === 2
+    && parseLegacyResults('<a data-job-id="1">missing href</a>', 'https://x').length === 0
+  ) {
+    pass('radancy.parseLegacyResults() deduplicates ids and rejects malformed rows');
+  } else {
+    fail('radancy.parseLegacyResults() malformed/dedup guard failed');
+  }
+
+  const fragmentUrl = new URL(buildFragmentUrl('https://careers.example.com/search-jobs', 3));
+  if (
+    fragmentUrl.pathname === '/search-jobs/results'
+    && fragmentUrl.searchParams.get('CurrentPage') === '3'
+    && fragmentUrl.searchParams.get('RecordsPerPage') === '100'
+    && fragmentUrl.searchParams.get('SearchResultsModuleName') === 'Search Results'
+    && !fragmentUrl.searchParams.has('SearchFiltersModuleName')
+  ) {
+    pass('radancy.buildFragmentUrl() requests compact paged results without facet payloads');
+  } else {
+    fail(`radancy.buildFragmentUrl() = ${fragmentUrl.href}`);
+  }
+  const totals = readFragmentTotals(legacy);
+  if (totals.totalResults === 2 && totals.totalPages === 1) {
+    pass('radancy.readFragmentTotals() reads server pagination bounds');
+  } else {
+    fail(`radancy.readFragmentTotals() = ${JSON.stringify(totals)}`);
+  }
+
+  const fragmentCalls = [];
+  const fragmentJobs = await radancy.fetch(
+    { name: 'Legacy Co', api: 'https://careers.example.com/search-jobs' },
+    {
+      sleep: async () => {},
+      fetchJson: async (url) => {
+        fragmentCalls.push(url);
+        return { results: legacy };
+      },
+      fetchText: async () => {
+        throw new Error('heavy HTML fallback must not run');
+      },
+    },
+  );
+  if (
+    fragmentJobs.length === 2
+    && fragmentJobs.every(job => job.company === 'Legacy Co')
+    && fragmentCalls.every(url => url.includes('/search-jobs/results'))
+  ) {
+    pass('radancy.fetch() prefers the compact JSON fragment transport');
+  } else {
+    fail(`radancy.fetch() fragment transport = ${JSON.stringify(fragmentJobs)}`);
+  }
+
+  let fallbackTextCalls = 0;
+  const fallbackJobs = await radancy.fetch(
+    { name: 'Modern Co', api: 'https://careers.munichre.com/en/search-jobs' },
+    {
+      sleep: async () => {},
+      fetchJson: async () => {
+        throw new Error('fragment unavailable');
+      },
+      fetchText: async () => (fallbackTextCalls++ === 0 ? html : '<html></html>'),
+    },
+  );
+  if (fallbackJobs.length === 2 && fallbackTextCalls === 2) {
+    pass('radancy.fetch() falls back to bounded HTML when fragments are unavailable');
+  } else {
+    fail(`radancy.fetch() fallback = ${fallbackJobs.length}/${fallbackTextCalls}`);
+  }
+
+  const cappedJobs = await radancy.fetch(
+    {
+      name: 'Legacy Co',
+      api: 'https://careers.example.com/search-jobs',
+      max_jobs: 1,
+    },
+    {
+      sleep: async () => {},
+      fetchJson: async () => ({
+        results: legacy.replace('data-total-results="2"', 'data-total-results="1"'),
+      }),
+      fetchText: async () => {
+        throw new Error('unused');
+      },
+    },
+  );
+  if (cappedJobs.length === 1) pass('radancy.fetch() enforces max_jobs on fragments');
+  else fail(`radancy.fetch() max_jobs returned ${cappedJobs.length}`);
 } catch (e) {
   fail(`radancy provider tests crashed: ${e.message}`);
 }

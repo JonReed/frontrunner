@@ -39,6 +39,7 @@ contains only a few compatibility entry points. Common commands are exposed via
 | `npm run invite-match` | `src/tracker/invite-match.mjs` | Fuzzy-match a pasted interview-invite email against `workspace/applications/tracker.md` |
 | `npm run paste-reply` | `src/tracker/paste-reply.mjs` | Manual/no-Gmail input into the `src/tracker/reply-watch.mjs` classification pipeline |
 | `npm run openai:tailor` | `src/evaluate/openai-tailor.mjs` | Tailor via any OpenAI-compatible endpoint; the model returns bounded versioned JSON, then code injects trusted identity, renders, fact-checks and atomically publishes HTML |
+| `npm run application:artifacts -- --report N --company NAME --role ROLE [--version N] [--init]` | `src/cv/application-artifacts.mjs` | Resolve or initialize one contained, versioned application-document bundle under `workspace/documents/applications/`; no output-root override |
 | `npm run or` | `src/evaluate/openrouter-runner.mjs` | OpenRouter evaluate/apply helper using fixed brokered endpoints, bounded responses, canonical scanning and a crash-safe concurrent model blacklist |
 | `npm run reconcile` | `src/tracker/reconcile-pipeline.mjs` | Remove batch-evaluated offers under the shared pipeline lock with an atomic backup/replacement |
 | `npm run cover-letter` | `src/cv/generate-cover-letter.mjs` | Render a cover-letter JSON payload to PDF |
@@ -160,6 +161,28 @@ npm run pdf -- input.html output.pdf --format=a4        # A4 (default)
 ```
 
 **Exit codes:** `0` PDF generated, `1` missing arguments or generation failure.
+
+---
+
+## application:artifacts and deterministic CV reuse
+
+Application-specific source CVs, tailored versions, job descriptions and reuse
+decisions have one stable bundle beneath
+`workspace/documents/applications/{report}-{company}-{role}/`. The resolver
+accepts no caller-selected root; labels are bounded and slugged, directories
+reject symbolic-link redirection, and decision JSON is schema-bounded,
+owner-locked, mode `0600`, and atomically replaced.
+
+```bash
+npm run application:artifacts -- \
+  --report 42 --company "Example Ltd" --role "Senior Engineer" --init
+```
+
+`src/cv/jd-similarity.mjs` supplies the code-owned reuse recommendation for
+backend callers. It compares bounded JD text with deterministic token overlap
+and forces regeneration when recognized seniority changes. It does not read
+arbitrary paths, invoke a model, copy a CV, or overwrite an artifact; the
+decision remains auditable and user-overridable.
 
 ---
 
@@ -489,6 +512,28 @@ readable, and test processes cannot overwrite or delete the live checkpoint.
 and probes those companies via the ATS providers instead of (or in addition
 to) the directory walk. Other flags: `--verbose`, `--json`, `--include-undated`,
 `--shuffle`.
+
+### DNS pacing
+
+Workday and iCIMS sweeps resolve a different hostname for each tenant. Those
+distinct lookups cannot benefit from the normal DNS cache and can overwhelm a
+rate-limited local resolver. Uncached lookups are therefore paced at 400 per
+minute by default, with a 20-lookup initial burst. Cache hits and concurrent
+requests for the same hostname consume no additional pacing tokens.
+
+The scan summary and JSON result report delayed lookups and aggregate wait
+time. Tune or disable pacing explicitly when the local resolver has a known
+budget:
+
+```bash
+FRONTRUNNER_DNS_LOOKUPS_PER_MIN=800 npm run scan:full
+FRONTRUNNER_DNS_LOOKUPS_PER_MIN=0 npm run scan:full
+FRONTRUNNER_NO_DNS_CACHE=1 npm run scan:full
+```
+
+The final option disables both caching and pacing and should be reserved for
+diagnosis. Large batches of resolver-level failures stop the affected source
+instead of continuing to flood DNS.
 
 **Exit codes:** `0` scan completed, `1` configuration error (no workspace/search/portals.yml, unknown `--ats` source) or fatal scan error.
 
