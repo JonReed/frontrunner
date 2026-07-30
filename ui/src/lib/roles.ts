@@ -18,6 +18,7 @@ import { readFile, readdir, open } from 'node:fs/promises';
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname, resolve, sep } from 'node:path';
+import { parsePipelineMetadata } from '../../../src/scan/pipeline-row.mjs';
 import { safeExternalUrl } from './urls';
 import { ROOT, WORKSPACE } from './root';
 
@@ -269,14 +270,13 @@ export async function readInbox(): Promise<InboxRole[]> {
     if (!m) continue;
     const url = safeExternalUrl(m[1]);
     if (!url) continue;
-    const parts = m[2].split('|').map((p) => p.trim()).filter(Boolean);
-    const postedPart = parts.find((p) => p.startsWith('posted:'));
+    const metadata = parsePipelineMetadata(m[2]);
     out.push({
       url,
-      company: parts[0] ?? '',
-      role: parts[1] ?? '',
-      location: parts[2] ?? '',
-      posted: postedPart ? postedPart.replace('posted:', '').trim() : null,
+      company: metadata.company,
+      role: metadata.role,
+      location: metadata.location,
+      posted: metadata.posted,
     });
   }
   return out;
