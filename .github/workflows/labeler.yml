@@ -15,6 +15,7 @@ concurrency:
 jobs:
   label:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       # pull_request_target is safe here because no contributor code is checked
       # out or executed; the action only reads changed paths and applies labels.

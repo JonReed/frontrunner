@@ -4,8 +4,9 @@ name: No user data in PRs
 # These live ONLY on the candidate's machine per DATA_CONTRACT.md and must never
 # enter the repo — they are personal job-search data. Sample/fixture data belongs
 # under docs/examples/. Tracked scaffolding (.gitkeep keepers, dir READMEs) is exempt.
-# Paths mirror USER_PATHS in update-system.mjs. Uses the API (listFiles) so it
-# works for fork PRs too.
+# The canonical workspace boundary plus protected legacy paths mirror USER_PATHS
+# in update-system.mjs. Uses the API (listFiles) so it works for fork PRs too
+# without checking out or executing untrusted pull-request code.
 
 on:
   pull_request:
@@ -18,6 +19,7 @@ permissions:
 jobs:
   guard:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
@@ -28,11 +30,10 @@ jobs:
               owner, repo, pull_number, per_page: 100,
             });
 
-            // User-layer paths from DATA_CONTRACT.md and update-system.mjs.
-            // workspace/profile/voice-dna.md is guarded: it used to ship as a populated system
-            // default, but it holds the user's own writing voice and now lives
-            // at templates/voice-dna.template.md, with workspace/profile/voice-dna.md gitignored.
+            // The complete workspace is private. Keep the legacy roots guarded
+            // while older installations wait to be archived into workspace/.
             const USER_PATHS = [
+              /^workspace\//,
               /^cv\.md$/,
               /^voice-dna\.md$/,
               /^config\/profile\.yml$/,

@@ -59,6 +59,28 @@ test('every external GitHub Action is pinned to an immutable commit SHA', () => 
   assert.deepEqual(mutable, [], `mutable action references:\n${mutable.join('\n')}`);
 });
 
+test('every CI job has a finite timeout and checkout drops persisted credentials', () => {
+  const violations = [];
+
+  for (const name of workflowFiles) {
+    const { document } = loadWorkflow(name);
+    for (const [jobName, job] of Object.entries(document.jobs ?? {})) {
+      if (!Number.isFinite(job?.['timeout-minutes']) || job['timeout-minutes'] <= 0) {
+        violations.push(`${name}:${jobName} has no positive timeout-minutes`);
+      }
+    }
+    visit(document.jobs, value => {
+      if (!value || typeof value !== 'object' || typeof value.uses !== 'string') return;
+      if (!value.uses.startsWith('actions/checkout@')) return;
+      if (value.with?.['persist-credentials'] !== false) {
+        violations.push(`${name}: checkout must set persist-credentials: false`);
+      }
+    });
+  }
+
+  assert.deepEqual(violations, [], violations.join('\n'));
+});
+
 test('pull_request_target workflows never execute contributor-controlled code', () => {
   for (const name of workflowFiles) {
     const { document } = loadWorkflow(name);

@@ -9153,13 +9153,27 @@ try {
 
   const noUserData = readFileSync(join(ROOT, '.github/workflows/no-user-data.yml'), 'utf-8');
   const guardedPaths = (noUserData.match(/const USER_PATHS = \[([\s\S]*?)\];/) || [, ''])[1];
-  if (
-    guardedPaths.includes('/^modes\\/_custom\\.md$/') &&
-    guardedPaths.includes('/^voice-dna\\.md$/')
-  ) {
-    pass('no-user-data guard protects workspace/profile/preferences.md and workspace/profile/voice-dna.md as user layer');
+  const guardPatterns = guardedPaths
+    .split('\n')
+    .map((line) => line.trim().match(/^\/(.+)\/,$/)?.[1])
+    .filter(Boolean)
+    .map((pattern) => new RegExp(pattern));
+  const privateExamples = [
+    'workspace/profile/cv.md',
+    'workspace/profile/preferences.md',
+    'workspace/profile/voice-dna.md',
+    'workspace/applications/tracker.md',
+    'workspace/reports/evaluations/001-private.md',
+    'workspace/documents/cv-private.pdf',
+    'workspace/jobs/descriptions/private.md',
+    'workspace/.state/reply-candidates.json',
+    'modes/_custom.md',
+    'voice-dna.md',
+  ];
+  if (privateExamples.every((path) => guardPatterns.some((pattern) => pattern.test(path)))) {
+    pass('no-user-data PR guard rejects the complete private workspace and protected legacy paths');
   } else {
-    fail('no-user-data guard has the wrong custom/user-layer paths (#1736)');
+    fail('no-user-data PR guard does not cover the complete private workspace and protected legacy paths');
   }
 } catch (e) {
   fail(`custom instructions test crashed: ${e.message}`);
