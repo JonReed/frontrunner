@@ -30,6 +30,7 @@
 
 import { useMemo, useState, useTransition } from 'react';
 import { saveDetails } from '@/app/actions';
+import { suggestCvContact } from '@/lib/cv-contact-suggestions.mjs';
 import { suggestJobTitles } from '@/lib/job-title-suggestions.mjs';
 
 const STEPS = ['Your CV', 'About you', 'What you want', 'Finish'] as const;
@@ -325,6 +326,7 @@ export function SetupFlow() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
+  const suggestedContact = useMemo(() => suggestCvContact(draft.cv), [draft.cv]);
   const suggestedRoles = useMemo(() => suggestJobTitles(draft.cv), [draft.cv]);
   const set = <K extends keyof SetupDraft>(k: K, v: SetupDraft[K]) =>
     setDraft((d) => ({ ...d, [k]: v }));
@@ -352,6 +354,18 @@ export function SetupFlow() {
 
   const removeCv = (id: string) =>
     setDraft((d) => ({ ...d, otherCvs: d.otherCvs.filter((c) => c.id !== id) }));
+
+  const advance = () => {
+    if (step === 0) {
+      setDraft((d) => ({
+        ...d,
+        fullName: d.fullName || suggestedContact.name || '',
+        email: d.email || suggestedContact.email || '',
+        location: d.location || suggestedContact.location || '',
+      }));
+    }
+    setStep((s) => s + 1);
+  };
 
   /**
    * Write everything, then leave setup for good.
@@ -572,6 +586,12 @@ export function SetupFlow() {
             Used on the CVs and cover letters this builds. Nothing here is sent anywhere on its
             own.
           </p>
+          {(suggestedContact.name || suggestedContact.email || suggestedContact.location) && (
+            <p className="mb-5 rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] px-3.5 py-3 text-sm text-[var(--color-ink-soft)]">
+              We filled what we could identify in your CV. Check it and change anything that is
+              not right.
+            </p>
+          )}
           <Field label="Full name">
             <input
               className={FIELD}
@@ -777,7 +797,7 @@ export function SetupFlow() {
         {step < STEPS.length - 1 && (
           <button
             type="button"
-            onClick={() => setStep((s) => s + 1)}
+            onClick={advance}
             disabled={!canAdvance}
             className="cursor-pointer rounded-lg bg-[var(--color-act)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-act-hover)] disabled:cursor-not-allowed disabled:bg-[var(--color-line-strong)]"
           >
