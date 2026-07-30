@@ -18,7 +18,7 @@ import { readFile, readdir, open } from 'node:fs/promises';
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname, resolve, sep } from 'node:path';
-import { parsePipelineMetadata } from '../../../src/scan/pipeline-row.mjs';
+import { parsePipelineMetadata } from './pipeline-row.mjs';
 import { safeExternalUrl } from './urls';
 import { ROOT, WORKSPACE } from './root';
 

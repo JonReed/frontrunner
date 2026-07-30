@@ -184,7 +184,6 @@ const SYSTEM_PATHS = [
   'src/scan/fetch-jds.mjs',
   'src/scan/jd-cache.mjs',
   'src/scan/jd-cache-store.mjs',
-  'src/scan/pipeline-row.mjs',
   'src/scan/prefilter.mjs',
   'src/scan/prefilter-overrides.mjs',
   'src/scan/prefilter-config.mjs',
