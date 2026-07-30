@@ -50,6 +50,8 @@
     "scan:yc": "node src/scan/scan-ats-full.mjs --seeds yc",
     "validate:portals": "node src/scan/validate-portals.mjs",
     "verify:portals": "node src/scan/verify-portals.mjs",
+    "fix:slugs": "node src/scan/fix-slugs.mjs",
+    "freshness": "node src/analysis/check-table-freshness.mjs",
     "tracker": "node src/tracker/tracker.mjs",
     "find": "node find.mjs",
     "patterns": "node src/analysis/analyze-patterns.mjs",
