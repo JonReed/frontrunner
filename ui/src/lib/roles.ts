@@ -14,10 +14,10 @@
  * readiness so the first row is always the most useful thing to do.
  */
 
-import { readdir, open } from 'node:fs/promises';
-import { constants } from 'node:fs';
+import { readdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { dirname, resolve } from 'node:path';
+import { readBoundedRegularFileSync } from '../../../src/lib/safe-file-read.mjs';
 import { parsePipelineMetadata } from './pipeline-row.mjs';
 import { safeExternalUrl } from './urls';
 import { ROOT, WORKSPACE } from './root';
@@ -88,17 +88,14 @@ const MAX_PIPELINE_BYTES = 5 * 1024 * 1024;
 const MAX_PDF_INDEX_BYTES = 2 * 1024 * 1024;
 
 async function readBoundedText(file: string, maxBytes: number): Promise<string | null> {
-  let fh;
   try {
-    fh = await open(file, reportReadFlags());
-    const stat = await fh.stat();
-    if (!stat.isFile() || stat.size > maxBytes) return null;
-    const content = await fh.readFile({ encoding: 'utf8' });
-    return Buffer.byteLength(content) <= maxBytes ? content : null;
+    return readBoundedRegularFileSync(file, {
+      maxBytes,
+      allowMissing: true,
+      label: 'UI workspace input',
+    });
   } catch {
     return null;
-  } finally {
-    await fh?.close().catch(() => {});
   }
 }
 
@@ -344,47 +341,20 @@ async function readPdfIndex(): Promise<Map<string, { pdf: string; html: string }
 async function readUrlFromReport(reportPath: string): Promise<string | null> {
   const candidate = safeReportFile(reportPath);
   if (!candidate) return null;
-  let fh;
-  try {
-      fh = await open(candidate, reportReadFlags());
-      const stat = await fh.stat();
-      if (!stat.isFile() || stat.size > MAX_REPORT_BYTES) return null;
-      const { buffer } = await fh.read(Buffer.alloc(2048), 0, 2048, 0);
-      const m = buffer.toString('utf8').match(/^\*\*URL:\*\*\s*(\S+)/m);
-      return m ? safeExternalUrl(m[1]) : null;
-  } catch {
-    return null;
-  } finally {
-    await fh?.close().catch(() => {});
-  }
+  const content = await readBoundedText(candidate, MAX_REPORT_BYTES);
+  if (content === null) return null;
+  const m = content.slice(0, 2048).match(/^\*\*URL:\*\*\s*(\S+)/m);
+  return m ? safeExternalUrl(m[1]) : null;
 }
 
 /** Full report markdown for a role, when one exists. */
 export async function readReport(reportPath: string): Promise<string | null> {
   const candidate = safeReportFile(reportPath);
   if (!candidate) return null;
-  let fh;
-  try {
-    fh = await open(candidate, reportReadFlags());
-    const stat = await fh.stat();
-    if (!stat.isFile() || stat.size > MAX_REPORT_BYTES) return null;
-    const content = await fh.readFile({ encoding: 'utf8' });
-    return Buffer.byteLength(content) <= MAX_REPORT_BYTES ? content : null;
-  } catch {
-    return null;
-  } finally {
-    await fh?.close().catch(() => {});
-  }
+  return readBoundedText(candidate, MAX_REPORT_BYTES);
 }
 
 const MAX_REPORT_BYTES = 2 * 1024 * 1024;
-
-function reportReadFlags(): number {
-  const noFollow = process.platform !== 'win32' && typeof constants.O_NOFOLLOW === 'number'
-    ? constants.O_NOFOLLOW
-    : 0;
-  return constants.O_RDONLY | noFollow;
-}
 
 function safeReportFile(reportPath: string): string | null {
   if (typeof reportPath !== 'string' || reportPath.length > 300 || !reportPath.endsWith('.md')) return null;

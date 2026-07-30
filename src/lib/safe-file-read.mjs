@@ -36,7 +36,6 @@ function readFlags() {
 }
 
 function validatePathIdentity(file, descriptorStat, beforeStat, label) {
-  if (!beforeStat) return;
   const afterStat = lstatSync(file);
   const unsafeType = !beforeStat.isFile() || !afterStat.isFile()
     || beforeStat.isSymbolicLink() || afterStat.isSymbolicLink();
@@ -63,12 +62,12 @@ export function readBoundedRegularFileWithStatSync(
   validateMaxBytes(maxBytes);
   let descriptor;
   try {
-    // Windows does not expose O_NOFOLLOW. Check the reparse-point type before
-    // opening, then compare it with both the descriptor and the path after the
-    // open. Reading remains descriptor-based, so later path replacement cannot
-    // redirect the bytes being consumed.
-    const beforeStat = supportsNoFollow() ? null : lstatSync(file);
-    if (beforeStat?.isSymbolicLink() || (beforeStat && !beforeStat.isFile())) {
+    // Every platform takes the same identity-validation path. O_NOFOLLOW is an
+    // additional kernel guard where available, never the only symlink defense.
+    // Keeping the portable path unconditional means a macOS/Linux local gate
+    // also exercises the logic relied on by Windows.
+    const beforeStat = lstatSync(file);
+    if (beforeStat.isSymbolicLink() || !beforeStat.isFile()) {
       throw fail(label, 'must not be a symbolic link');
     }
     descriptor = openSync(file, readFlags());
