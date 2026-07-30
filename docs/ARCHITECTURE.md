@@ -307,8 +307,10 @@ pipeline failure still produce one evidence-rich logical record.
 Safely pulls new system files from the official Frontrunner repository without
 touching user data. The source is pinned to
 `Furls-Digital/frontrunner`; the parent repository is only used by maintainers
-performing an explicit upstream merge. The updater backs up, fetches, re-execs
-the target updater, then checks out only `SYSTEM_PATHS`.
+performing a read-only, commit-by-commit source review. Parent branches are
+never merged, rebased or pulled into Frontrunner; accepted behavior is ported
+selectively through the ordinary protected-trunk PR gate. The updater backs
+up, fetches, re-execs the target updater, then checks out only `SYSTEM_PATHS`.
 `BOOTSTRAP_PATHS` covers very old installs.
 
 ### Multi-CLI entry files
