@@ -18,7 +18,7 @@ Cowork mounts your frontrunner folder and the agent reads the same instruction f
 2. Install [Claude Cowork](https://claude.com/download) and, in **Colaborar/Collaborate** mode, add the `~/frontrunner` folder.
 3. Say (anchored, so Cowork's own generic setup doesn't hijack the phrase "set me up"):
    > *"This folder contains Frontrunner. Read AGENTS.md, run its startup check (`node doctor.mjs --json`) and walk me through Frontrunner onboarding based on its output."*
-4. Hand over your CV any way you like — paste the text, or just point the agent at an existing **PDF**: it reads the file itself and converts it to `cv.md` (the parsing is your agent's ability, not a frontrunner script).
+4. Hand over your CV any way you like — paste the text, or just point the agent at an existing **PDF**: it reads the file itself and converts it to `workspace/profile/cv.md` (the parsing is your agent's ability, not a frontrunner script).
 5. Evaluate your first posting: paste a job URL or the JD text into the chat. From there, everything in the [README](../README.md) applies — same modes, same files, same data contract.
 
 ## What runs where
@@ -30,7 +30,7 @@ Cowork mounts your frontrunner folder and the agent reads the same instruction f
 | Merge/validation scripts (`src/tracker/merge-tracker.mjs`, `src/tracker/verify-pipeline.mjs`, …) | ✅ Sandbox |
 | **PDF generation** (`src/cv/generate-pdf.mjs`) and **browser-driven checks** (Playwright) | ⚠️ Playwright's Chromium lives on your machine, not in the sandbox — run these through the local shell when asked, or generate the HTML in Cowork and print to PDF |
 
-That Playwright caveat is the only real difference from the CLI experience. Two more small notes from verification: run `npm install` in a terminal before starting (Cowork's local shell can't reach npm), and if a stray `reports/.reserve-*` sentinel file survives a run (Cowork's file bridge can't delete files), it's harmless — the allocator garbage-collects stale sentinels after 4 hours.
+That Playwright caveat is the only real difference from the CLI experience. Two more small notes from verification: run `npm install` in a terminal before starting (Cowork's local shell can't reach npm), and if a stray `workspace/reports/evaluations/.reserve-*` sentinel file survives a run (Cowork's file bridge can't delete files), it's harmless — the allocator garbage-collects stale sentinels after 4 hours.
 
 ## Credit where due
 

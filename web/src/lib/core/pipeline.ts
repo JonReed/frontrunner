@@ -5,8 +5,8 @@ import { frontrunnerRoot, rootScript } from "@/lib/frontrunner";
 import type { DiscoveredOffer } from "./scan";
 
 /**
- * "Add to pipeline" — appends user-selected discovered offers to data/pipeline.md
- * AND records them in data/scan-history.tsv (so future scans dedup them). We reuse
+ * "Add to pipeline" — appends user-selected discovered offers to workspace/search/pipeline.md
+ * AND records them in workspace/.state/scan-history.tsv (so future scans dedup them). We reuse
  * the CANONICAL writers exported by the core's src/scan/scan.mjs (`appendToPipeline`,
  * `appendToScanHistory`) instead of re-implementing the line format / section
  * markers — single source of truth, per the web↔core contract. We invoke them in

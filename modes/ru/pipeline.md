@@ -9,4 +9,4 @@ stages without evaluation.
 
 Apply Russian-market vocabulary and rules from `modes/ru/_shared.md` and the
 selected Russian evaluation mode. Human-facing output still follows
-`config/profile.yml` → `language.output`.
+`workspace/profile/profile.yml` → `language.output`.

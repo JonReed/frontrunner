@@ -1,7 +1,7 @@
 /**
  * profile.ts — read who the user is.
  *
- * Deliberately READ-ONLY for now. config/profile.yml and cv.md are the user
+ * Deliberately READ-ONLY for now. workspace/profile/profile.yml and workspace/profile/cv.md are the user
  * layer: hand-edited, commented, and the source of truth for every judgement the tool
  * makes. Writing them from a web form without round-tripping comments would
  * quietly destroy work, so this first pass shows what is set and points at the
@@ -10,8 +10,7 @@
 
 import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
-import { ROOT } from './roles';
+import { WORKSPACE } from './root';
 
 export interface Profile {
   name: string | null;
@@ -82,8 +81,8 @@ function list(src: string, header: string): string[] {
 }
 
 export async function readProfile(): Promise<Profile> {
-  const yml = join(ROOT, 'config', 'profile.yml');
-  const cv = join(ROOT, 'cv.md');
+  const yml = WORKSPACE.profileFile;
+  const cv = WORKSPACE.cv;
 
   const src = existsSync(yml) ? await readFile(yml, 'utf8') : '';
   const cvText = existsSync(cv) ? await readFile(cv, 'utf8') : '';

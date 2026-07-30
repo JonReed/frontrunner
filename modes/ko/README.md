@@ -25,7 +25,7 @@
 
 ### 옵션 2 -- 영구 설정
 
-`config/profile.yml`에 다음을 추가하세요.
+`workspace/profile/profile.yml`에 다음을 추가하세요.
 
 ```yaml
 language:
@@ -52,7 +52,7 @@ language:
 
 테크 채용에서 표준적으로 쓰이는 표현은 의도적으로 번역하지 않습니다.
 
-- `cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`, `proof point`
+- `workspace/profile/cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`, `proof point`
 - 도구 이름(`Playwright`, `WebSearch`, `WebFetch`, `Read`, `Write`, `Edit`, `Bash`)
 - tracker 상태값(`Evaluated`, `Applied`, `Interview`, `Offer`, `Rejected`)
 - 코드 조각, 경로, 명령어

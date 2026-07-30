@@ -11,12 +11,13 @@ import { isAbsolute, relative, resolve, sep } from 'node:path';
 import { ROOT } from '#paths';
 
 const USER_FILES = new Set([
-  'article-digest.md',
   'cv.md',
+  'article-digest.md',
   'portals.yml',
   'voice-dna.md',
 ]);
 const USER_DIRECTORIES = new Set([
+  'workspace',
   'cv-versions',
   'data',
   'interview-prep',
@@ -27,8 +28,8 @@ const USER_DIRECTORIES = new Set([
 ]);
 const USER_CONFIG_FILES = new Set([
   'config/profile.yml',
-  'modes/_custom.md',
-  'modes/_profile.md',
+  'workspace/profile/preferences.md',
+  'workspace/profile/targeting.md',
 ]);
 
 export function testProcessActive() {

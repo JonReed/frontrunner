@@ -7,11 +7,11 @@ import { frontrunnerRoot } from "@/lib/frontrunner";
 import { DEFAULT_FILTERS, cleanChips, type ExploreFilters } from "@/lib/explore";
 
 /**
- * ACL for portals.yml — the core's scan-filter config (a CONTRACT entry-point,
+ * ACL for workspace/search/portals.yml — the core's scan-filter config (a CONTRACT entry-point,
  * see reference_web_core_sync_protocol). The Explorer NEVER mutates the user's
- * real portals.yml: it writes an EPHEMERAL filter file and points the scanner at
+ * real workspace/search/portals.yml: it writes an EPHEMERAL filter file and points the scanner at
  * it via FRONTRUNNER_PORTALS, so an ad-hoc search can't clobber the curated config.
- * We also read the real portals.yml + config/profile.yml (tolerantly) only to
+ * We also read the real workspace/search/portals.yml + workspace/profile/profile.yml (tolerantly) only to
  * SEED sensible defaults for the first search.
  *
  * Filter semantics mirror src/scan/scan.mjs::buildTitleFilter / buildLocationFilter:
@@ -25,7 +25,7 @@ function listFrom(v: unknown): string[] {
   return cleanChips(v);
 }
 
-/** Serialize filters into a minimal, valid portals.yml. Scalars go through
+/** Serialize filters into a minimal, valid workspace/search/portals.yml. Scalars go through
  *  JSON.stringify (a valid YAML double-quoted scalar) so arbitrary keywords —
  *  colons, quotes, leading dashes — can never break the document or inject YAML. */
 export function serializePortals(f: FilterLists): string {
@@ -73,15 +73,15 @@ function loadYaml(rel: string): Record<string, unknown> | null {
 
 /**
  * Tolerantly seed first-search defaults from the user's real config. Reads
- * portals.yml (title_filter / location_filter) and falls back to
- * config/profile.yml (target_roles, location) for the positive keywords when
+ * workspace/search/portals.yml (title_filter / location_filter) and falls back to
+ * workspace/profile/profile.yml (target_roles, location) for the positive keywords when
  * portals has none. Never throws — a bare checkout just yields DEFAULT_FILTERS.
  */
 export function seedExploreFilters(): { filters: ExploreFilters; seededFrom: string[] } {
   const filters: ExploreFilters = { ...DEFAULT_FILTERS, ats: [...DEFAULT_FILTERS.ats] };
   const seededFrom: string[] = [];
 
-  const portals = loadYaml("portals.yml");
+  const portals = loadYaml("workspace/search/portals.yml");
   if (portals) {
     const tf = (portals.title_filter ?? {}) as Record<string, unknown>;
     const lf = (portals.location_filter ?? {}) as Record<string, unknown>;
@@ -90,11 +90,11 @@ export function seedExploreFilters(): { filters: ExploreFilters; seededFrom: str
     filters.allow = listFrom(lf.allow);
     filters.block = listFrom(lf.block);
     filters.alwaysAllow = listFrom(lf.always_allow);
-    if (filters.positive.length || filters.allow.length || filters.block.length) seededFrom.push("portals.yml");
+    if (filters.positive.length || filters.allow.length || filters.block.length) seededFrom.push("workspace/search/portals.yml");
   }
 
   if (filters.positive.length === 0) {
-    const profile = loadYaml("config/profile.yml");
+    const profile = loadYaml("workspace/profile/profile.yml");
     const roles = (profile?.target_roles ?? {}) as Record<string, unknown>;
     const fromRoles = listFrom([
       ...(typeof roles.primary === "string" ? [roles.primary] : []),

@@ -9,7 +9,7 @@ System-layer template files used by frontrunner scripts and modes. These files a
 | `cv-template.html` | `generate-pdf.mjs` | HTML/CSS template for ATS-optimized CV PDFs |
 | `resume-template.html` | `generate-pdf.mjs` (via `--template`) | Resume-branded variant of `cv-template.html`. Same layout and placeholder tokens; differs in: `<title>` reads "Resume" instead of "CV", omits Certifications section, targets 1–2 page US/industry format. See detailed section below. |
 | `cv-template.tex` | `generate-latex.mjs` | LaTeX/Overleaf template for ATS-optimized CV PDFs |
-| `portals.example.yml` | Onboarding | Example portal scanner configuration (copy to `portals.yml` to activate) |
+| `portals.example.yml` | Onboarding | Example portal scanner configuration (copy to `workspace/search/portals.yml` to activate) |
 | `states.yml` | `verify-pipeline.mjs`, `normalize-statuses.mjs`, `merge-tracker.mjs` | Canonical application states and their aliases |
 | `restrictive-covenants.yml` | `modes/offer-prep.md` (statutory-context notes) | Jurisdiction-keyed table of restrictive-covenant statutory rules, per covenant type (v1: non-compete only — seeds US-CA B&P §16600/§16600.5 and Ontario ESA s.67.2). Status spectrum: `prohibited` / `allowed_with_mandatory_compensation` / `allowed_with_limits` / `common_law_reasonableness`. Prompt-level data reference — no script reads it; local lookup, never online research. Feeds statutory-context notes and targeted lawyer questions; never a verdict about the candidate's clause. Contribution rule: no entry without a citable legal source, an effective date, and an `as_of` verification date; covenant types are never conflated. |
 
@@ -42,10 +42,10 @@ LaTeX template for Overleaf-compatible CV generation. Based on the [sb2nov/resum
 **Usage:**
 ```bash
 # Validate and compile .tex → .pdf (requires pdflatex on PATH)
-node src/cv/generate-latex.mjs output/cv-name-company-date.tex
+node src/cv/generate-latex.mjs workspace/documents/cv-name-company-date.tex
 
 # Or specify a custom output path
-node src/cv/generate-latex.mjs output/cv-name-company-date.tex output/custom-name.pdf
+node src/cv/generate-latex.mjs workspace/documents/cv-name-company-date.tex workspace/documents/custom-name.pdf
 ```
 
 **Prerequisites:** `pdflatex` via [MiKTeX](https://miktex.org/) (Windows) or TeX Live (Linux/macOS). First compilation may auto-install missing LaTeX packages. Alternatively, upload the `.tex` file directly to [Overleaf](https://www.overleaf.com) — no local install needed.
@@ -56,7 +56,7 @@ node src/cv/generate-latex.mjs output/cv-name-company-date.tex output/custom-nam
 
 Pre-configured portal scanner with 45+ tracked companies and search queries. Contains title filters, company career page URLs, Greenhouse API endpoints, and WebSearch queries.
 
-**To activate:** Copy to project root as `portals.yml` and customize `title_filter.positive` keywords for your target roles. Add or remove companies as needed.
+**To activate:** Copy to project root as `workspace/search/portals.yml` and customize `title_filter.positive` keywords for your target roles. Add or remove companies as needed.
 
 ### states.yml
 

@@ -36,5 +36,5 @@ test('batch does not duplicate personalization into a temporary worker prompt', 
 
   assert.doesNotMatch(runner, /\.resolved-prompt|Runtime personalization|batch-prompt\.md/);
   assert.match(evaluator, /buildScoringPrompt/);
-  assert.match(evaluator, /config', 'profile\.yml/);
+  assert.match(evaluator, /workspace', 'profile', 'profile\.yml/);
 });

@@ -114,7 +114,7 @@ export function ApplicationRoleRow({
           )}
           <WorkState role={role} building={building} />
           {followup && <FollowupStatus followup={followup} />}
-          {role.pdf && <CvLinks pdf={role.pdf} size="sm" />}
+          {role.pdf && <CvLinks roleNum={role.num} size="sm" />}
         </div>
       </div>
       <RoleActions

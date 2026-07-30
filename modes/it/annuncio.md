@@ -22,7 +22,7 @@ Tabella con:
 
 ## Blocco B -- Corrispondenza con il CV
 
-Leggere `cv.md`. Creare una tabella che mappa ogni requisito dell'annuncio su righe esatte del CV.
+Leggere `workspace/profile/cv.md`. Creare una tabella che mappa ogni requisito dell'annuncio su righe esatte del CV.
 
 **Adattamento per archetipo:**
 - FDE -> priorità a proof point su velocità di consegna e vicinanza al cliente
@@ -79,7 +79,7 @@ Fornire le 5 modifiche principali al CV + le 5 modifiche principali al profilo L
 
 La colonna **Reflection** cattura cosa si è imparato o cosa si farebbe diversamente. Questo elemento segnala seniority: i profili junior descrivono cosa è successo, i senior ne traggono insegnamenti e linee guida.
 
-**Story Bank:** Se `interview-prep/story-bank.md` esiste, verificare se le storie sono già presenti. In caso contrario, aggiungerle. Con il tempo si costruisce un archivio riutilizzabile di 5-10 storie principali adattabili a qualsiasi colloquio.
+**Story Bank:** Se `workspace/interviews/story-bank.md` esiste, verificare se le storie sono già presenti. In caso contrario, aggiungerle. Con il tempo si costruisce un archivio riutilizzabile di 5-10 storie principali adattabili a qualsiasi colloquio.
 
 **Storie inquadrate per archetipo:**
 - FDE -> evidenziare velocità di consegna e vicinanza al cliente
@@ -101,7 +101,7 @@ Eseguire **SEMPRE** dopo i blocchi A-F:
 
 ### 1. Salvare il report .md
 
-Salvare la valutazione completa in `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
+Salvare la valutazione completa in `workspace/reports/evaluations/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 
 - `{###}` = prossimo numero sequenziale a 3 cifre, zero-padded. Allocarlo in modo atomico eseguendo `node src/tracker/reserve-report-num.mjs` (restituisce `{###}` su stdout), scrivere il report, poi eseguire `node src/tracker/reserve-report-num.mjs --release {###}` per liberare la prenotazione.
 - `{company-slug}` = nome dell'azienda in minuscolo senza spazi (usare i trattini)
@@ -149,7 +149,7 @@ Salvare la valutazione completa in `reports/{###}-{company-slug}-{YYYY-MM-DD}.md
 
 ### 2. Registrare nel tracker
 
-Registrare **SEMPRE** la valutazione in `data/applications.md`:
+Registrare **SEMPRE** la valutazione in `workspace/applications/tracker.md`:
 - Prossimo numero sequenziale
 - Data odierna
 - Azienda
@@ -157,7 +157,7 @@ Registrare **SEMPRE** la valutazione in `data/applications.md`:
 - Punteggio: media del match (da 1 a 5)
 - Stato: `Evaluated`
 - PDF: no (o sì se l'auto-pipeline ha generato il PDF direttamente)
-- Report: link relativo al file del report (es: `[001](reports/001-azienda-2026-01-01.md)`)
+- Report: link relativo al file del report (es: `[001](workspace/reports/evaluations/001-azienda-2026-01-01.md)`)
 
 **Formato del tracker:**
 

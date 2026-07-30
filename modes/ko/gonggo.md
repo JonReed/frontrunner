@@ -22,7 +22,7 @@
 
 ## 블록 B -- CV와의 매치
 
-`cv.md`를 읽습니다. 공고의 각 자격 요건을 CV의 정확한 문장과 매핑한 표를 만듭니다.
+`workspace/profile/cv.md`를 읽습니다. 공고의 각 자격 요건을 CV의 정확한 문장과 매핑한 표를 만듭니다.
 
 **Archetype에 맞게 조정:**
 - FDE -> 빠른 delivery와 고객 접점 proof point 우선
@@ -81,7 +81,7 @@ WebSearch를 사용합니다.
 
 **Reflection** 열은 무엇을 배웠는지 또는 다시 한다면 무엇을 다르게 할지를 담습니다. 이는 seniority를 보여주는 신호입니다. junior는 무슨 일이 있었는지를 설명하고, senior는 그 경험에서 무엇을 배웠는지까지 설명합니다.
 
-**Story Bank:** `interview-prep/story-bank.md`가 있으면 해당 story들이 이미 있는지 확인합니다. 없으면 새 story를 추가합니다. 시간이 지나면 어떤 면접 질문에도 재사용 가능한 5-10개의 master story bank가 만들어집니다.
+**Story Bank:** `workspace/interviews/story-bank.md`가 있으면 해당 story들이 이미 있는지 확인합니다. 없으면 새 story를 추가합니다. 시간이 지나면 어떤 면접 질문에도 재사용 가능한 5-10개의 master story bank가 만들어집니다.
 
 **Archetype에 맞춰 선택하고 framing합니다:**
 - FDE -> delivery 속도와 고객 접점을 강조
@@ -103,7 +103,7 @@ WebSearch를 사용합니다.
 
 ### 1. report .md 저장
 
-전체 평가를 `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`에 저장합니다.
+전체 평가를 `workspace/reports/evaluations/{###}-{company-slug}-{YYYY-MM-DD}.md`에 저장합니다.
 
 - `{###}` = 다음 순차 번호(3자리, zero-padded). 동시성 문제를 피하기 위해 반드시 `node src/tracker/reserve-report-num.mjs`를 실행해 번호를 예약합니다(stdout이 `{###}`를 반환). report를 작성한 뒤 `node src/tracker/reserve-report-num.mjs --release {###}`를 실행해 sentinel을 해제합니다.
 - `{company-slug}` = 회사명을 소문자와 하이픈으로 만든 slug
@@ -151,14 +151,14 @@ WebSearch를 사용합니다.
 
 ### 2. tracker 추가 항목 작성
 
-새 tracker row를 위해 `data/applications.md`를 직접 수정하지 않습니다. 평가마다 `batch/tracker-additions/{num}-{company-slug}.tsv`에 TSV 한 줄을 쓰고, 이후 `node src/tracker/merge-tracker.mjs`로 병합합니다.
+새 tracker row를 위해 `workspace/applications/tracker.md`를 직접 수정하지 않습니다. 평가마다 `workspace/.state/tracker-additions/{num}-{company-slug}.tsv`에 TSV 한 줄을 쓰고, 이후 `node src/tracker/merge-tracker.mjs`로 병합합니다.
 
 **TSV format (status before score):**
 
 ```text
-{num}\t{date}\t{company}\t{role}\tEvaluated\t{score}/5\t{pdf}\t[{num}](reports/{num}-{company-slug}-{date}.md)\t{note}
+{num}\t{date}\t{company}\t{role}\tEvaluated\t{score}/5\t{pdf}\t[{num}](workspace/reports/evaluations/{num}-{company-slug}-{date}.md)\t{note}
 ```
 
 - `pdf`는 PDF가 생성되면 `✅`, 아니면 `❌`
-- report 링크는 root-relative로 작성합니다: `[001](reports/001-company-2026-01-01.md)`
+- report 링크는 root-relative로 작성합니다: `[001](workspace/reports/evaluations/001-company-2026-01-01.md)`
 - 이미 같은 company + role이 있으면 새 row를 만들지 말고 기존 entry 업데이트 흐름을 따릅니다.

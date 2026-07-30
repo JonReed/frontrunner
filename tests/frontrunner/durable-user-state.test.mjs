@@ -282,13 +282,13 @@ test('destructive cross-process pipeline race retains both writers atomically', 
 
   try {
     await Promise.all([runWriter(1), runWriter(2)]);
-    const pipeline = readFileSync(join(fixture, 'data', 'pipeline.md'), 'utf8');
+    const pipeline = readFileSync(join(fixture, 'workspace', 'search', 'pipeline.md'), 'utf8');
     assert.equal((pipeline.match(/^# Pipeline — Pending URLs$/gmu) ?? []).length, 1);
     assert.equal((pipeline.match(/https:\/\/jobs\.example\.com\/race-1/gmu) ?? []).length, 1);
     assert.equal((pipeline.match(/https:\/\/jobs\.example\.com\/race-2/gmu) ?? []).length, 1);
-    assert.equal(existsSync(join(fixture, 'data', 'pipeline.md.lock')), false);
+    assert.equal(existsSync(join(fixture, 'workspace', 'search', 'pipeline.md.lock')), false);
     assert.equal(
-      readdirSync(join(fixture, 'data')).some(name => name.endsWith('.tmp')),
+      readdirSync(join(fixture, 'workspace', 'search')).some(name => name.endsWith('.tmp')),
       false,
     );
   } finally {

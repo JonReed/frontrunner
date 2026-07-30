@@ -14,7 +14,7 @@ Before doing anything, confirm a job description is present.
 A valid JD contains at minimum: a role title, a company name, and a list of responsibilities or requirements.
 
 - **No JD present** → Stop. Say: "Please paste the job description — I need it to tailor the letter."
-- **Slug provided** → Read `reports/` to find the matching report. Extract the `## Cover Letter Draft` section as a starting point. Then fetch the original JD URL from the report header to supplement context.
+- **Slug provided** → Read `workspace/reports/evaluations/` to find the matching report. Extract the `## Cover Letter Draft` section as a starting point. Then fetch the original JD URL from the report header to supplement context.
 - **JD present** → Proceed to Step 1.
 
 Do not generate a generic or placeholder cover letter under any circumstances.
@@ -23,20 +23,20 @@ Do not generate a generic or placeholder cover letter under any circumstances.
 
 ## Step 1 — Load candidate profile
 
-Read `config/profile.yml` for:
+Read `workspace/profile/profile.yml` for:
 - `candidate.name`, `email`, `phone`, `location`, `linkedin`, `github`
-- `candidate.credentials` (derive from cv.md Education + Certifications if not in profile.yml)
+- `candidate.credentials` (derive from workspace/profile/cv.md Education + Certifications if not in profile.yml)
 - `cover_letter.notice_period_days` (default: omit if key absent)
-- `cover_letter.primary_domain` (default: infer from cv.md if absent)
+- `cover_letter.primary_domain` (default: infer from workspace/profile/cv.md if absent)
 - `cover_letter.language_learning` (default: empty list if absent)
 
-Read `cv.md` for:
+Read `workspace/profile/cv.md` for:
 - Professional summary (profile introduction source)
 - All achievement bullets across all roles (achievement selection pool)
 
-Read `article-digest.md` if it exists — supplementary proof points and metrics take precedence over cv.md where they overlap.
+Read `workspace/profile/article-digest.md` if it exists — supplementary proof points and metrics take precedence over workspace/profile/cv.md where they overlap.
 
-Read `modes/_profile.md` if it exists — the candidate's personalization file. It captures their target roles, adaptive framing and archetypes, exit narrative, cross-cutting advantage, proof points, comp targets, negotiation scripts, location policy, and any voice or writing-style rules they have added. Its rules **govern the letter's voice and structure and override the generic defaults in this mode**, so the candidate's personalization is never lost.
+Read `workspace/profile/targeting.md` if it exists — the candidate's personalization file. It captures their target roles, adaptive framing and archetypes, exit narrative, cross-cutting advantage, proof points, comp targets, negotiation scripts, location policy, and any voice or writing-style rules they have added. Its rules **govern the letter's voice and structure and override the generic defaults in this mode**, so the candidate's personalization is never lost.
 
 ---
 
@@ -113,7 +113,7 @@ Wait for confirmation or corrections before proceeding.
 
 **Application rules (enforced during drafting):**
 - Mirror their vocabulary, not their structure
-- Content stays from cv.md — only vocabulary shifts
+- Content stays from workspace/profile/cv.md — only vocabulary shifts
 - Fit naturally or don't use — if a keyword can't be woven in, flag it post-generation
 - Apply to: opening, profile intro, achievements (vocabulary only), problems section
 - Do NOT apply to: why-this-role angle (user's own words), closing
@@ -190,13 +190,13 @@ Wait for all four answers before proceeding to Step 7.
 
 ---
 
-## Step 7 — Achievement selection (from cv.md only)
+## Step 7 — Achievement selection (from workspace/profile/cv.md only)
 
-Select 4-5 achievement bullets from `cv.md` only (`article-digest.md` may be read for context but is not a source of achievement bullets):
-1. Read all bullet points across all roles in cv.md
+Select 4-5 achievement bullets from `workspace/profile/cv.md` only (`workspace/profile/article-digest.md` may be read for context but is not a source of achievement bullets):
+1. Read all bullet points across all roles in workspace/profile/cv.md
 2. Score each against the JD's top 3-4 required competencies
 3. Pick the 4-5 highest-scoring, with at least one metric per bullet
-4. Use the exact wording and metrics from cv.md — never paraphrase or invent
+4. Use the exact wording and metrics from workspace/profile/cv.md — never paraphrase or invent
 5. Apply keyword mirroring from Step 4 to the vocabulary around each bullet (not the metrics)
 
 Format: `**Bold lead phrase,** one sentence of impact with metric.` This describes the *rendered* bullet only — the `lead` value in the JSON payload (Step 9) must be a bare phrase with no trailing punctuation; `generate-cover-letter.mjs` appends the comma automatically when building the bullet.
@@ -224,7 +224,7 @@ Address the named hiring manager if known, e.g. "Dear Jane Smith,". Omit if no n
 Why applying + functional summary. Derived from Angle A. Uses JD mirror vocabulary.
 
 [Profile introduction — 1 paragraph]
-Years of experience, current/most recent role, domain. Read from cv.md summary.
+Years of experience, current/most recent role, domain. Read from workspace/profile/cv.md summary.
 Tone matches user's choice from Step 6D.
 
 [Achievements — 4-5 bullets]
@@ -304,7 +304,7 @@ Assemble the JSON payload:
     "closing": "{approved closing}",
     "language_closing": "{approved language sentence or null}"
   },
-  "output_path": "output/{company-slug}-{role-slug}-cover.pdf"
+  "output_path": "workspace/documents/{company-slug}-{role-slug}-cover.pdf"
 }
 ```
 
@@ -335,8 +335,8 @@ After the PDF is confirmed, add a brief note:
 
 When invoked as `/frontrunner cover {slug}`:
 
-1. Find the matching report in `reports/` by slug
+1. Find the matching report in `workspace/reports/evaluations/` by slug
 2. Extract the `## Cover Letter Draft` section — use it as a pre-populated starting point for the draft
 3. Run all steps as normal (research, keywords, prompts, gaps) — the draft is a starting point, not the final output
 4. When presenting the draft in Step 8, show what was auto-generated and what was changed based on the user's answers
-5. After PDF generation, update the report's `## Cover Letter Draft` section with a note: `PDF generated: output/{path} on {date}`
+5. After PDF generation, update the report's `## Cover Letter Draft` section with a note: `PDF generated: workspace/documents/{path} on {date}`

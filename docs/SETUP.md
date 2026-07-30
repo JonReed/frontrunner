@@ -43,7 +43,7 @@ For one-shot workers or batch tasks in Codex, use `codex exec`. See [docs/CODEX.
 ```bash
 codex exec "Evaluate this JD with frontrunner auto-pipeline: https://company.com/jobs/123"
 codex exec "Run frontrunner scan mode in this repo."
-codex exec "Run frontrunner pipeline mode for data/pipeline.md."
+codex exec "Run frontrunner pipeline mode for workspace/search/pipeline.md."
 codex exec "Run frontrunner pdf mode for the latest evaluated role."
 codex exec "Run frontrunner email mode for the latest evaluated role. Draft only; do not send, submit, or click anything."
 codex exec "Run frontrunner tracker mode and summarize the current statuses."

@@ -13,8 +13,8 @@ try {
     '',
     '| # | Date | Company | Role | Score | Status | PDF | Report | Notes |',
     '|---|------|---------|------|-------|--------|-----|--------|-------|',
-    '| 1 | 2026-06-01 | Acme | Eng | 4.5/5 | Applied | ✅ | [1](../reports/001-acme-2026-06-01.md) | note |',
-    '| 2 | 2026-06-02 | Beta | Eng | 3.8/5 | Evaluated | ❌ | [2](../reports/002-beta-2026-06-02.md) | note |',
+    '| 1 | 2026-06-01 | Acme | Eng | 4.5/5 | Applied | ✅ | [1](../reports/evaluations/001-acme-2026-06-01.md) | note |',
+    '| 2 | 2026-06-02 | Beta | Eng | 3.8/5 | Evaluated | ❌ | [2](../reports/evaluations/002-beta-2026-06-02.md) | note |',
     '| 3 | 2026-06-03 | Gama | Eng | 4.2/5 | Interview | ✅ | ❌ | note |',
   ].join('\r\n');
   const t = stats.computeTrackerStats(trackerMd);
@@ -91,7 +91,7 @@ try {
     fail(`isoWeek boundary math wrong: ${JSON.stringify(wk)}`);
   }
 
-  // Portal coverage — real portals.yml keys (tracked_companies / job_boards).
+  // Portal coverage — real workspace/search/portals.yml keys (tracked_companies / job_boards).
   const portalsYml = [
     'tracked_companies:',
     '  - name: Acme',

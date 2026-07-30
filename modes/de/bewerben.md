@@ -12,7 +12,7 @@ Interaktiver Modus für den Moment, in dem der Kandidat in Chrome ein Bewerbungs
 ```
 1. ERKENNEN     → aktiven Chrome-Tab lesen (Screenshot / URL / Titel)
 2. IDENTIFIZIEREN → Firma + Rolle aus der Seite extrahieren
-3. SUCHEN       → mit bestehenden Reports unter reports/ abgleichen
+3. SUCHEN       → mit bestehenden Reports unter workspace/reports/evaluations/ abgleichen
 4. LADEN        → vollständigen Report lesen + Block G (falls vorhanden)
 5. VERGLEICHEN  → Stimmt die Rolle auf dem Bildschirm mit der bewerteten überein? Wenn sie sich geändert hat → warnen
 6. ANALYSIEREN  → ALLE sichtbaren Fragen des Formulars identifizieren
@@ -32,7 +32,7 @@ Interaktiver Modus für den Moment, in dem der Kandidat in Chrome ein Bewerbungs
 ## Schritt 2 — Identifizieren und Kontext laden
 
 1. Firmennamen und Rollentitel von der Seite extrahieren
-2. In `reports/` per Grep (case-insensitive) nach dem Firmennamen suchen
+2. In `workspace/reports/evaluations/` per Grep (case-insensitive) nach dem Firmennamen suchen
 3. Bei Treffer → vollständigen Report laden
 4. Wenn Block G vorhanden ist → die früheren Draft-Antworten als Basis laden
 5. Wenn KEIN Treffer → den Kandidaten warnen und eine schnelle Auto-Pipeline anbieten
@@ -56,7 +56,7 @@ ALLE sichtbaren Fragen identifizieren:
 
 Jede Frage klassifizieren:
 - **Bereits in Block G beantwortet** → bestehende Antwort übernehmen
-- **Neue Frage** → Antwort aus dem Report + `cv.md` generieren
+- **Neue Frage** → Antwort aus dem Report + `workspace/profile/cv.md` generieren
 
 ## Schritt 5 — Antworten erzeugen
 

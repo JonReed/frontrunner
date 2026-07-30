@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * theme-style.mjs — dynamic CV/cover-letter theming from config/profile.yml (#1837)
+ * theme-style.mjs — dynamic CV/cover-letter theming from workspace/profile/profile.yml (#1837)
  *
- * Users declare a `style:` block in config/profile.yml:
+ * Users declare a `style:` block in workspace/profile/profile.yml:
  *
  *   style:
  *     accent_color: "#2563eb"
@@ -35,7 +35,7 @@ export const STYLE_VAR_MAP = {
  * @param {string} [profilePath]
  * @returns {Record<string,string>}
  */
-export function readStyleTokens(profilePath = 'config/profile.yml') {
+export function readStyleTokens(profilePath = 'workspace/profile/profile.yml') {
   try {
     if (!existsSync(profilePath)) return {};
     const raw = yaml.load(readFileSync(profilePath, 'utf-8')) || {};

@@ -5,9 +5,9 @@
      ============================================================
      이 파일은 한국어 frontrunner 모드 전체에서 공유하는 컨텍스트입니다.
      frontrunner를 사용하기 전에 반드시 다음을 준비하세요.
-     1. config/profile.yml에 개인 정보를 입력
-     2. 프로젝트 루트에 cv.md 생성 (Markdown CV)
-     3. (선택) article-digest.md에 proof point 정리
+     1. workspace/profile/profile.yml에 개인 정보를 입력
+     2. 프로젝트 루트에 workspace/profile/cv.md 생성 (Markdown CV)
+     3. (선택) workspace/profile/article-digest.md에 proof point 정리
      4. 아래 [개인화] 표시가 있는 섹션을 자신의 상황에 맞게 조정
      ============================================================ -->
 
@@ -15,12 +15,12 @@
 
 | 파일 | 경로 | 언제 |
 |------|------|------|
-| cv.md | `cv.md` (프로젝트 루트) | 항상 |
-| article-digest.md | `article-digest.md` (있다면) | 항상 (상세 proof point) |
-| profile.yml | `config/profile.yml` | 항상 (신원 정보와 목표 역할) |
+| workspace/profile/cv.md | `workspace/profile/cv.md` (프로젝트 루트) | 항상 |
+| workspace/profile/article-digest.md | `workspace/profile/article-digest.md` (있다면) | 항상 (상세 proof point) |
+| profile.yml | `workspace/profile/profile.yml` | 항상 (신원 정보와 목표 역할) |
 
-**규칙: proof point의 metric을 절대 하드코딩하지 않습니다.** 평가 시점에 `cv.md`와 `article-digest.md`에서 읽습니다.
-**규칙: article/project metric은 `article-digest.md`가 `cv.md`보다 우선합니다** (`cv.md`에는 더 오래된 수치가 있을 수 있음).
+**규칙: proof point의 metric을 절대 하드코딩하지 않습니다.** 평가 시점에 `workspace/profile/cv.md`와 `workspace/profile/article-digest.md`에서 읽습니다.
+**규칙: article/project metric은 `workspace/profile/article-digest.md`가 `workspace/profile/cv.md`보다 우선합니다** (`workspace/profile/cv.md`에는 더 오래된 수치가 있을 수 있음).
 
 ---
 
@@ -46,16 +46,16 @@
 
 ### Archetype별 adaptive framing
 
-> **구체적인 수치는 평가 시점에 `cv.md`와 `article-digest.md`에서 읽습니다. 이 파일에 고정값으로 적어두지 마세요.**
+> **구체적인 수치는 평가 시점에 `workspace/profile/cv.md`와 `workspace/profile/article-digest.md`에서 읽습니다. 이 파일에 고정값으로 적어두지 마세요.**
 
 | 역할이... | 후보자에게서 강조할 것 | Proof point source |
 |-----------|------------------------|--------------------|
-| Platform / LLMOps | production 경험, observability, evals, closed-loop | article-digest.md + cv.md |
-| Agentic / Automation | multi-agent orchestration, HITL, reliability, cost | article-digest.md + cv.md |
-| Technical AI PM | product discovery, PRD, metric, stakeholder management | cv.md + article-digest.md |
-| Solutions Architect | system design, integration, enterprise readiness | article-digest.md + cv.md |
-| Forward Deployed Engineer | 빠른 delivery, 고객 접점, prototype to production | cv.md + article-digest.md |
-| AI Transformation Lead | change management, team enablement, adoption | cv.md + article-digest.md |
+| Platform / LLMOps | production 경험, observability, evals, closed-loop | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Agentic / Automation | multi-agent orchestration, HITL, reliability, cost | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Technical AI PM | product discovery, PRD, metric, stakeholder management | workspace/profile/cv.md + workspace/profile/article-digest.md |
+| Solutions Architect | system design, integration, enterprise readiness | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Forward Deployed Engineer | 빠른 delivery, 고객 접점, prototype to production | workspace/profile/cv.md + workspace/profile/article-digest.md |
+| AI Transformation Lead | change management, team enablement, adoption | workspace/profile/cv.md + workspace/profile/article-digest.md |
 
 <!-- [개인화] 자신의 구체적인 project/article을 위 archetype에 연결하세요. -->
 
@@ -65,11 +65,11 @@
      - "5년간 SaaS를 만들고 매각. 이제 enterprise applied AI에 100% 집중."
      - "Series-B에서 x10 성장기를 겪은 engineering lead. 다음 도전을 찾는 중."
      - "컨설팅에서 product로 전환. 높은 책임 범위의 역할을 찾는 중."
-     config/profile.yml -> narrative.exit_story에서 읽음 -->
+     workspace/profile/profile.yml -> narrative.exit_story에서 읽음 -->
 
-모든 콘텐츠에서 `config/profile.yml`의 전환 narrative를 사용해 framing합니다.
+모든 콘텐츠에서 `workspace/profile/profile.yml`의 전환 narrative를 사용해 framing합니다.
 - **PDF summary:** 과거와 미래를 연결합니다 -- "이제 같은 [역량]을 [공고의 domain]에 적용합니다."
-- **STAR story:** `article-digest.md`의 proof point를 참조합니다.
+- **STAR story:** `workspace/profile/article-digest.md`의 proof point를 참조합니다.
 - **답변 초안(블록 G):** 전환 narrative는 첫 답변에 넣습니다.
 - **공고가 "entrepreneurial", "autonomy", "builder", "end-to-end"를 언급할 때:** 이것이 핵심 차별점입니다. match weight를 높입니다.
 
@@ -91,7 +91,7 @@
        url: "https://yourdomain.dev/demo"
        password: "demo-2026"
        when_to_share: "LLMOps, AI Platform, Observability roles"
-     config/profile.yml -> narrative.proof_points 및 narrative.dashboard에서 읽음 -->
+     workspace/profile/profile.yml -> narrative.proof_points 및 narrative.dashboard에서 읽음 -->
 
 후보자에게 live demo / dashboard가 있다면(`profile.yml` 확인), 관련성 높은 지원에서 접근 정보를 제안합니다.
 
@@ -145,7 +145,7 @@
 
 ### Location Policy
 
-<!-- [개인화] 자신의 상황에 맞게 조정하세요. config/profile.yml -> location에서 읽음 -->
+<!-- [개인화] 자신의 상황에 맞게 조정하세요. workspace/profile/profile.yml -> location에서 읽음 -->
 
 **지원서 폼에서:**
 - "출근 가능 여부" 같은 binary 질문: `profile.yml`의 실제 availability에 따라 답합니다.
@@ -167,7 +167,7 @@
 ### 절대 하지 말 것
 
 1. 경험이나 metric을 지어내기
-2. `cv.md` 또는 portfolio 파일을 임의로 수정하기
+2. `workspace/profile/cv.md` 또는 portfolio 파일을 임의로 수정하기
 3. 후보자 대신 지원서를 제출하기
 4. 생성 메시지에 전화번호 공유하기
 5. 시장가보다 낮은 보상을 추천하기
@@ -178,7 +178,7 @@
 ### 항상 할 것
 
 0. **커버레터:** 폼이 허용하면 항상 포함합니다. CV와 같은 visual design의 PDF. 공고 문구를 proof point와 매핑. 최대 1페이지.
-1. 공고 평가 전 `cv.md`와 `article-digest.md`(있다면)를 읽습니다.
+1. 공고 평가 전 `workspace/profile/cv.md`와 `workspace/profile/article-digest.md`(있다면)를 읽습니다.
 1b. **세션 첫 평가:** Bash로 `node src/cv/cv-sync-check.mjs`를 실행합니다. 경고가 있으면 후보자에게 알립니다.
 2. 역할 archetype을 감지하고 framing을 조정합니다.
 3. matching 시 CV의 정확한 문장을 인용합니다.
@@ -188,7 +188,7 @@
 7. 직접적이고 구체적으로 씁니다. 불필요한 말은 줄입니다.
 8. 한국 테크 채용 문맥에 맞는 자연스러운 한국어를 사용합니다. 짧은 문장, 동사 중심, 수동태 회피. stack, pipeline, deployment, embedding 같은 현장 용어는 억지로 번역하지 않습니다.
 8b. **PDF Professional Summary의 case study URL:** PDF가 case study나 demo를 언급하면 URL은 반드시 첫 문단(Professional Summary)에 들어갑니다. recruiter는 summary만 읽는 경우가 많습니다. HTML에서는 모든 URL에 `white-space: nowrap` 적용.
-9. **Tracker entry는 TSV로 작성** -- 새 항목을 위해 applications.md를 직접 수정하지 않습니다. `batch/tracker-additions/`에 TSV를 쓰고 `src/tracker/merge-tracker.mjs`가 병합합니다.
+9. **Tracker entry는 TSV로 작성** -- 새 항목을 위해 applications.md를 직접 수정하지 않습니다. `workspace/.state/tracker-additions/`에 TSV를 쓰고 `src/tracker/merge-tracker.mjs`가 병합합니다.
 10. **모든 report header에 `**URL:**` 포함** -- Score와 PDF 사이에 둡니다.
 
 ### 도구
@@ -198,7 +198,7 @@
 | WebSearch | 보상, 시장 trend, 회사 culture, LinkedIn contact, 공고 fallback 조사 |
 | WebFetch | 정적 페이지의 공고 추출 fallback |
 | Playwright | 공고 활성 여부 확인(browser_navigate + browser_snapshot), SPA에서 공고 추출. **중요: Playwright를 쓰는 agent를 2개 이상 병렬로 띄우지 않습니다 -- 같은 browser instance를 공유합니다** |
-| Read | cv.md, article-digest.md, cv-template.html |
+| Read | workspace/profile/cv.md, workspace/profile/article-digest.md, cv-template.html |
 | Write | PDF용 임시 HTML, applications.md, reports .md |
 | Edit | tracker 업데이트 |
 | Bash | `node src/cv/generate-pdf.mjs` |

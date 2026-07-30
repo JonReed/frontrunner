@@ -4,7 +4,7 @@
  *
  * One JSON contract for "how is my pipeline doing, lifetime": tracker roll-up,
  * cumulative funnel, lifetime scanner totals from scan-history.tsv, portal
- * coverage from portals.yml, and follow-up compliance. Reads durable data
+ * coverage from workspace/search/portals.yml, and follow-up compliance. Reads durable data
  * files only — no LLM cost anywhere.
  *
  * Run: node src/analysis/stats.mjs             (JSON to stdout)
@@ -14,7 +14,7 @@
  * `metadata.sources` says which files were found — a fresh clone with zero
  * user data emits the full contract shape with null sections.
  *
- * `runs` aggregates data/scan-runs.tsv (per-run counters written by src/scan/scan.mjs,
+ * `runs` aggregates workspace/.state/scan-runs.tsv (per-run counters written by src/scan/scan.mjs,
  * #1604 PR-2) — null until the first non-dry scan creates the file.
  */
 
@@ -26,12 +26,12 @@ import { resolveColumns, parseTrackerRow } from '../tracker/tracker-parse.mjs';
 import { normalizeStatus } from '../tracker/followup-cadence.mjs';
 
 import { ROOT } from '#paths';
-const APPS_FILE = join(ROOT, 'data', 'applications.md');
-const SCAN_HISTORY_FILE = join(ROOT, 'data', 'scan-history.tsv');
-const FOLLOWUPS_FILE = join(ROOT, 'data', 'follow-ups.md');
-const SCAN_RUNS_FILE = join(ROOT, 'data', 'scan-runs.tsv');
-const PORTALS_FILE = join(ROOT, 'portals.yml');
-const PORTAL_HEALTH_FILE = join(ROOT, 'data', 'portal-health.tsv');
+const APPS_FILE = join(ROOT, 'workspace', 'applications', 'tracker.md');
+const SCAN_HISTORY_FILE = join(ROOT, 'workspace', '.state', 'scan-history.tsv');
+const FOLLOWUPS_FILE = join(ROOT, 'workspace', 'applications', 'follow-ups.md');
+const SCAN_RUNS_FILE = join(ROOT, 'workspace', '.state', 'scan-runs.tsv');
+const PORTALS_FILE = join(ROOT, 'workspace/search/portals.yml');
+const PORTAL_HEALTH_FILE = join(ROOT, 'workspace', '.state', 'portal-health.tsv');
 
 const CANONICAL_STATUSES = ['Evaluated', 'Applied', 'Responded', 'Interview', 'Offer', 'Hired', 'Rejected', 'Discarded', 'SKIP'];
 
@@ -228,11 +228,11 @@ export function scanCompanyNames(content) {
  * producingPct = share of configured tracked_companies whose name has EVER
  * appeared as a scanned job's company. A low number usually means "no matching
  * openings from that company yet", NOT a broken portal — the --summary label
- * carries the same caveat. Matching is exact-lowercase between portals.yml
+ * carries the same caveat. Matching is exact-lowercase between workspace/search/portals.yml
  * `name` and the scanner's company string; that undercounts when names differ
  * ("Acme" vs "Acme, Inc."). Documented v1 contract — no silent fuzzy-matching.
  *
- * @param {string} portalsYmlContent - Raw portals.yml text.
+ * @param {string} portalsYmlContent - Raw workspace/search/portals.yml text.
  * @param {object|null} scanStats - Result of computeScanStats (for activePortals).
  * @param {string[]} [producingCompanyNames] - From scanCompanyNames().
  */
@@ -331,7 +331,7 @@ export function computeFollowupStats(followupsContent, trackerByNum) {
 // ── Scan-run trends ─────────────────────────────────────────────────
 
 /**
- * Aggregate data/scan-runs.tsv (written by src/scan/scan.mjs, one row per non-dry run).
+ * Aggregate workspace/.state/scan-runs.tsv (written by src/scan/scan.mjs, one row per non-dry run).
  *
  * Header-name parsing, NEVER positional: columns may be appended in later
  * schema versions and a positional slice would silently miscount from then on.
@@ -435,7 +435,7 @@ function printSummary(stats) {
     const statusLine = Object.entries(t.byStatus).filter(([, c]) => c > 0).map(([s, c]) => `${s} ${c}`).join(' · ');
     if (statusLine) console.log(`Status:     ${statusLine}`);
   } else {
-    console.log('Tracker:    — no data (data/applications.md missing)');
+    console.log('Tracker:    — no data (workspace/applications/tracker.md missing)');
   }
   const f = stats.funnel;
   if (f) {
@@ -447,27 +447,27 @@ function printSummary(stats) {
     const portalsLine = Object.entries(s.byPortal).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([p, c]) => `${p} ${c}`).join(' · ');
     console.log(`Scanner:    ${s.totalRecorded} jobs recorded${s.firstSeen ? ` since ${s.firstSeen}` : ''} | ${s.added} added | ${s.distinctCompanies} companies${portalsLine ? ` | ${portalsLine}` : ''}`);
   } else {
-    console.log('Scanner:    — no data (data/scan-history.tsv missing)');
+    console.log('Scanner:    — no data (workspace/.state/scan-history.tsv missing)');
   }
   const p = stats.portals;
   if (p) {
     const deadPart = p.persistentlyDead > 0 ? ` | 🚨 ${p.persistentlyDead} persistently dead (run src/scan/verify-portals.mjs)` : '';
     console.log(`Portals:    ${p.configuredCompanies} companies + ${p.configuredBoards} boards configured | ${p.producingCompanies} have produced a match (${p.producingPct}%)${deadPart} — low ≠ broken, may just be no openings`);
   } else {
-    console.log('Portals:    — no data (portals.yml missing)');
+    console.log('Portals:    — no data (workspace/search/portals.yml missing)');
   }
   const fu = stats.followups;
   if (fu) {
     console.log(`Follow-ups: ${fu.totalFollowups} sent across ${fu.appsWithFollowups} apps | ${fu.appliedWithoutFollowup} Applied apps with none | avg ${fu.avgPerApp}/app`);
   } else {
-    console.log('Follow-ups: — no data (data/follow-ups.md missing)');
+    console.log('Follow-ups: — no data (workspace/applications/follow-ups.md missing)');
   }
   const r = stats.runs;
   if (r) {
     const failed = r.failedRuns > 0 ? ` | ${r.failedRuns} failed` : '';
     console.log(`Runs:       ${r.totalRuns} recorded (last ${r.lastRunDate})${failed} | avg ${r.avgFoundPerRun} found / ${r.avgNewPerRun} new per run | filters remove ${r.filterRemovalPct}%`);
   } else {
-    console.log('Runs:       — no data (data/scan-runs.tsv missing; created by the next scan)');
+    console.log('Runs:       — no data (workspace/.state/scan-runs.tsv missing; created by the next scan)');
   }
   console.log('');
 }

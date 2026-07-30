@@ -63,6 +63,8 @@ function runControl(base, request) {
 function sandbox(t) {
   const base = mkdtempSync(join(tmpdir(), 'frontrunner-profile-transaction-'));
   mkdirSync(join(base, 'config'), { recursive: true });
+  mkdirSync(join(base, 'workspace', 'profile'), { recursive: true });
+  mkdirSync(join(base, 'workspace', '.state'), { recursive: true });
   writeFileSync(
     join(base, 'config', 'profile.example.yml'),
     readFileSync(REAL_TEMPLATE, 'utf8'),
@@ -73,8 +75,8 @@ function sandbox(t) {
 
 test('whole-save preflight prevents a late invalid value from partially replacing the CV', async (t) => {
   const base = sandbox(t);
-  const cv = join(base, 'cv.md');
-  const profile = join(base, 'config', 'profile.yml');
+  const cv = join(base, 'workspace/profile/cv.md');
+  const profile = join(base, 'workspace', 'profile', 'profile.yml');
   writeFileSync(cv, '# Original CV\n');
   writeFileSync(profile, 'spend_tier: standard\n');
 
@@ -94,9 +96,9 @@ test('whole-save preflight prevents a late invalid value from partially replacin
 
 test('destructive process death replays one complete profile decision exactly once', async (t) => {
   const base = sandbox(t);
-  writeFileSync(join(base, 'cv.md'), '# Original CV\n');
+  writeFileSync(join(base, 'workspace/profile/cv.md'), '# Original CV\n');
   writeFileSync(
-    join(base, 'config', 'profile.yml'),
+    join(base, 'workspace', 'profile', 'profile.yml'),
     'candidate:\n  full_name: Old Name\nspend_tier: standard\n',
   );
   const save = {
@@ -110,13 +112,13 @@ test('destructive process death replays one complete profile decision exactly on
 
   const recovered = await recoverProfileSave({ base });
   assert.equal(recovered.entries.length, 3);
-  assert.equal(readFileSync(join(base, 'cv.md'), 'utf8'), '# New CV\n');
+  assert.equal(readFileSync(join(base, 'workspace/profile/cv.md'), 'utf8'), '# New CV\n');
   assert.equal(
-    readFileSync(join(base, 'cv-versions', '01-leadership.md'), 'utf8'),
+    readFileSync(join(base, 'workspace', 'profile', 'cv-versions', '01-leadership.md'), 'utf8'),
     '# Leadership CV\n',
   );
   assert.match(
-    readFileSync(join(base, 'config', 'profile.yml'), 'utf8'),
+    readFileSync(join(base, 'workspace', 'profile', 'profile.yml'), 'utf8'),
     /full_name: New Name/u,
   );
   assert.equal(existsSync(profileSaveJournalPath(base)), false);
@@ -125,7 +127,7 @@ test('destructive process death replays one complete profile decision exactly on
 
 test('recovery refuses to overwrite a newer edit made after a crash', async (t) => {
   const base = sandbox(t);
-  const cv = join(base, 'cv.md');
+  const cv = join(base, 'workspace/profile/cv.md');
   writeFileSync(cv, '# Original CV\n');
 
   await assert.rejects(
@@ -162,7 +164,7 @@ test('destructive cross-process profile saves retain independent field updates',
   ]);
   assert.deepEqual(results.map(result => result.code), [0, 0, 0]);
 
-  const profile = readFileSync(join(base, 'config', 'profile.yml'), 'utf8');
+  const profile = readFileSync(join(base, 'workspace', 'profile', 'profile.yml'), 'utf8');
   assert.match(profile, /full_name: "Jane Smith"/u);
   assert.match(profile, /email: "jane@example.com"/u);
   assert.match(profile, /city: "Manchester"/u);
@@ -205,15 +207,15 @@ test('the fixed profile controller publishes one complete transaction', async (t
   assert.equal(result.code, 0, result.stderr);
   assert.deepEqual(JSON.parse(result.stdout), {
     version: '1',
-    written: ['cv.md', 'cv-versions/1', 'candidate.full_name'],
+    written: ['workspace/profile/cv.md', 'workspace/profile/cv-versions/1', 'candidate.full_name'],
   });
-  assert.equal(readFileSync(join(base, 'cv.md'), 'utf8'), '# Controller CV\n');
+  assert.equal(readFileSync(join(base, 'workspace/profile/cv.md'), 'utf8'), '# Controller CV\n');
   assert.equal(
-    readFileSync(join(base, 'cv-versions', '01-focused.md'), 'utf8'),
+    readFileSync(join(base, 'workspace', 'profile', 'cv-versions', '01-focused.md'), 'utf8'),
     '# Focused CV\n',
   );
   assert.match(
-    readFileSync(join(base, 'config', 'profile.yml'), 'utf8'),
+    readFileSync(join(base, 'workspace', 'profile', 'profile.yml'), 'utf8'),
     /full_name: "Controller User"/u,
   );
   assert.equal(existsSync(profileSaveJournalPath(base)), false);

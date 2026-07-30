@@ -1,5 +1,5 @@
 # Frontrunner Profile Configuration
-# Copy this file to config/profile.yml and fill in your details.
+# Copy this file to workspace/profile/profile.yml and fill in your details.
 # This is the single source of truth for your personal data across all modes.
 
 candidate:
@@ -81,7 +81,7 @@ location:
   authorized_in: ["United States"]
   # true if you need visa sponsorship for roles OUTSIDE authorized_in. When a JD
   # explicitly states it will not sponsor, that is a hard blocker (see
-  # modes/_profile.md "Your Location Policy"). Omit → treated as false.
+  # workspace/profile/targeting.md "Your Location Policy"). Omit → treated as false.
   needs_sponsorship: false
   # For remote roles outside your country:
   # onsite_availability: "1 week/month in any city"
@@ -151,7 +151,7 @@ cv:
 #   deprioritize_if_absent: true
 
 # Optional user-owned LaTeX CV for `/frontrunner latex-tex` (opt-in tailoring in place).
-# cv.md remains the default source of truth for evaluations and auto-pipeline.
+# workspace/profile/cv.md remains the default source of truth for evaluations and auto-pipeline.
 # latex:
 #   source: resume.tex
 

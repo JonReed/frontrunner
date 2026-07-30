@@ -7,9 +7,9 @@
  * Lever) via the existing providers/ layer — zero LLM tokens, zero auth. A
  * company "resolves" when a vendor's board exists AND currently lists ≥1 job.
  *
- * portals.yml is a USER-LAYER file, so by DEFAULT this command is preview-only:
+ * workspace/search/portals.yml is a USER-LAYER file, so by DEFAULT this command is preview-only:
  * it prints the entries it WOULD add (pendingEntries) and writes nothing. Pass
- * --write to explicitly opt in to appending them to portals.yml `tracked_companies`
+ * --write to explicitly opt in to appending them to workspace/search/portals.yml `tracked_companies`
  * (a text splice that preserves the file's comments and formatting; deduped;
  * idempotent; atomic temp-then-rename). Companies that don't resolve —
  * JS-rendered portals, non-standard slugs, or Workday without a hint — are
@@ -19,7 +19,7 @@
  * bare company names as positional CLI args.
  *
  * Run: node src/scan/discover-ats.mjs --in companies.yml            (preview — writes nothing)
- *      node src/scan/discover-ats.mjs --in companies.yml --write    (opt in: append to portals.yml)
+ *      node src/scan/discover-ats.mjs --in companies.yml --write    (opt in: append to workspace/search/portals.yml)
  *      node src/scan/discover-ats.mjs Stripe Ramp Mollie            (bare names)
  *      node src/scan/discover-ats.mjs --in companies.yml --summary  (human table)
  *      node src/scan/discover-ats.mjs --in companies.yml --vendors gh,ashby
@@ -45,7 +45,7 @@ import workday from '../../providers/workday.mjs';
 
 import { ROOT as FRONTRUNNER } from '#paths';
 import { mutateFileLocked } from '../lib/locked-file.mjs';
-const PORTALS_PATH = process.env.FRONTRUNNER_PORTALS || join(FRONTRUNNER, 'portals.yml');
+const PORTALS_PATH = process.env.FRONTRUNNER_PORTALS || join(FRONTRUNNER, 'workspace/search/portals.yml');
 
 // Safe charset for a slug that will be interpolated into an ATS URL. Consistent
 // with the SLUG_RE guard in scan-ats-full.mjs and config/seeds/vc-portfolios.mjs — a
@@ -85,7 +85,7 @@ const WORKDAY_INSTANCES = ['wd1', 'wd2', 'wd3', 'wd5', 'wd10', 'wd12', 'wd101', 
 
 const USAGE = `Usage:
   node src/scan/discover-ats.mjs --in companies.yml            # PREVIEW — resolve + print entries, write nothing
-  node src/scan/discover-ats.mjs --in companies.yml --write    # opt in: append resolved entries to portals.yml
+  node src/scan/discover-ats.mjs --in companies.yml --write    # opt in: append resolved entries to workspace/search/portals.yml
   node src/scan/discover-ats.mjs Stripe Ramp Mollie            # company names as positional args
   node src/scan/discover-ats.mjs --in companies.yml --summary  # human-readable table
   node src/scan/discover-ats.mjs --in companies.yml --vendors gh,ashby,lever  # restrict probes
@@ -93,7 +93,7 @@ const USAGE = `Usage:
   node src/scan/discover-ats.mjs --self-test                   # inline test suite
   node src/scan/discover-ats.mjs --help                        # print this usage block
 
-portals.yml is a user-layer file: this command NEVER writes it unless you pass
+workspace/search/portals.yml is a user-layer file: this command NEVER writes it unless you pass
 --write. The default previews the entries it would add (see pendingEntries).
 
 Vendors: gh, ashby, lever (resolve from a name/slug) and workday (resolves from
@@ -299,7 +299,7 @@ export function buildWorkdayCandidates(coords) {
 
 /**
  * Quote a YAML scalar only when it needs it. Bare values stay bare (matching the
- * existing hand-written portals.yml style); values with YAML-special characters
+ * existing hand-written workspace/search/portals.yml style); values with YAML-special characters
  * are double-quoted and escaped.
  * @param {string} value
  * @returns {string}
@@ -312,12 +312,12 @@ export function yamlScalar(value) {
 }
 
 /**
- * Render one resolved match as a portals.yml tracked_companies entry snippet.
+ * Render one resolved match as a workspace/search/portals.yml tracked_companies entry snippet.
  * Leads with a newline so it slots cleanly against surrounding entries. Only
  * Greenhouse gets an `api:` line (matching every GH entry in the shipped file).
  * Workday gets an explicit `provider: workday` line — its detect() keys off the
  * myworkdayjobs.com host, but pinning it is unambiguous and matches how
- * provider-specific entries are written elsewhere in portals.yml.
+ * provider-specific entries are written elsewhere in workspace/search/portals.yml.
  *
  * @param {{name:string, careers_url:string, api?:string, provider?:string, notes?:string}} match
  * @returns {string}
@@ -344,7 +344,7 @@ function normalizeUrl(u) {
  * companies resolving to the same board).
  *
  * @param {{name:string, careers_url:string, api?:string}[]} matches
- * @param {any[]} existingEntries  Parsed portals.yml tracked_companies (or []).
+ * @param {any[]} existingEntries  Parsed workspace/search/portals.yml tracked_companies (or []).
  * @returns {{fresh: any[], duplicates: any[]}}
  */
 export function dedupeAgainstPortals(matches, existingEntries) {
@@ -377,10 +377,10 @@ export function dedupeAgainstPortals(matches, existingEntries) {
 
 /**
  * Splice rendered entry snippets into the tracked_companies block of a
- * portals.yml text, preserving every other byte (comments, other blocks,
+ * workspace/search/portals.yml text, preserving every other byte (comments, other blocks,
  * ordering). Never re-serializes the document.
  *
- * @param {string} fileText   Current portals.yml contents.
+ * @param {string} fileText   Current workspace/search/portals.yml contents.
  * @param {string[]} snippets  Output of renderPortalEntry(), one per entry.
  * @returns {string}
  */
@@ -490,13 +490,13 @@ export async function appendDiscoveredPortals(
   let outcome;
   await mutateFileLocked(portalsPath, current => {
     if (!existsSync(portalsPath)) {
-      throw new Error(`portals.yml not found at ${portalsPath}`);
+      throw new Error(`workspace/search/portals.yml not found at ${portalsPath}`);
     }
     let parsed;
     try {
       parsed = yaml.load(current);
     } catch (error) {
-      throw new Error(`portals.yml could not be parsed: ${error.message}`);
+      throw new Error(`workspace/search/portals.yml could not be parsed: ${error.message}`);
     }
     const existingEntries = Array.isArray(parsed?.tracked_companies)
       ? parsed.tracked_companies
@@ -830,7 +830,7 @@ function runSelfTest() {
 
 // ── CLI arg parsing ──────────────────────────────────────────────────
 
-// --write is the explicit opt-in to modify portals.yml (a user-layer file);
+// --write is the explicit opt-in to modify workspace/search/portals.yml (a user-layer file);
 // without it the run is preview-only. --dry-run is accepted as a harmless alias
 // for "don't write" (the default) so an older invocation never surprises anyone.
 const KNOWN_FLAGS = ['--in', '--vendors', '--write', '--dry-run', '--summary', '--self-test', '--help', '-h'];
@@ -889,7 +889,7 @@ function parseArgs(argv) {
     inPath: valueOf('--in'),
     vendors,
     includeWorkday,
-    // Preview by default; only --write may touch portals.yml. --dry-run is an
+    // Preview by default; only --write may touch workspace/search/portals.yml. --dry-run is an
     // accepted no-op alias (it just reaffirms the default).
     write: args.includes('--write'),
     summary: args.includes('--summary'),
@@ -941,13 +941,13 @@ async function main() {
       const parsed = yaml.load(readFileSync(PORTALS_PATH, 'utf-8'));
       existingEntries = Array.isArray(parsed?.tracked_companies) ? parsed.tracked_companies : [];
     } catch (err) {
-      warnings.push(`portals.yml: could not parse for dedupe — ${err.message}`);
+      warnings.push(`workspace/search/portals.yml: could not parse for dedupe — ${err.message}`);
     }
   }
   let { fresh, duplicates } = dedupeAgainstPortals(resolved, existingEntries);
   let snippets = fresh.map(renderPortalEntry);
 
-  // Data-contract rule: portals.yml is a USER-LAYER file and is NEVER written
+  // Data-contract rule: workspace/search/portals.yml is a USER-LAYER file and is NEVER written
   // unless the user explicitly opts in with --write. The default is preview —
   // we print the entries we WOULD add and touch nothing. This mirrors how the
   // rest of frontrunner treats user files (see DATA_CONTRACT.md).
@@ -959,9 +959,9 @@ async function main() {
     snippets = mutation.snippets;
     written = mutation.written;
   } else if (opts.write && fresh.length && !existsSync(PORTALS_PATH)) {
-    warnings.push(`--write given but portals.yml not found at ${PORTALS_PATH} — printing entries instead`);
+    warnings.push(`--write given but workspace/search/portals.yml not found at ${PORTALS_PATH} — printing entries instead`);
   } else if (!opts.write && fresh.length) {
-    warnings.push(`preview only — ${fresh.length} new entr${fresh.length === 1 ? 'y' : 'ies'} shown in pendingEntries; re-run with --write to append them to portals.yml`);
+    warnings.push(`preview only — ${fresh.length} new entr${fresh.length === 1 ? 'y' : 'ies'} shown in pendingEntries; re-run with --write to append them to workspace/search/portals.yml`);
   }
 
   const metadata = {

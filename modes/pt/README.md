@@ -31,7 +31,7 @@ Claude vai ler os arquivos desta pasta em vez de `modes/`.
 
 ### Caminho 2 -- Permanente, via perfil
 
-Adicione em `config/profile.yml` uma preferência de idioma:
+Adicione em `workspace/profile/profile.yml` uma preferência de idioma:
 
 ```yaml
 language:
@@ -62,12 +62,12 @@ Se a comunidade adotar os modos em português, mais modos serão traduzidos em P
 
 Propositalmente não traduzido, porque é vocabulário padrão de tech:
 
-- `cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`, `proof point`
+- `workspace/profile/cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`, `proof point`
 - Nomes de tools (`Playwright`, `WebSearch`, `WebFetch`, `Read`, `Write`, `Edit`, `Bash`)
 - Valores de status no tracker (`Evaluated`, `Applied`, `Interview`, `Offer`, `Rejected`)
 - Code snippets, caminhos de arquivo, comandos
 
-Os modos usam português tech brasileiro, como se fala em times de engenharia reais em São Paulo, Florianópolis ou Belo Horizonte: texto corrido em português, termos técnicos em inglês onde são de uso comum. Nada de traduzir "pipeline" para "tubulação" ou "cv.md" para "curriculo.md".
+Os modos usam português tech brasileiro, como se fala em times de engenharia reais em São Paulo, Florianópolis ou Belo Horizonte: texto corrido em português, termos técnicos em inglês onde são de uso comum. Nada de traduzir "pipeline" para "tubulação" ou "workspace/profile/cv.md" para "curriculo.md".
 
 ## Vocabulário de Referência
 

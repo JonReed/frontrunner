@@ -9,7 +9,7 @@ export const SUPPORTED_FAMILIES = ['resumeSubheading', 'tabularx-itemize'];
 
 export const UNSUPPORTED_HINT =
   'Unsupported LaTeX CV layout. v1 supports \\resumeSubheading + \\resumeItem macros, ' +
-  'or tabularx + itemize without resume macros. Use /frontrunner latex (cv.md → frontrunner template) instead.';
+  'or tabularx + itemize without resume macros. Use /frontrunner latex (workspace/profile/cv.md → frontrunner template) instead.';
 
 /**
  * @param {string} tex
@@ -324,7 +324,7 @@ export function buildManifest(texPath, tex) {
       source: texPath,
       slots: [],
       error: UNSUPPORTED_HINT,
-      hint: 'Place resume.tex in the project root or set latex.source in config/profile.yml.',
+      hint: 'Place resume.tex in the project root or set latex.source in workspace/profile/profile.yml.',
     };
   }
 

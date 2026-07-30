@@ -13,7 +13,7 @@ import { acquireTrackerLock, openTrackerTransaction } from '../src/tracker/track
 
 import { ROOT } from '#paths';
 const NODE = process.execPath;
-const CONCURRENT_ROW = '| 99 | 2026-01-03 | ConcurrentCo | Keeper | 4.3/5 | Applied | ❌ | [99](reports/099-concurrent.md) | preserve me |';
+const CONCURRENT_ROW = '| 99 | 2026-01-03 | ConcurrentCo | Keeper | 4.3/5 | Applied | ❌ | [99](workspace/reports/evaluations/099-concurrent.md) | preserve me |';
 let passed = 0;
 let failed = 0;
 
@@ -162,7 +162,7 @@ await runWhileLocked({
   name: 'normalize-statuses',
   script: 'src/tracker/normalize-statuses.mjs',
   content: trackerTable([
-    '| 1 | 2026-01-01 | Acme | Engineer | 4.0/5 | Aplicado | ❌ | [1](reports/001-acme.md) | seed |',
+    '| 1 | 2026-01-01 | Acme | Engineer | 4.0/5 | Aplicado | ❌ | [1](workspace/reports/evaluations/001-acme.md) | seed |',
   ]),
   verify: content => content.includes('| Applied |'),
   verifyOutput: (stdout, _stderr, tracker) => stdout.includes(`Written to ${realpathSync(tracker)}`)
@@ -173,8 +173,8 @@ await runWhileLocked({
   name: 'dedup-tracker',
   script: 'src/tracker/dedup-tracker.mjs',
   content: trackerTable([
-    '| 1 | 2026-01-01 | Acme | Engineer | 4.0/5 | Evaluated | ❌ | [1](reports/001-acme.md) | first |',
-    '| 2 | 2026-01-02 | Acme | Engineer | 3.0/5 | Evaluated | ❌ | [2](reports/002-acme.md) | duplicate |',
+    '| 1 | 2026-01-01 | Acme | Engineer | 4.0/5 | Evaluated | ❌ | [1](workspace/reports/evaluations/001-acme.md) | first |',
+    '| 2 | 2026-01-02 | Acme | Engineer | 3.0/5 | Evaluated | ❌ | [2](workspace/reports/evaluations/002-acme.md) | duplicate |',
   ]),
   verify: content => (content.match(/\| Acme \| Engineer \|/g) || []).length === 1,
   verifyOutput: (stdout, _stderr, tracker) => stdout.includes(`Written to ${realpathSync(tracker)}`)
@@ -186,8 +186,8 @@ await runWhileLocked({
   script: 'src/tracker/tracker.mjs',
   args: ['delete', '--num', '1'],
   content: trackerTable([
-    '| 1 | 2026-01-01 | Acme | Engineer | 4.0/5 | Evaluated | ❌ | [1](reports/001-acme.md) | seed |',
-    '| 2 | 2026-01-02 | Beta | Analyst | 3.5/5 | Evaluated | ❌ | [2](reports/002-beta.md) | keep |',
+    '| 1 | 2026-01-01 | Acme | Engineer | 4.0/5 | Evaluated | ❌ | [1](workspace/reports/evaluations/001-acme.md) | seed |',
+    '| 2 | 2026-01-02 | Beta | Analyst | 3.5/5 | Evaluated | ❌ | [2](workspace/reports/evaluations/002-beta.md) | keep |',
   ]),
   verify: content => !content.includes('| 1 | 2026-01-01 | Acme |') && content.includes('| 2 | 2026-01-02 | Beta |'),
 });
@@ -197,7 +197,7 @@ await runWhileLocked({
   script: 'src/tracker/tracker.mjs',
   args: ['export', '--out', '{tracker}'],
   content: trackerTable([
-    '| 1 | 2026-01-01 | Acme | Engineer | 4.0/5 | Evaluated | ❌ | [1](reports/001-acme.md) | seed |',
+    '| 1 | 2026-01-01 | Acme | Engineer | 4.0/5 | Evaluated | ❌ | [1](workspace/reports/evaluations/001-acme.md) | seed |',
   ]),
   verify: content => content.includes('| 1 | 2026-01-01 | Acme |')
     && content.includes(CONCURRENT_ROW),
@@ -211,7 +211,7 @@ await runWhileLocked({
   script: 'src/tracker/reply-watch.mjs',
   stdin: 'y\n',
   content: trackerTable([
-    '| 1 | 2026-01-01 | Acme | Engineer | 4.0/5 | Applied | ❌ | [1](reports/001-acme.md) | contact hr@acme.com |',
+    '| 1 | 2026-01-01 | Acme | Engineer | 4.0/5 | Applied | ❌ | [1](workspace/reports/evaluations/001-acme.md) | contact hr@acme.com |',
   ]),
   verify: content => content.includes('| Rejected |'),
   verifyOutput: (stdout, _stderr, tracker) => stdout.includes(`to ${realpathSync(tracker)}?`),
@@ -238,7 +238,7 @@ await runWhileLocked({
     },
   ],
   content: trackerTable([
-    '| 1 | 2026-01-01 | Acme | Engineer | 4.0/5 | Applied | ❌ | [1](reports/001-acme.md) | contact hr@acme.com |',
+    '| 1 | 2026-01-01 | Acme | Engineer | 4.0/5 | Applied | ❌ | [1](workspace/reports/evaluations/001-acme.md) | contact hr@acme.com |',
   ]),
   verify: content => content.includes('| Rejected |'),
   verifyOutput: stdout => stdout.includes('2 replies'),
@@ -250,7 +250,7 @@ await runWhileLocked({
   script: 'src/tracker/reply-watch.mjs',
   stdin: 'y\n',
   content: trackerTable([
-    '| 1 | 2026-01-01 | Acme | Engineer | 4.0/5 | Applied | ❌ | [1](reports/001-acme.md) | contact hr@acme.com |',
+    '| 1 | 2026-01-01 | Acme | Engineer | 4.0/5 | Applied | ❌ | [1](workspace/reports/evaluations/001-acme.md) | contact hr@acme.com |',
   ]),
   mutateWhileLocked: (content, concurrentRow) => `${content.replace('| Applied |', '| Interview |').trimEnd()}\n${concurrentRow}\n`,
   verify: content => content.includes('| 1 | 2026-01-01 | Acme | Engineer | 4.0/5 | Interview |')
@@ -391,7 +391,7 @@ async function testReplyWatchConflictingRecommendations() {
   const db = join(dir, 'applications.db');
   try {
     const initial = trackerTable([
-      '| 1 | 2026-01-01 | Acme | Engineer | 4.0/5 | Applied | ❌ | [1](reports/001-acme.md) | contact hr@acme.com |',
+      '| 1 | 2026-01-01 | Acme | Engineer | 4.0/5 | Applied | ❌ | [1](workspace/reports/evaluations/001-acme.md) | contact hr@acme.com |',
     ]);
     writeFileSync(tracker, initial);
     writeFileSync(candidatesPath, JSON.stringify([

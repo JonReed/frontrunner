@@ -3,12 +3,12 @@
 <!-- ============================================================
      PORTABLE EFFICIENCY RULES — contains no personal data.
 
-     SETUP: copy this to modes/_custom.md, then add your own
+     SETUP: copy this to workspace/profile/preferences.md, then add your own
      house rules underneath.
 
-         cp modes/_custom.efficiency.template.md modes/_custom.md
+         cp modes/_custom.efficiency.template.md workspace/profile/preferences.md
 
-     modes/_custom.md is gitignored (it is user layer), which is
+     workspace/profile/preferences.md is gitignored (it is user layer), which is
      why these rules live in a tracked template instead.
 
      WHY: by default every evaluation writes a ~2,200-word A-G
@@ -31,7 +31,7 @@ about it is waste.
 
 When the triage score is **< 2.0**:
 
-1. **Do not create a report file.** No `reports/{###}-*.md`.
+1. **Do not create a report file.** No `workspace/reports/evaluations/{###}-*.md`.
 2. **Do not reserve a report number.** Skip `src/tracker/reserve-report-num.mjs`.
 3. **Do NOT research.** No WebSearch, no comp lookups. Researching the salary of
    a role you are rejecting is pure waste. This is the biggest time saving.
@@ -107,9 +107,9 @@ npm run pipeline            # canonical scan → cache → liveness → prefilte
 npm run pipeline:prepare    # zero-token preparation only
 ```
 
-`src/scan/fetch-jds.mjs` writes `jds/` + `jds/index.tsv`; the batch runner reads that index
+`src/scan/fetch-jds.mjs` writes `workspace/jobs/descriptions/` + `workspace/jobs/descriptions/index.tsv`; the batch runner reads that index
 so workers get clean JD text instead of fetching HTML. `src/scan/prefilter.mjs` writes an
-audit trail to `batch/prefilter-rejects.tsv` — check it occasionally for false
+audit trail to `workspace/.state/prefilter-rejects.tsv` — check it occasionally for false
 rejects and tune the rules.
 
 ### After ANY `node update-system.mjs apply`

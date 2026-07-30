@@ -38,7 +38,7 @@ const VERIFY_BATCH = 5;
 const REMOTE_RE = /(remote|homeoffice|home[-\s]?office|ortsunabh|deutschlandweit|bundesweit|100\s*%|full[-\s]?remote|fully remote)/i;
 
 // Clamp a runtime integer into [min, max], falling back to `def` for NaN, so a
-// stray portals.yml value can't produce empty (size=0) or pathological queries.
+// stray workspace/search/portals.yml value can't produce empty (size=0) or pathological queries.
 function intInRange(val, def, min, max) {
   const n = Number(val);
   if (!Number.isFinite(n)) return def;

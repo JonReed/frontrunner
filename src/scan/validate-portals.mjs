@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * validate-portals.mjs — schema/shape validator for portals.yml.
+ * validate-portals.mjs — schema/shape validator for workspace/search/portals.yml.
  *
  * Usage:
  *   node src/scan/validate-portals.mjs
@@ -17,7 +17,7 @@ import yaml from 'js-yaml';
 
 import { ROOT } from '#paths';
 const PROVIDERS_DIR = join(ROOT, 'providers');
-const DEFAULT_PORTALS_PATH = process.env.FRONTRUNNER_PORTALS || 'portals.yml';
+const DEFAULT_PORTALS_PATH = process.env.FRONTRUNNER_PORTALS || 'workspace/search/portals.yml';
 
 function add(list, path, message) {
   list.push({ path, message });
@@ -270,7 +270,7 @@ async function main() {
   const fileFlag = args.indexOf('--file');
   const filePath = resolve(fileFlag === -1 ? DEFAULT_PORTALS_PATH : args[fileFlag + 1] || '');
   if (!filePath) {
-    console.error('Usage: node src/scan/validate-portals.mjs [--file portals.yml] [--self-test]');
+    console.error('Usage: node src/scan/validate-portals.mjs [--file workspace/search/portals.yml] [--self-test]');
     process.exit(1);
   }
 

@@ -8,7 +8,7 @@
 // v4 API (/api/chalice-search/v4/search) was deprecated; the v5 API at
 // /api/jobsearch/v5/search is the current replacement.
 //
-// This provider is designed for explicit `provider: jobstreet` in portals.yml.
+// This provider is designed for explicit `provider: jobstreet` in workspace/search/portals.yml.
 // Auto-detection from careers_url is not supported because Jobstreet is a
 // job board aggregator, not a company ATS.
 //
@@ -162,7 +162,7 @@ export default {
   detect(_entry) {
     // Jobstreet is a job board aggregator, not a company ATS.
     // Auto-detection from careers_url is intentionally not supported —
-    // use `provider: jobstreet` explicitly in portals.yml.
+    // use `provider: jobstreet` explicitly in workspace/search/portals.yml.
     return null;
   },
 

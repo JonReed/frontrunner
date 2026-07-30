@@ -1,134 +1,87 @@
-# Personal data (user fills these)
-cv.md
+# One private boundary. It is deliberately blanket-ignored: no tracked
+# placeholder may make a fresh install look initialized, and newly introduced
+# runtime filenames cannot accidentally become commit candidates.
+/workspace/
 local/
-# Everything under data/ is generated or personal at runtime — only .gitkeep
-# placeholders are tracked (verify with `git ls-files data/`). A blanket rule
-# means a new generated file (e.g. a future log/cache addition) is covered
-# for every user automatically, with no per-filename .gitignore update needed.
-data/*
-!data/.gitkeep
-!data/offers/
-!data/parser-output/
-# Received offers/contracts, promise notes, prep reports (PII — never commit)
-data/offers/*
-!data/offers/.gitkeep
-data/parser-output/**
-!data/parser-output/**/
-!data/parser-output/.gitkeep
-!data/parser-output/**/.gitkeep
-reports/*.md
-!reports/.gitkeep
-output/*
-!output/.gitkeep
-batch/logs/*
-!batch/logs/.gitkeep
+
+# Legacy private locations stay ignored until `node src/workspace/archive-legacy.mjs
+# --apply` moves an older installation into workspace/.legacy-backup/. New code
+# never reads or writes these paths.
+cv.md
+article-digest.md
+voice-dna.md
+portals.yml
+config/profile.yml
+config/cv-facts.json
+config/benchmarks.yml
+config/prefilter.yml
+data/
+reports/
+output/
+jds/
+interview-prep/
+writing-samples/
+cv-versions/
+
+# Legacy batch runtime locations.
+batch/logs/
+batch/tracker-additions/
 batch/batch-state.tsv
 batch/batch-input.tsv
+batch/batch-input.filtered.tsv
+batch/prefilter-rejects.tsv
+batch/liveness-results.tsv
+batch/liveness-active.tsv
 batch/.pipeline-run.lock/
 batch/.pipeline-run.lock.recover/
-batch/tracker-additions/**/*.tsv
-!batch/tracker-additions/.gitkeep
-jds/*
-!jds/.gitkeep
 
 # Personal documents — never commit scans or copies of these (PII).
-# Catches common identity/credential filenames so they can't be staged by accident.
 *passport*
 *diploma*
 *简历*
 *学位*
 *成绩单*
 
-# Interview prep (accumulated STAR+R stories — user data)
-interview-prep/*
-!interview-prep/
-!interview-prep/.gitkeep
-# Session transcripts hold real interviewer names/companies — ignore content,
-# ship only the system-owned scaffold (README + .gitkeep). #1242
-!interview-prep/sessions/
-interview-prep/sessions/*
-!interview-prep/sessions/.gitkeep
-!interview-prep/sessions/README.md
-
-# Writing samples (user's personal files — never committed)
-writing-samples/*
-!writing-samples/README.md
-
-# Additional CV versions (user's personal files — never committed).
-# Same trust level as writing-samples: the user's own words, kept as reference
-# material for tailoring, never a source of fact on their own.
-cv-versions/*
-!cv-versions/README.md
-
-# User config and customization (never auto-updated)
-config/profile.yml
-config/cv-facts.json
-config/benchmarks.yml
-portals.yml
+# Legacy customization paths.
 modes/_profile.md
 modes/_custom.md
 .update-dismissed
 .update-lock
 .manifesto-noted
 
-# Secrets (never commit — use .env.example as template)
+# Secrets and local tool state.
 .env
-# Universal safety net — protects ALL checkouts/branches, incl. untracked subprojects
-# (e.g. web/ before it graduates to main). Never commit local env files or TS build caches.
 **/.env.local
 **/.env*.local
 **/*.tsbuildinfo
+.claude/settings.local.json
+.claude/memory/
+.playwright-mcp/
+.frontrunner-web/
 
-# Generated
+# Generated files.
 .resolved-prompt-*
 node_modules
 bun.lock
-# Report-number reservation sentinels (ephemeral, created by reserve-report-num.mjs)
-reports/*-RESERVED.md
-
-# Backup files written by normalize-statuses.mjs / dedup-tracker.mjs
 *.bak
-
-# OpenRouter runner — generated data (personal, never commit)
-data/model-blacklist.json
-
-# OS
-.DS_Store
-*.mov
-*.mp4
-
-# CLI-specific local config
-.claude/settings.local.json
-.claude/memory/
-career-dashboard
-career-dashboard.exe
-package-lock.json
-!package-lock.json
-!ui/package-lock.json
-!web/package-lock.json
-
-# Playwright MCP server run artifacts (ephemeral, machine-local)
-.playwright-mcp/
-
-# Planning (local scratchpad)
-plan/
-
-# Web — runtime cache/history the dashboard writes locally; nothing here is tracked.
-.frontrunner-web/
-
-# Efficiency layer — generated artefacts, not source
-jds/
-batch/batch-input.filtered.tsv
-batch/prefilter-rejects.tsv
-config/prefilter.yml
-src/**/output/
+src/**/workspace/documents/
 .tmp-script-test-*/
-
-# UI v2
+plan/
 ui/.next/
 ui/next-env.d.ts
 ui/.jobs/
 
-# Writing voice guardrail (user layer — yours, never committed).
-# Copy templates/voice-dna.template.md to voice-dna.md to customise it.
-voice-dna.md
+# OS/media.
+.DS_Store
+*.mov
+*.mp4
+
+# Retired dashboard binaries.
+career-dashboard
+career-dashboard.exe
+
+# Lockfiles are tracked deliberately.
+package-lock.json
+!package-lock.json
+!ui/package-lock.json
+!web/package-lock.json

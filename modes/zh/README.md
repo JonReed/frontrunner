@@ -29,7 +29,7 @@
 
 ### 方式 2：在个人配置中永久设置
 
-在 `config/profile.yml` 中添加语言偏好设置，例如：
+在 `workspace/profile/profile.yml` 中添加语言偏好设置，例如：
 
 ```yaml
 language:

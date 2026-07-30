@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { join } from 'node:path';
-import { ROOT } from './roles';
+import { ROOT } from './root';
 
 const INBOX_CONTROL = join(ROOT, 'src', 'application', 'inbox-control.mjs');
 const RESPONSE_LIMIT = 8 * 1024;

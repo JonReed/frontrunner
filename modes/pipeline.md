@@ -1,6 +1,6 @@
 # Mode: pipeline — URL Inbox (Second Brain)
 
-Process job URLs stored in `data/pipeline.md`. The user adds URLs at any time and then executes `/frontrunner pipeline` to process them all.
+Process job URLs stored in `workspace/search/pipeline.md`. The user adds URLs at any time and then executes `/frontrunner pipeline` to process them all.
 
 ## Canonical workflow
 
@@ -28,9 +28,9 @@ Expired roles and deterministic rejects never receive report numbers and never
 reach a model. Uncertain liveness results are kept rather than silently
 discarded. The audit files are:
 
-- `batch/liveness-results.tsv`
-- `batch/prefilter-rejects.tsv`
-- `batch/batch-input.tsv` (survivors)
+- `workspace/.state/liveness-results.tsv`
+- `workspace/.state/prefilter-rejects.tsv`
+- `workspace/.state/batch-input.tsv` (survivors)
 
 At the end, summarize the command result:
 
@@ -85,7 +85,7 @@ are defined:
   A clean posting (or a scan with `trust_filter` disabled) omits the segment. Treat
   a low score as a ghost/scam-posting warning and weigh it in Block G legitimacy
   before spending an evaluation. The same score + flags are also written to the
-  trailing columns of `data/scan-history.tsv`.
+  trailing columns of `workspace/.state/scan-history.tsv`.
 - `| note: {text}` — a free-text ranking signal an importer attached to the offer
   (`- [ ] {url} | {company} | {title} | note: curated shortlist` is valid). The
   deterministic scanner never sets it.
@@ -102,7 +102,7 @@ can prove that it is live. Do not override a conclusive provider API result.
 **Special cases:**
 - **LinkedIn**: May require login → mark `[!]` and ask the user to paste the text
 - **PDF**: If the URL points to a PDF, read it directly with the Read tool
-- **`local:` prefix**: Read the local file. Example: `local:jds/linkedin-pm-ai.md` → read `jds/linkedin-pm-ai.md`
+- **`local:` prefix**: Read the local file. Example: `local:workspace/jobs/descriptions/linkedin-pm-ai.md` → read `workspace/jobs/descriptions/linkedin-pm-ai.md`
 
 ## Automatic numbering
 

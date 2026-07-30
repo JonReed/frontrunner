@@ -9,4 +9,4 @@ stages without evaluation.
 
 Apply DACH-market vocabulary and rules from `modes/de/_shared.md` and the
 selected German evaluation mode. Human-facing output still follows
-`config/profile.yml` → `language.output`.
+`workspace/profile/profile.yml` → `language.output`.

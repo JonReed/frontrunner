@@ -46,7 +46,7 @@ const job = operation === 'cv.build'
     input: {
       engine: 'claude',
       scan: true,
-      input: 'data/pipeline.md',
+      input: 'workspace/search/pipeline.md',
     },
   });
 process.stdout.write(`${JSON.stringify(job)}\n`);

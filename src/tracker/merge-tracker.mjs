@@ -26,7 +26,7 @@ import { moveFileAtomic } from '../lib/locked-file.mjs';
 import { runCheckedSubprocess } from '../security/subprocess.mjs';
 
 import { ROOT as FRONTRUNNER } from '#paths';
-// Support both layouts: data/applications.md (boilerplate) and applications.md
+// Support both layouts: workspace/applications/tracker.md (boilerplate) and applications.md
 // (original). FRONTRUNNER_TRACKER overrides the path (used by tests and
 // non-standard layouts). Resolution lives in tracker-utils.mjs so every tracker
 // writer agrees on the same canonical path (and therefore the same lock).
@@ -35,7 +35,7 @@ const TRACKER_DIR = dirname(APPS_FILE);
 // FRONTRUNNER_ADDITIONS overrides the additions dir (used by tests, mirrors FRONTRUNNER_TRACKER).
 const ADDITIONS_DIR = process.env.FRONTRUNNER_ADDITIONS
   ? process.env.FRONTRUNNER_ADDITIONS
-  : join(FRONTRUNNER, 'batch/tracker-additions');
+  : join(FRONTRUNNER, 'workspace', '.state', 'tracker-additions');
 const MERGED_DIR = join(ADDITIONS_DIR, 'merged');
 const DRY_RUN = process.argv.includes('--dry-run');
 const VERIFY = process.argv.includes('--verify');
@@ -46,16 +46,23 @@ const MERGE_READY_IPC = process.env.FRONTRUNNER_MERGE_READY_IPC === '1';
 
 const TRACKER_LOCK_DIR = trackerLockDirFor(APPS_FILE);
 
-// The reports/ dir sits at the repo root, which is the tracker's parent in the
-// data/ layout (data/applications.md) and the tracker's own dir at root layout.
-const REPORTS_ROOT = basename(TRACKER_DIR) === 'data' ? dirname(TRACKER_DIR) : TRACKER_DIR;
-const PDF_INDEX_FILE = join(REPORTS_ROOT, 'data', 'pdf-index.tsv');
+// Derive the installation root from the tracker override without falling back
+// to this module's checkout. Hermetic fixtures use the same canonical
+// workspace/applications/tracker.md shape as production.
+const TRACKER_WORKSPACE_DIR = dirname(TRACKER_DIR);
+const REPORTS_ROOT = basename(TRACKER_DIR) === 'applications'
+  && basename(TRACKER_WORKSPACE_DIR) === 'workspace'
+  ? dirname(TRACKER_WORKSPACE_DIR)
+  : basename(TRACKER_DIR) === 'data'
+    ? dirname(TRACKER_DIR)
+    : TRACKER_DIR;
+const PDF_INDEX_FILE = join(REPORTS_ROOT, 'workspace', '.state', 'pdf-index.tsv');
 
 /**
  * Normalize report links before writing them into the tracker file.
  *
  * TSV additions use root-relative report links so they are easy for agents to
- * generate. The tracker may live either at `data/applications.md` or at the
+ * generate. The tracker may live either at `workspace/applications/tracker.md` or at the
  * repository root, so this wrapper binds the correct tracker and reports
  * directories before delegating to the shared link normalizer.
  *
@@ -65,7 +72,7 @@ const PDF_INDEX_FILE = join(REPORTS_ROOT, 'data', 'pdf-index.tsv');
 const normalizeReportLink = (reportField) => normalizeLink(reportField, TRACKER_DIR, REPORTS_ROOT);
 
 // Ensure required directories exist (fresh setup)
-mkdirSync(join(FRONTRUNNER, 'data'), { recursive: true });
+mkdirSync(join(FRONTRUNNER, 'workspace', 'applications'), { recursive: true });
 mkdirSync(ADDITIONS_DIR, { recursive: true });
 
 /**
@@ -156,7 +163,7 @@ function validateStatus(status) {
  *
  * Report-number equality is an exact duplicate signal, but only after company
  * equality is confirmed by the caller. This helper reads links such as
- * `[123](../reports/123-company-role-date.md)` and returns the numeric id.
+ * `[123](../reports/evaluations/123-company-role-date.md)` and returns the numeric id.
  *
  * @param {string} reportStr - Raw report cell from applications.md or TSV input.
  * @returns {number|null} Parsed report number, or null when absent.
@@ -212,7 +219,7 @@ function parseScore(s) {
 /**
  * Load the optional generated-PDF manifest.
  *
- * data/pdf-index.tsv is gitignored and only exists after src/cv/generate-pdf.mjs has
+ * workspace/.state/pdf-index.tsv is gitignored and only exists after src/cv/generate-pdf.mjs has
  * written at least one PDF. Missing manifest = nothing to sync.
  *
  * @returns {Map<string,string>} Normalized report# → PDF path.
@@ -469,7 +476,7 @@ if (MIGRATE) {
     console.log(`🔎 Migration (dry-run): ${changed} row(s) would be rewritten in ${basename(APPS_FILE)}`);
   } else {
     writeFileAtomic(APPS_FILE, migrated.join('\n'));
-    console.log(`✅ Migration: rewrote ${changed} report link(s) in ${basename(APPS_FILE)} relative to ${TRACKER_DIR === FRONTRUNNER ? 'repo root' : 'data/'}`);
+    console.log(`✅ Migration: rewrote ${changed} report link(s) in ${basename(APPS_FILE)} relative to ${TRACKER_DIR === FRONTRUNNER ? 'repo root' : 'workspace/applications/'}`);
   }
   process.exit(0);
 }
@@ -612,7 +619,7 @@ for (const file of tsvFiles) {
   }
 
   // Normalize the report link to be relative to the tracker file's directory.
-  // The TSV convention carries a root-relative `reports/...` link; rewrite it
+  // The TSV convention carries a root-relative `workspace/reports/evaluations/...` link; rewrite it
   // so it resolves correctly when clicked from applications.md (see #760).
   addition.report = normalizeReportLink(addition.report);
 

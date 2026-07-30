@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import {
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
@@ -9,7 +10,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import test from 'node:test';
 
@@ -31,7 +32,7 @@ const BARRIER = fileURLToPath(
 const LEGACY_PROFILE_BASE = ['CAREER', 'OPS', 'PROFILE', 'BASE'].join('_');
 const PROTECTED_ROOT = process.env.FRONTRUNNER_TEST_PROTECTED_ROOT || ROOT;
 const REAL_USER_PATHS = [
-  join(ROOT, 'cv.md'),
+  join(ROOT, 'workspace/profile/cv.md'),
   join(ROOT, 'config', 'profile.yml'),
   join(ROOT, 'cv-versions', '01-focused.md'),
 ];
@@ -70,27 +71,27 @@ function run(command, args, options = {}) {
 
 test('the write policy identifies the complete real user layer, not temporary fixtures', () => {
   for (const path of [
-    'cv.md',
-    'config/profile.yml',
-    'modes/_profile.md',
-    'data/applications.md',
-    'reports/001-example.md',
-    'output/cv.pdf',
-    'jds/job.md',
-    'cv-versions/01-focused.md',
+    'workspace/profile/cv.md',
+    'workspace/profile/profile.yml',
+    'workspace/profile/targeting.md',
+    'workspace/applications/tracker.md',
+    'workspace/reports/evaluations/001-example.md',
+    'workspace/documents/cv.pdf',
+    'workspace/jobs/descriptions/job.md',
+    'workspace/profile/cv-versions/01-focused.md',
   ]) {
     assert.equal(isRealUserDataPath(join(ROOT, path)), true, path);
   }
   assert.equal(isRealUserDataPath(join(ROOT, 'src', 'application', 'run.mjs')), false);
-  assert.equal(isRealUserDataPath(join(tmpdir(), 'fixture', 'cv.md')), false);
+  assert.equal(isRealUserDataPath(join(tmpdir(), 'fixture', 'workspace/profile/cv.md')), false);
 });
 
-test('destructive barrier: a legacy direct fs write cannot touch real cv.md', async () => {
-  const before = snapshot([join(ROOT, 'cv.md')]);
+test('destructive barrier: a legacy direct fs write cannot touch real workspace/profile/cv.md', async () => {
+  const before = snapshot([join(ROOT, 'workspace/profile/cv.md')]);
   const barrierUrl = pathToFileURL(BARRIER).href;
   const result = await run(process.execPath, [
     '-e',
-    `require('node:fs').writeFileSync(${JSON.stringify(join(ROOT, 'cv.md'))}, 'unsafe')`,
+    `require('node:fs').writeFileSync(${JSON.stringify(join(ROOT, 'workspace/profile/cv.md'))}, 'unsafe')`,
   ], {
     env: {
       ...process.env,
@@ -129,13 +130,14 @@ test('destructive barrier: a stale profile fixture override cannot touch any rea
   assert.notEqual(result.code, 0);
   assert.match(result.stderr, /TEST_USER_DATA_WRITE_BLOCKED|refused to write real user data/u);
   assertUnchanged(before);
-  assert.equal(existsSync(join(fixture, 'cv.md')), false);
+  assert.equal(existsSync(join(fixture, 'workspace/profile/cv.md')), false);
 });
 
 test('the barrier permits writes inside an explicit temporary fixture', () => {
   const fixture = mkdtempSync(join(tmpdir(), 'frontrunner-write-barrier-'));
   try {
-    const file = join(fixture, 'cv.md');
+    const file = join(fixture, 'workspace/profile/cv.md');
+    mkdirSync(dirname(file), { recursive: true });
     writeFileSync(file, '# Isolated\n');
     assert.equal(readFileSync(file, 'utf8'), '# Isolated\n');
   } finally {
@@ -145,12 +147,12 @@ test('the barrier permits writes inside an explicit temporary fixture', () => {
 
 test('destructive barrier: every canonical mutation primitive refuses the real user layer', () => {
   const protectedPaths = [
-    join(PROTECTED_ROOT, 'cv.md'),
+    join(PROTECTED_ROOT, 'workspace/profile/cv.md'),
     join(PROTECTED_ROOT, 'config', 'profile.yml'),
     join(PROTECTED_ROOT, 'cv-versions', '01-focused.md'),
   ];
   const before = snapshot(protectedPaths);
-  const source = join(PROTECTED_ROOT, 'cv.md');
+  const source = join(PROTECTED_ROOT, 'workspace/profile/cv.md');
   const destination = join(PROTECTED_ROOT, 'output', 'must-never-exist.md');
   const reservation = join(PROTECTED_ROOT, 'reports', '999999-RESERVED.md');
 

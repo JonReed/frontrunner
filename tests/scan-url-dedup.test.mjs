@@ -47,15 +47,15 @@ try {
   if (normalizeUrlForDedup(plain) === plain) pass('a tracking-free URL is left unchanged');
   else fail(`plain = ${normalizeUrlForDedup(plain)}`);
 
-  // pipeline.md supports `local:jds/foo.md`. `local:` is a valid URL scheme, so this
+  // pipeline.md supports `local:workspace/jobs/descriptions/foo.md`. `local:` is a valid URL scheme, so this
   // parses and round-trips unchanged rather than hitting the catch — either way the
   // key must equal the input, or a local JD would be re-added on every scan.
-  const local = 'local:jds/acme-ai-engineer.md';
+  const local = 'local:workspace/jobs/descriptions/acme-ai-engineer.md';
   if (normalizeUrlForDedup(local) === local) pass('local: pipeline entries round-trip unchanged');
   else fail(`local = ${normalizeUrlForDedup(local)}`);
 
   // A genuinely unparseable value (no scheme) is what the catch actually handles.
-  const bare = 'jds/acme-ai-engineer.md';
+  const bare = 'workspace/jobs/descriptions/acme-ai-engineer.md';
   if (normalizeUrlForDedup(bare) === bare) pass('scheme-less values pass through unchanged');
   else fail(`scheme-less = ${normalizeUrlForDedup(bare)}`);
 

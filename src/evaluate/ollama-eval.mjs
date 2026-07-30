@@ -7,8 +7,8 @@
  *
  * Usage:
  *   node src/evaluate/ollama-eval.mjs "Paste full JD text here"
- *   node src/evaluate/ollama-eval.mjs --file ./jds/my-job.txt
- *   node src/evaluate/ollama-eval.mjs --model qwen2.5:72b --file ./jds/my-job.txt
+ *   node src/evaluate/ollama-eval.mjs --file ./workspace/jobs/descriptions/my-job.txt
+ *   node src/evaluate/ollama-eval.mjs --model qwen2.5:72b --file ./workspace/jobs/descriptions/my-job.txt
  *
  * Requires:
  *   Ollama running locally — https://ollama.com
@@ -48,11 +48,11 @@ import { ROOT } from '#paths';
 // Paths
 // ---------------------------------------------------------------------------
 const PATHS = {
-  cv:      join(ROOT, 'cv.md'),
-  profileYml: join(ROOT, 'config', 'profile.yml'),
-  profileMode: join(ROOT, 'modes', '_profile.md'),
-  articleDigest: join(ROOT, 'article-digest.md'),
-  customRules: join(ROOT, 'modes', '_custom.md'),
+  cv:      join(ROOT, 'workspace/profile/cv.md'),
+  profileYml: join(ROOT, 'workspace', 'profile', 'profile.yml'),
+  profileMode: join(ROOT, 'workspace', 'profile', 'targeting.md'),
+  articleDigest: join(ROOT, 'workspace/profile/article-digest.md'),
+  customRules: join(ROOT, 'workspace', 'profile', 'preferences.md'),
 };
 
 // ---------------------------------------------------------------------------
@@ -70,14 +70,14 @@ if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
 
   USAGE
     node src/evaluate/ollama-eval.mjs "<JD text>"
-    node src/evaluate/ollama-eval.mjs --file ./jds/my-job.txt
+    node src/evaluate/ollama-eval.mjs --file ./workspace/jobs/descriptions/my-job.txt
     node src/evaluate/ollama-eval.mjs --model qwen2.5:72b "<JD text>"
 
   OPTIONS
     --file <path>    Read JD from a file instead of inline text
     --model <name>   Ollama model to use (default: llama3.3)
     --url <url>      Ollama base URL (default: http://localhost:11434)
-    --no-save        Do not save report to reports/ directory
+    --no-save        Do not save report to workspace/reports/evaluations/ directory
     --help           Show this help
 
   SETUP
@@ -88,8 +88,8 @@ if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
 
   EXAMPLES
     node src/evaluate/ollama-eval.mjs "We are looking for a Senior AI Engineer..."
-    node src/evaluate/ollama-eval.mjs --file ./jds/openai-swe.txt
-    OLLAMA_MODEL=mistral-nemo node src/evaluate/ollama-eval.mjs --file ./jds/job.txt
+    node src/evaluate/ollama-eval.mjs --file ./workspace/jobs/descriptions/openai-swe.txt
+    OLLAMA_MODEL=mistral-nemo node src/evaluate/ollama-eval.mjs --file ./workspace/jobs/descriptions/job.txt
 `);
   process.exit(0);
 }
@@ -161,7 +161,7 @@ function readFile(path, label) {
 }
 
 // ---------------------------------------------------------------------------
-// Loopback guard — cv.md + full JD are sent to this endpoint.
+// Loopback guard — workspace/profile/cv.md + full JD are sent to this endpoint.
 // A remote URL would silently exfiltrate private data.
 // ---------------------------------------------------------------------------
 {
@@ -215,9 +215,9 @@ try {
 // ---------------------------------------------------------------------------
 console.log('\n📂  Loading context files...');
 
-const cvContent     = readFile(PATHS.cv,     'cv.md');
-const profileYml    = readFile(PATHS.profileYml, 'config/profile.yml');
-const profileMode   = readFile(PATHS.profileMode, 'modes/_profile.md');
+const cvContent     = readFile(PATHS.cv,     'workspace/profile/cv.md');
+const profileYml    = readFile(PATHS.profileYml, 'workspace/profile/profile.yml');
+const profileMode   = readFile(PATHS.profileMode, 'workspace/profile/targeting.md');
 const articleDigest = existsSync(PATHS.articleDigest) ? readFileSync(PATHS.articleDigest, 'utf8').trim() : '';
 const customRules   = existsSync(PATHS.customRules) ? readFileSync(PATHS.customRules, 'utf8').trim() : '';
 const languageInstruction = outputLanguageInstruction(parseOutputLanguage(profileYml));
@@ -309,8 +309,8 @@ if (saveReport) {
       tool: `Ollama (${modelName})`,
       rootDir: ROOT,
     });
-    console.log(`\n✅  Report saved: reports/${artifact.filename}`);
-    console.log('📊  Tracker merged into data/applications.md.');
+    console.log(`\n✅  Report saved: workspace/reports/evaluations/${artifact.filename}`);
+    console.log('📊  Tracker merged into workspace/applications/tracker.md.');
   } catch (err) {
     console.warn(`⚠️   Could not publish evaluation: ${err.message}`);
     console.warn('⚠️   Any pending publication journal will be recovered on the next evaluation.');

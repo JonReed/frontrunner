@@ -6,16 +6,16 @@ After dozens of evaluations, the tracker holds dozens of verdicts — and no agg
 
 Phase 1 (this mode): aggregate gap map from tracked reports, with an optional LLM synthesis pass and a diff against the previous run. Phase 2b adds a **web-searched learning plan** — free-first resources per gap, grounded in live search results — layered on top of the same gap map (Step 3; trust model in Rules).
 
-**Targeted mode** (`node src/analysis/upskill.mjs --url-text <url-or-file>`, #1739) analyses a *single* JD instead of the tracked history: it extracts the JD's required skills, suppresses the ones already in `cv.md`/`config/profile.yml`, and prints the remaining gaps as JSON (`{ mode: "targeted", gaps, excludedAsKnown, knownSkills }`). Known-skill suppression uses the same canonical extraction as the aggregate path, so a CV skill is never reported as a gap and a real gap is never hidden. `--url-text` accepts either an `http(s)` URL (Playwright, then a redirect-refusing fetch fallback) or a local file path. The web-searched learning plan (Step 3, #1740) is generated for the aggregate report; the targeted single-JD path prints gaps only.
+**Targeted mode** (`node src/analysis/upskill.mjs --url-text <url-or-file>`, #1739) analyses a *single* JD instead of the tracked history: it extracts the JD's required skills, suppresses the ones already in `workspace/profile/cv.md`/`workspace/profile/profile.yml`, and prints the remaining gaps as JSON (`{ mode: "targeted", gaps, excludedAsKnown, knownSkills }`). Known-skill suppression uses the same canonical extraction as the aggregate path, so a CV skill is never reported as a gap and a real gap is never hidden. `--url-text` accepts either an `http(s)` URL (Playwright, then a redirect-refusing fetch fallback) or a local file path. The web-searched learning plan (Step 3, #1740) is generated for the aggregate report; the targeted single-JD path prints gaps only.
 
 Pattern credit: [MadsLorentzen/ai-job-search](https://github.com/MadsLorentzen/ai-job-search)'s `/upskill`, adapted to frontrunner' tracker and A–F scoring model.
 
 ## Inputs
 
-- `data/applications.md` — Application tracker (rows with report links)
-- `reports/` — Evaluation reports (Machine Summary + Gap tables)
-- `cv.md` + `config/profile.yml` — Known skills (a skill present here must NEVER appear as a gap)
-- `data/upskill/report-*.md` — Previous upskill reports (for the diff section)
+- `workspace/applications/tracker.md` — Application tracker (rows with report links)
+- `workspace/reports/evaluations/` — Evaluation reports (Machine Summary + Gap tables)
+- `workspace/profile/cv.md` + `workspace/profile/profile.yml` — Known skills (a skill present here must NEVER appear as a gap)
+- `workspace/reports/analysis/upskill/report-*.md` — Previous upskill reports (for the diff section)
 
 ## Step 1 — Run the Aggregator
 
@@ -30,7 +30,7 @@ Parse the JSON output:
 | `schema_version` | Extraction-rule version. The diff section (Step 5) only compares reports with the same version. |
 | `metadata` | `reportsLinked` / `reportsRead` / `reportsWithMachineSummary` / `reportsScored` / `lowFitReports` — surface these honestly; older reports may predate the Machine Summary block |
 | `gaps` | `[{skill, reports, lowFitReports, lowFitShare, weightedScore, tier, sources}]` sorted by weighted score. Weight per report = `5.0 − score` (a 2.1/5 report says more about gaps than a 4.5/5 one); a skill counts once per report, not per mention |
-| `excludedAsKnown` | Skills found in report gaps but already present in `cv.md`/`config/profile.yml` |
+| `excludedAsKnown` | Skills found in report gaps but already present in `workspace/profile/cv.md`/`workspace/profile/profile.yml` |
 | `knownSkills` | The extracted known-skill set (for transparency) |
 
 Tiers are fixed, explainable thresholds over the share of low-fit (score < 4.0) reports naming the gap — always narrate them that way ("named in 4/9 low-fit reports"), never as an opaque ranking.
@@ -79,7 +79,7 @@ Embed the result as the `## Learning Plan` section of the report (Step 4 templat
 
 ## Step 4 — Generate Report
 
-Write to `data/upskill/report-{YYYY-MM-DD}.md` (user layer — never touched by the updater). Create the `data/upskill/` directory if missing.
+Write to `workspace/reports/analysis/upskill/report-{YYYY-MM-DD}.md` (user layer — never touched by the updater). Create the directory if missing.
 
 ```markdown
 # Skill-Gap Analysis -- {YYYY-MM-DD}
@@ -130,7 +130,7 @@ _Resources below are web-searched fresh every run — never version-controlled, 
 
 ## Step 5 — Diff vs Previous Report
 
-Find the newest existing `data/upskill/report-*.md` (by filename date) from before today.
+Find the newest existing `workspace/reports/analysis/upskill/report-*.md` (by filename date) from before today.
 
 - If none exists, omit the diff section.
 - If its `**Schema:**` line differs from the current `schema_version`, say so and skip the comparison ("previous report used schema v{X} — not comparable") instead of reporting spurious closures.
@@ -146,12 +146,12 @@ Condensed version in chat:
 
 Then offer the loop-closing action:
 
-> "If you've since gained any of these skills, tell me — I'll add them to `cv.md`/`config/profile.yml`, and the next run will show the gap closing."
+> "If you've since gained any of these skills, tell me — I'll add them to `workspace/profile/cv.md`/`workspace/profile/profile.yml`, and the next run will show the gap closing."
 
 ## Rules
 
-- **Output is user layer** (`data/upskill/`) — never write gap analysis into system files.
-- **A skill present in `cv.md`/`config/profile.yml` never appears as a gap.** If the user disputes an exclusion, fix the source files, not the report.
+- **Output is user layer** (`workspace/reports/analysis/upskill/`) — never write gap analysis into system files.
+- **A skill present in `workspace/profile/cv.md`/`workspace/profile/profile.yml` never appears as a gap.** If the user disputes an exclusion, fix the source files, not the report.
 - Gap evidence must cite its source (tracker counts or "LLM synthesis") — never present synthesized gaps as measured ones.
 - This mode reads reports and the CV; it never fabricates skills the user "should" have from outside the tracked evidence.
 

@@ -9,4 +9,4 @@ stages without evaluation.
 
 Apply Danish-market vocabulary and rules from `modes/da/_shared.md` and the
 selected Danish evaluation mode. Human-facing output still follows
-`config/profile.yml` → `language.output`.
+`workspace/profile/profile.yml` → `language.output`.

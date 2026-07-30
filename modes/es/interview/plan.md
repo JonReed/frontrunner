@@ -10,10 +10,10 @@ Dada una descripción de puesto (JD) y la fecha/hora de la entrevista, construye
 2. **Fecha y hora de la entrevista** (requerido) — para calcular las horas disponibles
 3. **Nombre y rol del entrevistador** (si se conoce) — determina la profundidad y el tono de la preparación
 4. **Tipo de ronda** (si se conoce) — filtro (screening), técnico/específico del dominio, diseño/estudio de caso, panel conductual (behavioral)
-5. **CV** en `cv.md` + `article-digest.md` (si está presente) — lee para obtener experiencia, habilidades y puntos de prueba
-6. **Perfil** en `config/profile.yml` + `modes/_profile.md` — lee para la narrativa, arquetipos y objetivos
-7. **Banco de historias** en `interview-prep/story-bank.md` — historias STAR+R existentes
-8. **Banco de preguntas** en `interview-prep/question-bank.md` — carencias existentes (si el archivo existe)
+5. **CV** en `workspace/profile/cv.md` + `workspace/profile/article-digest.md` (si está presente) — lee para obtener experiencia, habilidades y puntos de prueba
+6. **Perfil** en `workspace/profile/profile.yml` + `workspace/profile/targeting.md` — lee para la narrativa, arquetipos y objetivos
+7. **Banco de historias** en `workspace/interviews/story-bank.md` — historias STAR+R existentes
+8. **Banco de preguntas** en `workspace/interviews/question-bank.md` — carencias existentes (si el archivo existe)
 
 ---
 
@@ -72,7 +72,7 @@ Calibra el plan según la ronda. Prepararse en exceso para un filtro desperdicia
 
 Calcula las horas disponibles desde ahora hasta la hora de la entrevista. Divide en bloques:
 
-Antes de dimensionar los bloques, revisa `interview-prep/question-bank.md` (si existe). Cualquier pregunta marcada con 🔴 de una ronda anterior es una carencia comprobada — obtiene un bloque dedicado independientemente de cómo la clasifique el análisis CV-vs-JD. Los datos de rendimiento reales superan al riesgo inferido.
+Antes de dimensionar los bloques, revisa `workspace/interviews/question-bank.md` (si existe). Cualquier pregunta marcada con 🔴 de una ronda anterior es una carencia comprobada — obtiene un bloque dedicado independientemente de cómo la clasifique el análisis CV-vs-JD. Los datos de rendimiento reales superan al riesgo inferido.
 
 **Plantilla (ajusta el tamaño de los bloques según el total de horas disponibles):**
 
@@ -142,7 +142,7 @@ Al final del plan, produce una referencia rápida de una página que el candidat
 
 ## Step 5 — Guardar Resultados
 
-Guarda el plan en `interview-prep/{company-slug}-{role-slug}.md` si el archivo no existe, o añade una sección `## Prep Plan` si ya existe.
+Guarda el plan en `workspace/interviews/{company-slug}-{role-slug}.md` si el archivo no existe, o añade una sección `## Prep Plan` si ya existe.
 
 ---
 
@@ -154,4 +154,4 @@ Guarda el plan en `interview-prep/{company-slug}-{role-slug}.md` si el archivo n
 - **Un tema por bloque.** Mezclar temas en un solo bloque reduce la retención.
 - **Siempre incluye tiempo de descanso.** Un candidato descansado supera a uno que ha estudiado de más en el último momento.
 - **Nunca inventes información sobre la empresa.** Si no tienes investigación, dilo — no inventes afirmaciones sobre la cultura o detalles técnicos sobre la empresa.
-- **Nunca inventes afirmaciones para el candidato.** La frase ancla y los puntos de conversación previos a la entrevista en la referencia rápida (Step 4) deben estar basados en lo que el candidato realmente tiene — `cv.md`, `article-digest.md` o el banco de historias. No redactes afirmaciones que dependan de experiencia o métricas que el candidato no tiene. Si una afirmación aparece en `interview-prep/retracted-claims.md`, nunca la incluyas.
+- **Nunca inventes afirmaciones para el candidato.** La frase ancla y los puntos de conversación previos a la entrevista en la referencia rápida (Step 4) deben estar basados en lo que el candidato realmente tiene — `workspace/profile/cv.md`, `workspace/profile/article-digest.md` o el banco de historias. No redactes afirmaciones que dependan de experiencia o métricas que el candidato no tiene. Si una afirmación aparece en `workspace/interviews/retracted-claims.md`, nunca la incluyas.

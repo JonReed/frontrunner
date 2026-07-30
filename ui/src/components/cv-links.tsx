@@ -6,8 +6,8 @@
  * download is offered separately for when they actually want the file.
  */
 
-export function CvLinks({ pdf, size = 'md' }: { pdf: string; size?: 'sm' | 'md' }) {
-  const href = `/api/file?path=${encodeURIComponent(pdf)}`;
+export function CvLinks({ roleNum, size = 'md' }: { roleNum: number; size?: 'sm' | 'md' }) {
+  const href = `/api/file?role=${encodeURIComponent(roleNum)}&format=pdf`;
   const cls =
     size === 'sm'
       ? // Inline text link, but 40px of thumb on a phone. It stays visually a

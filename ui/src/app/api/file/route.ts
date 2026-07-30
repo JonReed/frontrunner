@@ -6,18 +6,19 @@
  * this file: a naive implementation here would let any query string read any
  * file on the user's machine.
  *
- * Only paths that resolve INSIDE output/ are served, checked after resolution
+ * Only paths that resolve INSIDE workspace/documents/ are served, checked after resolution
  * so that '..' segments cannot escape.
  */
 
 import { NextResponse } from 'next/server';
 import { createReadStream, existsSync, realpathSync, statSync } from 'node:fs';
-import { join, resolve, sep } from 'node:path';
-import { ROOT } from '@/lib/roles';
+import { resolve, sep } from 'node:path';
+import { ROOT, WORKSPACE } from '@/lib/root';
+import { readTracker } from '@/lib/roles';
 
 export const dynamic = 'force-dynamic';
 
-const ALLOWED_ROOT = resolve(ROOT, 'output');
+const ALLOWED_ROOT = WORKSPACE.documents;
 
 const TYPES: Record<string, string> = {
   '.pdf': 'application/pdf',
@@ -25,8 +26,18 @@ const TYPES: Record<string, string> = {
 };
 
 export async function GET(req: Request) {
-  const rel = new URL(req.url).searchParams.get('path');
-  if (!rel) return NextResponse.json({ error: 'missing path' }, { status: 400 });
+  const params = new URL(req.url).searchParams;
+  const roleNum = Number(params.get('role'));
+  const format = params.get('format');
+  if (!Number.isSafeInteger(roleNum) || roleNum < 1 || roleNum > 999_999) {
+    return NextResponse.json({ error: 'invalid role' }, { status: 400 });
+  }
+  if (format !== 'pdf' && format !== 'html') {
+    return NextResponse.json({ error: 'invalid format' }, { status: 400 });
+  }
+  const role = (await readTracker()).find((candidate) => candidate.num === roleNum);
+  const rel = role?.[format] ?? null;
+  if (!rel) return NextResponse.json({ error: 'not found' }, { status: 404 });
 
   const abs = resolve(ROOT, rel);
   // Containment check AFTER resolution — '..' is neutralised by this, not by
@@ -43,7 +54,10 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  const ext = abs.slice(abs.lastIndexOf('.')).toLowerCase();
+  const ext = `.${format}`;
+  if (!abs.toLowerCase().endsWith(ext)) {
+    return NextResponse.json({ error: 'artifact mismatch' }, { status: 415 });
+  }
   const type = TYPES[ext];
   if (!type) return NextResponse.json({ error: 'unsupported type' }, { status: 415 });
 

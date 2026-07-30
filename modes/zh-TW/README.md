@@ -33,7 +33,7 @@
 
 ### 方式 2：在個人設定中永久指定
 
-在 `config/profile.yml` 加上語言偏好，例如：
+在 `workspace/profile/profile.yml` 加上語言偏好，例如：
 
 ```yaml
 language:

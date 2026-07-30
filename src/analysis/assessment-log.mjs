@@ -11,7 +11,7 @@
  * content references Adobe Acrobat 9, a 2008-era version") — an empty
  * stale_note means no staleness was observed, not that the bank is current.
  *
- * Log lives in data/assessments.tsv (user layer, append-only, created on first
+ * Log lives in workspace/applications/assessments.tsv (user layer, append-only, created on first
  * `add`). Threshold/score are percentages; both optional — vendors often hide
  * the threshold, and some platforms never reveal the score.
  *
@@ -33,7 +33,7 @@ import { pathToFileURL } from 'url';
 import { ROOT as FRONTRUNNER } from '#paths';
 import { mutateFileLocked } from '../lib/locked-file.mjs';
 const LOG_PATH = process.env.FRONTRUNNER_ASSESSMENTS
-  || join(FRONTRUNNER, 'data/assessments.tsv');
+  || join(FRONTRUNNER, 'workspace/applications/assessments.tsv');
 
 const HEADER_COMMENT = [
   '# assessments.tsv — append-only skills-assessment log (user layer). Never rewrite rows.',

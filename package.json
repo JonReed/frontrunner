@@ -32,6 +32,7 @@
     "update:test": "node tests/updater-migration-tests.mjs",
     "update": "node update-system.mjs apply",
     "rollback": "node update-system.mjs rollback",
+    "workspace:archive": "node src/workspace/archive-legacy.mjs",
     "liveness": "node src/scan/check-liveness.mjs",
     "extract": "node src/scan/browser-extract.mjs",
     "scan": "node src/scan/scan.mjs",

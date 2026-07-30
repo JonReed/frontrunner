@@ -1,7 +1,7 @@
 /**
  * Crash-recoverable publication for confirmed candidate-source additions.
  *
- * `cv.md` and `article-digest.md` are both canonical user inputs. A confirmed
+ * `workspace/profile/cv.md` and `workspace/profile/article-digest.md` are both canonical user inputs. A confirmed
  * `/add` operation may update both, so publishing them as unrelated writes can
  * leave a half-applied fact after interruption. This module journals the exact
  * before/after transition and replays it idempotently under fixed-path locks.

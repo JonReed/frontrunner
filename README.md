@@ -1,12 +1,22 @@
-# Frontrunner
+<p align="center">
+  <strong>FIND&nbsp;&nbsp;·&nbsp;&nbsp;PREPARE&nbsp;&nbsp;·&nbsp;&nbsp;APPLY&nbsp;&nbsp;·&nbsp;&nbsp;INTERVIEW</strong>
+</p>
 
-Find the jobs worth applying for, prepare a strong application, and keep track
-of what happens next.
+<p align="center">
+  <img src="ui/src/app/icon.svg" width="72" height="72" alt="Frontrunner">
+</p>
 
-Frontrunner is a local-first job-search system. It scans public job boards,
-removes obvious mismatches before using an AI model, evaluates the roles that
-remain against your real experience, and keeps your applications and documents
-in one place.
+<h1 align="center">Frontrunner</h1>
+
+<p align="center">
+  <strong>Know which jobs are worth your time.</strong><br>
+  Find strong matches, prepare better applications, and keep every next step clear.
+</p>
+
+Frontrunner is a local-first job-search product. It scans public job boards,
+filters obvious mismatches before spending model tokens, evaluates the roles
+that remain against your real experience, and keeps your applications and
+documents together on your computer.
 
 It is a fork of [career-ops](https://github.com/santifer/career-ops). Frontrunner
 keeps its provider ecosystem, scoring framework, file formats, and ethical
@@ -20,11 +30,10 @@ input; Frontrunner does.
 > Its separate scored regression corpus has **zero false rejects at a score of
 > 3.0 or above**. See the [reproducible benchmark](#reproducible-benchmark).
 
-> **Current status:** the core workflow works, but Frontrunner is not yet a
-> polished consumer application. Setup still requires Node.js, Git, and an AI
-> coding assistant. A workflow-first interface is under active development in
-> `ui/`. If you are not comfortable using developer tools, this release is
-> probably not ready for you yet.
+> **Current status:** the workflow-first interface covers setup, job discovery,
+> role assessment, tailored CV preparation, application tracking, and
+> follow-ups. Installation still requires Node.js, Git, and an AI coding
+> assistant, so this is not yet a one-click consumer install.
 
 ## What it does
 
@@ -60,12 +69,23 @@ prefilter before model evaluation.
 
 ### What Frontrunner changes
 
+- **One private workspace:** the repository root is application source;
+  everything personal or generated lives under one blanket-ignored
+  `workspace/` tree. A fresh clone has no fake `.gitkeep` setup state, the
+  updater treats the whole boundary as untouchable, tests fail closed before
+  writing to the real tree, and backend/UI paths come from closed path maps
+  rather than being reconstructed by each feature.
 - **One backend pipeline:** `npm run pipeline` owns scan, cache, liveness,
   prefilter, and evaluation in that order.
 - **One local application boundary:** interfaces request a small versioned
   operation; fixed backend code chooses executables, scripts, paths, flags,
   timeouts, cancellation, and bounded lifecycle output. The new UI uses this
   boundary rather than constructing backend commands.
+- **A fixed UI privilege seam:** the supported launcher injects the canonical
+  repository root and fixes Next.js, its working directory, loopback address,
+  and port. Browser requests identify generated documents by tracker role and
+  format—not by filesystem path—and the server resolves the published artifact
+  before applying realpath containment.
 - **Structured progress, not log guessing:** canonical pipeline stages publish
   closed progress events over a bounded local process channel. Persistent jobs
   retain the latest validated stage across controller/UI reloads, while human
@@ -101,7 +121,7 @@ prefilter before model evaluation.
   scan→cache→liveness→prefilter→evaluation transaction; a competing run fails
   before scanning or spending tokens, and a crashed owner is recovered.
 - **Crash-safe local run history:** completed backend operations append a
-  bounded record to `data/run-history.ndjson` with status, duration, token-cost
+  bounded record to `workspace/.state/run-history.ndjson` with status, duration, token-cost
   classification, per-stage status/timing, safe pipeline counts and
   provider-reported token usage when available. Concurrent processes cannot
   lose records, interrupted replacement preserves the prior file, and the
@@ -179,12 +199,12 @@ prefilter before model evaluation.
   the same crash-safe locked replacement boundary, so concurrent scans or local
   clients cannot silently drop each other's state. Application-answer sections,
   pasted reply candidates, and assessment events use it too; reply input is
-  schema/size bounded and report updates are contained under `reports/`.
-  Explicit ATS discovery also re-reads and re-deduplicates `portals.yml` inside
+  schema/size bounded and report updates are contained under `workspace/reports/evaluations/`.
+  Explicit ATS discovery also re-reads and re-deduplicates `workspace/search/portals.yml` inside
   the lock, so simultaneous discoveries preserve every unique board. The
   shared JD cache uses the same discipline: scanner, bulk-fetch and
   browser-fallback publishers merge under one lock,
-  publish bounded JD files atomically, and commit `jds/index.tsv` last.
+  publish bounded JD files atomically, and commit `workspace/jobs/descriptions/index.tsv` last.
   Batch reconciliation also holds the pipeline lock from its first read through
   atomic backup and replacement, so it cannot erase a concurrent scan result
   or expose a truncated inbox after interruption.
@@ -202,7 +222,7 @@ prefilter before model evaluation.
   date, and Undo restores it when appropriate. Cleanup removes only the pin
   owned by that move.
   Generated PDF bookkeeping uses a locked atomic merge: concurrent renders
-  retain every `data/pdf-index.tsv` entry while interrupted index publication
+  retain every `workspace/.state/pdf-index.tsv` entry while interrupted index publication
   leaves the previous manifest readable. CV PDFs, image conversions and archived
   postings publish complete, size-bounded PDF buffers through one fsync-backed
   atomic boundary, so a killed renderer cannot truncate an existing artifact.
@@ -228,8 +248,8 @@ prefilter before model evaluation.
   merge fails after model tokens have already been spent, the next evaluation
   resumes the same publication idempotently instead of losing the result,
   duplicating the tracker row, or reusing its report number.
-- **Crash-safe candidate facts:** a confirmed `/add` update to `cv.md` and
-  `article-digest.md` is serialized and write-ahead journaled. If Frontrunner
+- **Crash-safe candidate facts:** a confirmed `/add` update to `workspace/profile/cv.md` and
+  `workspace/profile/article-digest.md` is serialized and write-ahead journaled. If Frontrunner
   stops between those two canonical files, the operation resumes without
   duplicating the entry; if either file was edited meanwhile, recovery refuses
   to overwrite the newer human change.
@@ -347,7 +367,8 @@ Frontrunner has two supported surfaces:
 - **Conversation** — the main supported workflow. Ask your AI coding assistant
   to scan, evaluate, prepare, or track an application in plain language.
 - **`ui/`** — the new Frontrunner interface. It is organised around the next
-  useful action rather than implementation commands, but is still incomplete.
+  useful action rather than implementation commands and covers onboarding,
+  discovery, assessment, CV preparation, application tracking and follow-ups.
 
 The inherited `web/` source is retained only as an upstream reference. Its
 `dev` and `start` commands fail closed, and its runtime returns `410 Gone` for
@@ -355,8 +376,8 @@ every route even if Next.js is launched directly. This removes the legacy
 tool-capable agents, browser-driving application flow and direct process
 endpoints from the reachable product surface.
 
-The new UI should not yet be presented as a finished non-technical installation
-experience.
+Install its dependencies once with `npm run ui:install`, then start the
+loopback-only interface with `npm run ui`.
 
 ## Run the pipeline
 
@@ -384,8 +405,8 @@ evaluation. Select a non-default evaluator with
 `node src/pipeline/run.mjs --engine openrouter`, `--engine openai`, or
 `--engine gemini`.
 
-Prefilter rejections are written to `batch/prefilter-rejects.tsv`, and
-liveness decisions to `batch/liveness-results.tsv`. Review both after a run to
+Prefilter rejections are written to `workspace/.state/prefilter-rejects.tsv`, and
+liveness decisions to `workspace/.state/liveness-results.tsv`. Review both after a run to
 catch rules that are too aggressive or sites that could not be verified.
 
 ## Configure the prefilter
@@ -418,7 +439,7 @@ Ollama if that content must never leave the machine.
 The canonical user data remains human-readable Markdown, YAML, and TSV. See
 [DATA_CONTRACT.md](DATA_CONTRACT.md) for the exact boundary.
 
-Operational run history is local user data too. `data/run-history.ndjson` keeps
+Operational run history is local user data too. `workspace/.state/run-history.ndjson` keeps
 at most 1,000 records and 2 MiB, uses private file permissions, and contains
 only bounded statuses, timings and aggregate counts. It is not uploaded or
 reported to Frontrunner.
@@ -461,8 +482,11 @@ not prompt wording that each provider has to remember.
   tracker rows, escapes HTML, verifies CV facts, and invokes fixed PDF commands.
 - **Local UI means local:** the new UI binds to `127.0.0.1`, rejects non-local
   Host/Origin values, sets an enforced CSP and security headers, validates file
-  containment and job IDs, allows only HTTP(S) external links, renders report
-  Markdown as escaped React elements, and sandboxes generated HTML previews.
+  containment and job IDs, resolves generated files from tracker role IDs
+  instead of browser-supplied paths, allows only HTTP(S) external links,
+  renders report Markdown as escaped React elements, and sandboxes generated
+  HTML previews. Its fixed launcher supplies the canonical repository root;
+  the UI never guesses it from its current working directory.
 
 The local UI is not a hosted scraping service and should not be exposed on a
 LAN or the public internet. Local-only operation also does not grant permission

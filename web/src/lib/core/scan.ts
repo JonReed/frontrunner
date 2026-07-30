@@ -11,7 +11,7 @@ export { ATS_SOURCES } from "@/lib/explore";
  * ACL for the discovery engine — orchestrates the REAL core scanner
  * `src/scan/scan-ats-full.mjs` (reverse ATS discovery, a contract entry-point). We run it
  * with `--dry-run` so it writes NOTHING (the user reviews + chooses), point it at
- * an EPHEMERAL filter file (never the user's portals.yml), and surface its results.
+ * an EPHEMERAL filter file (never the user's workspace/search/portals.yml), and surface its results.
  *
  * DISCOVERY IS FREE — zero LLM tokens (pure HTTP + JSON). Only evaluation costs
  * tokens, and that is triggered explicitly elsewhere.

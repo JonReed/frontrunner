@@ -29,7 +29,7 @@ Claude फिर `modes/` की जगह इस folder की files पढ़�
 
 ### Option 2 — Permanently, Profile से
 
-`config/profile.yml` में language preference add करें:
+`workspace/profile/profile.yml` में language preference add करें:
 
 ```yaml
 language:
@@ -73,7 +73,7 @@ language:
 
 जानबूझकर translate नहीं किया — standard tech vocabulary:
 
-- `cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`, `proof point`
+- `workspace/profile/cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`, `proof point`
 - Tool names (`Playwright`, `WebSearch`, `WebFetch`, `Read`, `Write`, `Edit`, `Bash`)
 - Tracker status values (`Evaluated`, `Applied`, `Interview`, `Offer`, `Rejected`)
 - Code snippets, file paths, commands

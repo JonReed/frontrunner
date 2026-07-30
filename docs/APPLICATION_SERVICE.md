@@ -29,7 +29,7 @@ fixed repository script, the repository root as its working directory, and
 Send one JSON object to `node src/application/run.mjs` on standard input:
 
 ```json
-{"version":"1","operation":"pipeline.prepare","input":{"scan":true,"input":"data/pipeline.md"}}
+{"version":"1","operation":"pipeline.prepare","input":{"scan":true,"input":"workspace/search/pipeline.md"}}
 ```
 
 The adapter emits newline-delimited JSON lifecycle events to standard output.
@@ -37,14 +37,17 @@ The terminal `finished` event contains the result envelope. Failed protocol
 validation is emitted as one `protocol_error` object on standard error and no
 backend process is started.
 
-Requests are limited to 64 KiB. Unknown fields and operations are rejected.
-Paths are repository-relative and contained under the operation's allowed data
-directory. URLs and model identifiers have explicit syntax and size limits.
+Job, health, status, inbox and prefilter requests are limited to 64 KiB.
+Profile saves use a separately declared 1.5 MiB aggregate limit so the UI's
+supported 512 KiB CV can cross the boundary; each CV and field still has its
+smaller semantic limit. Unknown fields and operations are rejected. Paths are
+repository-relative and contained under the operation's allowed data directory.
+URLs and model identifiers have explicit syntax and size limits.
 
 Persistent job control uses the same versioned, closed protocol:
 
 ```json
-{"version":"1","action":"start","request":{"version":"1","operation":"pipeline.prepare","input":{"scan":true,"input":"data/pipeline.md"}}}
+{"version":"1","action":"start","request":{"version":"1","operation":"pipeline.prepare","input":{"scan":true,"input":"workspace/search/pipeline.md"}}}
 {"version":"1","action":"read","id":"cv-42-abc123"}
 {"version":"1","action":"read","id":"job-prepare-abc123"}
 {"version":"1","action":"cancel","id":"cv-42-abc123"}
@@ -167,7 +170,7 @@ malformed storage fails closed instead of returning a partial view.
   trusted. A child-reported terminal timestamp is clamped to the persisted
   start time so it cannot create a negative-duration job.
 - Terminal operations are summarized in the local
-  `data/run-history.ndjson`. The history is locked across processes, replaced
+  `workspace/.state/run-history.ndjson`. The history is locked across processes, replaced
   atomically, private (`0600`), and capped at 1,000 records/2 MiB. It records
   operation, status, whole-run and per-stage timing, whether the operation could
   spend tokens, safe aggregate counts, and provider-reported usage when
@@ -189,9 +192,21 @@ malformed storage fails closed instead of returning a partial view.
   backend work into a failure. Malformed existing history fails closed and is
   never silently replaced.
 - Interfaces enumerate recent jobs and run history through the same bounded
-  controller instead of reading `ui/.jobs` or `data/run-history.ndjson`
+  controller instead of reading `ui/.jobs` or `workspace/.state/run-history.ndjson`
   directly. This keeps filtering, record validation, limits, and summary-field
   selection in the backend.
+- The supported UI starts only through `src/application/ui-launch.mjs`. The
+  launcher fixes the Next.js executable, mode, working directory, loopback
+  address and port, injects the canonical `#paths` repository root, uses no
+  shell, and forwards termination to the complete UI process tree. The Next.js
+  Server Action allowlist repeats the exact two canonical loopback identities,
+  and framework-identification headers are disabled. UI modules fail closed
+  when the root capability is absent rather than deriving it from
+  `process.cwd()`.
+- Generated-document requests contain a bounded tracker role number and a
+  closed `pdf`/`html` format—not a filesystem path. The server re-reads the
+  canonical published artifact mapping, then independently enforces extension,
+  lexical containment, realpath containment, content type and sandbox policy.
 - Pipeline evaluators publish model request counts and provider-reported token
   usage over one fixed, 2 KiB descriptor-3 JSON contract. Unknown fields,
   malformed JSON, oversized output and contradictory "skipped but billed"
@@ -208,18 +223,17 @@ spend deduplication or shared-resource exclusion.
 ## Migration rule
 
 New local interfaces must use this boundary instead of spawning backend scripts
-directly. The persistent controller now supports CV builds, scans, zero-token
-pipeline preparation and full evaluation runs through the same protocol. The
-Frontrunner UI's CV builder is migrated; it launches only the fixed, bounded
-`job-control.mjs` adapter and cannot choose a backend command. The workflow UI
-can adopt the other operations, progress reads and cancellation without adding
-a new privileged process endpoint. It can also discover recent jobs and
-operational history without direct filesystem access.
+directly. The persistent controller supports CV builds, scans, zero-token
+pipeline preparation, full evaluation runs, progress reads and cancellation
+through the same protocol. The Frontrunner UI launches only fixed application
+controllers and cannot choose a backend executable, script, working directory,
+path or flag. It can also discover recent jobs and operational history without
+reading their private storage directly.
 
 Profile saves use a separate fixed controller because they mutate user-layer
 source files rather than start backend jobs. The complete CV, additional CV
 versions and allowlisted profile fields are validated before any write. One
-cross-process transaction lock protects a private `data/` write-ahead journal
+cross-process transaction lock protects a private `workspace/.state/` write-ahead journal
 and deterministically ordered target locks. Recovery completes an interrupted
 save idempotently, but compares the journalled prior-state hash first and
 refuses to overwrite a newer manual or agent edit.

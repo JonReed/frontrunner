@@ -258,21 +258,12 @@ if (staticRelativeImport.test(source)) {
   pass('update-system.mjs is self-loading — no static relative imports (#1706)');
 }
 
-for (const userPath of ['cv.md', 'config/profile.yml', 'modes/_profile.md', 'portals.yml', 'data/', 'reports/']) {
+for (const userPath of ['workspace/', 'data/', 'reports/', 'output/', 'jds/']) {
   if (userPaths.includes(userPath)) pass(`USER_PATHS protects ${userPath}`);
   else fail(`USER_PATHS missing ${userPath}`);
 }
 
-const allowedSystemUserOverlap = new Set([
-  'writing-samples/README.md',
-  // System-owned scaffold inside the user-layer cv-versions/ dir:
-  // updates may refresh the guide, but never the user's alternate CV files.
-  'cv-versions/README.md',
-  // System-owned scaffold inside the user-layer interview-prep/ dir (#1242):
-  // the updater ships these two, but never the real session files alongside them.
-  'interview-prep/sessions/.gitkeep',
-  'interview-prep/sessions/README.md',
-]);
+const allowedSystemUserOverlap = new Set();
 let hasSystemUserCollision = false;
 for (const systemPath of systemPaths) {
   const overlapsUserPath = userPaths.some((userPath) => {

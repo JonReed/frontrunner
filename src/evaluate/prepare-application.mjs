@@ -4,13 +4,13 @@
  * prepare-application.mjs — ATS auto-fill for Greenhouse, Ashby, and Lever.
  *
  * Detects the ATS from the apply URL, reads candidate data from
- * config/profile.yml, and prints a prefill summary to stdout.
+ * workspace/profile/profile.yml, and prints a prefill summary to stdout.
  * Never POSTs anything — the user reviews the output, opens the apply URL,
  * and submits themselves.
  *
  * Usage:
- *   node src/evaluate/prepare-application.mjs --url <apply_url> --pdf output/<cv>.pdf
- *   node src/evaluate/prepare-application.mjs --url <apply_url> --pdf output/<cv>.pdf --cover cover.txt
+ *   node src/evaluate/prepare-application.mjs --url <apply_url> --pdf workspace/documents/<cv>.pdf
+ *   node src/evaluate/prepare-application.mjs --url <apply_url> --pdf workspace/documents/<cv>.pdf --cover cover.txt
  *
  * Supported ATS:
  *   Greenhouse  boards.greenhouse.io / greenhouse.io
@@ -49,12 +49,12 @@ if (!applyUrl || !pdfPath) {
 
 // ── PDF validation ────────────────────────────────────────────────────
 
-const outputDir = resolve(ROOT, 'output');
+const outputDir = join(ROOT, 'workspace', 'documents');
 const absPdf    = resolve(ROOT, pdfPath);
 
 const relPdf = relative(outputDir, absPdf);
 if (relPdf === '' || relPdf.startsWith('..') || isAbsolute(relPdf)) {
-  console.error(`Error: --pdf must point to a file inside output/ (got ${pdfPath})`);
+  console.error(`Error: --pdf must point to a file inside workspace/documents/ (got ${pdfPath})`);
   process.exit(1);
 }
 if (!existsSync(absPdf)) {
@@ -127,7 +127,7 @@ function detectAts(url) {
 // ── Profile reader ────────────────────────────────────────────────────
 
 function readProfile() {
-  const profilePath = resolve(ROOT, 'config/profile.yml');
+  const profilePath = resolve(ROOT, 'workspace/profile/profile.yml');
   if (!existsSync(profilePath)) return {};
   const raw = readFileSync(profilePath, 'utf-8');
 
@@ -230,7 +230,7 @@ const atsLabel   = ats.charAt(0).toUpperCase() + ats.slice(1);
 console.log(`\n── ${atsLabel} · ${companySlug} · job ${jobId} ${'─'.repeat(20)}`);
 console.log();
 for (const [key, value] of fields) {
-  console.log(`  ${key.padEnd(labelWidth)}${value || '(not set — check config/profile.yml)'}`);
+  console.log(`  ${key.padEnd(labelWidth)}${value || '(not set — check workspace/profile/profile.yml)'}`);
 }
 console.log(`\n  PDF     ${pdfFile} (${pdfSizeKb} KB)`);
 if (cover) console.log(`  Cover   ${coverPath} (${cover.wordCount} words)`);

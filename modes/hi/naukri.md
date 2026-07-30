@@ -22,7 +22,7 @@ Offer को 6 archetypes में से एक में classify करे�
 
 ## Block B -- CV के साथ Match
 
-`cv.md` पढ़ें। एक table बनाएं जहाँ offer की हर requirement CV की exact lines पर map हो।
+`workspace/profile/cv.md` पढ़ें। एक table बनाएं जहाँ offer की हर requirement CV की exact lines पर map हो।
 
 **Archetype के अनुसार adapt करें:**
 - FDE → rapid delivery और client proximity proof points prioritize करें
@@ -83,7 +83,7 @@ Offer की requirements पर mapped 6-10 STAR+R stories (STAR + **Reflection
 
 **Reflection** column वह capture करता है जो सीखा गया या अलग किया जाता। यह seniority signal करता है — juniors describe करते हैं क्या हुआ, seniors उससे lessons लेते हैं।
 
-**Story Bank:** यदि `interview-prep/story-bank.md` मौजूद है, check करें कि ये stories पहले से वहाँ हैं या नहीं। यदि नहीं, तो नई stories add करें। समय के साथ, यह 5-10 master stories का reusable bank बन जाता है।
+**Story Bank:** यदि `workspace/interviews/story-bank.md` मौजूद है, check करें कि ये stories पहले से वहाँ हैं या नहीं। यदि नहीं, तो नई stories add करें। समय के साथ, यह 5-10 master stories का reusable bank बन जाता है।
 
 **Archetype के अनुसार selected और framed:**
 - FDE → delivery speed और client proximity highlight करें
@@ -105,7 +105,7 @@ Offer की requirements पर mapped 6-10 STAR+R stories (STAR + **Reflection
 
 ### 1. Report .md Save करें
 
-पूरा evaluation `reports/{###}-{company-slug}-{YYYY-MM-DD}.md` में save करें।
+पूरा evaluation `workspace/reports/evaluations/{###}-{company-slug}-{YYYY-MM-DD}.md` में save करें।
 
 - `{###}` = अगला sequential number (3 digits, zero-padded)। इसे atomically allocate करने के लिए `node src/tracker/reserve-report-num.mjs` run करें (stdout `{###}` return करता है), report लिखें, फिर sentinel release करने के लिए `node src/tracker/reserve-report-num.mjs --release {###}` run करें।
 - `{company-slug}` = company name lowercase, no spaces (dashes use करें)
@@ -153,7 +153,7 @@ Offer की requirements पर mapped 6-10 STAR+R stories (STAR + **Reflection
 
 ### 2. Tracker में Record करें
 
-**हमेशा** `data/applications.md` में record करें:
+**हमेशा** `workspace/applications/tracker.md` में record करें:
 - अगला sequential number
 - आज की date
 - Company
@@ -161,7 +161,7 @@ Offer की requirements पर mapped 6-10 STAR+R stories (STAR + **Reflection
 - Score: match का average (1-5)
 - Status: `Evaluated`
 - PDF: नहीं (या हाँ यदि auto-pipeline ने PDF generate किया)
-- Report: report file का relative link (जैसे: `[001](reports/001-company-2026-01-01.md)`)
+- Report: report file का relative link (जैसे: `[001](workspace/reports/evaluations/001-company-2026-01-01.md)`)
 
 **Tracker format:**
 

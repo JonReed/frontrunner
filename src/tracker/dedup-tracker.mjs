@@ -20,7 +20,7 @@ import {
 import { resolveColumns, parseTrackerRow } from './tracker-parse.mjs';
 
 import { ROOT as CAREER_OPS } from '#paths';
-// Support both layouts: data/applications.md (boilerplate) and applications.md
+// Support both layouts: workspace/applications/tracker.md (boilerplate) and applications.md
 // (original). CAREER_OPS_TRACKER lets tests point the script at an isolated
 // fixture so the real user tracker is never touched.
 const APPS_FILE = resolveTrackerPath(CAREER_OPS);
@@ -124,7 +124,7 @@ function isAdvancedStatus(status) {
  * Extract the report number from a Markdown report link.
  *
  * Tracker report cells are normally written as links like
- * `[123](../reports/123-company-role-date.md)`. The bracketed number is the
+ * `[123](../reports/evaluations/123-company-role-date.md)`. The bracketed number is the
  * stable report identity used to distinguish exact duplicates from merely
  * similar fuzzy-title matches.
  *

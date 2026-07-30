@@ -15,14 +15,14 @@
 #   Using raw ATS URLs when a branded page exists can cause false 410 errors (job ID mismatch).
 #
 # HOW TO CUSTOMIZE:
-#   1. Copy this file to portals.yml in the project root
+#   1. Copy this file to workspace/search/portals.yml in the project root
 #   2. Edit title_filter.positive with YOUR target role keywords
 #   3. Add/remove companies in tracked_companies
 #   4. Adjust search_queries for your preferred job boards
 #   5. Set enabled: false on companies you don't care about
 
 # -- Scan history recheck policy (optional) --
-# By default, URLs recorded in data/scan-history.tsv are deduped forever.
+# By default, URLs recorded in workspace/.state/scan-history.tsv are deduped forever.
 # Set recheck_after_days to let previously added URLs become eligible again
 # after N days, useful for roles that reopen or are republished at the same URL.
 # Permanent invalid statuses such as blocked host or malformed URL still remain
@@ -135,7 +135,7 @@
 #
 # Need an ABSOLUTE date window instead (e.g. "only postings from the 17th to
 # the 20th") rather than a relative "N days old" cutoff? Use the CLI flags
-# instead of a portals.yml key: `node src/scan/scan.mjs --posted-after 2026-07-17
+# instead of a workspace/search/portals.yml key: `node src/scan/scan.mjs --posted-after 2026-07-17
 # --posted-before 2026-07-20`. Same "don't penalize missing data" rule.
 
 # -- Trust filter (optional) --
@@ -779,7 +779,7 @@ search_queries:
 # - name: VDAB — AI/ML Vlaanderen        # Flanders (BE) public employment service
 #   provider: vdab
 #   vdab:
-#     # keywords optional: falls back to config/profile.yml's target_roles
+#     # keywords optional: falls back to workspace/profile/profile.yml's target_roles
 #     # (primary[] + archetypes[].name) when omitted.
 #     # keywords: ["AI Engineer", "Machine Learning"]  # explicit override
 #     days: 30            # optional recency window (1-1000)
@@ -967,7 +967,7 @@ search_queries:
 # provider returns — usually the ATS org (e.g. Greenhouse "Intercom") — which
 # may differ from the brand you track (e.g. "Fin"). Without an alias, the same
 # role is re-scanned and re-evaluated every run because "intercom::role" never
-# matches "fin::role" in data/applications.md.
+# matches "fin::role" in workspace/applications/tracker.md.
 #
 # Format: `CanonicalName: [alias, ...]`. Every alias AND the canonical name
 # resolve to the canonical label (case-insensitive). Companies with no entry are
@@ -1680,7 +1680,7 @@ tracked_companies:
   # public ATS API (Greenhouse / Lever / Ashby) on their careers_url,
   # so `scan.mjs` will filter them out automatically (it requires a
   # detectable ATS). They are listed here as discovery aids — paste
-  # the URL of any specific role into `data/pipeline.md` and run
+  # the URL of any specific role into `workspace/search/pipeline.md` and run
   # `/frontrunner pipeline`, which uses Playwright/WebFetch instead.
   # Only Getir (jobs.lever.co/getir) is currently scannable.
   #

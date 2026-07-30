@@ -64,7 +64,7 @@ function eq(label, actual, expected) {
 
 // Tracker-row fixture — mirrors the shape parseTrackerRow() produces.
 function row(num, company, status, date, notes = '') {
-  return { num, date, company, role: 'Engineer', score: '4/5', status, pdf: '✅', report: `reports/${num}.md`, notes };
+  return { num, date, company, role: 'Engineer', score: '4/5', status, pdf: '✅', report: `workspace/reports/evaluations/${num}.md`, notes };
 }
 
 // Follow-up-row fixture — mirrors parseFollowups() output.
@@ -254,14 +254,14 @@ console.log('\n--- 4. real-file loaders ---');
 {
   const tmpDir = mkdtempSync(join(tmpdir(), 'company-history-test-'));
   try {
-    mkdirSync(join(tmpDir, 'data'), { recursive: true });
+    mkdirSync(join(tmpDir, 'workspace', 'applications'), { recursive: true });
 
     const trackerContent = [
       '| # | Date | Company | Role | Score | Status | PDF | Report | Notes |',
       '|---|------|---------|------|-------|--------|-----|--------|-------|',
-      '| 1 | 2026-01-01 | LoaderCo | Engineer | 4/5 | Applied | ✅ | [1](reports/1.md) | Applied 2026-01-05 |',
+      '| 1 | 2026-01-01 | LoaderCo | Engineer | 4/5 | Applied | ✅ | [1](workspace/reports/evaluations/1.md) | Applied 2026-01-05 |',
     ].join('\n');
-    writeFileSync(join(tmpDir, 'data/applications.md'), trackerContent);
+    writeFileSync(join(tmpDir, 'workspace/applications/tracker.md'), trackerContent);
 
     const tracker = loadTrackerRows(tmpDir);
     ok('loadTrackerRows: real file reports loaded=true', tracker.loaded === true);
@@ -273,7 +273,7 @@ console.log('\n--- 4. real-file loaders ---');
       '|---|------|------|---------|------|---------|---------|-------|',
       '| 1 | 1 | 2026-01-10 | LoaderCo | Engineer | Email | a@a.com | first nudge |',
     ].join('\n');
-    writeFileSync(join(tmpDir, 'data/follow-ups.md'), followupsContent);
+    writeFileSync(join(tmpDir, 'workspace/applications/follow-ups.md'), followupsContent);
 
     const followups = loadFollowupRows(tmpDir);
     ok('loadFollowupRows: real file reports loaded=true', followups.loaded === true);

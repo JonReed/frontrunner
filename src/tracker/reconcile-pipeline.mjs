@@ -3,8 +3,8 @@
  * reconcile-pipeline.mjs — Sync pipeline.md "Pendientes" with batch-state.tsv
  *
  * THE PROBLEM
- * batch-runner.sh records every evaluated offer in batch/batch-state.tsv, but
- * it never writes back to data/pipeline.md. Offers processed via batch mode
+ * batch-runner.sh records every evaluated offer in workspace/.state/batch-state.tsv, but
+ * it never writes back to workspace/search/pipeline.md. Offers processed via batch mode
  * therefore stay in the "Pendientes" section forever — the next scan and the
  * next `/frontrunner pipeline` run both re-surface them, and they get evaluated
  * again (duplicate reports, duplicate tracker rows).
@@ -80,14 +80,14 @@ function resolveInsideRepo(inputPath, fallbackPath, flag, { directory = false } 
   return abs;
 }
 
-const defaultPipeline = existsSync(join(FRONTRUNNER, 'data/pipeline.md'))
-  ? join(FRONTRUNNER, 'data/pipeline.md')
+const defaultPipeline = existsSync(join(FRONTRUNNER, 'workspace/search/pipeline.md'))
+  ? join(FRONTRUNNER, 'workspace/search/pipeline.md')
   : join(FRONTRUNNER, 'pipeline.md');
 const PIPELINE_FILE = resolveInsideRepo(argValue('--pipeline'), defaultPipeline, '--pipeline');
-const STATE_FILE = resolveInsideRepo(argValue('--state'), join(FRONTRUNNER, 'batch/batch-state.tsv'), '--state');
+const STATE_FILE = resolveInsideRepo(argValue('--state'), join(FRONTRUNNER, 'workspace/.state/batch-state.tsv'), '--state');
 const REPORTS_DIR = resolveInsideRepo(
   argValue('--reports'),
-  join(FRONTRUNNER, 'reports'),
+  join(FRONTRUNNER, 'workspace', 'reports', 'evaluations'),
   '--reports',
   { directory: true },
 );
@@ -258,7 +258,7 @@ for (let i = pendStart + 1; i < pendEnd; i++) {
 // ---- report & exit early if nothing changed ----
 console.log('=== Reconcile pipeline.md ===');
 for (const s of skippedNoReport) {
-  console.warn(`⚠️  ${s.url} — batch reports report #${s.reportNum} but no reports/${s.reportNum}-*.md found; left in Pendientes.`);
+  console.warn(`⚠️  ${s.url} — batch reports report #${s.reportNum} but no workspace/reports/evaluations/${s.reportNum}-*.md found; left in Pendientes.`);
 }
 
 if (removeIdx.size === 0) {

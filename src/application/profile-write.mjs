@@ -2,7 +2,7 @@
  * profile-write.mjs — the only way user-layer profile files get written.
  *
  * Two callers need this and they are the same operation at different moments:
- * onboarding creates `config/profile.yml` and `cv.md` from nothing, and the
+ * onboarding creates `workspace/profile/profile.yml` and `workspace/profile/cv.md` from nothing, and the
  * profile screen updates fields in them later. Building it once means the
  * second is nearly free.
  *
@@ -33,7 +33,7 @@
  */
 
 import { existsSync, readFileSync, mkdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { parseDocument } from 'yaml';
 
 import { ROOT } from '#paths';
@@ -46,23 +46,23 @@ import { mutateFileLocked, replaceFileAtomic } from '../lib/locked-file.mjs';
  * the two files it would be worst to write during a test run. A suite that
  * exercises this module against the real checkout overwrites the developer's
  * own CV — which has already happened once in this project, with
- * src/cv/generate-pdf.mjs writing into the real data/pdf-index.tsv.
+ * src/cv/generate-pdf.mjs writing into the real workspace/.state/pdf-index.tsv.
  * FRONTRUNNER_PDF_BASE is the precedent this mirrors.
  */
 export function profileBase() {
   return process.env.FRONTRUNNER_PROFILE_BASE || ROOT;
 }
 
-export const profilePath = () => join(profileBase(), 'config', 'profile.yml');
+export const profilePath = () => join(profileBase(), 'workspace', 'profile', 'profile.yml');
 export const profileTemplatePath = (base = profileBase()) =>
   join(base, 'config', 'profile.example.yml');
-export const cvPath = () => join(profileBase(), 'cv.md');
+export const cvPath = () => join(profileBase(), 'workspace/profile/cv.md');
 /**
- * Additional CV versions. Same trust level as writing-samples/ — the user's own
+ * Additional CV versions. Same trust level as workspace/profile/writing-samples/ — the user's own
  * words, kept as reference material for tailoring, never a source of fact on
  * their own. Gitignored like every other user-layer directory.
  */
-export const cvVersionsDir = () => join(profileBase(), 'cv-versions');
+export const cvVersionsDir = () => join(profileBase(), 'workspace', 'profile', 'cv-versions');
 
 const MAX_FIELD = 500;
 const MAX_LIST = 40;
@@ -161,7 +161,7 @@ export function renderProfilePatch(current, patch, options = {}) {
   );
   if (doc.errors?.length) {
     throw fail(
-      `config/profile.yml could not be parsed, so it was left untouched: ${doc.errors[0].message}`,
+      `workspace/profile/profile.yml could not be parsed, so it was left untouched: ${doc.errors[0].message}`,
       'PROFILE_UNPARSEABLE',
     );
   }
@@ -174,7 +174,7 @@ export function renderProfilePatch(current, patch, options = {}) {
 }
 
 /**
- * Apply an allowlisted patch to config/profile.yml.
+ * Apply an allowlisted patch to workspace/profile/profile.yml.
  *
  * Returns the paths actually written. Creates the file from the template when
  * it does not exist, so onboarding and later edits are the same code path.
@@ -182,7 +182,7 @@ export function renderProfilePatch(current, patch, options = {}) {
 export async function updateProfile(patch) {
   const clean = validateProfilePatch(patch);
 
-  mkdirSync(join(profileBase(), 'config'), { recursive: true });
+  mkdirSync(dirname(profilePath()), { recursive: true });
 
   await mutateFileLocked(
     profilePath(),
@@ -218,7 +218,7 @@ export function normalizeCvText(markdown, label = 'CV') {
 }
 
 /**
- * Write cv.md — the canonical CV.
+ * Write workspace/profile/cv.md — the canonical CV.
  *
  * A whole-file replace, because unlike the profile this file has no structure
  * to preserve; it is the user's own prose. Still locked and atomic: it is the

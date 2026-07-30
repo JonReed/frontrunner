@@ -1,6 +1,6 @@
 # Mode: apply — Live Application Assistant
 
-> Apply `voice-dna.md` (if present) to free-text answers and cover-letter fields — full guardrail, conversational voice included (Tier 1 + Tier 2). See `_shared.md` → Voice DNA.
+> Apply `workspace/profile/voice-dna.md` (if present) to free-text answers and cover-letter fields — full guardrail, conversational voice included (Tier 1 + Tier 2). See `_shared.md` → Voice DNA.
 
 Interactive mode for when the candidate is filling out an application form in Chrome. It reads what is on the screen, loads the previous context of the job, and generates personalized responses for each form question.
 
@@ -14,7 +14,7 @@ Interactive mode for when the candidate is filling out an application form in Ch
 ```text
 1. DETECT      → Read active Chrome tab (screenshot/URL/title)
 2. IDENTIFY    → Extract company + role from the page
-3. SEARCH      → Match against existing reports in reports/
+3. SEARCH      → Match against existing reports in workspace/reports/evaluations/
 4. LOAD        → Read full report + Section H / Application Answers (if they exist)
 5. PREFLIGHT   → Confirm posting liveness + company/role match before drafting
 5b. PRE-SCAN   → Scan page for knock-out questions (degree, experience, work authorization/visa, sponsorship, salary floors)
@@ -28,15 +28,15 @@ Interactive mode for when the candidate is filling out an application form in Ch
 
 Before generating any application answers, verify that the form still points to the intended active job. This gate runs after the page has been detected, the company/role has been identified, and the matching report has been loaded.
 
-**Blacklist check (#1742):** before any form filling starts, if `data/blacklist.md` exists, check the visible company against it (case- and punctuation-insensitive). The file is the candidate's own do-not-apply list — on a hit, STOP and surface their own recorded decision: "{Company} is on your blacklist (since {Since}): *{Reason}*. Do you still want to apply?" Require an explicit yes before generating or filling anything — never silently refuse, never silently proceed; the candidate's call always wins. Absent file = skip this check.
+**Blacklist check (#1742):** before any form filling starts, if `workspace/search/blacklist.md` exists, check the visible company against it (case- and punctuation-insensitive). The file is the candidate's own do-not-apply list — on a hit, STOP and surface their own recorded decision: "{Company} is on your blacklist (since {Since}): *{Reason}*. Do you still want to apply?" Require an explicit yes before generating or filling anything — never silently refuse, never silently proceed; the candidate's call always wins. Absent file = skip this check.
 
-**Cross-channel check (#1596):** before drafting — and ALWAYS before the user authorizes an agency to submit on their behalf — check `data/applications.md` for an existing row with the same company+role under a different Via (agency vs direct, or two agencies). A double submission burns the candidate with both the agency and the employer. If found, stop and ask the user which channel owns the candidacy. If the end employer is still unknown (Company `?`), the check still runs in degraded form — it is never silently skipped:
+**Cross-channel check (#1596):** before drafting — and ALWAYS before the user authorizes an agency to submit on their behalf — check `workspace/applications/tracker.md` for an existing row with the same company+role under a different Via (agency vs direct, or two agencies). A double submission burns the candidate with both the agency and the employer. If found, stop and ask the user which channel owns the candidacy. If the end employer is still unknown (Company `?`), the check still runs in degraded form — it is never silently skipped:
 
 1. Ask the user (or the recruiter, via the user) for the client company name first — the reveal is the cheapest fix and unlocks the full check.
 2. If the name is not available, check the tracker for `?` rows with the same Via + a similar role (the same agency re-blasting one listing) and for similar-role rows at plausible-match companies; surface anything close.
 3. Then STOP and require explicit user acknowledgment before the agency is authorized: "The end employer is unknown, so I cannot verify you haven't already applied to this company directly. Authorize anyway?" Never proceed on silence — the reveal-time check only catches damage after the fact.
 
-**Repeat-application ATS profile check (#1920):** count the visible company's rows in `data/applications.md` (the same company-name match Step 2 already uses to search `reports/`). If this submission would be the 2nd or later application to that company, surface a reminder before drafting — this is separate from the Ashby email-dedup quirk below (that one is about the *current* submission getting silently merged; this one is about *older* submissions, possibly predating the candidate's current resume-generation workflow, resurfacing and contradicting the current materials):
+**Repeat-application ATS profile check (#1920):** count the visible company's rows in `workspace/applications/tracker.md` (the same company-name match Step 2 already uses to search `workspace/reports/evaluations/`). If this submission would be the 2nd or later application to that company, surface a reminder before drafting — this is separate from the Ashby email-dedup quirk below (that one is about the *current* submission getting silently merged; this one is about *older* submissions, possibly predating the candidate's current resume-generation workflow, resurfacing and contradicting the current materials):
 
 > "You've applied to {Company} {N} times before. Some ATS platforms (Workday in particular) retain and cross-reference a candidate's full application history. Before submitting, consider checking your candidate profile/application history in their portal for consistency with your current materials — especially if any earlier applications predate your current resume-generation workflow."
 
@@ -63,7 +63,7 @@ Read the entire page/form to scan for knock-out questions BEFORE generating full
    - **Degree requirements** (e.g., "Do you have a Bachelor's degree in Computer Science or a related field?")
    - **Work authorization/Visa sponsorship** (e.g., "Will you now or in the future require visa sponsorship to work in the United States?")
    - **Salary floors/expectations** (e.g., "What is your target salary / expectation?")
-2. Check these questions against the candidate's `config/profile.yml` or `cv.md` parameters.
+2. Check these questions against the candidate's `workspace/profile/profile.yml` or `workspace/profile/cv.md` parameters.
 3. If a knock-out question is detected where the candidate's profile represents a potential mismatch (e.g., candidate needs sponsorship and the form automatically filters out sponsorship-needy applicants, or candidate's salary expectations mismatch the visible JD/form floors):
    - Highlight the specific knock-out question to the candidate immediately.
    - Present a clear warning block:
@@ -71,7 +71,7 @@ Read the entire page/form to scan for knock-out questions BEFORE generating full
    - Stop and wait for the candidate's confirmation before drafting any further answers.
 4. If no knock-out questions are found, or the candidate resolves the warning, proceed to Step 6.
 
-**Applying to several roles in one sitting?** This preflight verifies the single form in front of you. Before a multi-role session — especially against scanner entries marked `**Verification:** unconfirmed (batch mode)` — run the `pipeline` mode **Liveness sweep** first (`node src/scan/check-liveness.mjs --file <urls>`). It drops the dead postings from `data/pipeline.md` in one batch so you never open a tab on an expired role.
+**Applying to several roles in one sitting?** This preflight verifies the single form in front of you. Before a multi-role session — especially against scanner entries marked `**Verification:** unconfirmed (batch mode)` — run the `pipeline` mode **Liveness sweep** first (`node src/scan/check-liveness.mjs --file <urls>`). It drops the dead postings from `workspace/search/pipeline.md` in one batch so you never open a tab on an expired role.
 
 ## Step 1 — Detect the job
 
@@ -85,7 +85,7 @@ Read the entire page/form to scan for knock-out questions BEFORE generating full
 ## Step 2 — Identify and search for context
 
 1. Extract company name and role title from the page
-2. Search in `reports/` by company name (case-insensitive grep)
+2. Search in `workspace/reports/evaluations/` by company name (case-insensitive grep)
 3. If there is a match → load the full report
 4. If there is a Section H or `## Application Answers` → load previous answers as a base
 5. If there is NO match → notify and offer to run a quick auto-pipeline
@@ -109,16 +109,16 @@ Identify ALL visible questions:
 
 Classify each question:
 - **Already answered in Section H or `## Application Answers`** → adapt the existing response
-- **New question** → generate response from the report + cv.md
+- **New question** → generate response from the report + workspace/profile/cv.md
 
 For each field, preserve the application form contract:
 - `field_type`: `text`, `textarea`, `select`, `radio`, `checkbox`, `number`, `file`, or `unknown`
 - `required`: `yes`, `no`, or `unknown`
 - `limit`: exact character/word limit if visible; otherwise `unknown`
 - `options`: visible options for select/radio/checkbox fields
-- `needs_candidate_confirmation`: `yes` for legal, demographic, work authorization, visa, relocation, salary, disability, veteran, sponsorship, background-check, or self-identification questions unless the answer is explicitly present in `config/profile.yml`
+- `needs_candidate_confirmation`: `yes` for legal, demographic, work authorization, visa, relocation, salary, disability, veteran, sponsorship, background-check, or self-identification questions unless the answer is explicitly present in `workspace/profile/profile.yml`
 
-Never invent answers for legal, demographic, work-authorization, visa/sponsorship, salary, disability, veteran, background-check, relocation, or self-identification fields. If the answer is not present in `config/profile.yml` or visible context, mark it as needing candidate confirmation and provide the safest question to ask the candidate.
+Never invent answers for legal, demographic, work-authorization, visa/sponsorship, salary, disability, veteran, background-check, relocation, or self-identification fields. If the answer is not present in `workspace/profile/profile.yml` or visible context, mark it as needing candidate confirmation and provide the safest question to ask the candidate.
 
 
 ## Step 7 — Generate responses
@@ -174,7 +174,7 @@ Write the section at the end of the report, or replace only the existing `## App
 Use `src/evaluate/application-answers.mjs` when possible to format/upsert the section:
 
 ```bash
-node src/evaluate/application-answers.mjs --report reports/NNN-company-role-date.md --input answers.json --state filled
+node src/evaluate/application-answers.mjs --report workspace/reports/evaluations/NNN-company-role-date.md --input answers.json --state filled
 ```
 
 ## Step 9 — Post-apply (optional)
@@ -185,7 +185,7 @@ If the candidate confirms that they submitted the application:
 3. Refresh the report's `## Application Answers` section with the final field values and `**State:** submitted`
 4. Suggest next step: run the `contacto` mode (`/frontrunner contacto` where available) for LinkedIn outreach
 
-**Confirmed resume-verification failure at this vendor? Check the rest of the pipeline (#1870).** If the candidate confirms the ATS silently dropped or altered resume content that they had submitted (see the SuccessFactors-family quirk below), don't treat it as a one-off. Tracker rows in `data/applications.md` don't carry a canonical ATS-vendor field, so don't grep the tracker text for a vendor name — it will miss rows silently. Instead, resolve the vendor per row from its linked report's `**URL:**` field:
+**Confirmed resume-verification failure at this vendor? Check the rest of the pipeline (#1870).** If the candidate confirms the ATS silently dropped or altered resume content that they had submitted (see the SuccessFactors-family quirk below), don't treat it as a one-off. Tracker rows in `workspace/applications/tracker.md` don't carry a canonical ATS-vendor field, so don't grep the tracker text for a vendor name — it will miss rows silently. Instead, resolve the vendor per row from its linked report's `**URL:**` field:
 - For clean-fingerprint vendors (Greenhouse, Lever, Ashby, Workday), match the URL's hostname the same way `detectVendor()` in `src/analysis/analyze-patterns.mjs` does — reuse that function/pattern rather than re-deriving it, so the two stay in sync.
 - White-labeled ATS (SuccessFactors, iCIMS, UKG, Dayforce, and similar) are **not** detectable from the URL alone — the very vendor family this quirk was confirmed on falls in this bucket. For those, don't guess from the domain: ask the candidate directly which other in-flight rows (`Applied`, `Responded`, `Interview`) went through the same portal, since neither the tracker nor the URL structurally exposes it.
 
@@ -205,7 +205,7 @@ Field-tested across ~12 Playwright-driven applications (Ashby, Greenhouse, Lever
 ### Ashby — email-based candidate dedup
 
 - **Symptom:** Submitting a second application at the same company silently fails or merges into the existing candidate record. Ashby deduplicates by email per company.
-- **Agent:** Before filling the email field, check whether an earlier report for the same company already exists in `reports/`. If it does, warn the candidate and pre-fill a `+tag` alias (e.g., `user+teamname@domain.com`) as the suggested value.
+- **Agent:** Before filling the email field, check whether an earlier report for the same company already exists in `workspace/reports/evaluations/`. If it does, warn the candidate and pre-fill a `+tag` alias (e.g., `user+teamname@domain.com`) as the suggested value.
 - **Candidate:** Confirms or changes the email before the form is submitted.
 
 ### Lever — hCaptcha intercepts checkbox/radio clicks
@@ -230,7 +230,7 @@ Field-tested across ~12 Playwright-driven applications (Ashby, Greenhouse, Lever
 
 - **Symptom:** Country, university, or field-of-study dropdowns contain thousands of `<option>` entries. Snapshotting them floods context and stalls the agent.
 - **Agent:** Use `select_option` directly by value or visible label. Never snapshot the full option list. If the exact label is unknown, ask the candidate for the value instead of dumping options into context.
-- **Candidate:** Provides the correct label when the agent cannot infer it from `config/profile.yml`.
+- **Candidate:** Provides the correct label when the agent cannot infer it from `workspace/profile/profile.yml`.
 
 ### Job-board host ≠ application host — re-check the URL after "Apply"
 
@@ -241,7 +241,7 @@ Field-tested across ~12 Playwright-driven applications (Ashby, Greenhouse, Lever
 ### Workday — set-value doesn't register on React fields
 
 - **Symptom:** Setting a Workday text field's value programmatically (without real keystrokes) leaves it visually filled but empty to Workday's validation — the React `onChange` never fires, so Save throws "required" on a visibly-filled field. Yes/No dropdowns also vary their option order per question, so a positional click can select the wrong answer (e.g. "No" on *are you authorized to work?*).
-- **Agent:** For required text fields, **type** real keystrokes (focus → select-all → type), or verify each value registered before Save. Survey the whole step top-to-bottom first (the address block is often below the fold) and fill from the candidate's saved profile (`config/profile.yml` / `cv.md`) proactively, rather than discovering fields via validation errors. For dropdowns, use **type-ahead** (open → type the option text → confirm the highlight) instead of positional clicks, and verify each selection.
+- **Agent:** For required text fields, **type** real keystrokes (focus → select-all → type), or verify each value registered before Save. Survey the whole step top-to-bottom first (the address block is often below the fold) and fill from the candidate's saved profile (`workspace/profile/profile.yml` / `workspace/profile/cv.md`) proactively, rather than discovering fields via validation errors. For dropdowns, use **type-ahead** (open → type the option text → confirm the highlight) instead of positional clicks, and verify each selection.
 - **Candidate:** Reviews the filled step — especially work-authorization/sponsorship dropdowns and any EEO/legal attestations — before Save/Submit.
 
 ### SuccessFactors-family — uploaded resume can silently diverge from the stored profile (#1870)

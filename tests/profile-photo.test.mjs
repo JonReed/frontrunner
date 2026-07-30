@@ -29,8 +29,12 @@ function render(inputPayload, { preview = false } = {}) {
   const args = preview
     ? ['src/cv/build-cv-html.mjs', '--preview', input, TEMPLATE]
     : ['src/cv/build-cv-html.mjs', input, output, TEMPLATE];
-  const stdout = execFileSync(process.execPath, args, { cwd: ROOT, encoding: 'utf8' });
-  return { html: readFileSync(preview ? join(ROOT, 'output', 'cv-preview.html') : output, 'utf8'), stdout, output };
+  const stdout = execFileSync(process.execPath, args, {
+    cwd: ROOT,
+    encoding: 'utf8',
+    env: { ...process.env, FRONTRUNNER_CV_OUTPUT_BASE: dir },
+  });
+  return { html: readFileSync(preview ? join(dir, 'workspace', 'documents', 'cv-preview.html') : output, 'utf8'), stdout, output };
 }
 
 test('no photo emits no img and reserves no photo markup', () => {

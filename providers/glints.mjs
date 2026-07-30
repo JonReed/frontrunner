@@ -7,7 +7,7 @@
 // Their internal API is a no-auth GraphQL endpoint at /api/v2-alc/graphql that
 // powers the job search page. The schema is reverse-engineered and may change.
 //
-// This provider is designed for explicit `provider: glints` in portals.yml.
+// This provider is designed for explicit `provider: glints` in workspace/search/portals.yml.
 // Auto-detection is not supported — Glints is a job board aggregator, not
 // a company ATS.
 //
@@ -186,7 +186,7 @@ export default {
   detect(_entry) {
     // Glints is a job board aggregator, not a company ATS.
     // Auto-detection is intentionally not supported —
-    // use `provider: glints` explicitly in portals.yml.
+    // use `provider: glints` explicitly in workspace/search/portals.yml.
     return null;
   },
 

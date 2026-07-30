@@ -12,7 +12,7 @@ Tryb interaktywny na moment, gdy kandydat wypełnia formularz aplikacyjny w Chro
 ```
 1. WYKRYJ       -> Przeczytaj aktywną kartę Chrome (zrzut/URL/tytuł)
 2. ZIDENTYFIKUJ -> Wyciągnij firmę + rolę ze strony
-3. WYSZUKAJ     -> Dopasuj do istniejących reportów w reports/
+3. WYSZUKAJ     -> Dopasuj do istniejących reportów w workspace/reports/evaluations/
 4. ZAŁADUJ      -> Przeczytaj pełny report + Blok G (jeśli istnieje)
 5. PORÓWNAJ     -> Czy rola na ekranie odpowiada ocenionej? Jeśli zmiana -> ostrzeż
 6. PRZEANALIZUJ -> Zidentyfikuj WSZYSTKIE widoczne pytania formularza
@@ -32,7 +32,7 @@ Tryb interaktywny na moment, gdy kandydat wypełnia formularz aplikacyjny w Chro
 ## Krok 2 -- Zidentyfikuj i załaduj kontekst
 
 1. Wyciągnij nazwę firmy i tytuł stanowiska ze strony
-2. Wyszukaj w `reports/` po nazwie firmy (Grep case-insensitive)
+2. Wyszukaj w `workspace/reports/evaluations/` po nazwie firmy (Grep case-insensitive)
 3. Jeśli dopasowanie -> załaduj pełny report
 4. Jeśli Blok G obecny -> załaduj poprzednie szkice odpowiedzi jako bazę
 5. Jeśli BRAK dopasowania -> ostrzeż kandydata i zaproponuj szybki auto-pipeline
@@ -56,7 +56,7 @@ Zidentyfikuj WSZYSTKIE widoczne pytania:
 
 Sklasyfikuj każde pytanie:
 - **Już odpowiedziane w Bloku G** -> wykorzystaj istniejącą odpowiedź
-- **Nowe pytanie** -> wygeneruj odpowiedź z reportu + `cv.md`
+- **Nowe pytanie** -> wygeneruj odpowiedź z reportu + `workspace/profile/cv.md`
 
 ## Krok 5 -- Wygeneruj odpowiedzi
 

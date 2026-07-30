@@ -9,4 +9,4 @@ stages without evaluation.
 
 Apply Korean-market vocabulary and rules from `modes/ko/_shared.md` and the
 selected Korean evaluation mode. Human-facing output still follows
-`config/profile.yml` → `language.output`.
+`workspace/profile/profile.yml` → `language.output`.

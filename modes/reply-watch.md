@@ -7,17 +7,17 @@ Local-first, human-in-the-loop: **nothing here auto-updates without user confirm
 ## Purpose
 
 - Classify reply candidates into candidate-facing categories (`Interview`, `Responded`, `Need Action`, `Rejected`, `Offer`, `Auto-confirmation`, `Noise`, `Unknown`).
-- Match candidates to active tracker rows in `data/applications.md` based on company names, role titles, and domain matching.
+- Match candidates to active tracker rows in `workspace/applications/tracker.md` based on company names, role titles, and domain matching.
 - Generate a concise review digest highlighting updates, signals, and evidence.
 - Prompt for human-in-the-loop tracker status updates.
 
 ## Inputs
 
-- `data/reply-candidates.json` — Normalized reply candidates (subject, body, sender, signal)
-- `data/applications.md` — Application tracker (source of truth)
-- `data/follow-ups.md` — Follow-up history (for contact matching)
+- `workspace/applications/reply-candidates.json` — Normalized reply candidates (subject, body, sender, signal)
+- `workspace/applications/tracker.md` — Application tracker (source of truth)
+- `workspace/applications/follow-ups.md` — Follow-up history (for contact matching)
 
-**Populating `data/reply-candidates.json` manually:** if you don't want to grant any tool mailbox access, run `node src/tracker/paste-reply.mjs` and paste (or point `--file` at) the raw text of a reply email. It normalizes the subject/from/body into the exact candidate shape above and appends it — it never classifies the reply itself and never runs `src/tracker/reply-watch.mjs` or touches the tracker.
+**Populating `workspace/applications/reply-candidates.json` manually:** if you don't want to grant any tool mailbox access, run `node src/tracker/paste-reply.mjs` and paste (or point `--file` at) the raw text of a reply email. It normalizes the subject/from/body into the exact candidate shape above and appends it — it never classifies the reply itself and never runs `src/tracker/reply-watch.mjs` or touches the tracker.
 
 ## Invocation
 
@@ -65,7 +65,7 @@ If the script identifies recommended updates (e.g. `Applied` → `Interview`), i
 Suggested status updates to apply:
   #2 Example Labs (Full-stack Engineer): Applied → Rejected
 
-Apply recommended status updates to data/applications.md? (y/N): 
+Apply recommended status updates to workspace/applications/tracker.md? (y/N):
 ```
 
-Type `y` or `yes` to apply the changes. The script will rewrite the matched rows in `data/applications.md` and rebuild the derived SQLite index.
+Type `y` or `yes` to apply the changes. The script will rewrite the matched rows in `workspace/applications/tracker.md` and rebuild the derived SQLite index.

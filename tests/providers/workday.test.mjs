@@ -463,10 +463,10 @@ try {
 
   // fetch() cap-hit warning — reverse-scan context (ctx.sinceMs set, as
   // scan-ats-full.mjs always does) where entries are synthesized from an
-  // external dataset, not portals.yml: there's no portal entry to edit, and
+  // external dataset, not workspace/search/portals.yml: there's no portal entry to edit, and
   // — per the "no fixed cap can guarantee full coverage" conclusion — no
   // fix to advise at all, so the message is just the short fact, with
-  // neither "raise max_pages" nor a portals.yml edit suggested.
+  // neither "raise max_pages" nor a workspace/search/portals.yml edit suggested.
   // includeUndated: true forces this past the no-date-skip short-circuit
   // (tested separately below) so the fetch actually reaches the cap.
   const noDateSinceMs = nowMs - SINCE_DAYS * 86_400_000;

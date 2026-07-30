@@ -25,7 +25,7 @@
 //
 // Facet criteria use tenant-internal numeric term codes (Mercedes: country
 // 329 = Germany, discoverable via MatchedObjectDescriptor "Facet:…" queries).
-// A portals.yml entry can pin them via:
+// A workspace/search/portals.yml entry can pin them via:
 //   beesite:
 //     searchCriteria:
 //       - { CriterionName: PositionLocation.Country, CriterionValue: [329] }

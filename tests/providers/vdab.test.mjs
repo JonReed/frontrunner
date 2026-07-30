@@ -251,8 +251,8 @@ try {
     }
   }
 
-  // fetch() — keyword fallback to config/profile.yml's target_roles. Runs in
-  // an isolated tmp cwd (never the real project's own config/profile.yml, so
+  // fetch() — keyword fallback to workspace/profile/profile.yml's target_roles. Runs in
+  // an isolated tmp cwd (never the real project's own workspace/profile/profile.yml, so
   // the test is hermetic regardless of whether the checkout is onboarded).
   {
     const withTmpCwd = async (setup, run) => {
@@ -271,8 +271,8 @@ try {
     let sentTrefwoord = null;
     await withTmpCwd(
       (tmp) => {
-        mkdirSync(join(tmp, 'config'));
-        writeFileSync(join(tmp, 'config', 'profile.yml'), 'target_roles:\n  primary:\n    - Data Engineer\n');
+        mkdirSync(join(tmp, 'workspace', 'profile'), { recursive: true });
+        writeFileSync(join(tmp, 'workspace', 'profile', 'profile.yml'), 'target_roles:\n  primary:\n    - Data Engineer\n');
       },
       () => vdab.fetch(
         { name: 'VDAB', vdab: {} },
@@ -280,7 +280,7 @@ try {
       ),
     );
     if (sentTrefwoord === 'Data Engineer') {
-      pass('vdab.fetch() falls back to config/profile.yml target_roles when vdab.keywords[] is empty');
+      pass('vdab.fetch() falls back to workspace/profile/profile.yml target_roles when vdab.keywords[] is empty');
     } else {
       fail(`vdab.fetch() fallback trefwoord = ${JSON.stringify(sentTrefwoord)}`);
     }

@@ -99,7 +99,7 @@ function RoleRow({ role, followup }: { role: Role; followup?: Followup }) {
         always one click away, from every screen that shows a verdict.
       */}
       <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2">
-        {role.pdf && <CvLinks pdf={role.pdf} size="sm" />}
+        {role.pdf && <CvLinks roleNum={role.num} size="sm" />}
         {role.url && (
           <a
             href={role.url}

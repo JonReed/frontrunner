@@ -25,7 +25,7 @@
 
 ## Блок B — Збіг з CV
 
-Прочитати `cv.md`. Створити таблицю: кожна вимога JD → точні рядки CV.
+Прочитати `workspace/profile/cv.md`. Створити таблицю: кожна вимога JD → точні рядки CV.
 
 **Адаптовано під архетип:**
 
@@ -87,7 +87,7 @@
 
 Стовпець **Рефлексія** фіксує, що було вивчено або що можна було б зробити інакше. Це сигнал сеньйорності — джуніори описують що сталося, сеньйори витягують уроки.
 
-**Банк історій:** Якщо `interview-prep/story-bank.md` існує, перевірити, чи є там ці історії. Якщо ні — додати нові. З часом це формує банк з 5-10 майстер-історій для будь-якого питання на співбесіді.
+**Банк історій:** Якщо `workspace/interviews/story-bank.md` існує, перевірити, чи є там ці історії. Якщо ні — додати нові. З часом це формує банк з 5-10 майстер-історій для будь-якого питання на співбесіді.
 
 **Підібрані й обрамлені за архетипом:**
 
@@ -110,7 +110,7 @@
 
 ### 1. Зберегти звіт .md
 
-Зберегти повну оцінку в `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
+Зберегти повну оцінку в `workspace/reports/evaluations/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 
 - `{###}` = наступний порядковий номер (3 цифри, zero-padded). Щоб виділити цей номер атомарно та уникнути станів гонки, ви ПОВИННІ виконати `node src/tracker/reserve-report-num.mjs` для резервування номера (stdout поверне `{###}`), записати звіт, а потім виконати `node src/tracker/reserve-report-num.mjs --release {###}` для звільнення маркера (sentinel).
 - `{company-slug}` = назва компанії: lowercase, пробіли замінити на `-`, прибрати спецсимволи (наприклад, `Acme Corp` → `acme-corp`)
@@ -167,18 +167,18 @@
 
 ### 2. Зареєструвати в трекері
 
-Для **нового** запису не редагувати `data/applications.md` напряму. Замість цього записати один TSV-рядок у `batch/tracker-additions/{num}-{company-slug}.tsv` з 8 або 9 колонками через табуляцію:
+Для **нового** запису не редагувати `workspace/applications/tracker.md` напряму. Замість цього записати один TSV-рядок у `workspace/.state/tracker-additions/{num}-{company-slug}.tsv` з 8 або 9 колонками через табуляцію:
 
 ```
-{num}\t{date}\t{company}\t{role}\t{status}\t{score}\t{pdf_emoji}\t[{num}](reports/{num}-{slug}-{date}.md)\t{note}
+{num}\t{date}\t{company}\t{role}\t{status}\t{score}\t{pdf_emoji}\t[{num}](workspace/reports/evaluations/{num}-{slug}-{date}.md)\t{note}
 ```
 
-- `{num}` = наступний порядковий номер (ціле число, обчислити з `reports/`)
+- `{num}` = наступний порядковий номер (ціле число, обчислити з `workspace/reports/evaluations/`)
 - `{status}` = `Evaluated`
 - `{score}` = формат `X.X/5` (наприклад, `4.2/5`)
 - `{pdf_emoji}` = `✅` або `❌`
 - `{note}` = короткий коментар (опціонально, колонку можна опустити)
 
-Потім виконати `node src/tracker/merge-tracker.mjs` для злиття в `data/applications.md`.
+Потім виконати `node src/tracker/merge-tracker.mjs` для злиття в `workspace/applications/tracker.md`.
 
-Для **існуючого** запису допустиме пряме оновлення в `data/applications.md` (статус, PDF, посилання на звіт).
+Для **існуючого** запису допустиме пряме оновлення в `workspace/applications/tracker.md` (статус, PDF, посилання на звіт).

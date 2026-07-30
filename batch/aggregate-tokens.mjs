@@ -9,9 +9,9 @@ import { estimateCost } from '../src/lib/token-tracker.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
-const STATE_FILE = path.join(ROOT, 'batch', 'batch-state.tsv');
-const LOGS_DIR = path.join(ROOT, 'batch', 'logs');
-const REPORTS_DIR = path.join(ROOT, 'reports');
+const STATE_FILE = path.join(ROOT, 'workspace', '.state', 'batch-state.tsv');
+const LOGS_DIR = path.join(ROOT, 'workspace', '.state', 'logs');
+const REPORTS_DIR = path.join(ROOT, 'workspace', 'reports', 'evaluations');
 
 export function parseTokenVal(str) {
   if (!str) return 0;

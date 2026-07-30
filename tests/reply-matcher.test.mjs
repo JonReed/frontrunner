@@ -50,7 +50,7 @@ test('getAppDomains - drops prose tokens and filenames, keeps real hostnames', (
     num: 68,
     company: 'Northwind',
     role: 'VP, Demand Generation',
-    notes: 'Near-bullseye remote VP-DG at enterprise SaaS; no hard blockers (MBA/vertical-pod soft gaps).; Applied via careers.northwind.com, Remote-US. Comp expectation submitted before the screen. CV: output/cv-vp-demand-generation-2026-06-23.pdf'
+    notes: 'Near-bullseye remote VP-DG at enterprise SaaS; no hard blockers (MBA/vertical-pod soft gaps).; Applied via careers.northwind.com, Remote-US. Comp expectation submitted before the screen. CV: workspace/documents/cv-vp-demand-generation-2026-06-23.pdf'
   };
 
   const domains = getAppDomains(app, []);
@@ -103,14 +103,14 @@ test('getAppDomains - rejects bare filenames whose extension parses as a TLD', (
     num: 30,
     company: 'Initech',
     role: 'Head of Growth',
-    notes: 'Tailored from cv.md. Proof points pulled from article-digest.md, cover draft saved as cover-letter.pdf. Recruiter is talent@initech-group.example.'
+    notes: 'Tailored from workspace/profile/cv.md. Proof points pulled from workspace/profile/article-digest.md, cover draft saved as cover-letter.pdf. Recruiter is talent@initech-group.example.'
   };
 
   const domains = getAppDomains(app, []);
 
   assert.ok(hasDomain(domains, 'initech.com'), 'company-domain guess must survive');
   assert.ok(hasDomain(domains, 'initech-group.example'), 'employer contact domain must survive');
-  for (const filename of ['cv.md', 'article-digest.md', 'cover-letter.pdf']) {
+  for (const filename of ['workspace/profile/cv.md', 'workspace/profile/article-digest.md', 'cover-letter.pdf']) {
     assert.ok(!hasDomain(domains, filename), `expected filename "${filename}" to be dropped`);
   }
 });

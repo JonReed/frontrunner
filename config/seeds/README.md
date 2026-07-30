@@ -1,6 +1,6 @@
 # config/seeds/ — VC Portfolio Seed Fetchers
 
-A complementary discovery path for startup job-seekers: pull a **public VC portfolio company list** and probe each company's ATS for openings, feeding results into the same pipeline as tracked companies in `portals.yml`.
+A complementary discovery path for startup job-seekers: pull a **public VC portfolio company list** and probe each company's ATS for openings, feeding results into the same pipeline as tracked companies in `workspace/search/portals.yml`.
 
 ## What this does
 
@@ -13,10 +13,10 @@ VC portfolio API/page
 SeedCompany[]
     ↓ toPortalEntry()
 PortalEntry (careers_url set to best-guess ATS URL)
-    ↓ provider.detect() (same as portals.yml companies)
+    ↓ provider.detect() (same as workspace/search/portals.yml companies)
 ATS provider fetches jobs
     ↓ title_filter / location_filter / dedup
-data/pipeline.md
+workspace/search/pipeline.md
 ```
 
 ## Usage

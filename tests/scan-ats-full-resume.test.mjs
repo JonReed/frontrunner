@@ -121,7 +121,7 @@ const { loadCheckpoint, checkpointCompatible } = mod;
   const { writeFileSync, mkdirSync, rmSync } = await import('node:fs');
   // Anchored to ROOT, not CWD: run from anywhere else and a relative path would
   // create — and then rmSync — a directory outside the project.
-  const dir = join(ROOT, 'data/cache/.test-checkpoint');
+  const dir = join(ROOT, 'workspace/.state/cache/.test-checkpoint');
   mkdirSync(dir, { recursive: true });
   const p = `${dir}/cp.json`;
   writeFileSync(p, 'not json', 'utf-8');

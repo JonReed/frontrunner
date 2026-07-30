@@ -5,7 +5,7 @@ import { parseApplications } from "@/lib/tracker-table.mjs";
 
 /**
  * Resolve the frontrunner "home" — the directory holding the user's sibling
- * files (cv.md, data/, reports/). In production the web/ app lives inside the
+ * files (workspace/profile/cv.md, data/, workspace/reports/evaluations/). In production the web/ app lives inside the
  * frontrunner checkout, so the home is its parent (..). Dev overrides via
  * FRONTRUNNER_ROOT to read the user's real (gitignored) data from a separate
  * checkout — see web/.env.local.
@@ -47,12 +47,12 @@ function read(rel: string): string | null {
 
 export type InboxJob = { url: string; company: string; role: string; location?: string; compensation?: string; done: boolean; postedAt?: string };
 
-/** Parse data/pipeline.md — `- [ ] URL | Company | Role [| Location [| Compensation]]`.
+/** Parse workspace/search/pipeline.md — `- [ ] URL | Company | Role [| Location [| Compensation]]`.
  *  Positional split (NOT a greedy trailing group): the optional 4th `location`
  *  (#1015) and 5th `compensation` (#1017) columns must NOT bleed into `role`;
  *  any further trailing columns are ignored gracefully. */
 export function readInbox(): InboxJob[] {
-  const md = read("data/pipeline.md");
+  const md = read("workspace/search/pipeline.md");
   if (!md) return [];
   const jobs: InboxJob[] = [];
   for (const line of md.split("\n")) {
@@ -73,7 +73,7 @@ export function readInbox(): InboxJob[] {
 }
 
 /**
- * Read data/scan-history.tsv → Map<url, first_seen(YYYY-MM-DD)>. The scanner
+ * Read workspace/.state/scan-history.tsv → Map<url, first_seen(YYYY-MM-DD)>. The scanner
  * already stamps every discovered posting with the date it was first seen
  * (col 2), so we derive the inbox's freshness signal here WITHOUT touching the
  * core (see the inbox-triage build: freshness = option A, no scanner change).
@@ -81,7 +81,7 @@ export function readInbox(): InboxJob[] {
  * a malformed row is skipped, never thrown (missing ≠ corrupt).
  */
 export function readScanDates(): Map<string, string> {
-  const tsv = read("data/scan-history.tsv");
+  const tsv = read("workspace/.state/scan-history.tsv");
   const dates = new Map<string, string>();
   if (!tsv) return dates;
   const lines = tsv.split("\n");
@@ -113,21 +113,21 @@ export type Application = {
 };
 
 /**
- * Parse data/applications.md — the tracker table (source of truth).
+ * Parse workspace/applications/tracker.md — the tracker table (source of truth).
  * The header-aware parsing lives in tracker-table.mjs, which resolves headers
  * through the SAME alias table the Node tooling uses (tracker-aliases.json,
  * exported by src/tracker/tracker-parse.mjs as HEADER_ALIASES) — one shared source, no
  * web-side mirror to drift (#954, PR #1598 review).
  */
 export function readApplications(): Application[] {
-  const md = read("data/applications.md");
+  const md = read("workspace/applications/tracker.md");
   if (!md) return [];
   return parseApplications(md, frontrunnerRoot());
 }
 
 /**
  * Server-side lifecycle of the user's setup — mirrors the prerequisite list that
- * doctor.mjs uses (cv.md, config/profile.yml, modes/_profile.md, portals.yml), by
+ * doctor.mjs uses (workspace/profile/cv.md, workspace/profile/profile.yml, workspace/profile/targeting.md, workspace/search/portals.yml), by
  * plain file-stat (no subprocess). Drives the home branch: first-run (no CV) →
  * the CV takeover; in-between (CV but no profile) → gentle nudges; established.
  */
@@ -135,11 +135,11 @@ export type LifecyclePhase = "first-run" | "in-between" | "established";
 /**
  * Server-side lifecycle, mirroring the core doctor.mjs prerequisite list with the
  * SAME existsSync semantics (the SSOT the OnboardingBanner already reads via
- * /api/doctor). The 4 user-layer prereqs: cv.md, config/profile.yml,
- * modes/_profile.md, portals.yml.
+ * /api/doctor). The 4 user-layer prereqs: workspace/profile/cv.md, workspace/profile/profile.yml,
+ * workspace/profile/targeting.md, workspace/search/portals.yml.
  *   - first-run  → a TRULY empty install (no cv AND no data): the CV takeover.
  *     CRITICAL back-compat (maintainer): NEVER force onboarding on a user who
- *     already has data (a full pipeline/tracker with no cv.md is valid).
+ *     already has data (a full pipeline/tracker with no workspace/profile/cv.md is valid).
  *   - in-between → has cv/data but setup incomplete: dashboard + the nudge banner.
  *   - established → all 4 prereqs present.
  * onboardingNeeded mirrors doctor.mjs: true if ANY prereq is missing → show banner.
@@ -159,13 +159,13 @@ export function doctorState(): {
     }
   };
   const prereqs: [string, string][] = [
-    ["cv.md", "cv.md"],
-    ["config/profile.yml", "config/profile.yml"],
-    ["modes/_profile.md", "modes/_profile.md"],
-    ["portals.yml", "portals.yml"],
+    ["workspace/profile/cv.md", "workspace/profile/cv.md"],
+    ["workspace/profile/profile.yml", "workspace/profile/profile.yml"],
+    ["workspace/profile/targeting.md", "workspace/profile/targeting.md"],
+    ["workspace/search/portals.yml", "workspace/search/portals.yml"],
   ];
   const missing = prereqs.filter(([rel]) => !has(rel)).map(([, label]) => label);
-  const hasCv = has("cv.md");
+  const hasCv = has("workspace/profile/cv.md");
   const hasData = readApplications().length > 0 || readInbox().some((j) => !j.done);
   const onboardingNeeded = missing.length > 0;
   const phase: LifecyclePhase = !hasCv && !hasData ? "first-run" : onboardingNeeded ? "in-between" : "established";
@@ -195,7 +195,7 @@ export function pipelineSummary(): PipelineSummary {
 export type ReportData = { content: string; file: string };
 
 /** Locate the evaluation report for an application number
- *  (reports/{n}-{slug}-{date}.md; the leading number may be zero-padded). */
+ *  (workspace/reports/evaluations/{n}-{slug}-{date}.md; the leading number may be zero-padded). */
 export function findReportFile(n: string): string | null {
   const target = parseInt(n, 10);
   if (Number.isNaN(target)) return null;
@@ -233,7 +233,7 @@ export function profilePath(): string {
 const NOTES_START = "<!-- co-web-notes:start -->";
 const NOTES_END = "<!-- co-web-notes:end -->";
 
-/** Read back ONLY the web-assistant managed notes from modes/_profile.md (small,
+/** Read back ONLY the web-assistant managed notes from workspace/profile/targeting.md (small,
  *  focused — the agent reads the rest of the canonical files itself). Falls back
  *  to the legacy web-only memory file for back-compat. */
 export function readMemory(): string {
@@ -252,7 +252,7 @@ export function readMemory(): string {
   }
 }
 
-/** Append a durable fact to the canonical modes/_profile.md (creating the file +
+/** Append a durable fact to the canonical workspace/profile/targeting.md (creating the file +
  *  managed block if needed), PRESERVING existing user content. */
 export function rememberFact(fact: string): "ok" | "deduped" | "error" {
   const f = fact.trim().replace(/\s+/g, " ").slice(0, 300);

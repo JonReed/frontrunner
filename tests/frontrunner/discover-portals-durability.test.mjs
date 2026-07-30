@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
@@ -33,7 +34,8 @@ const START = [
 
 function fixture() {
   const dir = mkdtempSync(join(tmpdir(), 'frontrunner-portals-state-'));
-  const portalsPath = join(dir, 'portals.yml');
+  const portalsPath = join(dir, 'workspace/search/portals.yml');
+  mkdirSync(join(dir, 'workspace', 'search'), { recursive: true });
   writeFileSync(portalsPath, START);
   return { dir, portalsPath };
 }

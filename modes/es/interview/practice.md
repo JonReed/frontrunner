@@ -9,12 +9,12 @@ Ejecuta una entrevista de práctica realista — una pregunta a la vez — y da 
 1. **Tipo de ronda** (requerido) — filtro/reclutador (screening/recruiter), filtro/HM (screening/HM), técnico/específico del dominio, diseño/estudio de caso, conductual (behavioral)
 2. **Persona del entrevistador** (si se conoce) — nombre, rol, empresa; determina el estilo y profundidad de las preguntas
 3. **Lista de preguntas** (opcional) — preguntas específicas a cubrir; si no se proporcionan, generarlas a partir del tipo de ronda
-4. **CV** en `cv.md` + `article-digest.md` (si está presente) — para verificar las afirmaciones en las respuestas y fundamentar versiones más sólidas en la experiencia real
-5. **Perfil** en `config/profile.yml` + `modes/_profile.md` — narrativa del candidato, factores decisivos (deal-breakers), objetivos de compensación
-6. **Banco de historias** en `interview-prep/story-bank.md` — para verificar la precisión de la historia en los comentarios
-7. **Banco de preguntas** en `interview-prep/question-bank.md` — para actualizar el estado después de cada respuesta
+4. **CV** en `workspace/profile/cv.md` + `workspace/profile/article-digest.md` (si está presente) — para verificar las afirmaciones en las respuestas y fundamentar versiones más sólidas en la experiencia real
+5. **Perfil** en `workspace/profile/profile.yml` + `workspace/profile/targeting.md` — narrativa del candidato, factores decisivos (deal-breakers), objetivos de compensación
+6. **Banco de historias** en `workspace/interviews/story-bank.md` — para verificar la precisión de la historia en los comentarios
+7. **Banco de preguntas** en `workspace/interviews/question-bank.md` — para actualizar el estado después de cada respuesta
 8. **Archivo de preparación específico del rol** — para inteligencia de la empresa, preguntas obtenidas, estrategia de compensación
-9. **Afirmaciones retractadas** en `interview-prep/retracted-claims.md` (si está presente) — afirmaciones que el candidato ha rechazado explícitamente como indefendibles; trátalo como una barrera estricta (hard gate)
+9. **Afirmaciones retractadas** en `workspace/interviews/retracted-claims.md` (si está presente) — afirmaciones que el candidato ha rechazado explícitamente como indefendibles; trátalo como una barrera estricta (hard gate)
 
 ---
 
@@ -24,10 +24,10 @@ Ejecuta una entrevista de práctica realista — una pregunta a la vez — y da 
 
 Antes de establecer la escena, confirma qué archivos existen:
 
-- `interview-prep/question-bank.md` (o un equivalente específico de la empresa)
-- El archivo de preparación específico del rol (`interview-prep/{company}-{role}.md`)
-- `cv.md`
-- `interview-prep/retracted-claims.md`
+- `workspace/interviews/question-bank.md` (o un equivalente específico de la empresa)
+- El archivo de preparación específico del rol (`workspace/interviews/{company}-{role}.md`)
+- `workspace/profile/cv.md`
+- `workspace/interviews/retracted-claims.md`
 
 Si el banco de preguntas y el archivo de preparación del rol están ausentes, dile al candidato claramente:
 
@@ -98,11 +98,11 @@ Mantén la retroalimentación concisa. Una o dos cosas a mejorar por respuesta �
 
 **Regla de los dos minutos.** Si una respuesta dura más de dos minutos, anótalo. Los entrevistadores dejan de escuchar. La solución casi siempre es indicar la respuesta primero, y luego explicar — no cortar contenido. *En una sesión escrita no puedes cronometrar la entrega — sustituye esto por una comprobación de estructura:* marca las respuestas que entierran el titular (más de 4-5 oraciones de configuración antes de llegar al punto) y dile al candidato: el ritmo y las palabras de relleno solo se pueden diagnosticar en voz alta — grábate o ejecuta esta pregunta nuevamente de forma verbal.
 
-**Verifica las afirmaciones sospechosas antes de asesorar sobre ellas.** Cuando el candidato indica una métrica específica o una afirmación de alcance (personal a cargo, AUM, cifra de ingresos, porcentaje de mejora) que no puedes confirmar en el contexto previo, compárala con `cv.md`, `article-digest.md` y `interview-prep/retracted-claims.md` antes de dar feedback. Si la afirmación no está respaldada, márcala: "No puedo encontrar ese número en tu CV — ¿es defendible si presionan? Si no, aquí tienes una versión que no depende de él". Nunca aconsejes a un candidato que repita una afirmación que no puede respaldar.
+**Verifica las afirmaciones sospechosas antes de asesorar sobre ellas.** Cuando el candidato indica una métrica específica o una afirmación de alcance (personal a cargo, AUM, cifra de ingresos, porcentaje de mejora) que no puedes confirmar en el contexto previo, compárala con `workspace/profile/cv.md`, `workspace/profile/article-digest.md` y `workspace/interviews/retracted-claims.md` antes de dar feedback. Si la afirmación no está respaldada, márcala: "No puedo encontrar ese número en tu CV — ¿es defendible si presionan? Si no, aquí tienes una versión que no depende de él". Nunca aconsejes a un candidato que repita una afirmación que no puede respaldar.
 
-**Nunca inventes experiencia o métricas.** La versión más sólida solo puede usar hechos que el candidato indicó realmente, o afirmaciones que existen en `cv.md`, `article-digest.md` o el banco de historias. Ajustar el encuadre es tu trabajo — agregar logros es inventar. Si una afirmación aparece en `interview-prep/retracted-claims.md`, no la uses en una versión más sólida, incluso si el candidato lo dijo.
+**Nunca inventes experiencia o métricas.** La versión más sólida solo puede usar hechos que el candidato indicó realmente, o afirmaciones que existen en `workspace/profile/cv.md`, `workspace/profile/article-digest.md` o el banco de historias. Ajustar el encuadre es tu trabajo — agregar logros es inventar. Si una afirmación aparece en `workspace/interviews/retracted-claims.md`, no la uses en una versión más sólida, incluso si el candidato lo dijo.
 
-**Ofrece registrar retractaciones.** Cuando un candidato concede a mitad de sesión que una afirmación no es defendible bajo presión ("tienes razón, no puedo respaldar eso"), ofrece agregarla a `interview-prep/retracted-claims.md`: "¿Quieres que agregue eso a tu lista de afirmaciones retractadas para que no vuelva a surgir?". Si responde que sí, agrega: `**"[afirmación]"** ([contexto]). Razón: [razón de una línea + encuadre correcto si aplica].`
+**Ofrece registrar retractaciones.** Cuando un candidato concede a mitad de sesión que una afirmación no es defendible bajo presión ("tienes razón, no puedo respaldar eso"), ofrece agregarla a `workspace/interviews/retracted-claims.md`: "¿Quieres que agregue eso a tu lista de afirmaciones retractadas para que no vuelva a surgir?". Si responde que sí, agrega: `**"[afirmación]"** ([contexto]). Razón: [razón de una línea + encuadre correcto si aplica].`
 
 **Cuando la inteligencia de la empresa sea escasa a mitad de sesión.** Si al candidato le cuesta visiblemente una pregunta sobre "por qué esta empresa / por qué este rol" porque el archivo de preparación del rol carece de información, no inventes ni te quedes en silencio. Sal del personaje, ejecuta el paso de investigación `interview-prep` para esa única pregunta (la misma ruta de investigación referenciada que posee `interview-prep.md`), y vuelve con 2-3 ángulos concretos y citados. Luego retoma el personaje. Si la investigación no produce nada útil, dilo claramente. Esto no es un segundo ciclo de búsqueda — es invocar la etapa de investigación existente justo a tiempo cuando la ruta principal no se ejecutó primero.
 
@@ -134,7 +134,7 @@ Mantén la retroalimentación concisa. Una o dos cosas a mejorar por respuesta �
 
 ### Write Session Transcript
 
-Después del resumen, escribe una transcripción de la sesión legible por máquina en `interview-prep/sessions/{company-slug}-{role-slug}-{round}-{YYYY-MM-DD}.md` (usa `practice` para el slug de empresa/rol si no fue una sesión específica de empresa). Este es un registro estructurado de la ronda para modos de análisis posteriores; los turnos etiquetados por hablante permiten a un consumidor leer cualquier lado sin volver a inferir quién habló. El contrato completo vive en `interview-prep/sessions/README.md`.
+Después del resumen, escribe una transcripción de la sesión legible por máquina en `workspace/interviews/sessions/{company-slug}-{role-slug}-{round}-{YYYY-MM-DD}.md` (usa `practice` para el slug de empresa/rol si no fue una sesión específica de empresa). Este es un registro estructurado de la ronda para modos de análisis posteriores; los turnos etiquetados por hablante permiten a un consumidor leer cualquier lado sin volver a inferir quién habló. El contrato completo vive en `workspace/interviews/sessions/README.md`.
 
 Formato:
 
@@ -171,7 +171,7 @@ Reglas para la transcripción:
 
 Si no se proporciona una lista de preguntas, obtén las preguntas en este orden de precedencia:
 
-1. **Preguntas reales de `interview-prep/question-bank.md`** — preguntas que esta empresa (o en una ronda anterior) realmente hizo, capturadas por resúmenes (debriefs). Mayor valor: fundamentado empíricamente.
+1. **Preguntas reales de `workspace/interviews/question-bank.md`** — preguntas que esta empresa (o en una ronda anterior) realmente hizo, capturadas por resúmenes (debriefs). Mayor valor: fundamentado empíricamente.
 2. **Preguntas obtenidas del archivo de preparación del rol** — preguntas que la investigación de interview-prep.md encontró y citó. Úsalas tal como están escritas; mantén sus citas fuera de la sesión pero respeta su redacción.
 3. **Los conjuntos predeterminados a continuación** — fallback generado para una primera sesión sin investigación aún. Llena los espacios entre corchetes con información de la JD.
 
@@ -249,7 +249,7 @@ Mezcla al menos 2 preguntas situacionales / con visión de futuro del siguiente 
 - **Una pregunta a la vez.** Nunca lances múltiples preguntas juntas. Los entrevistadores reales hacen una a la vez.
 - **Sin pistas antes de la respuesta.** No prepares al candidato con "esto trata sobre X". Pregunta en frío.
 - **Solo feedback honesto.** El falso aliento es peor que el silencio — envía al candidato a una entrevista real mal preparado.
-- **Sin afirmaciones inventadas en las respuestas sugeridas.** Las versiones más sólidas se basan solo en lo que dijo el candidato o lo que está en `cv.md`, `article-digest.md` o el banco de historias — nunca inventar experiencia o métricas.
-- **Las afirmaciones retractadas son una barrera estricta.** Si una afirmación aparece en `interview-prep/retracted-claims.md`, nunca la uses en una versión más sólida — incluso si el candidato la dijo en su respuesta. En su lugar, márcala.
-- **Rastrea el estado.** Actualiza `interview-prep/question-bank.md` después de la sesión si existe.
+- **Sin afirmaciones inventadas en las respuestas sugeridas.** Las versiones más sólidas se basan solo en lo que dijo el candidato o lo que está en `workspace/profile/cv.md`, `workspace/profile/article-digest.md` o el banco de historias — nunca inventar experiencia o métricas.
+- **Las afirmaciones retractadas son una barrera estricta.** Si una afirmación aparece en `workspace/interviews/retracted-claims.md`, nunca la uses en una versión más sólida — incluso si el candidato la dijo en su respuesta. En su lugar, márcala.
+- **Rastrea el estado.** Actualiza `workspace/interviews/question-bank.md` después de la sesión si existe.
 - **Detente cuando te lo pidan.** Si el candidato dice "vamos a pausar" o "es suficiente por hoy", respétalo. No presiones para una pregunta más.

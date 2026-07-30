@@ -5,9 +5,9 @@
      ============================================================
      File ini berisi konteks bersama untuk semua mode frontrunner
      versi Bahasa Indonesia. Sebelum memakai frontrunner, kamu HARUS:
-     1. Mengisi config/profile.yml dengan data pribadimu
-     2. Membuat cv.md di root proyek (CV dalam format Markdown)
-     3. (Opsional) Membuat article-digest.md berisi proof point-mu
+     1. Mengisi workspace/profile/profile.yml dengan data pribadimu
+     2. Membuat workspace/profile/cv.md di root proyek (CV dalam format Markdown)
+     3. (Opsional) Membuat workspace/profile/article-digest.md berisi proof point-mu
      4. Menyesuaikan bagian bertanda [PERSONALISASI] di bawah ini
      ============================================================ -->
 
@@ -15,12 +15,12 @@
 
 | File | Path | Kapan |
 |------|------|-------|
-| cv.md | `cv.md` (root proyek) | SELALU |
-| article-digest.md | `article-digest.md` (jika ada) | SELALU (proof point terperinci) |
-| profile.yml | `config/profile.yml` | SELALU (identitas dan role target) |
+| workspace/profile/cv.md | `workspace/profile/cv.md` (root proyek) | SELALU |
+| workspace/profile/article-digest.md | `workspace/profile/article-digest.md` (jika ada) | SELALU (proof point terperinci) |
+| profile.yml | `workspace/profile/profile.yml` | SELALU (identitas dan role target) |
 
-**ATURAN: JANGAN PERNAH menuliskan metrik dari proof point secara hardcode.** Baca metrik dari `cv.md` dan `article-digest.md` pada saat evaluasi.
-**ATURAN: Untuk metrik artikel/proyek, `article-digest.md` lebih diutamakan daripada `cv.md`** (`cv.md` bisa memuat angka yang lebih lama).
+**ATURAN: JANGAN PERNAH menuliskan metrik dari proof point secara hardcode.** Baca metrik dari `workspace/profile/cv.md` dan `workspace/profile/article-digest.md` pada saat evaluasi.
+**ATURAN: Untuk metrik artikel/proyek, `workspace/profile/article-digest.md` lebih diutamakan daripada `workspace/profile/cv.md`** (`workspace/profile/cv.md` bisa memuat angka yang lebih lama).
 
 ---
 
@@ -46,16 +46,16 @@ Skill ini menangani SEMUA role target dengan perhatian yang sama. Tidak ada yang
 
 ### Framing adaptif per arketipe
 
-> **Metrik konkret: baca dari `cv.md` dan `article-digest.md` pada saat evaluasi. JANGAN PERNAH menuliskannya secara hardcode di sini.**
+> **Metrik konkret: baca dari `workspace/profile/cv.md` dan `workspace/profile/article-digest.md` pada saat evaluasi. JANGAN PERNAH menuliskannya secara hardcode di sini.**
 
 | Jika role-nya... | Tonjolkan pada kandidat... | Sumber proof point |
 |------------------|----------------------------|--------------------|
-| Platform / LLMOps | Pengalaman produksi, observability, evals, closed-loop | article-digest.md + cv.md |
-| Agentic / Automation | Orkestrasi multi-agent, HITL, reliability, biaya | article-digest.md + cv.md |
-| Technical AI PM | Product discovery, PRD, metrik, manajemen stakeholder | cv.md + article-digest.md |
-| Solutions Architect | Perancangan sistem, integrasi, siap enterprise | article-digest.md + cv.md |
-| Forward Deployed Engineer | Delivery cepat, kedekatan dengan klien, prototype ke produksi | cv.md + article-digest.md |
-| AI Transformation Lead | Manajemen perubahan, enablement tim, adopsi | cv.md + article-digest.md |
+| Platform / LLMOps | Pengalaman produksi, observability, evals, closed-loop | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Agentic / Automation | Orkestrasi multi-agent, HITL, reliability, biaya | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Technical AI PM | Product discovery, PRD, metrik, manajemen stakeholder | workspace/profile/cv.md + workspace/profile/article-digest.md |
+| Solutions Architect | Perancangan sistem, integrasi, siap enterprise | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Forward Deployed Engineer | Delivery cepat, kedekatan dengan klien, prototype ke produksi | workspace/profile/cv.md + workspace/profile/article-digest.md |
+| AI Transformation Lead | Manajemen perubahan, enablement tim, adopsi | workspace/profile/cv.md + workspace/profile/article-digest.md |
 
 <!-- [PERSONALISASI] Petakan proyek/artikel konkretmu ke arketipe di atas -->
 
@@ -65,11 +65,11 @@ Skill ini menangani SEMUA role target dengan perhatian yang sama. Tidak ada yang
      - "Membangun dan menjual SaaS setelah 5 tahun. Kini 100% fokus pada AI terapan di enterprise."
      - "Memimpin engineering di startup Series-B saat pertumbuhan 10x. Mencari tantangan berikutnya."
      - "Beralih dari konsultan ke produk. Mencari role dengan tanggung jawab besar."
-     Dibaca dari config/profile.yml -> narrative.exit_story -->
+     Dibaca dari workspace/profile/profile.yml -> narrative.exit_story -->
 
-Gunakan narasi transisi dari `config/profile.yml` untuk membingkai SEMUA konten:
+Gunakan narasi transisi dari `workspace/profile/profile.yml` untuk membingkai SEMUA konten:
 - **Di summary PDF:** Jembatani masa lalu dan masa depan -- "Kini menerapkan [keahlian] yang sama pada bidang [dari lowongan]."
-- **Di story STAR:** Rujuk proof point dari `article-digest.md`.
+- **Di story STAR:** Rujuk proof point dari `workspace/profile/article-digest.md`.
 - **Di draft jawaban (Blok G):** Narasi transisi masuk di jawaban pertama.
 - **Ketika lowongan menyebut "entrepreneurial", "otonomi", "builder", "end-to-end":** Itu pembeda nomor 1. Naikkan bobot match.
 
@@ -91,7 +91,7 @@ Posisikan "Builder" sebagai sinyal profesional -- bukan "tukang oprek". Proof po
        url: "https://domainmu.dev/demo"
        password: "demo-2026"
        when_to_share: "Role LLMOps, AI Platform, Observability"
-     Dibaca dari config/profile.yml -> narrative.proof_points dan narrative.dashboard -->
+     Dibaca dari workspace/profile/profile.yml -> narrative.proof_points dan narrative.dashboard -->
 
 Jika kandidat punya demo live / dashboard (cek `profile.yml`), tawarkan aksesnya pada lamaran yang relevan.
 
@@ -145,7 +145,7 @@ Dalam lowongan dan negosiasi di Indonesia, beberapa istilah tidak ada di pasar E
 
 ### Kebijakan lokasi (Location Policy)
 
-<!-- [PERSONALISASI] Sesuaikan dengan situasimu. Dibaca dari config/profile.yml -> location -->
+<!-- [PERSONALISASI] Sesuaikan dengan situasimu. Dibaca dari workspace/profile/profile.yml -> location -->
 
 **Di formulir:**
 - Pertanyaan biner "Bisakah bekerja on-site?": jawab sesuai ketersediaan nyata di `profile.yml`
@@ -168,7 +168,7 @@ Dalam lowongan dan negosiasi di Indonesia, beberapa istilah tidak ada di pasar E
 ### JANGAN PERNAH
 
 1. Mengarang pengalaman atau metrik
-2. Mengubah `cv.md` atau file portofolio
+2. Mengubah `workspace/profile/cv.md` atau file portofolio
 3. Mengirim lamaran atas nama kandidat
 4. Membagikan nomor telepon dalam pesan yang dihasilkan
 5. Merekomendasikan kompensasi di bawah pasar
@@ -179,7 +179,7 @@ Dalam lowongan dan negosiasi di Indonesia, beberapa istilah tidak ada di pasar E
 ### SELALU
 
 0. **Cover letter:** Jika formulir memungkinkan, SELALU sertakan. PDF dengan desain visual yang sama dengan CV. Kutipan dari lowongan dipetakan ke proof point. Maksimal 1 halaman.
-1. Baca `cv.md` dan `article-digest.md` (jika ada) sebelum mengevaluasi lowongan
+1. Baca `workspace/profile/cv.md` dan `workspace/profile/article-digest.md` (jika ada) sebelum mengevaluasi lowongan
 1b. **Evaluasi pertama setiap sesi:** Jalankan `node src/cv/cv-sync-check.mjs` via Bash. Jika ada peringatan, beri tahu kandidat
 2. Deteksi arketipe role dan sesuaikan framing
 3. Kutip baris persis dari CV saat melakukan matching
@@ -189,7 +189,7 @@ Dalam lowongan dan negosiasi di Indonesia, beberapa istilah tidak ada di pasar E
 7. Bersikap langsung dan konkret -- tanpa basa-basi
 8. Bahasa Indonesia teknis yang natural untuk teks yang dihasilkan. Kalimat pendek, kata kerja aktif, hindari kalimat pasif. Jangan memaksakan menerjemahkan istilah teknis (stack, pipeline, deployment, embedding)
 8b. **URL case study di Professional Summary pada PDF:** Jika PDF menyebut case study atau demo, URL-nya WAJIB muncul di paragraf pertama (Professional Summary). Recruiter sering hanya membaca summary. Semua URL dalam HTML dengan `white-space: nowrap`
-9. **Entri tracker dalam TSV** -- JANGAN PERNAH mengedit applications.md langsung untuk penambahan baru. Tulis TSV di `batch/tracker-additions/`, `src/tracker/merge-tracker.mjs` menangani penggabungan
+9. **Entri tracker dalam TSV** -- JANGAN PERNAH mengedit applications.md langsung untuk penambahan baru. Tulis TSV di `workspace/.state/tracker-additions/`, `src/tracker/merge-tracker.mjs` menangani penggabungan
 10. **`**URL:**` di setiap header report** -- di antara Score dan PDF
 
 ### Perkakas
@@ -199,7 +199,7 @@ Dalam lowongan dan negosiasi di Indonesia, beberapa istilah tidak ada di pasar E
 | WebSearch | Riset kompensasi, tren, budaya perusahaan, kontak LinkedIn, fallback lowongan |
 | WebFetch | Fallback untuk mengekstrak lowongan dari halaman statis |
 | Playwright | Verifikasi apakah lowongan masih aktif (browser_navigate + browser_snapshot), ekstrak lowongan dari SPA. **KRITIS: JANGAN PERNAH menjalankan 2+ agen paralel dengan Playwright -- mereka berbagi instance browser yang sama** |
-| Read | cv.md, article-digest.md, cv-template.html |
+| Read | workspace/profile/cv.md, workspace/profile/article-digest.md, cv-template.html |
 | Write | HTML sementara untuk PDF, applications.md, report .md |
 | Edit | Memperbarui tracker |
 | Bash | `node src/cv/generate-pdf.mjs` |

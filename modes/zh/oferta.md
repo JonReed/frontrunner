@@ -23,7 +23,7 @@
 ---
 
 ## 维度 B — 简历匹配分析 (Match with CV)
-读取 `cv.md`。创建一个对照表格，将 JD 中的各项硬性/软性要求一一映射到简历中的具体行号和量化表述上。
+读取 `workspace/profile/cv.md`。创建一个对照表格，将 JD 中的各项硬性/软性要求一一映射到简历中的具体行号和量化表述上。
 
 **针对不同岗位画像的分析侧重点：**
 - **AI 前线交付 (FDE)** → 侧重交付速度、全栈开发及直接对接客户的成果。
@@ -133,7 +133,7 @@
 
 在**反思**列中，务必提炼出学到的核心教训或如果重新来过会如何改进。这对于体现资深度至关重要——初级候选人只描述过程，资深候选人能提炼方法论。
 
-**故事库同步：** 如果存在 `interview-prep/story-bank.md`，检查这些故事是否已在故事库中。如果不存在，将其追加进去，以便随着评估逐渐建立一个可随时调用的“黄金面试故事库”。
+**故事库同步：** 如果存在 `workspace/interviews/story-bank.md`，检查这些故事是否已在故事库中。如果不存在，将其追加进去，以便随着评估逐渐建立一个可随时调用的“黄金面试故事库”。
 
 **根据画像进行故事包装：**
 - **FDE** → 强调极限交付时间、应对客户紧急多变的需求。
@@ -189,7 +189,7 @@
 | Posting legitimacy | Block G 的评级 | `✅ High Confidence`；Proceed with Caution / Suspicious 渲染为 `⚠️ {tier} — {一句话原因}` |
 | Employment classification | Block G 内的用工性质信号 | 检查已运行且无异常时 `✅ clear`；标记触发时 `⚠️ contractor-style language: "{引用原文}"`；无法运行时 `— not evaluated` |
 | Culture screen | Block A 的文化筛查字段 | `✅ pass`，或 `⚠️ caution — {证据}` / `⚠️ fail — {证据}`；未做筛查时 `— not evaluated` |
-| Interview red flags | `interview-prep/{company-slug}-redflags.md`（来自 `interview-redflag` 模式） | **交叉引用，不是复制：** 文件存在时写出其当前警告级别并附相对链接 —— `[{level}](../interview-prep/{company-slug}-redflags.md)`（相对于 `reports/`）；否则 `— no interview sessions yet` |
+| Interview red flags | `workspace/interviews/{company-slug}-redflags.md`（来自 `interview-redflag` 模式） | **交叉引用，不是复制：** 文件存在时写出其当前警告级别并附相对链接 —— `[{level}](../workspace/interviews/{company-slug}-redflags.md)`（相对于 `workspace/reports/evaluations/`）；否则 `— no interview sessions yet` |
 | AI claims vs. infrastructure | Block G 中的 AI/基础设施一致性检查（如果存在） | 本报告包含该检查时镜像其结论（`✅ consistent` / `⚠️ {发现}`）；否则 `— not evaluated`。该检查一旦存在此行自动启用，无顺序依赖 |
 
 块格式：
@@ -211,7 +211,7 @@
 **在生成 Block A-G 的评估结果后，必须无条件执行以下两个步骤：**
 
 ### 1. 保存报告 markdown 文件
-将完整的评估内容保存到本地路径 `reports/{###}-{company-slug}-{YYYY-MM-DD}.md` 中。
+将完整的评估内容保存到本地路径 `workspace/reports/evaluations/{###}-{company-slug}-{YYYY-MM-DD}.md` 中。
 
 - `{###}` = 顺序递增的 3 位数字（如 001, 002）
 - `{company-slug}` = 公司英文或拼音缩写，全小写，空格用连字符 `-` 代替
@@ -265,7 +265,7 @@
 ```
 
 ### 2. 登记到 Tracker 记录簿
-在 `data/applications.md` 的末尾追加此条记录：
+在 `workspace/applications/tracker.md` 的末尾追加此条记录：
 - 顺序 ID 编号
 - 日期
 - 公司名称
@@ -273,4 +273,4 @@
 - 评分（如 4.2/5）
 - 状态（无脑填写为 `Evaluated`）
 - PDF 状态（默认为 ❌）
-- 报告链接：根目录相对路径 `[###](reports/###-company-YYYY-MM-DD.md)`（注意：合并脚本会将其自动格式化）
+- 报告链接：根目录相对路径 `[###](workspace/reports/evaluations/###-company-YYYY-MM-DD.md)`（注意：合并脚本会将其自动格式化）

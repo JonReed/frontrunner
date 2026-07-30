@@ -37,7 +37,7 @@ const MAX_ENTRIES = 22;
 const ENTRY_KEYS = new Set(['path', 'beforeHash', 'content']);
 const JOURNAL_KEYS = new Set(['version', 'createdAt', 'entries']);
 const VERSION_KEYS = new Set(['label', 'text']);
-const VERSION_PATH_RE = /^cv-versions\/\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/u;
+const VERSION_PATH_RE = /^workspace\/profile\/cv-versions\/\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/u;
 
 function fail(message, code = 'PROFILE_TRANSACTION_FAILED') {
   const error = new Error(message);
@@ -58,12 +58,12 @@ function hash(content) {
 }
 
 function journalPath(base = profileBase()) {
-  return join(base, 'data', JOURNAL_NAME);
+  return join(base, 'workspace', '.state', JOURNAL_NAME);
 }
 
 function resolveTarget(relativePath, base = profileBase()) {
-  if (relativePath === 'cv.md') return join(base, 'cv.md');
-  if (relativePath === 'config/profile.yml') return join(base, 'config', 'profile.yml');
+  if (relativePath === 'workspace/profile/cv.md') return join(base, 'workspace/profile/cv.md');
+  if (relativePath === 'workspace/profile/profile.yml') return join(base, 'workspace', 'profile', 'profile.yml');
   if (VERSION_PATH_RE.test(relativePath)) return join(base, ...relativePath.split('/'));
   throw fail(`profile journal contains an invalid target: ${relativePath}`);
 }
@@ -221,7 +221,7 @@ function normalizedSave({ fields = {}, cv, versions = [] }) {
       throw fail('profile CV version needs a text label and content');
     }
     return Object.freeze({
-      path: `cv-versions/${cvVersionFilename(label, index)}`,
+      path: `workspace/profile/cv-versions/${cvVersionFilename(label, index)}`,
       content: normalizeCvText(version.text, 'CV version'),
     });
   });
@@ -239,10 +239,10 @@ export async function publishProfileSave(save, options = {}) {
     await recoverUnlocked(base, options);
     const clean = normalizedSave(save);
     const relativeTargets = [
-      ...(clean.cv === undefined ? [] : [{ path: 'cv.md', content: clean.cv }]),
+      ...(clean.cv === undefined ? [] : [{ path: 'workspace/profile/cv.md', content: clean.cv }]),
       ...clean.versions,
       ...(Object.keys(clean.fields).length === 0 ? [] : [{
-        path: 'config/profile.yml',
+        path: 'workspace/profile/profile.yml',
         content: null,
       }]),
     ];
@@ -254,7 +254,7 @@ export async function publishProfileSave(save, options = {}) {
     return withTargetLocks(entries, async () => {
       const journalEntries = entries.map((entry) => {
         const current = readTarget(entry.target);
-        const content = entry.path === 'config/profile.yml'
+        const content = entry.path === 'workspace/profile/profile.yml'
           ? renderProfilePatch(current ?? '', clean.fields, { base })
           : entry.content;
         return {

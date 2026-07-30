@@ -25,7 +25,7 @@ Claude vil så læse filerne i denne mappe i stedet for `modes/`.
 
 ### Mulighed 2 -- Permanent
 
-Tilføj i `config/profile.yml`:
+Tilføj i `workspace/profile/profile.yml`:
 
 ```yaml
 language:
@@ -52,7 +52,7 @@ De øvrige modes (`scan`, `batch`, `pdf`, `tracker`, `auto-pipeline`, `deep`, `c
 
 Bevidst ikke oversat, fordi det er standard tech-ordforråd:
 
-- `cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`, `proof point`
+- `workspace/profile/cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`, `proof point`
 - Værktøjsnavne (`Playwright`, `WebSearch`, `WebFetch`, `Read`, `Write`, `Edit`, `Bash`)
 - Statusværdier i trackeren (`Evaluated`, `Applied`, `Interview`, `Offer`, `Rejected`)
 - Kodeuddrag, stier, kommandoer

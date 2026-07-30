@@ -12,7 +12,7 @@ Mode interaktif untuk saat kandidat mengisi formulir lamaran di Chrome. Membaca 
 ```text
 1. DETEKSI      -> Baca tab Chrome yang aktif (tangkapan layar/URL/judul)
 2. IDENTIFIKASI -> Ekstrak perusahaan + role dari halaman
-3. CARI         -> Cocokkan dengan report yang ada di reports/
+3. CARI         -> Cocokkan dengan report yang ada di workspace/reports/evaluations/
 4. MUAT         -> Baca report lengkap + Blok G (jika ada)
 5. BANDINGKAN   -> Apakah role di layar cocok dengan yang dievaluasi? Jika berubah -> beri peringatan
 6. ANALISIS     -> Identifikasi SEMUA pertanyaan yang terlihat di formulir
@@ -32,7 +32,7 @@ Mode interaktif untuk saat kandidat mengisi formulir lamaran di Chrome. Membaca 
 ## Langkah 2 -- Identifikasi dan muat konteks
 
 1. Ekstrak nama perusahaan dan jabatan dari halaman
-2. Cari di `reports/` berdasarkan nama perusahaan (Grep case-insensitive)
+2. Cari di `workspace/reports/evaluations/` berdasarkan nama perusahaan (Grep case-insensitive)
 3. Jika cocok -> muat report lengkap
 4. Jika ada Blok G -> muat draft jawaban sebelumnya sebagai dasar
 5. Jika TIDAK cocok -> beri peringatan kepada kandidat dan tawarkan auto-pipeline cepat
@@ -56,7 +56,7 @@ Identifikasi SEMUA pertanyaan yang terlihat:
 
 Klasifikasikan tiap pertanyaan:
 - **Sudah dijawab di Blok G** -> pakai kembali jawaban yang ada
-- **Pertanyaan baru** -> hasilkan jawaban dari report + `cv.md`
+- **Pertanyaan baru** -> hasilkan jawaban dari report + `workspace/profile/cv.md`
 
 ## Langkah 5 -- Hasilkan jawaban
 

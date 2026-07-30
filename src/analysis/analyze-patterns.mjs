@@ -20,10 +20,10 @@ import { load as yamlLoad } from 'js-yaml';
 import { resolveColumns, parseTrackerRow, normalizeVia } from '../tracker/tracker-parse.mjs';
 
 import { ROOT as FRONTRUNNER } from '#paths';
-const APPS_FILE = existsSync(join(FRONTRUNNER, 'data/applications.md'))
-  ? join(FRONTRUNNER, 'data/applications.md')
+const APPS_FILE = existsSync(join(FRONTRUNNER, 'workspace/applications/tracker.md'))
+  ? join(FRONTRUNNER, 'workspace/applications/tracker.md')
   : join(FRONTRUNNER, 'applications.md');
-const REPORTS_DIR = join(FRONTRUNNER, 'reports');
+const REPORTS_DIR = join(FRONTRUNNER, 'workspace', 'reports', 'evaluations');
 
 const MACHINE_SUMMARY_FIELDS = new Set([
   'company',
@@ -658,7 +658,7 @@ function analyze() {
       const candidate = existsSync(fromTracker) ? fromTracker : join(FRONTRUNNER, reportMatch[1]);
       
       const repoRelative = relative(FRONTRUNNER, candidate).split(sep).join('/');
-      if (repoRelative.startsWith('reports/') && !repoRelative.includes('..')) {
+      if (repoRelative.startsWith('workspace/reports/evaluations/') && !repoRelative.includes('..')) {
         reportPath = existsSync(candidate) ? candidate : null;
       }
     }
@@ -899,7 +899,7 @@ function analyze() {
   const topDiscardReason = discardReasonStats[0];
   if (topDiscardReason && topDiscardReason.frequency >= Math.max(3, Math.ceil(enriched.length * 0.15))) {
     recommendations.push({
-      action: `Add "${topDiscardReason.reason}" filter to modes/_custom.md to avoid wasting evaluation effort`,
+      action: `Add "${topDiscardReason.reason}" filter to workspace/profile/preferences.md to avoid wasting evaluation effort`,
       reasoning: `"${topDiscardReason.reason}" is the most frequent discard reason (${topDiscardReason.frequency}x, ${topDiscardReason.percentage}% of all applications).`,
       impact: 'high',
     });
@@ -925,7 +925,7 @@ function analyze() {
   const geoBlocker = blockerAnalysis.find(b => b.blocker === 'geo-restriction');
   if (geoBlocker && geoBlocker.percentage >= 20) {
     recommendations.push({
-      action: `Tighten location filters in portals.yml -- ${geoBlocker.percentage}% of applications hit a geo-restriction blocker`,
+      action: `Tighten location filters in workspace/search/portals.yml -- ${geoBlocker.percentage}% of applications hit a geo-restriction blocker`,
       reasoning: `${geoBlocker.frequency} of ${enriched.length} offers are location-restricted (US/Canada-only). These are wasted evaluation effort.`,
       impact: 'high',
     });

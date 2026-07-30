@@ -93,7 +93,7 @@ let freeModels = null;   // string[]
 let modelIndex = 0;      // current position in rotation
 
 // Persistent blacklist file — survives process restarts
-const BLACKLIST_FILE = path.join(__dirname, 'data', 'model-blacklist.json');
+const BLACKLIST_FILE = path.join(__dirname, 'workspace', '.state', 'model-blacklist.json');
 function loadPersistedBlacklist() {
   return [...readModelBlacklist(BLACKLIST_FILE)];
 }
@@ -170,7 +170,7 @@ function fileExists(relPath) {
   return fs.existsSync(path.join(__dirname, relPath));
 }
 
-export function cachedJdForUrl(url, { outDir = path.join(__dirname, 'jds') } = {}) {
+export function cachedJdForUrl(url, { outDir = path.join(__dirname, 'workspace', 'jobs', 'descriptions') } = {}) {
   const file = readJdManifest(outDir).get(url);
   if (!file) return null;
   try {
@@ -304,12 +304,12 @@ async function callOpenRouter(systemPrompt, userMessage) {
 // ---------------------------------------------------------------------------
 function loadContext() {
   return {
-    cv:          readFile('cv.md')               ?? 'CV not found.',
-    profile:     readFile('config/profile.yml')  ?? '',
+    cv:          readFile('workspace/profile/cv.md')               ?? 'CV not found.',
+    profile:     readFile('workspace/profile/profile.yml')  ?? '',
     shared:      readFile('modes/_shared.md')    ?? '',
-    profileMode: readFile('modes/_profile.md')   ?? '',
-    articleDigest: readFile('article-digest.md') ?? '',
-    customRules: readFile('modes/_custom.md')    ?? '',
+    profileMode: readFile('workspace/profile/targeting.md')   ?? '',
+    articleDigest: readFile('workspace/profile/article-digest.md') ?? '',
+    customRules: readFile('workspace/profile/preferences.md')    ?? '',
   };
 }
 
@@ -354,8 +354,8 @@ function normKeywords(v) {
 }
 
 export function parsePortals(rawOverride) {
-  const raw = rawOverride ?? readFile('portals.yml');
-  if (!raw) throw new Error('portals.yml not found');
+  const raw = rawOverride ?? readFile('workspace/search/portals.yml');
+  if (!raw) throw new Error('workspace/search/portals.yml not found');
   const config = yaml.load(raw) || {};
 
   const tf = config.title_filter || {};
@@ -509,10 +509,10 @@ async function cmdEvaluate(input, ctx) {
       sourceUrl,
       rootDir: __dirname,
     });
-    const relPath = `reports/${artifact.filename}`;
+    const relPath = `workspace/reports/evaluations/${artifact.filename}`;
 
     console.log(`\n✅ Report saved: ${relPath}`);
-    console.log('📊 Tracker merged into data/applications.md.');
+    console.log('📊 Tracker merged into workspace/applications/tracker.md.');
     console.log('\n─── EVALUATION ──────────────────────────────────────\n');
     console.log(result);
     console.log('\n─────────────────────────────────────────────────────\n');
@@ -549,14 +549,14 @@ async function cmdApply(ref, ctx) {
     reportContent = readFile(ref);
   } else {
     const numStr = String(ref).padStart(3, '0');
-    const reportsDir = path.join(__dirname, 'reports');
+    const reportsDir = path.join(__dirname, 'workspace', 'reports', 'evaluations');
     const dirEntries = fs.existsSync(reportsDir) ? fs.readdirSync(reportsDir) : [];
     const matches = dirEntries.filter(f => f.startsWith(numStr));
     if (matches.length === 0) {
       console.error(`Report not found: ${ref}`);
       return;
     }
-    reportContent = readFile(`reports/${matches[0]}`);
+    reportContent = readFile(`workspace/reports/evaluations/${matches[0]}`);
   }
 
   if (!reportContent) { console.error('Could not read report content.'); return; }

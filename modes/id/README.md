@@ -25,7 +25,7 @@ Claude akan membaca file di folder ini alih-alih `modes/`.
 
 ### Opsi 2 -- Permanen
 
-Tambahkan di `config/profile.yml`:
+Tambahkan di `workspace/profile/profile.yml`:
 
 ```yaml
 language:
@@ -52,7 +52,7 @@ Mode lain (`scan`, `batch`, `pdf`, `tracker`, `auto-pipeline`, `deep`, `contacto
 
 Sengaja tidak diterjemahkan karena merupakan kosakata teknis standar:
 
-- `cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`, `proof point`
+- `workspace/profile/cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`, `proof point`
 - Nama perkakas (`Playwright`, `WebSearch`, `WebFetch`, `Read`, `Write`, `Edit`, `Bash`)
 - Nilai status di tracker (`Evaluated`, `Applied`, `Interview`, `Offer`, `Rejected`)
 - Cuplikan kode, path, perintah

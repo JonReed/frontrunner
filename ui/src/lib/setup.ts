@@ -14,7 +14,7 @@
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { ROOT } from './roles';
+import { ROOT } from './root';
 
 export interface SetupItem {
   /** Path relative to the repo root, for the seam that eventually writes it. */
@@ -29,25 +29,25 @@ export interface SetupItem {
 
 const ITEMS: Omit<SetupItem, 'present'>[] = [
   {
-    file: 'cv.md',
+    file: 'workspace/profile/cv.md',
     title: 'Your CV',
     why: 'Every role is scored against it. Nothing works without this one.',
     required: true,
   },
   {
-    file: 'config/profile.yml',
+    file: 'workspace/profile/profile.yml',
     title: 'Your details and targets',
     why: 'Name, location, and the kind of work you are after.',
     required: true,
   },
   {
-    file: 'portals.yml',
+    file: 'workspace/search/portals.yml',
     title: 'Where to search',
     why: 'The job boards to scan. Ships with sensible defaults.',
     required: false,
   },
   {
-    file: 'data/applications.md',
+    file: 'workspace/applications/tracker.md',
     title: 'Your tracker',
     why: 'Where applications are recorded as they move.',
     required: false,

@@ -182,7 +182,7 @@ const KEY = companyRoleDedupKey('Anduril', 'Strategic Finance');
 // passes against a build where main() simply never passes the extra sources —
 // the defect lived in the wiring, so it has to be observed through the CLI.
 //
-// scan.mjs resolves data/ relative to process.cwd(), so the child runs with cwd
+// scan.mjs resolves workspace/ relative to process.cwd(), so the child runs with cwd
 // pinned to a sandbox. The fixture board is reached through local-parser, which
 // requires an in-repo script (realpath-guarded) and runs it with cwd at the repo
 // root — hence the repo-relative `script:` against an absolute portals path.
@@ -190,15 +190,16 @@ const KEY = companyRoleDedupKey('Anduril', 'Strategic Finance');
 {
   const dir = mkdtempSync(join(tmpdir(), 'scan-e2e-'));
   try {
-    mkdirSync(join(dir, 'data'), { recursive: true });
-    writeFileSync(join(dir, 'data', 'applications.md'), `# Applications Tracker
+    mkdirSync(join(dir, 'workspace', 'applications'), { recursive: true });
+    mkdirSync(join(dir, 'workspace', 'search'), { recursive: true });
+    writeFileSync(join(dir, 'workspace', 'applications', 'tracker.md'), `# Applications Tracker
 
 | # | Date | Company | Role | Score | Status | PDF | Report | Notes |
 |---|------|---------|------|-------|--------|-----|--------|-------|
 `);
-    writeFileSync(join(dir, 'data', 'pipeline.md'), '# Pipeline\n\n');
+    writeFileSync(join(dir, 'workspace', 'search', 'pipeline.md'), '# Pipeline\n\n');
 
-    const portals = join(dir, 'portals.yml');
+    const portals = join(dir, 'workspace/search/portals.yml');
     writeFileSync(portals, `title_filter:
   positive:
     - "Strategic Finance"
@@ -217,7 +218,7 @@ tracked_companies:
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     const entries = () => {
-      const p = join(dir, 'data', 'pipeline.md');
+      const p = join(dir, 'workspace', 'search', 'pipeline.md');
       if (!existsSync(p)) return [];
       return readFileSync(p, 'utf-8').split('\n').filter(l => /^- \[[ x]\]\s+https?:\/\//.test(l));
     };

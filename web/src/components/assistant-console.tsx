@@ -94,9 +94,9 @@ function describePage(p: string): string {
   if (p === "/pipeline") return "Pipeline — the applications table + the inbox of pending job URLs.";
   const m = p.match(/^\/pipeline\/([^/]+)$/);
   if (m)
-    return `The user is viewing the EVALUATION REPORT for application #${m[1]}. If they say "this offer", "apply", "evaluate it", "draft a cover letter", they mean application #${m[1]} — read reports/${m[1]}-*.md or the matching data/applications.md row and act on THAT one.`;
+    return `The user is viewing the EVALUATION REPORT for application #${m[1]}. If they say "this offer", "apply", "evaluate it", "draft a cover letter", they mean application #${m[1]} — read workspace/reports/evaluations/${m[1]}-*.md or the matching workspace/applications/tracker.md row and act on THAT one.`;
   if (p === "/analytics") return "Analytics — funnel, score distribution, top companies.";
-  if (p === "/cv") return "CV editor (cv.md).";
+  if (p === "/cv") return "CV editor (workspace/profile/cv.md).";
   if (p === "/config") return "Config — CLI / engine setup.";
   if (p === "/apply") return "Apply — the form-proxy: the user is reviewing a job application re-rendered in plain language, pre-filled from their CV. You can write/revise answers via setApplyField.";
   if (p.startsWith("/jobs/")) return "Watching a running worker / evaluation in progress.";

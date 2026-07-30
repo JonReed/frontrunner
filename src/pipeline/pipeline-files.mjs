@@ -2,7 +2,7 @@
  * Canonical publisher for pipeline working files and inbox outcomes.
  *
  * Pipeline locking belongs to the caller because some files are private to one
- * leased run while data/pipeline.md uses its shared transaction lock. This
+ * leased run while workspace/search/pipeline.md uses its shared transaction lock. This
  * boundary owns durable atomic replacement and protected-test enforcement.
  */
 

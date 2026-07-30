@@ -10,7 +10,7 @@
 2. 投稿を分類する：
    - **active posting evidence:** title/role + 実際の job description または application/apply path
    - **closed posting evidence:** expired/closed/"no longer accepting applications"、JD がなく nav/footer だけ、generic careers/search page への hard redirect、404/410
-3. 投稿が closed に見える場合は、**Block A の前で stop**：候補者に link が dead であると伝える。entry が `data/pipeline.md` 由来なら、`- [x] ~~Company | Role~~ -- 求人非アクティブ` として mark する。評価、report、CV は生成しない。
+3. 投稿が closed に見える場合は、**Block A の前で stop**：候補者に link が dead であると伝える。entry が `workspace/search/pipeline.md` 由来なら、`- [x] ~~Company | Role~~ -- 求人非アクティブ` として mark する。評価、report、CV は生成しない。
 4. 候補者が JD テキストだけを貼った場合（URL なし）、liveness は確認できない。その limitation を note して進む。確認する link がないため。
 
 この gate が解決するまで Block A に進まない。ここで取得した snapshot は Block G の freshness signals に再利用する。
@@ -35,7 +35,7 @@ Table with:
 
 ## Block B -- Match with CV
 
-`cv.md` を読む。JD の各 requirement を CV の exact lines に mapping した table を作る。
+`workspace/profile/cv.md` を読む。JD の各 requirement を CV の exact lines に mapping した table を作る。
 
 **Adapted to the archetype:**
 - If FDE → delivery speed と client-facing proof points を優先
@@ -94,7 +94,7 @@ JD requirements に mapping した 6-10 STAR+R stories（STAR + **Reflection**�
 
 **Reflection** column は、何を学んだか、または次に何を変えるかを捉える。これは seniority の signal。Junior candidates は起きたことを説明する。Senior candidates は lessons を抽出する。
 
-**Story Bank:** `interview-prep/story-bank.md` が存在する場合、これらの stories がすでにあるか確認する。なければ新しいものを append する。時間とともに、どの interview question にも適応できる 5-10 master stories の reusable bank を作る。
+**Story Bank:** `workspace/interviews/story-bank.md` が存在する場合、これらの stories がすでにあるか確認する。なければ新しいものを append する。時間とともに、どの interview question にも適応できる 5-10 master stories の reusable bank を作る。
 
 **Selected and framed according to the archetype:**
 - FDE → delivery speed と client-facing を強調
@@ -171,10 +171,10 @@ Report を保存し tracker に記録した後、report file に `## Cover Lette
 
 **How to generate the draft:**
 
-1. `cv.md` を読む。JD の top requirements に最も relevant な achievement bullets を 4 つ選ぶ（exact wording、real metrics only）
-2. `config/profile.yml` を読む。candidate name、current role、years of experience を抽出する
+1. `workspace/profile/cv.md` を読む。JD の top requirements に最も relevant な achievement bullets を 4 つ選ぶ（exact wording、real metrics only）
+2. `workspace/profile/profile.yml` を読む。candidate name、current role、years of experience を抽出する
 3. Role title と JD mission language に基づく 2-sentence opening を書く
-4. `cv.md` summary から 1-paragraph profile intro を書き、JD domain に合わせる
+4. `workspace/profile/cv.md` summary から 1-paragraph profile intro を書き、JD domain に合わせる
 5. "Problems / Why this company / Approach" section は placeholder にする。ここは user input が必要
 6. Gaps（domain mismatch、language requirement、start date urgency）を detect and flag し、ユーザーがすぐ確認できるようにする
 
@@ -192,13 +192,13 @@ Report を保存し tracker に記録した後、report file に `## Cover Lette
 {2-sentence opening based on JD role title and mission language}
 
 **Profile introduction**
-{1 paragraph from cv.md summary, adapted to JD domain and required competencies}
+{1 paragraph from workspace/profile/cv.md summary, adapted to JD domain and required competencies}
 
-**Key achievements** *(selected from cv.md -- exact wording preserved)*
-- **{lead from cv.md},** {impact sentence with metric}.
-- **{lead from cv.md},** {impact sentence with metric}.
-- **{lead from cv.md},** {impact sentence with metric}.
-- **{lead from cv.md},** {impact sentence with metric}.
+**Key achievements** *(selected from workspace/profile/cv.md -- exact wording preserved)*
+- **{lead from workspace/profile/cv.md},** {impact sentence with metric}.
+- **{lead from workspace/profile/cv.md},** {impact sentence with metric}.
+- **{lead from workspace/profile/cv.md},** {impact sentence with metric}.
+- **{lead from workspace/profile/cv.md},** {impact sentence with metric}.
 
 **Problems I will solve** *(placeholder -- requires company research + your input)*
 > To be completed: what challenges does {company} face that you'd address? How would you approach them?
@@ -237,7 +237,7 @@ I am happy to discuss further at your convenience.
 | Posting legitimacy | ブロック G の評価ティア | `✅ High Confidence`。Proceed with Caution / Suspicious は `⚠️ {tier} — {一文の理由}` |
 | Employment classification | ブロック G 内の雇用形態シグナル | チェックが実行され問題がなければ `✅ clear`。フラグが立った場合は `⚠️ contractor-style language: "{引用した表現}"`。実行できなかった場合は `— not evaluated` |
 | Culture screen | ブロック A のカルチャースクリーン項目 | `✅ pass`、または `⚠️ caution — {根拠}` / `⚠️ fail — {根拠}`。スクリーンを実施していない場合は `— not evaluated` |
-| Interview red flags | `interview-prep/{company-slug}-redflags.md`（`interview-redflag` モード） | **コピーではなく相互参照：** ファイルが存在する場合は現在の警告レベルと相対リンクを記載 — `[{level}](../interview-prep/{company-slug}-redflags.md)`（`reports/` からの相対）。無ければ `— no interview sessions yet` |
+| Interview red flags | `workspace/interviews/{company-slug}-redflags.md`（`interview-redflag` モード） | **コピーではなく相互参照：** ファイルが存在する場合は現在の警告レベルと相対リンクを記載 — `[{level}](../workspace/interviews/{company-slug}-redflags.md)`（`workspace/reports/evaluations/` からの相対）。無ければ `— no interview sessions yet` |
 | AI claims vs. infrastructure | ブロック G の AI／インフラ整合性チェック（存在する場合） | 本レポートにそのチェックが含まれる場合は判定をミラーする（`✅ consistent` / `⚠️ {検出事項}`）。無ければ `— not evaluated`。チェックが存在すれば自動的に有効化され、順序依存はありません |
 
 ブロック形式：
@@ -260,7 +260,7 @@ I am happy to discuss further at your convenience.
 
 ### 1. Save report .md
 
-Full evaluation を `reports/{###}-{company-slug}-{YYYY-MM-DD}.md` に保存する。
+Full evaluation を `workspace/reports/evaluations/{###}-{company-slug}-{YYYY-MM-DD}.md` に保存する。
 
 - `{###}` = next sequential number（3 digits, zero-padded）。競合を防ぐため、必ず `node src/tracker/reserve-report-num.mjs` を実行して番号を claim し（stdout returns `{###}`）、report を write してから `node src/tracker/reserve-report-num.mjs --release {###}` を実行して sentinel を release する。
 - `{company-slug}` = company name in lowercase, without spaces（use hyphens）
@@ -315,7 +315,7 @@ Full evaluation を `reports/{###}-{company-slug}-{YYYY-MM-DD}.md` に保存す�
 
 ### 2. Record in tracker
 
-**ALWAYS** record in `data/applications.md`:
+**ALWAYS** record in `workspace/applications/tracker.md`:
 - Next sequential number
 - Current date
 - Company
@@ -323,7 +323,7 @@ Full evaluation を `reports/{###}-{company-slug}-{YYYY-MM-DD}.md` に保存す�
 - Score: match average (1-5)
 - Status: `Evaluated`
 - PDF: ❌（または auto-pipeline が PDF を生成した場合は ✅）
-- Report: root-relative link `[001](reports/001-company-2026-01-01.md)`（`src/tracker/merge-tracker.mjs` 経由で merge されると tracker file からの相対 link に normalize される。例：`../reports/...`。#760 参照）
+- Report: root-relative link `[001](workspace/reports/evaluations/001-company-2026-01-01.md)`（`src/tracker/merge-tracker.mjs` 経由で merge されると tracker file からの相対 link に normalize される。例：`../reports/evaluations/...`。#760 参照）
 
 **Tracker format:**
 

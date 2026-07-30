@@ -3,7 +3,7 @@
 <!-- ============================================================
      此檔案由系統自動更新，請勿在此處填寫個人隱私資料。
 
-     你的個人化設定應寫入 modes/_profile.md 中（絕不會被自動覆蓋）。
+     你的個人化設定應寫入 workspace/profile/targeting.md 中（絕不會被自動覆蓋）。
      本檔案包含系統規則、評分邏輯與工具設定，並在後續版本中持續改進。
      ============================================================ -->
 
@@ -11,14 +11,14 @@
 
 | 檔案 | 路徑 | 讀取時機 |
 |---|---|---|
-| 履歷 | `cv.md` (專案根目錄) | 一律讀取 |
-| 專案／文章摘要 | `article-digest.md` (若存在) | 一律讀取（包含詳細的量化指標與專案佐證）|
-| 個人偏好設定 | `config/profile.yml` | 一律讀取（求職者的個人身分、目標薪資與地點偏好）|
-| 個人客製策略 | `modes/_profile.md` | 一律讀取（自訂原型偏好、求職敘事、談判話術）|
-| 寫作樣本目錄 | `writing-samples/` | 僅在產生求職者對外文本時 — 先檢查 `_profile.md` 中快取的 `## 寫作風格`，缺少時再掃描此目錄 |
+| 履歷 | `workspace/profile/cv.md` (專案根目錄) | 一律讀取 |
+| 專案／文章摘要 | `workspace/profile/article-digest.md` (若存在) | 一律讀取（包含詳細的量化指標與專案佐證）|
+| 個人偏好設定 | `workspace/profile/profile.yml` | 一律讀取（求職者的個人身分、目標薪資與地點偏好）|
+| 個人客製策略 | `workspace/profile/targeting.md` | 一律讀取（自訂原型偏好、求職敘事、談判話術）|
+| 寫作樣本目錄 | `workspace/profile/writing-samples/` | 僅在產生求職者對外文本時 — 先檢查 `_profile.md` 中快取的 `## 寫作風格`，缺少時再掃描此目錄 |
 
-**規則：嚴禁把專案／文章的量化指標寫死在程式或模式檔中。** 必須在評估時從 `cv.md` 和 `article-digest.md` 動態讀取。
-**規則：關於文章與專案指標，`article-digest.md` 的優先權高於 `cv.md`。**
+**規則：嚴禁把專案／文章的量化指標寫死在程式或模式檔中。** 必須在評估時從 `workspace/profile/cv.md` 和 `workspace/profile/article-digest.md` 動態讀取。
+**規則：關於文章與專案指標，`workspace/profile/article-digest.md` 的優先權高於 `workspace/profile/cv.md`。**
 **規則：一律在讀完本檔之後才讀 `_profile.md`。`_profile.md` 中的使用者自訂內容會覆蓋此處的預設值。**
 
 ---
@@ -99,7 +99,7 @@
 | **AI 前線交付工程師 (FDE)** | "交付", "客戶對接", "原型開發", "快速上線", "現場支援" |
 | **AI 轉型專家 / 顧問** | "變革管理", "AI 導入/Adoption", "賦能", "業務轉型" |
 
-偵測到原型後，讀取 `modes/_profile.md` 中求職者針對該原型的特定表達框架與專案佐證。
+偵測到原型後，讀取 `workspace/profile/targeting.md` 中求職者針對該原型的特定表達框架與專案佐證。
 
 ---
 
@@ -140,7 +140,7 @@
 ### 嚴禁事項 (NEVER)
 
 1. 虛構求職者的工作經歷或量化指標。
-2. 直接修改 `cv.md` 或作品集原始檔案。
+2. 直接修改 `workspace/profile/cv.md` 或作品集原始檔案。
 3. 代表求職者直接送出應徵，或按下最終的送出／投遞按鈕。
 4. 在產生的溝通話術中直接洩漏電話號碼等過度隱私的資料。
 5. 建議求職者接受低於市場合理水準的薪資。
@@ -151,7 +151,7 @@
 ### 必須事項 (ALWAYS)
 
 0. **求職信 (Cover Letter)：** 若投遞表單允許，一律提供一份。視覺設計與履歷保持一致，將 JD 關鍵字／需求一一對應到履歷中的量化指標，篇幅控制在 1 頁以內。
-1. 開始評估職缺前，先閱讀 `cv.md`、`_profile.md` 和 `article-digest.md`（若存在）。
+1. 開始評估職缺前，先閱讀 `workspace/profile/cv.md`、`_profile.md` 和 `workspace/profile/article-digest.md`（若存在）。
 2. 在每個會談的第一次評估前執行 `node src/cv/cv-sync-check.mjs`。若出現同步警告，提示求職者。
 3. 準確辨識職缺的角色原型，並依 `_profile.md` 中的策略調整表達重點。
 4. 比對職缺需求時，標明對應履歷的具體行號作為佐證。
@@ -159,7 +159,7 @@
 6. 完成評估後，即時記錄到 tracker 紀錄簿。
 7. 產生的內容與 JD 的語言保持一致（預設使用英文，中文 JD 使用中文）。
 8. 產生繁體中文技術文本（求職信、LinkedIn 話術等）時：使用自然道地的台灣科技業中文習慣。多用短句、主動語態，避免生硬的西式被動句。常見的通用產業術語（如 stack, pipeline, deployment, embedding）不需勉強中譯，保留英文即可。
-9. **向 tracker 新增紀錄時必須使用 TSV 格式** — 嚴禁直接編輯 `applications.md`，將 TSV 檔寫入 `batch/tracker-additions/` 目錄，由 `src/tracker/merge-tracker.mjs` 統一合併。
+9. **向 tracker 新增紀錄時必須使用 TSV 格式** — 嚴禁直接編輯 `applications.md`，將 TSV 檔寫入 `workspace/.state/tracker-additions/` 目錄，由 `src/tracker/merge-tracker.mjs` 統一合併。
 10. **每一份評估報告的開頭，必須包含 `**URL:**` 欄位。**
 
 ---
@@ -170,7 +170,7 @@
 
 **校準適用範圍：** 適用於產生一切需要符合求職者口吻的對外文本（如求職信、LinkedIn 溝通話術、表單開放式問答等）。不適用於內部評估報告（Block A–G 的評分及分析）。
 
-**若 `_profile.md` 中沒有快取寫作風格：** 讀取 `writing-samples/` 目錄下的所有檔案（**跳過任何名為 `README.md` 的檔案**）。若找不到寫作樣本，則跳過此校準，並溫和提示求職者可以加入樣本，幫助我們更貼近他的聲線。若存在樣本，擷取以下風格特徵，並寫入 `_profile.md` 的 `## Writing Style` 區塊，供未來會談直接使用。
+**若 `_profile.md` 中沒有快取寫作風格：** 讀取 `workspace/profile/writing-samples/` 目錄下的所有檔案（**跳過任何名為 `README.md` 的檔案**）。若找不到寫作樣本，則跳過此校準，並溫和提示求職者可以加入樣本，幫助我們更貼近他的聲線。若存在樣本，擷取以下風格特徵，並寫入 `_profile.md` 的 `## Writing Style` 區塊，供未來會談直接使用。
 
 ### 風格擷取要素
 

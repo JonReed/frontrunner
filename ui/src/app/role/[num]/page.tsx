@@ -91,7 +91,7 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
           {followup && <FollowupStatus followup={followup} detail />}
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-        {role.pdf && <CvLinks pdf={role.pdf} />}
+        {role.pdf && <CvLinks roleNum={role.num} />}
         {/* Read the original before trusting anything below it. */}
         {jobUrl && (
           <a

@@ -16,7 +16,7 @@ const targetIdx = argv.indexOf('--target');
 const projectRoot =
   targetIdx !== -1 && argv[targetIdx + 1] ? argv[targetIdx + 1] : __dirname;
 const JSON_OUT = argv.includes('--json');
-// --strict adds a live ATS-slug probe of portals.yml (network). Opt-in so the
+// --strict adds a live ATS-slug probe of workspace/search/portals.yml (network). Opt-in so the
 // default `npm run doctor` stays fast and fully offline.
 const STRICT = argv.includes('--strict');
 
@@ -112,12 +112,12 @@ function playwrightMcpConfigured(root) {
   return false;
 }
 
-// Report which scan/JD extractor is active (config/profile.yml → scan.extractor).
+// Report which scan/JD extractor is active (workspace/profile/profile.yml → scan.extractor).
 // `mcp` (default) uses the browser MCP; `cli` uses src/scan/browser-extract.mjs. When cli
 // is selected but the helper is missing, the modes fall back to MCP — surface
 // that as a warning, never a failure.
 function checkScanExtractor(root) {
-  const mode = resolveExtractorMode(join(root, 'config', 'profile.yml'));
+  const mode = resolveExtractorMode(join(root, 'workspace', 'profile', 'profile.yml'));
   if (mode === 'cli') {
     if (existsSync(join(root, 'src/scan/browser-extract.mjs'))) {
       return { pass: true, label: 'Scan extractor: cli (src/scan/browser-extract.mjs)' };
@@ -125,7 +125,7 @@ function checkScanExtractor(root) {
     return {
       warn: true,
       label: 'Scan extractor: cli set, but src/scan/browser-extract.mjs is missing — falls back to MCP',
-      fix: ['Restore src/scan/browser-extract.mjs, or set `scan.extractor: mcp` in config/profile.yml.'],
+      fix: ['Restore src/scan/browser-extract.mjs, or set `scan.extractor: mcp` in workspace/profile/profile.yml.'],
     };
   }
   return { pass: true, label: 'Scan extractor: mcp (default)' };
@@ -153,30 +153,30 @@ function checkPlaywrightMcp(root) {
 // THIS array, so they cannot drift. Paths use "/" and are split for join().
 const USER_LAYER_PREREQS = [
   {
-    path: 'cv.md',
+    path: 'workspace/profile/cv.md',
     fix: [
-      'Create cv.md in the project root with your CV in markdown',
+      'Create workspace/profile/cv.md with your CV in markdown',
       'See docs/examples/ for reference CVs',
     ],
   },
   {
-    path: 'config/profile.yml',
+    path: 'workspace/profile/profile.yml',
     fix: [
-      'Run: cp config/profile.example.yml config/profile.yml',
+      'Run: cp config/profile.example.yml workspace/profile/profile.yml',
       'Then edit it with your details',
     ],
   },
   {
-    path: 'modes/_profile.md',
+    path: 'workspace/profile/targeting.md',
     fix: [
-      'Run: cp modes/_profile.template.md modes/_profile.md',
+      'Run: cp modes/_profile.template.md workspace/profile/targeting.md',
       'Then customize your archetypes / targeting narrative',
     ],
   },
   {
-    path: 'portals.yml',
+    path: 'workspace/search/portals.yml',
     fix: [
-      'Run: cp templates/portals.example.yml portals.yml',
+      'Run: cp templates/portals.example.yml workspace/search/portals.yml',
       'Then customize with your target companies',
     ],
   },
@@ -238,25 +238,25 @@ function checkAutoDir(name) {
   }
 }
 
-// --strict only: probe the ATS slug of every tracked company in portals.yml so
+// --strict only: probe the ATS slug of every tracked company in workspace/search/portals.yml so
 // a typo'd slug (which 404s silently on scans) surfaces here. Skipped gracefully
-// when portals.yml is absent. Delegates to src/scan/verify-portals.mjs so there is one
+// when workspace/search/portals.yml is absent. Delegates to src/scan/verify-portals.mjs so there is one
 // slug-probing implementation. Network-bound, hence opt-in.
 async function checkPortalSlugs(root) {
-  const portalsPath = join(root, 'portals.yml');
+  const portalsPath = join(root, 'workspace/search/portals.yml');
   if (!existsSync(portalsPath)) {
-    return { pass: true, label: 'ATS slugs: no portals.yml yet (skipped)' };
+    return { pass: true, label: 'ATS slugs: no workspace/search/portals.yml yet (skipped)' };
   }
   try {
     const { verifyPortalsFile } = await import('./src/scan/verify-portals.mjs');
     const { results } = await verifyPortalsFile(portalsPath);
     const unresolved = results.filter((r) => r.status === 'missing');
     if (unresolved.length === 0) {
-      return { pass: true, label: 'All ATS slugs in portals.yml resolve' };
+      return { pass: true, label: 'All ATS slugs in workspace/search/portals.yml resolve' };
     }
     return {
       pass: false,
-      label: `${unresolved.length} ATS slug(s) in portals.yml do not resolve`,
+      label: `${unresolved.length} ATS slug(s) in workspace/search/portals.yml do not resolve`,
       fix: [
         ...unresolved.map((r) => {
           let line = `${r.name}: ${r.ats || '?'}/${r.slug || '?'} — ${r.reason || 'unresolved'}`;
@@ -281,18 +281,19 @@ Paste job URLs below as \`- [ ] {url}\` then run \`/frontrunner pipeline\`.
 `;
 
 function checkPipelineFile() {
-  const filePath = join(projectRoot, 'data', 'pipeline.md');
+  const filePath = join(projectRoot, 'workspace', 'search', 'pipeline.md');
   if (existsSync(filePath)) {
-    return { pass: true, label: 'data/pipeline.md ready' };
+    return { pass: true, label: 'workspace/search/pipeline.md ready' };
   }
   try {
+    mkdirSync(dirname(filePath), { recursive: true });
     writeFileSync(filePath, PIPELINE_SKELETON, 'utf-8');
-    return { pass: true, label: 'data/pipeline.md ready (auto-created)' };
+    return { pass: true, label: 'workspace/search/pipeline.md ready (auto-created)' };
   } catch {
     return {
       pass: false,
-      label: 'data/pipeline.md could not be created',
-      fix: 'Run: mkdir -p data && touch data/pipeline.md',
+      label: 'workspace/search/pipeline.md could not be created',
+      fix: 'Run: mkdir -p workspace/search && touch workspace/search/pipeline.md',
     };
   }
 }
@@ -309,10 +310,9 @@ async function main() {
     checkScanExtractor(projectRoot),
     ...USER_LAYER_PREREQS.map(checkPrereq),
     checkFonts(),
-    checkAutoDir('data'),
     checkPipelineFile(),
-    checkAutoDir('output'),
-    checkAutoDir('reports'),
+    checkAutoDir('workspace/documents'),
+    checkAutoDir('workspace/reports/evaluations'),
   ];
 
   // Network-bound ATS slug probe — only under --strict.
@@ -360,14 +360,15 @@ async function main() {
 function onboardingState(root) {
   const autoCopied = [];
   const templates = [
-    { target: 'modes/_profile.md', template: 'modes/_profile.template.md' },
-    { target: 'modes/_custom.md', template: 'modes/_custom.template.md' },
+    { target: 'workspace/profile/targeting.md', template: 'modes/_profile.template.md' },
+    { target: 'workspace/profile/preferences.md', template: 'modes/_custom.template.md' },
   ];
   for (const { target, template } of templates) {
     const targetPath = join(root, ...target.split('/'));
     const templatePath = join(root, ...template.split('/'));
     if (!existsSync(targetPath) && existsSync(templatePath)) {
       try {
+        mkdirSync(dirname(targetPath), { recursive: true });
         copyFileSync(templatePath, targetPath);
         autoCopied.push(target);
       } catch {

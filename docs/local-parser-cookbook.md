@@ -4,7 +4,7 @@ Local parsers let `src/scan/scan.mjs` read SSR or static career pages without as
 
 ## When To Use This
 
-Use `scan_method: local_parser` when a company career page has stable HTML, a documented endpoint, or another deterministic source that is easier to parse locally than with Playwright. The parser can be written in JavaScript, Python, shell, Go, or any executable available on the user's machine. `frontrunner` does not bundle company-specific parser scripts; users bring their own script and point `portals.yml` at it.
+Use `scan_method: local_parser` when a company career page has stable HTML, a documented endpoint, or another deterministic source that is easier to parse locally than with Playwright. The parser can be written in JavaScript, Python, shell, Go, or any executable available on the user's machine. `frontrunner` does not bundle company-specific parser scripts; users bring their own script and point `workspace/search/portals.yml` at it.
 
 ## Portal Configuration
 
@@ -65,7 +65,7 @@ The parser must print one of these JSON shapes to stdout:
 
 ## Artifact Storage
 
-The scanner only needs stdout. If a parser also writes full JSON snapshots for debugging or audit, store them under `data/parser-output/{company}/`. Generated JSON artifacts must stay out of git; `.gitkeep` placeholders are the only committed exception for preserving directory structure.
+The scanner only needs stdout. If a parser also writes full JSON snapshots for debugging or audit, store them under `workspace/.state/parser-output/{company}/`. Generated JSON artifacts must stay out of git; `.gitkeep` placeholders are the only committed exception for preserving directory structure.
 
 ## Failure Handling
 

@@ -34,7 +34,7 @@ use, prefer the canonical `npm run pipeline`; it prepares this input safely.
    ./batch/batch-runner.sh
    ```
 
-4. **Results** are automatically merged into `data/applications.md`, processed offers are reconciled out of the `data/pipeline.md` inbox, and integrity is verified with `src/tracker/verify-pipeline.mjs` at the end of the run.
+4. **Results** are automatically merged into `workspace/applications/tracker.md`, processed offers are reconciled out of the `workspace/search/pipeline.md` inbox, and integrity is verified with `src/tracker/verify-pipeline.mjs` at the end of the run.
 
 ## Options
 
@@ -71,14 +71,14 @@ batch/
    and launches `src/evaluate/claude-eval.mjs`.
 3. Claude receives the bounded JD and candidate context with `--tools ""`,
    safe mode, strict MCP isolation and a JSON schema. Code validates the result,
-   writes an A-G report to `reports/`, and writes a tracker TSV to
+   writes an A-G report to `workspace/reports/evaluations/`, and writes a tracker TSV to
    `tracker-additions/`. A missing cached JD fails closed; there is no agent or
    browser fallback.
-4. After all workers finish, batch-runner calls `src/tracker/merge-tracker.mjs` to merge TSVs into `data/applications.md`, `src/tracker/reconcile-pipeline.mjs` to move processed offers out of the `data/pipeline.md` inbox, and `src/tracker/verify-pipeline.mjs` to check integrity.
+4. After all workers finish, batch-runner calls `src/tracker/merge-tracker.mjs` to merge TSVs into `workspace/applications/tracker.md`, `src/tracker/reconcile-pipeline.mjs` to move processed offers out of the `workspace/search/pipeline.md` inbox, and `src/tracker/verify-pipeline.mjs` to check integrity.
 
 ## Tracker Merge
 
-Workers write one TSV per offer to `batch/tracker-additions/`. The merge script (`npm run merge`) handles:
+Workers write one TSV per offer to `workspace/.state/tracker-additions/`. The merge script (`npm run merge`) handles:
 
 - Deduplication by company + role fuzzy match and report number
 - Column order conversion (TSV has status before score; applications.md has score before status)
@@ -89,7 +89,7 @@ Run `npm run merge` manually if you need to merge outside of a batch run.
 
 ## Pipeline Reconcile
 
-Batch mode reads offers from `batch-input.tsv`, but the `data/pipeline.md` inbox is a separate list. Without reconciliation, an offer evaluated by a batch run stays in the pipeline "Pendientes" section and gets surfaced again on the next scan or `/frontrunner pipeline` run -- producing duplicate reports.
+Batch mode reads offers from `batch-input.tsv`, but the `workspace/search/pipeline.md` inbox is a separate list. Without reconciliation, an offer evaluated by a batch run stays in the pipeline "Pendientes" section and gets surfaced again on the next scan or `/frontrunner pipeline` run -- producing duplicate reports.
 
 `src/tracker/reconcile-pipeline.mjs` (run as `npm run reconcile`) closes that gap: after the tracker merge, every `completed` or `skipped` offer in `batch-state.tsv` whose URL is still in pipeline "Pendientes" is moved to "Procesadas" with its report link and score (entries without a report file on disk are left in place). It is idempotent -- safe to run after every batch, or manually.
 

@@ -4,7 +4,7 @@
  *
  * Usage:
  *   node src/cv/generate-cover-letter.mjs --payload payload.json
- *   node src/cv/generate-cover-letter.mjs --payload payload.json --out output/slug-cover.pdf
+ *   node src/cv/generate-cover-letter.mjs --payload payload.json --out workspace/documents/slug-cover.pdf
  *
  * Fills templates/cover-letter-template.html with the payload, then renders
  * it to PDF via the same Playwright pipeline used for CVs (generate-pdf.mjs).
@@ -192,12 +192,12 @@ async function main() {
   if (args.help || !args.payload) {
     console.log(`
 Usage:
-  node src/cv/generate-cover-letter.mjs --payload payload.json [--out output/path.pdf] [--format letter|a4] [--report NNN]
+  node src/cv/generate-cover-letter.mjs --payload payload.json [--out workspace/documents/path.pdf] [--format letter|a4] [--report NNN]
 
   --payload   Path to the JSON payload file (required)
   --out       Override output path from payload (optional)
   --format    Override output PDF page format (letter|a4, default: a4)
-  --report    Link the PDF to a tracker report number in data/pdf-index.tsv
+  --report    Link the PDF to a tracker report number in workspace/.state/pdf-index.tsv
 `);
     process.exit(args.help ? 0 : 1);
   }

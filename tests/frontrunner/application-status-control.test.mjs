@@ -85,7 +85,7 @@ test('status control accepts only an honest bounded tracker decision', () => {
     null,
     [],
     { ...request, command: '/bin/sh' },
-    { ...request, roleNum: '../data/applications.md' },
+    { ...request, roleNum: '../workspace/applications/tracker.md' },
     { ...request, state: 'Invented' },
     { ...request, note: 'break | the row' },
     { ...request, note: 'line one\nline two' },

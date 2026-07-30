@@ -240,7 +240,7 @@ export function ReportView({
       ) : (
         <div className="mt-8 flex items-center gap-3 rounded-2xl border border-dashed border-border bg-surface/30 p-5 text-sm text-muted">
           <FileText className="size-5 shrink-0 text-faint" />
-          No report file found for #{id} in <code className="text-foreground">reports/</code>.
+          No report file found for #{id} in <code className="text-foreground">workspace/reports/evaluations/</code>.
         </div>
       )}
     </div>

@@ -22,7 +22,7 @@ Tabel berisi:
 
 ## Blok B -- Kecocokan dengan CV
 
-Baca `cv.md`. Buat tabel di mana setiap syarat lowongan dipetakan ke baris persis dari CV.
+Baca `workspace/profile/cv.md`. Buat tabel di mana setiap syarat lowongan dipetakan ke baris persis dari CV.
 
 **Disesuaikan dengan arketipe:**
 - FDE -> prioritaskan proof point delivery cepat dan kedekatan dengan klien
@@ -79,7 +79,7 @@ Top 5 perubahan CV + Top 5 perubahan LinkedIn untuk memaksimalkan match.
 
 Kolom **Reflection** menangkap apa yang dipelajari atau apa yang akan dilakukan berbeda. Ini menandakan senioritas -- yang junior menggambarkan apa yang terjadi, yang senior menarik pelajaran darinya.
 
-**Story Bank:** Jika `interview-prep/story-bank.md` ada, cek apakah story ini sudah tercatat. Jika belum, tambahkan yang baru. Seiring waktu, ini membangun bank 5-10 master story yang bisa dipakai ulang dan disesuaikan untuk pertanyaan wawancara apa pun.
+**Story Bank:** Jika `workspace/interviews/story-bank.md` ada, cek apakah story ini sudah tercatat. Jika belum, tambahkan yang baru. Seiring waktu, ini membangun bank 5-10 master story yang bisa dipakai ulang dan disesuaikan untuk pertanyaan wawancara apa pun.
 
 **Dipilih dan dibingkai sesuai arketipe:**
 - FDE -> tonjolkan kecepatan delivery dan kedekatan dengan klien
@@ -101,7 +101,7 @@ Sertakan juga:
 
 ### 1. Simpan report .md
 
-Simpan evaluasi lengkap ke `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
+Simpan evaluasi lengkap ke `workspace/reports/evaluations/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 
 - `{###}` = nomor urut berikutnya (3 digit, zero-padded). Untuk mengalokasikannya secara atomik dan menghindari race condition, kamu harus menjalankan `node src/tracker/reserve-report-num.mjs` untuk memesan nomor (stdout mengembalikan `{###}`), menulis report, lalu menjalankan `node src/tracker/reserve-report-num.mjs --release {###}` untuk melepas sentinel.
 - `{company-slug}` = nama perusahaan huruf kecil, tanpa spasi (gunakan tanda hubung)
@@ -149,7 +149,7 @@ Simpan evaluasi lengkap ke `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 
 ### 2. Catat ke tracker
 
-**SELALU** catat ke `data/applications.md`:
+**SELALU** catat ke `workspace/applications/tracker.md`:
 - Nomor urut berikutnya
 - Tanggal hari ini
 - Perusahaan
@@ -157,7 +157,7 @@ Simpan evaluasi lengkap ke `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 - Score: rata-rata match (1-5)
 - Status: `Evaluated`
 - PDF: tidak (atau ya jika auto-pipeline menghasilkan PDF)
-- Report: tautan relatif ke file report (mis.: `[001](reports/001-company-2026-01-01.md)`)
+- Report: tautan relatif ke file report (mis.: `[001](workspace/reports/evaluations/001-company-2026-01-01.md)`)
 
 **Format tracker:**
 

@@ -1,5 +1,5 @@
 /**
- * tracker-utils.mjs — shared helpers for rewriting `data/applications.md` rows.
+ * tracker-utils.mjs — shared helpers for rewriting `workspace/applications/tracker.md` rows.
  *
  * The tracker is a markdown table that several scripts mutate in place
  * (`dedup-tracker.mjs`, `normalize-statuses.mjs`, `merge-tracker.mjs`,
@@ -71,7 +71,7 @@ export function cell(v) {
 /**
  * Resolve the tracker file path for the current workspace.
  *
- * Supports both layouts: `data/applications.md` (boilerplate) and
+ * Supports both layouts: `workspace/applications/tracker.md` (boilerplate) and
  * `applications.md` (original root layout). The `FRONTRUNNER_TRACKER` env var
  * overrides the path (used by tests and non-standard layouts). The result is
  * canonicalized so every script that locks or hashes the tracker path agrees
@@ -83,8 +83,8 @@ export function cell(v) {
 export function resolveTrackerPath(rootDir) {
   const raw = process.env.FRONTRUNNER_TRACKER
     ? process.env.FRONTRUNNER_TRACKER
-    : existsSync(join(rootDir, 'data/applications.md'))
-      ? join(rootDir, 'data/applications.md')
+    : existsSync(join(rootDir, 'workspace/applications/tracker.md'))
+      ? join(rootDir, 'workspace/applications/tracker.md')
       : join(rootDir, 'applications.md');
   return canonicalizeTrackerPath(raw);
 }

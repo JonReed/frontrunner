@@ -30,7 +30,7 @@ function resolveSlug(entry) {
   // entry.api takes precedence over careers_url (mirrors greenhouse/ashby) so a
   // branded page (e.g. https://jobs.continental.com) can stay as careers_url
   // while the SmartRecruiters slug is pinned via
-  // api: https://careers.smartrecruiters.com/<slug> in portals.yml.
+  // api: https://careers.smartrecruiters.com/<slug> in workspace/search/portals.yml.
   for (const raw of [entry.api, entry.careers_url]) {
     if (typeof raw !== 'string' || !raw) continue;
     let parsed;

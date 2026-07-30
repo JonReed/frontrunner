@@ -11,14 +11,14 @@ import {
 import { join, relative } from 'path';
 import { pass, fail, ROOT, NODE } from './helpers.mjs';
 
-const outputRoot = join(ROOT, 'output');
+const outputRoot = join(ROOT, 'workspace', 'documents');
 mkdirSync(outputRoot, { recursive: true });
 const sandbox = mkdtempSync(join(outputRoot, 'page-budget-test-'));
 const script = join(sandbox, 'src/cv/generate-pdf.mjs');
 const input = join(sandbox, 'two-pages.html');
 const defaultOverflowInput = join(sandbox, 'three-pages.html');
-const manifest = join(sandbox, 'data', 'pdf-index.tsv');
-mkdirSync(join(sandbox, 'data'), { recursive: true });
+const manifest = join(sandbox, 'workspace', '.state', 'pdf-index.tsv');
+mkdirSync(join(sandbox, 'workspace', '.state'), { recursive: true });
 writeFileSync(manifest, '', 'utf-8');
 const playwrightStub = join(sandbox, 'node_modules', 'playwright');
 
@@ -124,7 +124,7 @@ function runPdf(args) {
     cwd: sandbox,
     encoding: 'utf-8',
     timeout: 30_000,
-    // Keep output/ and data/pdf-index.tsv inside the sandbox. Without this the
+    // Keep workspace/documents/ and workspace/.state/pdf-index.tsv inside the sandbox. Without this the
     // copied script resolves them against the REAL repo root and writes test
     // rows into the user's own manifest.
     env: { ...process.env, FRONTRUNNER_PDF_BASE: sandbox },

@@ -28,7 +28,7 @@ Codex prompt examples that map to the same router semantics:
 ```text
 Evaluate this JD with frontrunner auto-pipeline: https://company.com/jobs/123
 Run the frontrunner scan mode and summarize new matches.
-Run the frontrunner pipeline mode for data/pipeline.md.
+Run the frontrunner pipeline mode for workspace/search/pipeline.md.
 Run the frontrunner pdf mode for the latest evaluated role.
 Run the frontrunner tracker mode and summarize the current statuses.
 ```
@@ -86,7 +86,7 @@ If `$mode` is not a sub-command AND doesn't look like a JD, show discovery.
 
 ## Output Language Directive
 
-Before executing any mode, read `config/profile.yml` if it exists and resolve:
+Before executing any mode, read `workspace/profile/profile.yml` if it exists and resolve:
 
 - `language.output` → ISO language code for human-facing output. Default: `en`.
 - `language.modes_dir` → optional market-mode directory. This controls market vocabulary and local evaluation rules only.
@@ -108,7 +108,7 @@ Concrete equivalents for Codex prompt-driven sessions:
 ```text
 /frontrunner {JD}           ↔ "Evaluate this JD with frontrunner auto-pipeline: {JD or URL}"
 /frontrunner scan           ↔ "Run the frontrunner scan mode and summarize new matches."
-/frontrunner pipeline       ↔ "Run the frontrunner pipeline mode for data/pipeline.md."
+/frontrunner pipeline       ↔ "Run the frontrunner pipeline mode for workspace/search/pipeline.md."
 /frontrunner pdf            ↔ "Run the frontrunner pdf mode for the latest evaluated role."
 /frontrunner email          ↔ "Run the frontrunner email mode for the latest evaluated role."
 /frontrunner tracker        ↔ "Run the frontrunner tracker mode and summarize the current statuses."
@@ -121,7 +121,7 @@ frontrunner -- Command Center
 
 Available commands:
   /frontrunner {JD}      → AUTO-PIPELINE: evaluate + report + PDF + tracker (paste text or URL)
-  /frontrunner pipeline  → Process pending URLs from inbox (data/pipeline.md)
+  /frontrunner pipeline  → Process pending URLs from inbox (workspace/search/pipeline.md)
   /frontrunner oferta    → Evaluation only A-G (no auto PDF)
   /frontrunner ofertas   → Compare and rank multiple offers
   /frontrunner contacto  → LinkedIn power move: find contacts + draft message
@@ -135,7 +135,7 @@ Available commands:
   /frontrunner interview/debrief → Post-interview debrief: close gaps, predict next round
   /frontrunner pdf       → PDF only, ATS-optimized CV
   /frontrunner latex     → Export CV as LaTeX/Overleaf .tex
-  /frontrunner latex-tex → Tailor your own resume.tex in place (opt-in; cv.md stays default)
+  /frontrunner latex-tex → Tailor your own resume.tex in place (opt-in; workspace/profile/cv.md stays default)
   /frontrunner cover     → Cover letter: standalone JD paste or /frontrunner cover {slug}
   /frontrunner email     → Formal application email draft (draft-only; never sends, submits, or clicks)
   /frontrunner add       → Add a project/paper/role to your CV (fetch + preview + confirm)
@@ -143,10 +143,10 @@ Available commands:
   /frontrunner training  → Evaluate course/cert against North Star
   /frontrunner project   → Evaluate portfolio project idea
   /frontrunner tracker   → Application status overview
-  /frontrunner agent-inbox → Queue/drain requests for the next session (data/agent-inbox.md)
+  /frontrunner agent-inbox → Queue/drain requests for the next session (workspace/applications/agent-inbox.md)
   /frontrunner apply     → Live application assistant (reads form + generates answers)
   /frontrunner scan      → Scan portals and discover new offers
-  /frontrunner discover  → Resolve a company list to scannable ATS boards + append to portals.yml (zero-token)
+  /frontrunner discover  → Resolve a company list to scannable ATS boards + append to workspace/search/portals.yml (zero-token)
   /frontrunner batch     → Batch processing with parallel workers
   /frontrunner patterns  → Analyze rejection patterns and improve targeting
   /frontrunner offer-prep → Read a received offer/contract with the candidate: clause walk + lawyer questions (not legal advice)
@@ -155,7 +155,7 @@ Available commands:
   /frontrunner followup  → Follow-up cadence tracker: flag overdue, generate drafts
   /frontrunner update    → Update frontrunner system files with diff preview + compat check
 
-Inbox: add URLs to data/pipeline.md → /frontrunner pipeline (`npm run pipeline`)
+Inbox: add URLs to workspace/search/pipeline.md → /frontrunner pipeline (`npm run pipeline`)
 Or paste a JD directly to run the full pipeline.
 ```
 
@@ -165,7 +165,7 @@ Or paste a JD directly to run the full pipeline.
 
 After determining the mode, load the necessary files before executing:
 
-If `modes/_custom.md` exists, read it after `modes/_profile.md` and before the selected mode file. It contains user house rules and procedural preferences. It may override workflow/style defaults, but it never adds factual claims about the candidate.
+If `workspace/profile/preferences.md` exists, read it after `workspace/profile/targeting.md` and before the selected mode file. It contains user house rules and procedural preferences. It may override workflow/style defaults, but it never adds factual claims about the candidate.
 
 ### Canonical backend pipeline
 
@@ -176,13 +176,13 @@ preparation stages without evaluation.
 
 ### Modes that require `_shared.md` + their mode file
 
-Read `modes/_shared.md` + `modes/_profile.md` (if exists) + `modes/_custom.md` (if exists) + `modes/{mode}.md`
+Read `modes/_shared.md` + `workspace/profile/targeting.md` (if exists) + `workspace/profile/preferences.md` (if exists) + `modes/{mode}.md`
 
 Applies to: `auto-pipeline`, `oferta`, `ofertas`, `pdf`, `contacto`, `apply`, `scan`, `batch`
 
 ### Standalone modes with profile and custom context
 
-Read `modes/_profile.md` (if exists) + `modes/_custom.md` (if exists) + `modes/{mode}.md`
+Read `workspace/profile/targeting.md` (if exists) + `workspace/profile/preferences.md` (if exists) + `modes/{mode}.md`
 
 Applies to: `tracker`, `agent-inbox`, `deep`, `interview-prep`, `interview`, `regional/eu-swe`, `interview/plan`, `interview/practice`, `interview/debrief`, `latex`, `latex-tex`, `training`, `project`, `patterns`, `titles`, `upskill`, `followup`, `cover`, `email`, `add`, `offer-prep`, `discover`
 
@@ -193,7 +193,7 @@ For `scan` and `apply` (with Playwright): launch as a worker/subagent with the c
 ```python
 Agent(
   subagent_type="general-purpose",
-  prompt="[output language directive]\n\n[content of modes/_shared.md]\n\n[content of modes/_profile.md if exists]\n\n[content of modes/_custom.md if exists]\n\n[content of modes/{mode}.md]\n\n[invocation-specific data]",
+  prompt="[output language directive]\n\n[content of modes/_shared.md]\n\n[content of workspace/profile/targeting.md if exists]\n\n[content of workspace/profile/preferences.md if exists]\n\n[content of modes/{mode}.md]\n\n[invocation-specific data]",
   description="frontrunner {mode}"
 )
 ```

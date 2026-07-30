@@ -10,7 +10,7 @@
  * zero new npm dependencies.
  *
  * Deliberately standalone: it does NOT go through generate-pdf.mjs, so
- * it is never subject to that script's cv.md section-order validation
+ * it is never subject to that script's workspace/profile/cv.md section-order validation
  * (which only makes sense for the CV HTML template).
  *
  * MVP scope: one image -> one PDF page. Multi-image/multi-page is an

@@ -12,7 +12,7 @@ Interaktiv mode til det øjeblik, hvor kandidaten udfylder en ansøgningsformula
 ```
 1. DETEKTÉR     -> Læs den aktive Chrome-fane (skærmbillede/URL/titel)
 2. IDENTIFICÉR  -> Udtræk virksomhed + rolle fra siden
-3. SØG          -> Match mod eksisterende reports i reports/
+3. SØG          -> Match mod eksisterende reports i workspace/reports/evaluations/
 4. INDLÆS       -> Læs den fulde report + Blok G (hvis den findes)
 5. SAMMENLIGN   -> Svarer rollen på skærmen til den evaluerede? Hvis ændret -> advar
 6. ANALYSÉR     -> Identificér ALLE synlige spørgsmål i formularen
@@ -32,7 +32,7 @@ Interaktiv mode til det øjeblik, hvor kandidaten udfylder en ansøgningsformula
 ## Trin 2 -- Identificér og indlæs konteksten
 
 1. Udtræk virksomhedens navn og stillingstitlen fra siden
-2. Søg i `reports/` efter virksomhedsnavn (Grep case-insensitive)
+2. Søg i `workspace/reports/evaluations/` efter virksomhedsnavn (Grep case-insensitive)
 3. Hvis match -> indlæs den fulde report
 4. Hvis Blok G findes -> indlæs de tidligere svar-udkast som grundlag
 5. Hvis INTET match -> advar kandidaten og foreslå en hurtig auto-pipeline
@@ -56,7 +56,7 @@ Identificér ALLE synlige spørgsmål:
 
 Klassificér hvert spørgsmål:
 - **Allerede besvaret i Blok G** -> genbrug det eksisterende svar
-- **Nyt spørgsmål** -> generér svaret fra report + `cv.md`
+- **Nyt spørgsmål** -> generér svaret fra report + `workspace/profile/cv.md`
 
 ## Trin 5 -- Generér svarene
 

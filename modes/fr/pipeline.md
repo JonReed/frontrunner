@@ -9,4 +9,4 @@ stages without evaluation.
 
 Apply French-market vocabulary and rules from `modes/fr/_shared.md` and the
 selected French evaluation mode. Human-facing output still follows
-`config/profile.yml` → `language.output`.
+`workspace/profile/profile.yml` → `language.output`.

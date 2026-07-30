@@ -10,7 +10,7 @@
  * is that place: an append-only queue the agent drains at the start of a
  * session.
  *
- *   data/agent-inbox.md
+ *   workspace/applications/agent-inbox.md
  *     - [ ] <stamp> — <request>          (pending)
  *     - [x] <stamp> — <request> → result: <one line>   (resolved)
  *
@@ -30,7 +30,7 @@ import { readFileSync, existsSync } from 'fs';
 
 import { mutateFileLocked } from '../lib/locked-file.mjs';
 
-const PATH = process.env.FRONTRUNNER_INBOX || 'data/agent-inbox.md';
+const PATH = process.env.FRONTRUNNER_INBOX || 'workspace/applications/agent-inbox.md';
 
 const HEADER = [
   '# Agent Inbox',
@@ -53,7 +53,7 @@ async function ensureGitignored() {
   // The inbox is personal data. On installs whose .gitignore predates this
   // feature, make sure the default path is ignored so a first `add` can't
   // accidentally commit it. Only manages the default, non-overridden path.
-  if (process.env.FRONTRUNNER_INBOX || PATH !== 'data/agent-inbox.md') return;
+  if (process.env.FRONTRUNNER_INBOX || PATH !== 'workspace/applications/agent-inbox.md') return;
   try {
     if (!existsSync('.gitignore')) return; // not a git checkout we should touch
     await mutateFileLocked('.gitignore', (text) => {

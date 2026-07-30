@@ -22,12 +22,12 @@ These skills assume the following files exist (frontrunner defaults):
 
 | File | Purpose |
 |---|---|
-| `cv.md` | Candidate CV — source of truth for experience and proof points |
-| `article-digest.md` | Compact proof points from portfolio (optional) |
-| `config/profile.yml` | Candidate profile — target roles, compensation, narrative |
-| `modes/_profile.md` | Candidate archetypes, narrative, and deal-breakers |
-| `interview-prep/story-bank.md` | Accumulated STAR+R stories |
-| `interview-prep/question-bank.md` | Question bank with gap tracking (created on first use) |
-| `interview-prep/interview-prep-guide.md` | General interview principles (optional) |
-| `interview-prep/{company}-{role}.md` | Role-specific prep file |
-| `interview-prep/retracted-claims.md` | Claims the candidate has rejected as indefensible — hard gate in practice and debrief (format: `**"[claim]"** ([context]). Reason: [one-line reason + correct framing if applicable].`) |
+| `workspace/profile/cv.md` | Candidate CV — source of truth for experience and proof points |
+| `workspace/profile/article-digest.md` | Compact proof points from portfolio (optional) |
+| `workspace/profile/profile.yml` | Candidate profile — target roles, compensation, narrative |
+| `workspace/profile/targeting.md` | Candidate archetypes, narrative, and deal-breakers |
+| `workspace/interviews/story-bank.md` | Accumulated STAR+R stories |
+| `workspace/interviews/question-bank.md` | Question bank with gap tracking (created on first use) |
+| `workspace/interviews/interview-prep-guide.md` | General interview principles (optional) |
+| `workspace/interviews/{company}-{role}.md` | Role-specific prep file |
+| `workspace/interviews/retracted-claims.md` | Claims the candidate has rejected as indefensible — hard gate in practice and debrief (format: `**"[claim]"** ([context]). Reason: [one-line reason + correct framing if applicable].`) |

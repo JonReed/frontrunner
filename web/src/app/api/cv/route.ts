@@ -5,7 +5,7 @@ import { frontrunnerRoot } from "@/lib/frontrunner";
 import { atomicWriteWithBackup } from "@/lib/core/safe-write";
 
 function cvPath() {
-  return path.join(frontrunnerRoot(), "cv.md");
+  return path.join(frontrunnerRoot(), "workspace/profile/cv.md");
 }
 
 const MAX_CV_BYTES = 200_000;
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   if (Buffer.byteLength(body.content, "utf8") > MAX_CV_BYTES) {
     return NextResponse.json({ error: "CV is too large (over 200KB)" }, { status: 413 });
   }
-  // DATA_CONTRACT: cv.md is user-layer and gitignored (no git recovery). Never
+  // DATA_CONTRACT: workspace/profile/cv.md is user-layer and gitignored (no git recovery). Never
   // blind-overwrite — snapshot the prior CV to a .bak first, write atomically.
   try {
     const bak = atomicWriteWithBackup(cvPath(), body.content);

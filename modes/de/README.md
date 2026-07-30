@@ -31,7 +31,7 @@ Claude liest dann die Dateien aus diesem Ordner statt aus `modes/`.
 
 ### Weg 2 — Dauerhaft, per Profil
 
-Trage in `config/profile.yml` eine Sprach-Präferenz ein, z. B.:
+Trage in `workspace/profile/profile.yml` eine Sprach-Präferenz ein, z. B.:
 
 ```yaml
 language:
@@ -62,12 +62,12 @@ Wenn die Community die deutschen Modi annimmt, werden weitere Modi in einem Folg
 
 Bewusst nicht eingedeutscht, weil Standard-Tech-Vokabular:
 
-- `cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`, `proof point`
+- `workspace/profile/cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`, `proof point`
 - Tool-Namen (`Playwright`, `WebSearch`, `WebFetch`, `Read`, `Write`, `Edit`, `Bash`)
 - Status-Werte im Tracker (`Evaluated`, `Applied`, `Interview`, `Offer`, `Rejected`)
 - Code-Snippets, Pfade, Befehle
 
-Die Modi verwenden deutsches Tech-Deutsch, wie es in echten Engineering-Teams in Berlin, München oder Zürich gesprochen wird: deutscher Fließtext, englische Fachbegriffe da, wo sie üblich sind. Keine erzwungene Eindeutschung von "Pipeline" zu "Förderband", kein "Lebenslauf-Datei" für `cv.md`.
+Die Modi verwenden deutsches Tech-Deutsch, wie es in echten Engineering-Teams in Berlin, München oder Zürich gesprochen wird: deutscher Fließtext, englische Fachbegriffe da, wo sie üblich sind. Keine erzwungene Eindeutschung von "Pipeline" zu "Förderband", kein "Lebenslauf-Datei" für `workspace/profile/cv.md`.
 
 ## Vokabular-Spickzettel
 

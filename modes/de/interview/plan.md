@@ -10,10 +10,10 @@ Erstelle aus einer Stellenanzeige und einem Interviewtermin einen strukturierten
 2. **Datum und Uhrzeit des Interviews** (erforderlich) — um die verfügbaren Stunden zu berechnen
 3. **Name und Rolle des Interviewers** (falls bekannt) — bestimmt Tiefe und Ton der Vorbereitung
 4. **Art der Runde** (falls bekannt) — Screening, technisch/fachspezifisch, Design/Case Study, Behavioral Panel
-5. **Lebenslauf** unter `cv.md` + `article-digest.md` (falls vorhanden) — für Erfahrung, Skills, Proof Points lesen
-6. **Profil** unter `config/profile.yml` + `modes/_profile.md` — für Narrativ, Archetypen und Ziele lesen
-7. **Story Bank** unter `interview-prep/story-bank.md` — vorhandene STAR+R-Stories
-8. **Question Bank** unter `interview-prep/question-bank.md` — bestehende Lücken (falls die Datei existiert)
+5. **Lebenslauf** unter `workspace/profile/cv.md` + `workspace/profile/article-digest.md` (falls vorhanden) — für Erfahrung, Skills, Proof Points lesen
+6. **Profil** unter `workspace/profile/profile.yml` + `workspace/profile/targeting.md` — für Narrativ, Archetypen und Ziele lesen
+7. **Story Bank** unter `workspace/interviews/story-bank.md` — vorhandene STAR+R-Stories
+8. **Question Bank** unter `workspace/interviews/question-bank.md` — bestehende Lücken (falls die Datei existiert)
 
 ---
 
@@ -67,7 +67,7 @@ Kalibriere den Plan auf die Runde. Für ein Screening zu viel Tiefe vorzubereite
 
 Berechne die verfügbaren Stunden von jetzt bis zum Interviewzeitpunkt. Teile sie in Blöcke auf:
 
-Bevor du die Blöcke dimensionierst, prüfe `interview-prep/question-bank.md` (falls vorhanden). Jede aus einer früheren Runde mit 🔴 markierte Frage ist eine erwiesene Lücke — sie bekommt einen eigenen Block, unabhängig davon, wie die CV-vs-JD-Analyse sie einordnet. Reale Performance-Daten schlagen abgeleitetes Risiko.
+Bevor du die Blöcke dimensionierst, prüfe `workspace/interviews/question-bank.md` (falls vorhanden). Jede aus einer früheren Runde mit 🔴 markierte Frage ist eine erwiesene Lücke — sie bekommt einen eigenen Block, unabhängig davon, wie die CV-vs-JD-Analyse sie einordnet. Reale Performance-Daten schlagen abgeleitetes Risiko.
 
 **Vorlage (passe die Blockgrößen an die insgesamt verfügbaren Stunden an):**
 
@@ -137,7 +137,7 @@ Erstelle am Ende des Plans eine einseitige Kurzreferenz, die der Kandidat 15 Min
 
 ## Step 5 — Save Output
 
-Speichere den Plan unter `interview-prep/{company-slug}-{role-slug}.md`, falls keine Datei existiert, oder hänge einen `## Prep Plan`-Abschnitt an, falls doch.
+Speichere den Plan unter `workspace/interviews/{company-slug}-{role-slug}.md`, falls keine Datei existiert, oder hänge einen `## Prep Plan`-Abschnitt an, falls doch.
 
 ---
 
@@ -149,4 +149,4 @@ Speichere den Plan unter `interview-prep/{company-slug}-{role-slug}.md`, falls k
 - **Ein Thema pro Block.** Themen in einem einzigen Block zu mischen senkt die Behaltensleistung.
 - **Plane immer Erholungszeit ein.** Ein ausgeruhter Kandidat schneidet besser ab als einer, der bis zuletzt paukt.
 - **Erfinde niemals falsche Unternehmensinfos.** Wenn du keine Recherche hast, sag es — erfinde keine Kulturaussagen oder technischen Details über das Unternehmen.
-- **Erfinde niemals Aussagen für den Kandidaten.** Der Anchor Sentence und die Talking Points vor dem Interview in der Kurzreferenz (Step 4) müssen auf dem beruhen, was der Kandidat tatsächlich hat — `cv.md`, `article-digest.md` oder die Story Bank. Formuliere keine Aussagen, die von Erfahrung oder Kennzahlen abhängen, die der Kandidat nicht hat. Wenn eine Aussage in `interview-prep/retracted-claims.md` steht, nimm sie niemals auf.
+- **Erfinde niemals Aussagen für den Kandidaten.** Der Anchor Sentence und die Talking Points vor dem Interview in der Kurzreferenz (Step 4) müssen auf dem beruhen, was der Kandidat tatsächlich hat — `workspace/profile/cv.md`, `workspace/profile/article-digest.md` oder die Story Bank. Formuliere keine Aussagen, die von Erfahrung oder Kennzahlen abhängen, die der Kandidat nicht hat. Wenn eine Aussage in `workspace/interviews/retracted-claims.md` steht, nimm sie niemals auf.

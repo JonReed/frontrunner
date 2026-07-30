@@ -42,7 +42,7 @@ export type Diag = {
 };
 
 /** Gather a STRUCTURAL diagnostic snapshot. Deliberately excludes anything personal:
- *  no cv.md, no profile, no application answers, no job URLs, no report content. */
+ *  no workspace/profile/cv.md, no profile, no application answers, no job URLs, no report content. */
 export async function collect(): Promise<Diag> {
   let version = "";
   let coreVersion = "";

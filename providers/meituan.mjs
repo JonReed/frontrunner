@@ -11,7 +11,7 @@
 //     "jobType": [{"code": "3", "subCode": []}], ← 3 = social hiring (社招)
 //     "cityList": [], "department": [], "jfJgList": [], "typeCode": [], "specialCode": [] }
 //
-// portals.yml entry example:
+// workspace/search/portals.yml entry example:
 //   - name: 美团
 //     careers_url: https://zhaopin.meituan.com/web/social   # auto-detected
 //     keywords: ["AI", "大模型"]   # each keyword is a separate server-side query, results deduped;

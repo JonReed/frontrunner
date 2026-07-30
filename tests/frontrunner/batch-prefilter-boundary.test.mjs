@@ -25,12 +25,13 @@ test('destructive batch boundary: missing prefilter fails closed before launchin
   const fakeBin = join(dir, 'bin');
   mkdirSync(batch, { recursive: true });
   mkdirSync(fakeBin);
-  mkdirSync(join(dir, 'reports'));
-  mkdirSync(join(dir, 'data'));
+  mkdirSync(join(dir, 'workspace', '.state'), { recursive: true });
+  mkdirSync(join(dir, 'workspace', 'reports', 'evaluations'), { recursive: true });
+  mkdirSync(join(dir, 'workspace', 'applications'), { recursive: true });
   copyFileSync(join(ROOT, 'batch', 'batch-runner.sh'), join(batch, 'batch-runner.sh'));
   chmodSync(join(batch, 'batch-runner.sh'), 0o755);
   writeFileSync(join(batch, 'batch-prompt.md'), 'fixture\n');
-  writeFileSync(join(batch, 'batch-input.tsv'), 'id\turl\tsource\tnotes\n1\thttps://example.com/job\tfixture\tAcme — Director\n');
+  writeFileSync(join(dir, 'workspace', '.state', 'batch-input.tsv'), 'id\turl\tsource\tnotes\n1\thttps://example.com/job\tfixture\tAcme — Director\n');
   const launched = join(dir, 'worker-launched');
   writeFileSync(join(fakeBin, 'claude'), `#!/bin/sh\nprintf launched > "${launched}"\n`);
   chmodSync(join(fakeBin, 'claude'), 0o755);

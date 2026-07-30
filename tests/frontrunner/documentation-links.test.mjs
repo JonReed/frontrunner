@@ -23,7 +23,7 @@ const DOC_TREES = [
   'config/seeds',
   'cv-versions',
   'docs',
-  'interview-prep/sessions',
+  'workspace/interviews/sessions',
   'providers',
   'templates',
   'tests',

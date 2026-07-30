@@ -9,4 +9,4 @@ stages without evaluation.
 
 Apply market vocabulary and rules from `modes/zh/_shared.md` and the selected
 Simplified Chinese evaluation mode. Human-facing output still follows
-`config/profile.yml` → `language.output`.
+`workspace/profile/profile.yml` → `language.output`.

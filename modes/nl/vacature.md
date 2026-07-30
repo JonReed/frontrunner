@@ -22,7 +22,7 @@ Tabel met:
 
 ## Blok B - Match met CV
 
-Lees `cv.md`. Maak een tabel waarin elke voorwaarde van de vacature wordt weergegeven op de exacte regels van het CV.
+Lees `workspace/profile/cv.md`. Maak een tabel waarin elke voorwaarde van de vacature wordt weergegeven op de exacte regels van het CV.
 
 **Aangepast aan het archetype:**
 - FDE -> geef prioriteit aan proof points voor snelle levering en nabijheid bij de klant
@@ -79,7 +79,7 @@ Top 5 CV-bewerkingen + Top 5 LinkedIn-bewerkingen om de match te maximaliseren.
 
 De kolom **Reflectie** geeft weer wat er is geleerd of wat er anders zou worden gedaan. Dit duidt op anciënniteit: junioren beschrijven wat er is gebeurd, senioren leren ervan.
 
-**Verhalenbank:** Als `interview-prep/story-bank.md` bestaat, controleer dan of deze verhalen er al zijn. Voeg anders het nieuws toe. In de loop van de tijd bouwt dit een herbruikbare bank van 5-10 meesterverhalen op die aanpasbaar zijn aan elke interviewvraag.
+**Verhalenbank:** Als `workspace/interviews/story-bank.md` bestaat, controleer dan of deze verhalen er al zijn. Voeg anders het nieuws toe. In de loop van de tijd bouwt dit een herbruikbare bank van 5-10 meesterverhalen op die aanpasbaar zijn aan elke interviewvraag.
 
 **Geselecteerd en gepositioneerd volgens het archetype:**
 - FDE -> leveringssnelheid en klantnabijheid benadrukken
@@ -101,7 +101,7 @@ Bevat ook:
 
 ### 1. Sla het .md-rapport op
 
-Sla de volledige evaluatie op in `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
+Sla de volledige evaluatie op in `workspace/reports/evaluations/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 
 - `{###}` = volgend volgnummer (3 cijfers, nullen opgevuld). Om het atomair toe te wijzen en racecondities te vermijden, zou je `node src/tracker/reserve-report-num.mjs` uitvoeren om het nummer te reserveren (stdout retourneert `{###}`), het rapport schrijven en vervolgens `node src/tracker/reserve-report-num.mjs --release {###}` uitvoeren om de sentinel vrij te geven.
 - `{company-slug}` = bedrijfsnaam in kleine letters, zonder spaties (gebruik koppeltekens)
@@ -149,7 +149,7 @@ Sla de volledige evaluatie op in `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 
 ### 2. Opslaan in tracker
 
-**ALTIJD** registreren via een TSV-bestand in `batch/tracker-additions/`; bewerk `data/applications.md` nooit rechtstreeks. Voer vóór voltooiing, in deze volgorde, `node src/tracker/merge-tracker.mjs`, `node src/tracker/verify-pipeline.mjs`, `node src/tracker/normalize-statuses.mjs` en `node src/tracker/dedup-tracker.mjs` uit:
+**ALTIJD** registreren via een TSV-bestand in `workspace/.state/tracker-additions/`; bewerk `workspace/applications/tracker.md` nooit rechtstreeks. Voer vóór voltooiing, in deze volgorde, `node src/tracker/merge-tracker.mjs`, `node src/tracker/verify-pipeline.mjs`, `node src/tracker/normalize-statuses.mjs` en `node src/tracker/dedup-tracker.mjs` uit:
 - Volgend opeenvolgend nummer
 - De datum van vandaag
 - Bedrijf
@@ -157,7 +157,7 @@ Sla de volledige evaluatie op in `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 - Status: `Evaluated`
 - Gemiddelde score (1-5): uitsluitend een numerieke TSV-waarde met een punt als decimaalteken, bijvoorbeeld `4.2/5`; kopieer geen beschrijvende tekst naar dit veld
 - PDF: nee (of ja als de auto-pipeline een PDF heeft gegenereerd)
-- Rapport: relatieve link naar het rapportbestand (bijvoorbeeld: `[001](reports/001-company-2026-01-01.md)`)
+- Rapport: relatieve link naar het rapportbestand (bijvoorbeeld: `[001](workspace/reports/evaluations/001-company-2026-01-01.md)`)
 - Notities: optioneel
 
 **TSV-formaat (door tabs gescheiden):**

@@ -26,22 +26,22 @@ import { looksLikeScoreCell, isSeparatorRow, isHeaderRow, resolveColumns } from 
 import { gcStaleReportReservations } from './reserve-report-num.mjs';
 
 import { ROOT as FRONTRUNNER } from '#paths';
-// Support both layouts: data/applications.md (boilerplate) and applications.md (original).
+// Support both layouts: workspace/applications/tracker.md (boilerplate) and applications.md (original).
 // FRONTRUNNER_TRACKER overrides the path (used by tests and non-standard layouts).
 const APPS_FILE = process.env.FRONTRUNNER_TRACKER
   ? process.env.FRONTRUNNER_TRACKER
-  : existsSync(join(FRONTRUNNER, 'data/applications.md'))
-    ? join(FRONTRUNNER, 'data/applications.md')
+  : existsSync(join(FRONTRUNNER, 'workspace/applications/tracker.md'))
+    ? join(FRONTRUNNER, 'workspace/applications/tracker.md')
     : join(FRONTRUNNER, 'applications.md');
-const ADDITIONS_DIR = join(FRONTRUNNER, 'batch/tracker-additions');
+const ADDITIONS_DIR = join(FRONTRUNNER, 'workspace', '.state', 'tracker-additions');
 // FRONTRUNNER_REPORTS overrides the reports dir (used by tests, mirrors FRONTRUNNER_TRACKER).
-const REPORTS_DIR = process.env.FRONTRUNNER_REPORTS || join(FRONTRUNNER, 'reports');
+const REPORTS_DIR = process.env.FRONTRUNNER_REPORTS || join(FRONTRUNNER, 'workspace', 'reports', 'evaluations');
 const STATES_FILE = existsSync(join(FRONTRUNNER, 'templates/states.yml'))
   ? join(FRONTRUNNER, 'templates/states.yml')
   : join(FRONTRUNNER, 'states.yml');
 
 // Ensure required directories exist (fresh setup)
-mkdirSync(join(FRONTRUNNER, 'data'), { recursive: true });
+mkdirSync(join(FRONTRUNNER, 'workspace', 'applications'), { recursive: true });
 mkdirSync(REPORTS_DIR, { recursive: true });
 
 const CANONICAL_STATUSES = [
@@ -221,7 +221,7 @@ for (const e of entries) {
 if (boldScores === 0) ok('No bold in scores');
 
 // --- Check 8: Stale report-number sentinels (GC) ---
-// reserve-report-num.mjs drops NNN-RESERVED.md files in reports/ when a
+// reserve-report-num.mjs drops NNN-RESERVED.md files in workspace/reports/evaluations/ when a
 // number is claimed.  If the process crashed before writing the real report
 // and deleting the sentinel it will linger.  Sentinels older than 4 h are
 // stale; remove them here so they don't skew the next slot allocation.
@@ -234,7 +234,7 @@ if (staleSentinels === 0) ok('No stale reservation sentinels');
 
 // --- Check 9: Duplicate reports for the same company+role (#1425) ---
 // Two concurrent evaluators can each write a report for the same role.
-// merge-tracker dedups the TRACKER, but nothing watched reports/ itself.
+// merge-tracker dedups the TRACKER, but nothing watched workspace/reports/evaluations/ itself.
 // Warning-level, not error: duplicates can be legitimate (re-evaluation
 // after a JD change).
 const REPORT_FILE_RE = /^(\d+)-(.+)-\d{4}-\d{2}-\d{2}\.md$/;
@@ -287,7 +287,7 @@ for (const group of reportsByRole.values()) {
 if (dupReports === 0) ok('No duplicate reports for the same company+role');
 
 // --- Check 10: Orphan reports with no tracker row (#1425) ---
-// Every reports/NNN-*.md should be referenced by a tracker row — by the row's
+// Every workspace/reports/evaluations/NNN-*.md should be referenced by a tracker row — by the row's
 // own number, the [NNN] link text, or the NNN- prefix of the linked filename.
 // A report none of them reference is usually the loser of a tracker dedup.
 const referencedNums = new Set();
@@ -306,7 +306,7 @@ let orphanReports = 0;
 for (const name of reportFiles) {
   const num = parseInt(name.match(REPORT_FILE_RE)[1], 10);
   if (!referencedNums.has(num)) {
-    warn(`Orphan report — no tracker row references #${num}: reports/${name}`);
+    warn(`Orphan report — no tracker row references #${num}: workspace/reports/evaluations/${name}`);
     orphanReports++;
   }
 }

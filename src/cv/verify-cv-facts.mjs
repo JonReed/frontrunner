@@ -5,7 +5,7 @@
  *
  * Usage:
  *   node src/cv/verify-cv-facts.mjs <generated-cv.html|md|tex>
- *   node src/cv/verify-cv-facts.mjs <generated-cv> --source cv.md --source article-digest.md
+ *   node src/cv/verify-cv-facts.mjs <generated-cv> --source workspace/profile/cv.md --source workspace/profile/article-digest.md
  *   node src/cv/verify-cv-facts.mjs --self-test
  */
 
@@ -14,7 +14,7 @@ import { isAbsolute, join, dirname, basename } from 'path';
 import { fileURLToPath } from 'url';
 
 import { ROOT } from '#paths';
-const DEFAULT_SOURCES = ['cv.md', 'article-digest.md'];
+const DEFAULT_SOURCES = ['workspace/profile/cv.md', 'workspace/profile/article-digest.md'];
 const DEFAULT_CONFIG = join(ROOT, 'config', 'cv-facts.json');
 
 function readIfExists(path) {
@@ -29,7 +29,7 @@ function stripMarkup(text) {
     // A bare `<` is ordinary prose in these sources (`p<0.001`, `ρ < 0.3`, `<30 min`),
     // and `[^>]` matches newlines — so the old `/<[^>]+>/g` let one stray `<` swallow
     // everything up to the next `>`, deleting real evidence from the allow-list and
-    // failing truthful CVs (article-digest.md lost 1,327 chars, incl. two metrics).
+    // failing truthful CVs (workspace/profile/article-digest.md lost 1,327 chars, incl. two metrics).
     .replace(/<\/?[a-zA-Z][^>\n]*>/g, ' ')
     .replace(/\\[a-zA-Z]+\*?(?:\[[^\]]*\])?(?:\{([^}]*)\})?/g, ' $1 ')
     .replace(/&nbsp;/g, ' ')
@@ -321,8 +321,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       console.log(`Usage: node src/cv/verify-cv-facts.mjs <generated-cv> [--source path] [--config path]
 
 Checks generated CV text for metric-like claims that are absent from source files.
-Default sources: cv.md, article-digest.md
-Default config:  config/cv-facts.json (optional)`);
+Default sources: workspace/profile/cv.md, workspace/profile/article-digest.md
+Default config:  workspace/profile/cv-facts.json (optional)`);
       process.exit(targetArg ? 0 : 1);
     }
 
@@ -359,7 +359,7 @@ Default config:  config/cv-facts.json (optional)`);
       console.error('\nForbidden phrases found:');
       for (const phrase of forbidden) console.error(`  - ${phrase}`);
     }
-    console.error('\nAdd real evidence to cv.md/article-digest.md, or allow a verified exception in config/cv-facts.json.');
+    console.error('\nAdd real evidence to workspace/profile/cv.md/article-digest.md, or allow a verified exception in workspace/profile/cv-facts.json.');
     process.exit(1);
   }
 }

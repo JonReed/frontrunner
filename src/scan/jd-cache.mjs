@@ -29,7 +29,7 @@ function stableName(url) {
  * @param {{outDir?:string}} [options]
  */
 export async function cacheProviderDescriptions(offers, {
-  outDir = join(ROOT, 'jds'),
+  outDir = join(ROOT, 'workspace', 'jobs', 'descriptions'),
   publishOptions = {},
 } = {}) {
   const manifest = readJdManifest(outDir);

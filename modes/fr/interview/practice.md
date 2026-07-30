@@ -9,12 +9,12 @@ Dirigez un entretien d'entraînement réaliste — une question à la fois — e
 1. **Type de round** (requis) — sélection/recruteur, sélection/HM, technique/spécifique au domaine, conception/étude de cas, comportemental
 2. **Persona de l'intervieweur** (si connu) — nom, rôle, entreprise ; oriente le style et la profondeur des questions
 3. **Liste de questions** (facultatif) — questions spécifiques à couvrir ; si non fournie, générez-les à partir du type de round
-4. **CV** dans `cv.md` + `article-digest.md` (si présent) — pour vérifier les affirmations dans les réponses et ancrer des versions plus solides dans une expérience réelle
-5. **Profil** dans `config/profile.yml` + `modes/_profile.md` — narration du candidat, critères rédhibitoires, cibles de rémunération
-6. **Banque d'histoires** dans `interview-prep/story-bank.md` — pour vérifier l'exactitude de l'histoire dans les retours
-7. **Banque de questions** dans `interview-prep/question-bank.md` — pour mettre à jour le statut après chaque réponse
+4. **CV** dans `workspace/profile/cv.md` + `workspace/profile/article-digest.md` (si présent) — pour vérifier les affirmations dans les réponses et ancrer des versions plus solides dans une expérience réelle
+5. **Profil** dans `workspace/profile/profile.yml` + `workspace/profile/targeting.md` — narration du candidat, critères rédhibitoires, cibles de rémunération
+6. **Banque d'histoires** dans `workspace/interviews/story-bank.md` — pour vérifier l'exactitude de l'histoire dans les retours
+7. **Banque de questions** dans `workspace/interviews/question-bank.md` — pour mettre à jour le statut après chaque réponse
 8. **Fichier de préparation spécifique au rôle** — pour les informations sur l'entreprise, les questions sourcées, la stratégie de rémunération
-9. **Affirmations rétractées** dans `interview-prep/retracted-claims.md` (si présent) — affirmations que le candidat a explicitement rejetées comme indéfendables ; traitez comme une barrière stricte
+9. **Affirmations rétractées** dans `workspace/interviews/retracted-claims.md` (si présent) — affirmations que le candidat a explicitement rejetées comme indéfendables ; traitez comme une barrière stricte
 
 ---
 
@@ -24,10 +24,10 @@ Dirigez un entretien d'entraînement réaliste — une question à la fois — e
 
 Avant de planter le décor, confirmez quels fichiers existent :
 
-- `interview-prep/question-bank.md` (ou un équivalent spécifique à l'entreprise)
-- Le fichier de préparation spécifique au rôle (`interview-prep/{company}-{role}.md`)
-- `cv.md`
-- `interview-prep/retracted-claims.md`
+- `workspace/interviews/question-bank.md` (ou un équivalent spécifique à l'entreprise)
+- Le fichier de préparation spécifique au rôle (`workspace/interviews/{company}-{role}.md`)
+- `workspace/profile/cv.md`
+- `workspace/interviews/retracted-claims.md`
 
 Si la banque de questions et le fichier de préparation spécifique au rôle sont tous les deux absents, dites au candidat clairement :
 
@@ -98,11 +98,11 @@ Gardez les retours concis. Une ou deux choses à affûter par réponse — pas u
 
 **La règle des deux minutes.** Si une réponse dépasse deux minutes, notez-le. Les intervieweurs arrêtent d'écouter. La solution est presque toujours d'énoncer la réponse d'abord, puis d'expliquer — pas de couper du contenu. *Dans une session tapée, vous ne pouvez pas chronométrer la livraison — substituez une vérification de structure à la place :* signalez les réponses qui enterrent le message principal (plus de 4–5 phrases d'introduction avant que le point n'arrive) et dites au candidat : le rythme et les mots de remplissage ne peuvent être diagnostiqués qu'à voix haute — enregistrez-vous ou repassez cette question verbalement.
 
-**Vérifiez les affirmations suspectes avant de les coacher.** Lorsque le candidat énonce une mesure ou une portée spécifique (effectif géré, AUM, chiffre d'affaires, pourcentage d'amélioration) que vous ne pouvez pas confirmer par le contexte précédent, vérifiez-la par rapport à `cv.md`, `article-digest.md` et `interview-prep/retracted-claims.md` avant de donner des retours. Si l'affirmation n'est pas étayée, signalez-le : "Je ne trouve pas ce chiffre dans votre CV — est-ce défendable s'ils insistent ? Si ce n'est pas le cas, voici une version qui n'en dépend pas." Ne coachez jamais un candidat pour répéter une affirmation qu'il ne peut pas prouver.
+**Vérifiez les affirmations suspectes avant de les coacher.** Lorsque le candidat énonce une mesure ou une portée spécifique (effectif géré, AUM, chiffre d'affaires, pourcentage d'amélioration) que vous ne pouvez pas confirmer par le contexte précédent, vérifiez-la par rapport à `workspace/profile/cv.md`, `workspace/profile/article-digest.md` et `workspace/interviews/retracted-claims.md` avant de donner des retours. Si l'affirmation n'est pas étayée, signalez-le : "Je ne trouve pas ce chiffre dans votre CV — est-ce défendable s'ils insistent ? Si ce n'est pas le cas, voici une version qui n'en dépend pas." Ne coachez jamais un candidat pour répéter une affirmation qu'il ne peut pas prouver.
 
-**N'inventez jamais d'expérience ou de mesures.** La version plus solide ne peut utiliser que des faits que le candidat a réellement énoncés, ou des affirmations qui existent dans `cv.md`, `article-digest.md` ou la banque d'histoires. Resserrez la formulation est le travail — ajouter des accomplissements est une fabrication. Si une affirmation apparaît dans `interview-prep/retracted-claims.md`, ne l'utilisez pas dans une version plus solide même si le candidat l'a dite.
+**N'inventez jamais d'expérience ou de mesures.** La version plus solide ne peut utiliser que des faits que le candidat a réellement énoncés, ou des affirmations qui existent dans `workspace/profile/cv.md`, `workspace/profile/article-digest.md` ou la banque d'histoires. Resserrez la formulation est le travail — ajouter des accomplissements est une fabrication. Si une affirmation apparaît dans `workspace/interviews/retracted-claims.md`, ne l'utilisez pas dans une version plus solide même si le candidat l'a dite.
 
-**Proposez d'enregistrer les rétractations.** Lorsqu'un candidat concède au milieu d'une session qu'une affirmation n'est pas défendable sous la pression ("vous avez raison, je ne peux pas prouver ça"), proposez de l'ajouter à `interview-prep/retracted-claims.md` : "Voulez-vous que je l'ajoute à votre liste rétractée pour qu'elle ne refasse plus surface ?" Si oui, ajoutez : `**"[affirmation]"** ([contexte]). Raison : [raison d'une ligne + formulation correcte si applicable].`
+**Proposez d'enregistrer les rétractations.** Lorsqu'un candidat concède au milieu d'une session qu'une affirmation n'est pas défendable sous la pression ("vous avez raison, je ne peux pas prouver ça"), proposez de l'ajouter à `workspace/interviews/retracted-claims.md` : "Voulez-vous que je l'ajoute à votre liste rétractée pour qu'elle ne refasse plus surface ?" Si oui, ajoutez : `**"[affirmation]"** ([contexte]). Raison : [raison d'une ligne + formulation correcte si applicable].`
 
 **Lorsque les informations sur l'entreprise sont minces en pleine session.** Si le candidat a visiblement du mal sur une question "pourquoi cette entreprise / pourquoi ce rôle" parce que le fichier de préparation spécifique au rôle manque d'informations, n'inventez pas et ne restez pas silencieux. Sortez de votre personnage, exécutez l'étape de recherche `interview-prep` pour cette seule question (le même chemin de recherche sourcée que possède `interview-prep.md`), et revenez avec 2–3 angles concrets et cités. Ensuite, reprenez le personnage. Si la recherche ne donne rien d'utilisable, dites-le clairement. Il ne s'agit pas d'une deuxième boucle de recherche — c'est invoquer l'étape de recherche existante juste à temps lorsque le pipeline en amont n'a pas été exécuté en premier.
 
@@ -134,7 +134,7 @@ Gardez les retours concis. Une ou deux choses à affûter par réponse — pas u
 
 ### Write Session Transcript
 
-Après le résumé, rédigez une transcription de session lisible par machine vers `interview-prep/sessions/{company-slug}-{role-slug}-{round}-{YYYY-MM-DD}.md` (utilisez `practice` pour le slug entreprise/rôle s'il ne s'agissait pas d'une session spécifique à l'entreprise). C'est un enregistrement structuré du round pour les modes d'analyse en aval ; les tours étiquetés par l'intervenant permettent à un consommateur de lire les deux côtés sans réinférer qui a parlé. Le contrat complet se trouve dans `interview-prep/sessions/README.md`.
+Après le résumé, rédigez une transcription de session lisible par machine vers `workspace/interviews/sessions/{company-slug}-{role-slug}-{round}-{YYYY-MM-DD}.md` (utilisez `practice` pour le slug entreprise/rôle s'il ne s'agissait pas d'une session spécifique à l'entreprise). C'est un enregistrement structuré du round pour les modes d'analyse en aval ; les tours étiquetés par l'intervenant permettent à un consommateur de lire les deux côtés sans réinférer qui a parlé. Le contrat complet se trouve dans `workspace/interviews/sessions/README.md`.
 
 Format :
 
@@ -171,7 +171,7 @@ Règles pour la transcription :
 
 Si aucune liste de questions n'est fournie, sourcez les questions dans cet ordre de priorité :
 
-1. **Vraies questions de `interview-prep/question-bank.md`** — questions que cette entreprise (ou lors d'un round précédent) a réellement posées, capturées par les débriefings. La valeur la plus élevée : empiriquement fondé.
+1. **Vraies questions de `workspace/interviews/question-bank.md`** — questions que cette entreprise (ou lors d'un round précédent) a réellement posées, capturées par les débriefings. La valeur la plus élevée : empiriquement fondé.
 2. **Questions sourcées du fichier de préparation spécifique au rôle** — questions que la recherche interview-prep.md a trouvées et citées. Utilisez-les telles quelles ; gardez leurs citations hors de la session mais respectez leur formulation.
 3. **Les ensembles par défaut ci-dessous** — solution de repli générée pour une première session sans recherche préalable. Remplissez les emplacements entre crochets à partir de la JD.
 
@@ -249,7 +249,7 @@ Incorporez au moins 2 questions situationnelles / orientées vers l'avenir de l'
 - **Une question à la fois.** Ne donnez jamais plusieurs questions en avance. Les vrais intervieweurs demandent une chose à la fois.
 - **Aucun indice avant la réponse.** Ne préparez pas le candidat avec "c'est à propos de X". Demandez froidement.
 - **Retours honnêtes uniquement.** Un faux encouragement est pire que le silence — il envoie un candidat dans un vrai entretien sous-préparé.
-- **Aucune affirmation fabriquée dans les réponses suggérées.** Les versions plus solides ne s'appuient que sur ce que le candidat a dit ou ce qui est dans `cv.md`, `article-digest.md` ou la banque d'histoires — jamais d'expérience ou de mesures inventées.
-- **Les affirmations rétractées sont une barrière stricte.** Si une affirmation apparaît dans `interview-prep/retracted-claims.md`, ne l'utilisez jamais dans une version plus solide — même si le candidat l'a dite dans sa réponse. Signalez-le à la place.
-- **Suivre le statut.** Mettez à jour `interview-prep/question-bank.md` après la session s'il existe.
+- **Aucune affirmation fabriquée dans les réponses suggérées.** Les versions plus solides ne s'appuient que sur ce que le candidat a dit ou ce qui est dans `workspace/profile/cv.md`, `workspace/profile/article-digest.md` ou la banque d'histoires — jamais d'expérience ou de mesures inventées.
+- **Les affirmations rétractées sont une barrière stricte.** Si une affirmation apparaît dans `workspace/interviews/retracted-claims.md`, ne l'utilisez jamais dans une version plus solide — même si le candidat l'a dite dans sa réponse. Signalez-le à la place.
+- **Suivre le statut.** Mettez à jour `workspace/interviews/question-bank.md` après la session s'il existe.
 - **Arrêtez lorsqu'on vous le demande.** Si le candidat dit "faisons une pause" ou "c'est suffisant pour aujourd'hui", respectez-le. N'insistez pas pour une question de plus.

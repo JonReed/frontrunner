@@ -304,7 +304,7 @@ export default {
     // tenant that actually hits it needs to be surfaced, in one short line
     // (a full-directory scan can hit this on dozens of tenants).
     //
-    // "raise max_pages" only applies when `entry` is a real portals.yml
+    // "raise max_pages" only applies when `entry` is a real workspace/search/portals.yml
     // tracked_companies entry (src/scan/scan.mjs, sinceMs === null). src/scan/scan-ats-full.mjs's
     // reverse scan (the only caller that sets ctx.sinceMs) synthesizes entries
     // from the external dataset — there's no portal entry to edit, and no

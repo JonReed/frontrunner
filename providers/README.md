@@ -24,14 +24,14 @@ its file:
 /** @type {Provider} */
 export default {
   id: 'myboard',                 // unique across all loaded providers
-  detect(entry) { ... },         // optional: claim a portals.yml entry
+  detect(entry) { ... },         // optional: claim a workspace/search/portals.yml entry
   async fetch(entry, ctx) { ... } // required: return Job[]
 };
 ```
 
 - `id` (required) — unique string; on a duplicate the first loaded provider
   wins and the later file is skipped with a warning (`_registry.mjs`).
-- `detect(entry)` (optional) — return `{ url }` to claim a `portals.yml`
+- `detect(entry)` (optional) — return `{ url }` to claim a `workspace/search/portals.yml`
   entry, or `null`. Two styles exist: URL-pattern matching on
   `entry.careers_url` (e.g. `greenhouse.mjs`, `lever.mjs`) and explicit-only
   (`return entry?.provider === 'myboard' ? { url: FEED_URL } : null`) for
@@ -78,7 +78,7 @@ There is no index file — discovery is filesystem-convention-based
 
 1. Every `providers/*.mjs` file NOT starting with `_` is dynamically
    imported, in alphabetical order (so `detect()` priority is deterministic).
-2. For each `portals.yml` entry, routing precedence is: explicit
+2. For each `workspace/search/portals.yml` entry, routing precedence is: explicit
    `provider: <id>` field first (bypasses detect), then the configured
    `local-parser`, then each provider's `detect()` in load order — first
    non-null hit wins.

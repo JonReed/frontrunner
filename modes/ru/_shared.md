@@ -4,29 +4,29 @@
      ЭТОТ ФАЙЛ — СИСТЕМНЫЙ.
      НЕ добавляйте сюда персональные данные.
      ============================================================
-     Персонализация → modes/_profile.md и config/profile.yml.
+     Персонализация → workspace/profile/targeting.md и workspace/profile/profile.yml.
      Этот файл содержит общий контекст, архетипы и правила
      для русскоязычных режимов.
      Примечание: modes/ru/ пока не включён в auto-update
      (update-system.mjs). Обновления применяются вручную.
      
      Перед использованием frontrunner убедитесь:
-     1. config/profile.yml заполнен вашими данными
-     2. cv.md создан в корне проекта (резюме в Markdown)
-     3. (Опционально) article-digest.md с proof points
+     1. workspace/profile/profile.yml заполнен вашими данными
+     2. workspace/profile/cv.md создан в корне проекта (резюме в Markdown)
+     3. (Опционально) workspace/profile/article-digest.md с proof points
      ============================================================ -->
 
 ## Источники правды (ВСЕГДА читать перед каждой оценкой)
 
 | Файл | Путь | Когда |
 |------|------|-------|
-| cv.md | `cv.md` (корень проекта) | ВСЕГДА |
-| article-digest.md | `article-digest.md` (если есть) | ВСЕГДА (детальные proof points) |
-| profile.yml | `config/profile.yml` | ВСЕГДА (идентичность кандидата и целевые роли) |
-| _profile.md | `modes/_profile.md` | ВСЕГДА (пользовательские архетипы, нарратив, переговоры) |
+| workspace/profile/cv.md | `workspace/profile/cv.md` (корень проекта) | ВСЕГДА |
+| workspace/profile/article-digest.md | `workspace/profile/article-digest.md` (если есть) | ВСЕГДА (детальные proof points) |
+| profile.yml | `workspace/profile/profile.yml` | ВСЕГДА (идентичность кандидата и целевые роли) |
+| _profile.md | `workspace/profile/targeting.md` | ВСЕГДА (пользовательские архетипы, нарратив, переговоры) |
 
-**ПРАВИЛО: НИКОГДА не хардкодить метрики из proof points.** Читать их из cv.md + article-digest.md во время оценки.
-**ПРАВИЛО: Для метрик статей/проектов `article-digest.md` имеет приоритет над `cv.md`.**
+**ПРАВИЛО: НИКОГДА не хардкодить метрики из proof points.** Читать их из workspace/profile/cv.md + workspace/profile/article-digest.md во время оценки.
+**ПРАВИЛО: Для метрик статей/проектов `workspace/profile/article-digest.md` имеет приоритет над `workspace/profile/cv.md`.**
 **ПРАВИЛО: Читать `_profile.md` ПОСЛЕ этого файла. Пользовательские настройки в `_profile.md` перезаписывают значения по умолчанию.**
 
 ---
@@ -69,18 +69,18 @@
 
 ### Адаптивный фрейминг по архетипу
 
-> **Конкретные метрики: читать во время оценки из `cv.md` и `article-digest.md`. НИКОГДА не хардкодить.**
+> **Конкретные метрики: читать во время оценки из `workspace/profile/cv.md` и `workspace/profile/article-digest.md`. НИКОГДА не хардкодить.**
 
 | Если роль... | Подчеркнуть о кандидате... | Источники proof points |
 |--------------|---------------------------|------------------------|
-| Platform / LLMOps | Продакшн-системы, observability, evals | article-digest.md + cv.md |
-| Agentic / Automation | Мульти-агентная оркестрация, HITL, надёжность | article-digest.md + cv.md |
-| Technical AI PM | Product discovery, PRD, метрики | cv.md + article-digest.md |
-| Solutions Architect | Системный дизайн, интеграции, enterprise-ready | article-digest.md + cv.md |
-| Forward Deployed Engineer | Быстрая поставка, клиентский фокус, прототип → прод | cv.md + article-digest.md |
-| Backend-разработчик | Highload, микросервисы, масштабирование | cv.md |
-| DevOps/SRE | Инфраструктура, автоматизация, мониторинг | cv.md |
-| Тимлид / EM | Лидерство, найм, техническая стратегия | cv.md |
+| Platform / LLMOps | Продакшн-системы, observability, evals | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Agentic / Automation | Мульти-агентная оркестрация, HITL, надёжность | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Technical AI PM | Product discovery, PRD, метрики | workspace/profile/cv.md + workspace/profile/article-digest.md |
+| Solutions Architect | Системный дизайн, интеграции, enterprise-ready | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Forward Deployed Engineer | Быстрая поставка, клиентский фокус, прототип → прод | workspace/profile/cv.md + workspace/profile/article-digest.md |
+| Backend-разработчик | Highload, микросервисы, масштабирование | workspace/profile/cv.md |
+| DevOps/SRE | Инфраструктура, автоматизация, мониторинг | workspace/profile/cv.md |
+| Тимлид / EM | Лидерство, найм, техническая стратегия | workspace/profile/cv.md |
 
 ---
 
@@ -148,7 +148,7 @@
 ### НИКОГДА
 
 1. Выдумывать опыт или метрики
-2. Модифицировать cv.md или файлы портфолио
+2. Модифицировать workspace/profile/cv.md или файлы портфолио
 3. Отправлять отклики от имени кандидата
 4. Делиться телефоном в генерируемых сообщениях
 5. Рекомендовать компенсацию ниже рынка
@@ -159,7 +159,7 @@
 ### ВСЕГДА
 
 0. **Сопроводительное письмо:** Если форма позволяет, ВСЕГДА включать. Тот же дизайн, что и CV. Цитаты из JD, привязанные к proof points. Максимум 1 страница.
-1. Читать cv.md, _profile.md и article-digest.md (если есть) перед оценкой
+1. Читать workspace/profile/cv.md, _profile.md и workspace/profile/article-digest.md (если есть) перед оценкой
 1b. **Первая оценка в сессии:** Запустить `node src/cv/cv-sync-check.mjs`. Если предупреждения — уведомить пользователя.
 2. Определить архетип роли и адаптировать фрейминг по _profile.md
 3. Цитировать точные строки из CV при совпадении
@@ -169,7 +169,7 @@
 7. Быть прямым и конкретным — без воды
 8. Для русскоязычных вакансий: технический русский, короткие предложения, глаголы действия.
 8b. URL-ы кейсов в Professional Summary PDF (рекрутер может прочитать только это).
-9. **Добавления в трекер как TSV** — не добавлять НОВЫЕ записи в `data/applications.md` напрямую; для новых записей писать TSV в `batch/tracker-additions/` и делать merge. Прямое редактирование существующих строк допустимо для обновления `status`/`notes`.
+9. **Добавления в трекер как TSV** — не добавлять НОВЫЕ записи в `workspace/applications/tracker.md` напрямую; для новых записей писать TSV в `workspace/.state/tracker-additions/` и делать merge. Прямое редактирование существующих строк допустимо для обновления `status`/`notes`.
 10. **Включать `**URL:**` в заголовок каждого отчёта.**
 
 ### Инструменты
@@ -179,8 +179,8 @@
 | WebSearch | Исследование компенсации, тренды, культура компании, контакты в LinkedIn, fallback для JD |
 | WebFetch | Fallback для извлечения JD со статических страниц |
 | Playwright | Верификация вакансий (browser_navigate + browser_snapshot). **НИКОГДА 2+ агентов с Playwright параллельно.** |
-| Read | cv.md, _profile.md, article-digest.md, cv-template.html |
-| Write | Временный HTML для PDF, data/applications.md, отчёты .md |
+| Read | workspace/profile/cv.md, _profile.md, workspace/profile/article-digest.md, cv-template.html |
+| Write | Временный HTML для PDF, workspace/applications/tracker.md, отчёты .md |
 | Edit | Обновление трекера |
 | Bash | `node src/cv/generate-pdf.mjs` |
 

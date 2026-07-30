@@ -85,7 +85,7 @@ function makeSandbox(trackerContent, additions = {}) {
 
 // Pin src/scan/scan.mjs's extra dedupe sources inside the sandbox. The module-level
 // paths are relative to process.cwd(), so an in-process call would otherwise
-// read the developer's real data/scan-history.tsv and data/pipeline.md — CI
+// read the developer's real workspace/.state/scan-history.tsv and workspace/search/pipeline.md — CI
 // only escapes that because both files are gitignored.
 function sandboxSources(sb) {
   return {
@@ -197,9 +197,9 @@ const TSV_NO_LOCATION = '2\t2026-02-02\tGlobex\tManager\tApplied\tN/A\t✅\t—\
 // ── Test 5: removeRowByNum resolves the Report column by header ─────────────
 {
   const { removeRowByNum } = await import('../src/tracker/tracker.mjs');
-  const tenCol = HEADER_10.replace('| — | seed row |', '| [1](reports/001-acme-2026-01-01.md) | seed row |');
+  const tenCol = HEADER_10.replace('| — | seed row |', '| [1](workspace/reports/evaluations/001-acme-2026-01-01.md) | seed row |');
   const res = removeRowByNum(tenCol, 1);
-  if (res.removed && res.report === '[1](reports/001-acme-2026-01-01.md)') {
+  if (res.removed && res.report === '[1](workspace/reports/evaluations/001-acme-2026-01-01.md)') {
     pass('removeRowByNum: report column resolved by header on 10-col tracker');
   } else {
     fail(`removeRowByNum: report on 10-col tracker — got "${res.report}"`);
@@ -608,15 +608,15 @@ if (!HAS_WEB) {
 
 // ── Test 17: pipe rows preserve empty interior cells ──────────────────────
 {
-  const EMPTY_PDF = '| 42 | 2026-01-01 | Foo | Bar Engineer | 4.0/5 | Evaluated |  | [42](reports/042-foo-2026-01-01.md) | some note |';
-  const EMPTY_NOTES = '| 43 | 2026-01-02 | Baz | Platform Engineer | 4.1/5 | Evaluated | ✅ | [43](reports/043-baz-2026-01-02.md) |  | Singapore';
+  const EMPTY_PDF = '| 42 | 2026-01-01 | Foo | Bar Engineer | 4.0/5 | Evaluated |  | [42](workspace/reports/evaluations/042-foo-2026-01-01.md) | some note |';
+  const EMPTY_NOTES = '| 43 | 2026-01-02 | Baz | Platform Engineer | 4.1/5 | Evaluated | ✅ | [43](workspace/reports/evaluations/043-baz-2026-01-02.md) |  | Singapore';
   const sb = makeSandbox(HEADER_10, { '42-foo.tsv': EMPTY_PDF, '43-baz.tsv': EMPTY_NOTES });
   const res = runScript('src/tracker/merge-tracker.mjs', [], sb);
   const foo = dataRows(sb.tracker).find(l => l.includes('Foo'));
   const baz = dataRows(sb.tracker).find(l => l.includes('Baz'));
   const fooCells = foo ? foo.split('|').map(s => s.trim()) : [];
   const bazCells = baz ? baz.split('|').map(s => s.trim()) : [];
-  if (res.code === 0 && fooCells[8] === '' && fooCells[9] === '[42](reports/042-foo-2026-01-01.md)' && fooCells[10] === 'some note') {
+  if (res.code === 0 && fooCells[8] === '' && fooCells[9] === '[42](workspace/reports/evaluations/042-foo-2026-01-01.md)' && fooCells[10] === 'some note') {
     pass('merge: empty PDF cell does not shift Report or Notes');
   } else {
     fail(`merge: empty PDF cell shifted columns (code ${res.code}) row: ${foo}\n${res.stdout}`);

@@ -20,7 +20,7 @@ import { PIPELINE_STAGES } from './progress.mjs';
 
 export const RUN_HISTORY_VERSION = '1';
 export const APPLICATION_RUN_ID_ENV = 'FRONTRUNNER_APPLICATION_RUN_ID';
-export const DEFAULT_RUN_HISTORY_FILE = join(ROOT, 'data', 'run-history.ndjson');
+export const DEFAULT_RUN_HISTORY_FILE = join(ROOT, 'workspace', '.state', 'run-history.ndjson');
 export const DEFAULT_RUN_HISTORY_RECORDS = 1_000;
 export const DEFAULT_RUN_HISTORY_BYTES = 2 * 1024 * 1024;
 export const MAX_RUN_HISTORY_READ_RECORDS = 50;

@@ -5,10 +5,10 @@
 ## Вхідні дані
 
 1. **Назва компанії** та **посада** (обов'язково)
-2. **Звіт оцінки** в `reports/` (якщо є)
-3. **Банк історій** `interview-prep/story-bank.md`
-4. **CV** `cv.md` + `article-digest.md`
-5. **Профіль** `config/profile.yml` + `modes/_profile.md`
+2. **Звіт оцінки** в `workspace/reports/evaluations/` (якщо є)
+3. **Банк історій** `workspace/interviews/story-bank.md`
+4. **CV** `workspace/profile/cv.md` + `workspace/profile/article-digest.md`
+5. **Профіль** `workspace/profile/profile.yml` + `workspace/profile/targeting.md`
 
 ## Крок 1 — Дослідження
 
@@ -70,7 +70,7 @@ WebSearch-запити. Витягати структуровані дані, н
 
 ### Red flags у бекграунді
 
-Питання, які інтерв'юер вірогідно задасть про прогалини, переходи або незвичайні елементи у бекграунді. Читати `_profile.md` та `cv.md`.
+Питання, які інтерв'юер вірогідно задасть про прогалини, переходи або незвичайні елементи у бекграунді. Читати `_profile.md` та `workspace/profile/cv.md`.
 
 ## Крок 5 — Маппінг банку історій
 
@@ -129,7 +129,7 @@ WebSearch-запити. Витягати структуровані дані, н
 
 ## Висновок
 
-Зберегти звіт у `interview-prep/{company-slug}-{role-slug}.md`.
+Зберегти звіт у `workspace/interviews/{company-slug}-{role-slug}.md`.
 
 ```markdown
 # Підготовка до співбесіди: {Компанія} — {Роль}

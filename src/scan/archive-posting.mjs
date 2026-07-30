@@ -9,11 +9,11 @@
  * Usage:
  *   node src/scan/archive-posting.mjs <url>
  *   node src/scan/archive-posting.mjs <url> --company=Anthropic --role=senior-ai-engineer
- *   node src/scan/archive-posting.mjs --pipeline          Archive pending URLs in data/pipeline.md
+ *   node src/scan/archive-posting.mjs --pipeline          Archive pending URLs in workspace/search/pipeline.md
  *   node src/scan/archive-posting.mjs --dry-run <url>     Preview filename without saving
  *
- * Output:    jds/YYYY-MM-DD_company-slug_role-slug.pdf
- * Reference: local:jds/YYYY-MM-DD_company-slug_role-slug.pdf  (paste into pipeline.md)
+ * Output:    workspace/jobs/descriptions/YYYY-MM-DD_company-slug_role-slug.pdf
+ * Reference: local:workspace/jobs/descriptions/YYYY-MM-DD_company-slug_role-slug.pdf  (paste into pipeline.md)
  */
 
 import { chromium } from 'playwright';
@@ -29,8 +29,8 @@ import {
   navigateGuardedPage,
 } from '../security/browser-egress.mjs';
 import { LIVENESS_CONTEXT_OPTIONS } from './liveness-browser.mjs';
-const JDS_DIR = join(ROOT, 'jds');
-const PIPELINE_PATH = join(ROOT, 'data', 'pipeline.md');
+const JDS_DIR = join(ROOT, 'workspace', 'jobs', 'descriptions');
+const PIPELINE_PATH = join(ROOT, 'workspace', 'search', 'pipeline.md');
 const DIRECT = process.argv[1]
   && import.meta.url === pathToFileURL(process.argv[1]).href;
 
@@ -49,21 +49,21 @@ if (DIRECT && (args.length === 0 || args[0] === '--help' || args[0] === '-h')) {
   USAGE
     node src/scan/archive-posting.mjs <url>
     node src/scan/archive-posting.mjs <url> --company=Anthropic --role=senior-ai-engineer
-    node src/scan/archive-posting.mjs --pipeline     Archive all pending URLs in data/pipeline.md
+    node src/scan/archive-posting.mjs --pipeline     Archive all pending URLs in workspace/search/pipeline.md
     node src/scan/archive-posting.mjs --dry-run <url>
 
   OPTIONS
     --company <name>   Override auto-detected company name
     --role <title>     Override auto-detected role title
-    --pipeline         Archive all pending (- [ ]) entries in data/pipeline.md
+    --pipeline         Archive all pending (- [ ]) entries in workspace/search/pipeline.md
     --dry-run          Preview filename without saving
     --help             Show this help
 
   OUTPUT
-    jds/YYYY-MM-DD_company-slug_role-slug.pdf
+    workspace/jobs/descriptions/YYYY-MM-DD_company-slug_role-slug.pdf
 
-  PIPELINE REFERENCE (paste into pipeline.md or reports/)
-    local:jds/YYYY-MM-DD_company-slug_role-slug.pdf
+  PIPELINE REFERENCE (paste into pipeline.md or workspace/reports/evaluations/)
+    local:workspace/jobs/descriptions/YYYY-MM-DD_company-slug_role-slug.pdf
 
   EXAMPLES
     node src/scan/archive-posting.mjs "https://jobs.ashbyhq.com/anthropic/abc123"
@@ -177,14 +177,14 @@ function extractCompanyFromUrl(url) {
 // ── Pipeline URL extraction ──────────────────────────────────────────────────
 
 /**
- * Parse data/pipeline.md and return pending entries.
+ * Parse workspace/search/pipeline.md and return pending entries.
  * Handles both plain and annotated forms:
  *   - [ ] https://example.com/job/123
  *   - [ ] https://example.com/job/456 | Acme Corp | Senior PM
  */
 async function extractPipelineEntries() {
   if (!existsSync(PIPELINE_PATH)) {
-    console.error('data/pipeline.md not found. Add URLs there first.');
+    console.error('workspace/search/pipeline.md not found. Add URLs there first.');
     process.exit(1);
   }
 
@@ -253,9 +253,9 @@ export async function archiveUrl(
 
     const filename = `${today()}_${slugify(company)}_${slugify(role)}.pdf`;
     const outputPath = join(JDS_DIR, filename);
-    const reference = `local:jds/${filename}`;
+    const reference = `local:workspace/jobs/descriptions/${filename}`;
 
-    console.log(`   Output:  jds/${filename}`);
+    console.log(`   Output:  workspace/jobs/descriptions/${filename}`);
 
     const pdfBuffer = await page.pdf({
       format: 'a4',
@@ -285,7 +285,7 @@ async function main() {
   if (pipelineMode) {
     const entries = await extractPipelineEntries();
     if (entries.length === 0) {
-      console.log('No pending (- [ ]) URLs found in data/pipeline.md.');
+      console.log('No pending (- [ ]) URLs found in workspace/search/pipeline.md.');
       return;
     }
     targets = entries;
@@ -295,7 +295,7 @@ async function main() {
 
   if (dryRun) console.log('🔍  Dry-run mode — no files will be saved.\n');
 
-  console.log(`Archiving ${targets.length} posting(s) to jds/`);
+  console.log(`Archiving ${targets.length} posting(s) to workspace/jobs/descriptions/`);
 
   const results = [];
   let failed = 0;
@@ -307,11 +307,11 @@ async function main() {
       const resolvedCompany = overrideCompany || company || urlCompany || 'unknown';
       const resolvedRole = overrideRole || role || 'job';
       const filename = `${today()}_${slugify(resolvedCompany)}_${slugify(resolvedRole)}.pdf`;
-      const reference = `local:jds/${filename}`;
+      const reference = `local:workspace/jobs/descriptions/${filename}`;
       console.log(`\n🔗  ${url}`);
       console.log(`   Company: ${resolvedCompany}`);
       console.log(`   Role:    ${resolvedRole}`);
-      console.log(`   Output:  jds/${filename}`);
+      console.log(`   Output:  workspace/jobs/descriptions/${filename}`);
       console.log('   (dry-run — not saved)');
       results.push({ url, filename, reference, skipped: true });
     }
@@ -343,7 +343,7 @@ async function main() {
 
   console.log('\n' + '─'.repeat(62));
   if (dryRun) {
-    console.log(`  Dry-run: ${skipped} file(s) would be saved to jds/`);
+    console.log(`  Dry-run: ${skipped} file(s) would be saved to workspace/jobs/descriptions/`);
   } else {
     console.log(`  Archived: ${saved} saved  ${failed} failed`);
   }

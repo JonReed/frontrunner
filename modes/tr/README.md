@@ -27,7 +27,7 @@ veya
 
 ### Yol 2 — Kalıcı olarak, profil üzerinden
 
-`config/profile.yml` dosyasına dil tercihini ekle:
+`workspace/profile/profile.yml` dosyasına dil tercihini ekle:
 
 ```yaml
 language:
@@ -68,7 +68,7 @@ Diğer modlar (`scan`, `batch`, `pdf`, `tracker`, `auto-pipeline`, `deep`, `cont
 
 Kasıtlı olarak çevrilmedi — standart teknik kelime dağarcığı:
 
-- `cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`, `proof point`
+- `workspace/profile/cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`, `proof point`
 - Araç adları (`Playwright`, `WebSearch`, `WebFetch`, `Read`, `Write`, `Edit`, `Bash`)
 - Takipçideki durum değerleri (`Evaluated`, `Applied`, `Interview`, `Offer`, `Rejected`)
 - Kod parçacıkları, dosya yolları, komutlar

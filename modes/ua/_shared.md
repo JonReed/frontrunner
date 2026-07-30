@@ -4,29 +4,29 @@
      ЦЕ — СИСТЕМНИЙ AUTO-UPDATABLE ФАЙЛ.
      НЕ додавайте сюди персональні дані.
      ============================================================
-     Персоналізація → modes/_profile.md та config/profile.yml.
+     Персоналізація → workspace/profile/targeting.md та workspace/profile/profile.yml.
      Цей файл містить спільний контекст, архетипи та правила
      для україномовних режимів.
      Примітка: modes/ua/ поки не включено до auto-update
      (update-system.mjs). Оновлення застосовуються вручну.
 
      Перед використанням frontrunner переконайтеся:
-     1. config/profile.yml заповнений вашими даними
-     2. cv.md створений у корені проєкту (резюме в Markdown)
-     3. (Опціонально) article-digest.md з proof points
+     1. workspace/profile/profile.yml заповнений вашими даними
+     2. workspace/profile/cv.md створений у корені проєкту (резюме в Markdown)
+     3. (Опціонально) workspace/profile/article-digest.md з proof points
      ============================================================ -->
 
 ## Джерела правди
 
 | Файл              | Шлях                         | Коли                                                 |
 | ----------------- | ---------------------------- | ---------------------------------------------------- |
-| cv.md             | `cv.md` (корінь проєкту)     | ЗАВЖДИ                                               |
-| article-digest.md | `article-digest.md` (якщо є) | ЗАВЖДИ (детальні proof points)                       |
-| profile.yml       | `config/profile.yml`         | ЗАВЖДИ (ідентичність кандидата і цільові ролі)       |
-| \_profile.md      | `modes/_profile.md`          | ЗАВЖДИ (користувацькі архетипи, наратив, переговори) |
+| workspace/profile/cv.md             | `workspace/profile/cv.md` (корінь проєкту)     | ЗАВЖДИ                                               |
+| workspace/profile/article-digest.md | `workspace/profile/article-digest.md` (якщо є) | ЗАВЖДИ (детальні proof points)                       |
+| profile.yml       | `workspace/profile/profile.yml`         | ЗАВЖДИ (ідентичність кандидата і цільові ролі)       |
+| \_profile.md      | `workspace/profile/targeting.md`          | ЗАВЖДИ (користувацькі архетипи, наратив, переговори) |
 
-**ПРАВИЛО: НІКОЛИ не хардкодити метрики з proof points.** Читати їх з cv.md + article-digest.md під час оцінки.
-**ПРАВИЛО: Для метрик статей/проєктів `article-digest.md` має пріоритет над `cv.md`.**
+**ПРАВИЛО: НІКОЛИ не хардкодити метрики з proof points.** Читати їх з workspace/profile/cv.md + workspace/profile/article-digest.md під час оцінки.
+**ПРАВИЛО: Для метрик статей/проєктів `workspace/profile/article-digest.md` має пріоритет над `workspace/profile/cv.md`.**
 **ПРАВИЛО: Читати `_profile.md` ПІСЛЯ цього файлу. Користувацькі налаштування в `_profile.md` перезаписують значення за замовчуванням.**
 
 ---
@@ -112,22 +112,22 @@
 | **Tech Lead / Engineering Manager** | People management, tech strategy, delivery, найм                     |
 | **Solution Architect**              | Системний дизайн, інтеграції, масштабування, стандарти               |
 
-Після визначення архетипу — читати `modes/_profile.md` для специфічного фреймінгу та proof points кандидата.
+Після визначення архетипу — читати `workspace/profile/targeting.md` для специфічного фреймінгу та proof points кандидата.
 
 ### Адаптивний фреймінг за архетипом
 
-> **Конкретні метрики: читати під час оцінки з `cv.md` та `article-digest.md`. НІКОЛИ не хардкодити.**
+> **Конкретні метрики: читати під час оцінки з `workspace/profile/cv.md` та `workspace/profile/article-digest.md`. НІКОЛИ не хардкодити.**
 
 | Якщо роль...              | Підкреслити про кандидата...                          | Джерела proof points      |
 | ------------------------- | ----------------------------------------------------- | ------------------------- |
-| Platform / LLMOps         | Production systems, observability, evals, reliability | article-digest.md + cv.md |
-| Agentic / Automation      | Multi-agent orchestration, HITL, fault tolerance      | article-digest.md + cv.md |
-| Technical AI PM           | Product discovery, PRD, metrics, delivery             | cv.md + article-digest.md |
-| Solutions Architect       | System design, integrations, enterprise-ready         | article-digest.md + cv.md |
-| Forward Deployed Engineer | Fast delivery, client-facing, prototype → prod        | cv.md + article-digest.md |
-| Backend                   | Highload, microservices, scaling, distributed systems | cv.md                     |
-| DevOps/SRE                | Infrastructure, CI/CD, monitoring, automation         | cv.md                     |
-| Tech Lead / EM            | Leadership, hiring, tech strategy, delivery           | cv.md                     |
+| Platform / LLMOps         | Production systems, observability, evals, reliability | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Agentic / Automation      | Multi-agent orchestration, HITL, fault tolerance      | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Technical AI PM           | Product discovery, PRD, metrics, delivery             | workspace/profile/cv.md + workspace/profile/article-digest.md |
+| Solutions Architect       | System design, integrations, enterprise-ready         | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Forward Deployed Engineer | Fast delivery, client-facing, prototype → prod        | workspace/profile/cv.md + workspace/profile/article-digest.md |
+| Backend                   | Highload, microservices, scaling, distributed systems | workspace/profile/cv.md                     |
+| DevOps/SRE                | Infrastructure, CI/CD, monitoring, automation         | workspace/profile/cv.md                     |
+| Tech Lead / EM            | Leadership, hiring, tech strategy, delivery           | workspace/profile/cv.md                     |
 
 ---
 
@@ -196,7 +196,7 @@
 ### НІКОЛИ
 
 1. Вигадувати досвід або метрики
-2. Модифікувати cv.md або файли портфоліо
+2. Модифікувати workspace/profile/cv.md або файли портфоліо
 3. Надсилати відгуки від імені кандидата
 4. Ділитися телефоном у генерованих повідомленнях
 5. Рекомендувати компенсацію нижче ринку
@@ -207,7 +207,7 @@
 ### ЗАВЖДИ
 
 0. **Супровідний лист:** Якщо форма дозволяє, ЗАВЖДИ включати. Той самий дизайн, що й CV. Цитати з JD, прив'язані до proof points. Максимум 1 сторінка.
-1. Читати cv.md, \_profile.md та article-digest.md (якщо є) перед оцінкою
+1. Читати workspace/profile/cv.md, \_profile.md та workspace/profile/article-digest.md (якщо є) перед оцінкою
    1b. **Перша оцінка в сесії:** Запустити `node src/cv/cv-sync-check.mjs`. Якщо є попередження — повідомити користувача.
 2. Визначити архетип ролі та адаптувати фреймінг за \_profile.md
 3. Цитувати точні рядки з CV при збігу
@@ -217,7 +217,7 @@
 7. Бути прямим і конкретним — без води
 8. Для україномовних вакансій: технічна українська, короткі речення.
    8b. URL-и кейсів у Professional Summary PDF (рекрутер може прочитати тільки це).
-9. **Додавання до трекера як TSV** — не додавати НОВІ записи в `data/applications.md` напряму; для нових записів писати TSV у `batch/tracker-additions/` і робити merge. Пряме редагування існуючих рядків допустиме для оновлення `status`/`notes`.
+9. **Додавання до трекера як TSV** — не додавати НОВІ записи в `workspace/applications/tracker.md` напряму; для нових записів писати TSV у `workspace/.state/tracker-additions/` і робити merge. Пряме редагування існуючих рядків допустиме для оновлення `status`/`notes`.
 10. **Включати `**URL:**` в заголовок кожного звіту.**
 
 ### Інструменти
@@ -227,8 +227,8 @@
 | WebSearch  | Дослідження компенсації, тренди, культура компанії, контакти в LinkedIn, fallback для JD                                                             |
 | WebFetch   | Fallback для отримання JD зі статичних сторінок                                                                                                      |
 | Playwright | Верифікація вакансій (browser_navigate + browser_snapshot). **НІКОЛИ 2+ агентів з Playwright паралельно.**                                           |
-| Read       | cv.md, \_profile.md, article-digest.md, cv-template.html                                                                                             |
-| Write      | Тимчасовий HTML для PDF, data/applications.md, звіти .md                                                                                             |
+| Read       | workspace/profile/cv.md, \_profile.md, workspace/profile/article-digest.md, cv-template.html                                                                                             |
+| Write      | Тимчасовий HTML для PDF, workspace/applications/tracker.md, звіти .md                                                                                             |
 | Edit       | Оновлення трекера                                                                                                                                    |
 | Canva MCP  | Опціональна генерація візуального CV. Дублювати базовий дизайн, редагувати текст, експортувати PDF. Потребує `canva_resume_design_id` в profile.yml. |
 | Bash       | `node src/cv/generate-pdf.mjs`                                                                                                                              |

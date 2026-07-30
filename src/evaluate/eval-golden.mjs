@@ -19,7 +19,7 @@
  *
  * Usage:
  *   node src/evaluate/eval-golden.mjs --replay --model cheap-stub     # offline, deterministic ($0)
- *   node src/evaluate/eval-golden.mjs --live   --model gpt-4o-mini    # calls openai-eval.mjs (needs key + cv.md)
+ *   node src/evaluate/eval-golden.mjs --live   --model gpt-4o-mini    # calls openai-eval.mjs (needs key + workspace/profile/cv.md)
  *   npm run eval:golden -- --replay --model cheap-stub
  */
 
@@ -57,7 +57,7 @@ if (args.includes('--help') || args.includes('-h')) {
   console.log(`eval-golden.mjs — golden-set eval harness (#1354)
 
   --replay         Replay recorded fixtures (default; offline, $0, deterministic)
-  --live           Call the model live via openai-eval.mjs (needs key + cv.md)
+  --live           Call the model live via openai-eval.mjs (needs key + workspace/profile/cv.md)
   --model <id>     Candidate model id to evaluate (default: cheap-stub)
   --golden <dir>   Golden-set directory (default: tests/evals/golden)
   --fixtures <dir> Replay fixtures directory (default: sibling of --golden)

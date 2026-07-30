@@ -35,10 +35,10 @@ function put(file, contents = '') {
 test('doctor validates the real templates/fonts path and creates runtime directories', (t) => {
   const target = fixture(t, 'frontrunner-doctor-');
 
-  put(join(target, 'cv.md'), '# CV\n');
-  put(join(target, 'config/profile.yml'), 'name: Test User\n');
-  put(join(target, 'modes/_profile.md'), '# Profile\n');
-  put(join(target, 'portals.yml'), 'companies: []\n');
+  put(join(target, 'workspace/profile/cv.md'), '# CV\n');
+  put(join(target, 'workspace/profile/profile.yml'), 'name: Test User\n');
+  put(join(target, 'workspace/profile/targeting.md'), '# Profile\n');
+  put(join(target, 'workspace/search/portals.yml'), 'companies: []\n');
   put(join(target, 'templates/fonts/test.woff2'), 'not-a-real-font');
   mkdirSync(join(target, 'node_modules'));
 
@@ -49,10 +49,10 @@ test('doctor validates the real templates/fonts path and creates runtime directo
 
   assert.match(proc.stdout, /✓ Fonts directory ready/);
   assert.doesNotMatch(proc.stdout, /✗ templates\/fonts\//);
-  for (const dir of ['data', 'output', 'reports']) {
+  for (const dir of ['workspace/search', 'workspace/documents', 'workspace/reports/evaluations']) {
     assert.ok(existsSync(join(target, dir)), `${dir}/ was not created`);
   }
-  assert.match(readFileSync(join(target, 'data/pipeline.md'), 'utf8'), /^# Pipeline — Pending URLs/);
+  assert.match(readFileSync(join(target, 'workspace/search/pipeline.md'), 'utf8'), /^# Pipeline — Pending URLs/);
 });
 
 test('prefilter writes an auditable shortlist into new directories and is idempotent', (t) => {

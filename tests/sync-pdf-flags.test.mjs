@@ -13,10 +13,10 @@ const TRACKER_HEADER = [
   '',
   '| # | Date | Company | Role | Score | Status | PDF | Report | Notes |',
   '|---|------|---------|------|-------|--------|-----|--------|-------|',
-  '| 1 | 2026-01-01 | Acme | ML Eng | 4.5/5 | Evaluated | ❌ | [1](reports/1-acme.md) | |',
-  '| 2 | 2026-01-02 | Globex | Data Eng | 4.0/5 | Evaluated | — | [2](reports/2-globex.md) | |',
-  '| 3 | 2026-01-03 | Initech | SE | 3.5/5 | Evaluated | ✅ | [3](reports/3-initech.md) | |',
-  '| 4 | 2026-01-04 | Massive Dynamic | SE | 4.0/5 | Evaluated | ❌ | [4](reports/4-massive.md) | |',
+  '| 1 | 2026-01-01 | Acme | ML Eng | 4.5/5 | Evaluated | ❌ | [1](workspace/reports/evaluations/1-acme.md) | |',
+  '| 2 | 2026-01-02 | Globex | Data Eng | 4.0/5 | Evaluated | — | [2](workspace/reports/evaluations/2-globex.md) | |',
+  '| 3 | 2026-01-03 | Initech | SE | 3.5/5 | Evaluated | ✅ | [3](workspace/reports/evaluations/3-initech.md) | |',
+  '| 4 | 2026-01-04 | Massive Dynamic | SE | 4.0/5 | Evaluated | ❌ | [4](workspace/reports/evaluations/4-massive.md) | |',
   '',
 ].join('\n');
 

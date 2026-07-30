@@ -1,5 +1,5 @@
 /**
- * Canonical transaction boundary for data/follow-ups.md.
+ * Canonical transaction boundary for workspace/applications/follow-ups.md.
  *
  * The complete read/decision/publication sequence runs under the shared
  * owner-verified file lock. Replacement is fsync-backed and atomic, so a

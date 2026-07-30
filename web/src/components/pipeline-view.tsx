@@ -280,7 +280,7 @@ function InboxEmpty({ count, filtered }: { count: number; filtered: boolean }) {
             </Link>
             <p className="mx-auto mt-4 max-w-sm text-xs text-muted">
               Prefer the terminal? Run <code className="rounded bg-surface-hover px-1 py-0.5 font-mono">frontrunner scan</code>, or add job URLs to{" "}
-              <code className="rounded bg-surface-hover px-1 py-0.5 font-mono">data/pipeline.md</code>.
+              <code className="rounded bg-surface-hover px-1 py-0.5 font-mono">workspace/search/pipeline.md</code>.
             </p>
           </>
         )}

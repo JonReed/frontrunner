@@ -31,7 +31,7 @@ import {
 } from './discover-ats.mjs';
 import yaml from 'js-yaml';
 import { ROOT } from '#paths';
-import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'fs';
+import { mkdirSync, readFileSync, writeFileSync, mkdtempSync, rmSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { tmpdir } from 'os';
@@ -320,11 +320,12 @@ eq('empty input → unresolved []', emptyJson.unresolved, []);
 ok('empty input → previewOnly true', emptyJson.metadata.previewOnly === true);
 ok('empty input → written false', emptyJson.metadata.written === false);
 
-// Data contract: the DEFAULT run (no --write) must never touch portals.yml, even
+// Data contract: the DEFAULT run (no --write) must never touch workspace/search/portals.yml, even
 // when it can't be parsed. Run against a scratch file and assert it's untouched.
 // Network-free: an unresolvable slug (SLUG_RE-safe but no real board) + no --write.
 const tmpDir = mkdtempSync(join(tmpdir(), 'discover-ats-test-'));
-const scratchPortals = join(tmpDir, 'portals.yml');
+const scratchPortals = join(tmpDir, 'workspace/search/portals.yml');
+mkdirSync(dirname(scratchPortals), { recursive: true });
 const scratchContent = 'title_filter:\n  positive: [pm]\n\ntracked_companies:\n  - name: Existing\n    careers_url: https://jobs.lever.co/existing\n\njob_boards:\n  - name: Foo\n';
 writeFileSync(scratchPortals, scratchContent);
 try {
@@ -337,7 +338,7 @@ try {
   const previewJson = JSON.parse(previewOut);
   ok('default run → previewOnly true', previewJson.metadata.previewOnly === true);
   ok('default run → written false', previewJson.metadata.written === false);
-  eq('default run → portals.yml byte-for-byte unchanged', readFileSync(scratchPortals, 'utf-8'), scratchContent);
+  eq('default run → workspace/search/portals.yml byte-for-byte unchanged', readFileSync(scratchPortals, 'utf-8'), scratchContent);
 
   // --write is accepted as a known flag (empty list → no fresh entries → still
   // no write, file unchanged). Proves the flag parses and the guard holds.
@@ -347,7 +348,7 @@ try {
   });
   const writeJson = JSON.parse(writeOut);
   ok('--write accepted (valid JSON, exit 0)', typeof writeJson === 'object' && 'metadata' in writeJson);
-  eq('--write with nothing fresh → portals.yml still unchanged', readFileSync(scratchPortals, 'utf-8'), scratchContent);
+  eq('--write with nothing fresh → workspace/search/portals.yml still unchanged', readFileSync(scratchPortals, 'utf-8'), scratchContent);
 
   // --dry-run is accepted as a harmless alias for the default (no write).
   const aliasOut = execFileSync('node', [scriptPath, '--dry-run'], {

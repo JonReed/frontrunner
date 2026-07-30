@@ -18,10 +18,10 @@ After a real interview, capture what was asked, assess what landed and what didn
 2. **Interviewer name and role** — informs next round prediction
 3. **Round outcome** (if known) — moved forward / rejected / pending
 4. **Next round details** (if known) — format, interviewers, timeline
-5. **Question bank** at `interview-prep/question-bank.md` — update with real data
-6. **Story bank** at `interview-prep/story-bank.md` — add new stories if surfaced
-7. **CV** at `cv.md` + `article-digest.md` (if present) — to ground suggested answers in real experience
-8. **Retracted claims** at `interview-prep/retracted-claims.md` (if present) — hard gate; never use a retracted claim in a suggested answer even if the candidate said it in the interview
+5. **Question bank** at `workspace/interviews/question-bank.md` — update with real data
+6. **Story bank** at `workspace/interviews/story-bank.md` — add new stories if surfaced
+7. **CV** at `workspace/profile/cv.md` + `workspace/profile/article-digest.md` (if present) — to ground suggested answers in real experience
+8. **Retracted claims** at `workspace/interviews/retracted-claims.md` (if present) — hard gate; never use a retracted claim in a suggested answer even if the candidate said it in the interview
 9. **Role-specific prep file** — append debrief notes
 
 ---
@@ -76,7 +76,7 @@ Be direct. If they missed the core concept the question was testing, say so. If 
 
 ## Step 3 — Update Question Bank
 
-For each question debriefed, update `interview-prep/question-bank.md`:
+For each question debriefed, update `workspace/interviews/question-bank.md`:
 - Change status to ✅ / 🟡 / 🔴 based on real performance
 - Add gap notes from the debrief
 - Add any new questions that appeared and weren't in the bank yet
@@ -92,7 +92,7 @@ For each 🔴 gap identified:
 1. **Explain the correct answer** — clear, concise, with a worked example (code, calculation, diagram) where it helps
 2. **Connect to a real story** if possible — "you actually have this in your [existing story from the story bank] — here's how to use it"
 3. **Add to role-specific prep file** under a "Gaps to Close Before Round N" section
-4. **Add to `interview-prep/interview-prep-guide.md`** (if the candidate maintains one) when it's a reusable principle that applies beyond this role
+4. **Add to `workspace/interviews/interview-prep-guide.md`** (if the candidate maintains one) when it's a reusable principle that applies beyond this role
 
 ---
 
@@ -102,7 +102,7 @@ Sometimes a real interview surfaces a story the candidate hadn't prepared. If th
 
 > "You mentioned [X] in your answer — that sounds like it could become a proper STAR+R story. Want to build it out now while it's fresh?"
 
-If yes, build it out as a STAR+R story (Situation, Task, Action, Result, Reflection) and append it to `interview-prep/story-bank.md`.
+If yes, build it out as a STAR+R story (Situation, Task, Action, Result, Reflection) and append it to `workspace/interviews/story-bank.md`.
 
 ---
 
@@ -139,7 +139,7 @@ Be honest. A probability range with clear reasoning is more useful than false co
 
 ## Step 8 — Save Debrief
 
-Append to `interview-prep/{company-slug}-{role-slug}.md`:
+Append to `workspace/interviews/{company-slug}-{role-slug}.md`:
 
 ```markdown
 ## Round [N] Debrief — [YYYY-MM-DD]
@@ -166,13 +166,13 @@ Append to `interview-prep/{company-slug}-{role-slug}.md`:
 **Next steps:** [what the interviewer said happens next and by when]
 ```
 
-**If a compensation number was verbally stated this round** (the candidate gave a figure, not just "comp came up"), append one `stated` line to `data/salary-observations.tsv` (create the file if missing; format per `docs/SCRIPTS.md` → salary-gap) with the tracker#, this round's date, the amount/currency, source `user`, a short note, the round label, and the interviewer's name. This is what lets `interview/plan` remind the candidate of it before the next round — see Inputs #9 there.
+**If a compensation number was verbally stated this round** (the candidate gave a figure, not just "comp came up"), append one `stated` line to `workspace/applications/salary-observations.tsv` (create the file if missing; format per `docs/SCRIPTS.md` → salary-gap) with the tracker#, this round's date, the amount/currency, source `user`, a short note, the round label, and the interviewer's name. This is what lets `interview/plan` remind the candidate of it before the next round — see Inputs #9 there.
 
 ---
 
 ## Step 9 — Write Session Transcript
 
-After the debrief, also write a machine-readable session transcript to `interview-prep/sessions/{company-slug}-{role-slug}-{round}-{YYYY-MM-DD}.md`. This is a structured record of the round for downstream analysis modes; the speaker-labelled turns let a consumer read either side without re-inferring who spoke. The full contract lives in `interview-prep/sessions/README.md`.
+After the debrief, also write a machine-readable session transcript to `workspace/interviews/sessions/{company-slug}-{role-slug}-{round}-{YYYY-MM-DD}.md`. This is a structured record of the round for downstream analysis modes; the speaker-labelled turns let a consumer read either side without re-inferring who spoke. The full contract lives in `workspace/interviews/sessions/README.md`.
 
 **Check the `input_source` marker set in Step 1.** If `input_source: transcript`, skip reconstruction: don't regenerate the transcript from Step 1/Step 2 output — that would be a lossier copy of the real source it came from. Instead, save the original transcript directly, lightly normalized to match the schema below (speaker labels, front-matter, competency tags from the Step 2 assessment). If `input_source: recall`, reconstruct the transcript from Step 1/Step 2 output as before — recall never has a verbatim original to preserve.
 
@@ -211,9 +211,9 @@ Rules for the transcript:
 
 - **Debrief immediately.** Memory of interview details degrades fast — within hours, specific questions and reactions are forgotten. Run this skill the same day.
 - **Don't soften gaps.** A 🔴 gap that gets called 🟡 out of kindness will show up again in the next round.
-- **Never put invented claims in the candidate's mouth.** Correct/complete answers may draw on general domain knowledge, but any suggested personal claim or metric must come from what the candidate said, `cv.md`, `article-digest.md`, or the story bank.
-- **Retracted claims are a hard gate.** If a claim appears in `interview-prep/retracted-claims.md`, never suggest the candidate use it — even if they said it in the real interview. Flag it: "That claim is in your retracted list — it's not defensible under pressure. Here's a version that doesn't depend on it."
-- **Record new retractions.** If the debrief reveals a claim the candidate used in the real interview that they now agree isn't defensible, offer to append it to `interview-prep/retracted-claims.md`: `**"[claim]"** ([context]). Reason: [one-line reason + correct framing if applicable].`
-- **Extract vocabulary gaps explicitly.** If the candidate used an imprecise term where a precise one exists, add it to `interview-prep/interview-prep-guide.md` under the vocabulary section (if the candidate maintains one).
+- **Never put invented claims in the candidate's mouth.** Correct/complete answers may draw on general domain knowledge, but any suggested personal claim or metric must come from what the candidate said, `workspace/profile/cv.md`, `workspace/profile/article-digest.md`, or the story bank.
+- **Retracted claims are a hard gate.** If a claim appears in `workspace/interviews/retracted-claims.md`, never suggest the candidate use it — even if they said it in the real interview. Flag it: "That claim is in your retracted list — it's not defensible under pressure. Here's a version that doesn't depend on it."
+- **Record new retractions.** If the debrief reveals a claim the candidate used in the real interview that they now agree isn't defensible, offer to append it to `workspace/interviews/retracted-claims.md`: `**"[claim]"** ([context]). Reason: [one-line reason + correct framing if applicable].`
+- **Extract vocabulary gaps explicitly.** If the candidate used an imprecise term where a precise one exists, add it to `workspace/interviews/interview-prep-guide.md` under the vocabulary section (if the candidate maintains one).
 - **One gap = one fix.** Don't overwhelm with a full study plan for every gap. Prioritize the 1–2 most likely to be tested in the next round.
 - **Celebrate what worked.** Debrief isn't only about gaps. Name what was strong — it reinforces the right behaviour and builds confidence for the next round.

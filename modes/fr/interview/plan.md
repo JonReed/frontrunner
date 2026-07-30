@@ -10,10 +10,10 @@
 2. **Date et heure de l'entretien** (requis) — pour calculer les heures disponibles
 3. **Nom et rôle de l'intervieweur** (si connu) — oriente la profondeur et le ton de la préparation
 4. **Type de round** (si connu) — sélection (screening), technique/spécifique au domaine, conception/étude de cas, panel comportemental
-5. **CV** dans `cv.md` + `article-digest.md` (si présent) — lire pour l'expérience, les compétences, les points de preuve
-6. **Profil** dans `config/profile.yml` + `modes/_profile.md` — lire pour la narration, les archétypes et les cibles
-7. **Banque d'histoires** dans `interview-prep/story-bank.md` — histoires STAR+R existantes
-8. **Banque de questions** dans `interview-prep/question-bank.md` — lacunes existantes (si le fichier existe)
+5. **CV** dans `workspace/profile/cv.md` + `workspace/profile/article-digest.md` (si présent) — lire pour l'expérience, les compétences, les points de preuve
+6. **Profil** dans `workspace/profile/profile.yml` + `workspace/profile/targeting.md` — lire pour la narration, les archétypes et les cibles
+7. **Banque d'histoires** dans `workspace/interviews/story-bank.md` — histoires STAR+R existantes
+8. **Banque de questions** dans `workspace/interviews/question-bank.md` — lacunes existantes (si le fichier existe)
 
 ---
 
@@ -72,7 +72,7 @@ Calibrez le plan au round. Trop préparer en profondeur pour un round de sélect
 
 Calculez les heures disponibles entre maintenant et l'heure de l'entretien. Divisez en blocs :
 
-Avant de dimensionner les blocs, vérifiez `interview-prep/question-bank.md` (s'il existe). Toute question marquée 🔴 lors d'un round précédent est une lacune prouvée — elle obtient un bloc dédié indépendamment de la façon dont l'analyse CV-vs-JD la classe. Les données de performance réelles priment sur le risque inféré.
+Avant de dimensionner les blocs, vérifiez `workspace/interviews/question-bank.md` (s'il existe). Toute question marquée 🔴 lors d'un round précédent est une lacune prouvée — elle obtient un bloc dédié indépendamment de la façon dont l'analyse CV-vs-JD la classe. Les données de performance réelles priment sur le risque inféré.
 
 **Modèle (ajustez la taille des blocs en fonction des heures totales disponibles) :**
 
@@ -142,7 +142,7 @@ Ajustez la taille des blocs en fonction de la gravité des lacunes et du type de
 
 ## Step 5 — Save Output
 
-Sauvegardez le plan dans `interview-prep/{company-slug}-{role-slug}.md` si un fichier n'existe pas, ou ajoutez une section `## Prep Plan` s'il existe.
+Sauvegardez le plan dans `workspace/interviews/{company-slug}-{role-slug}.md` si un fichier n'existe pas, ou ajoutez une section `## Prep Plan` s'il existe.
 
 ---
 
@@ -154,4 +154,4 @@ Sauvegardez le plan dans `interview-prep/{company-slug}-{role-slug}.md` si un fi
 - **Un sujet par bloc.** Mélanger les sujets dans un seul bloc réduit la rétention.
 - **Prévoyez toujours du temps de repos.** Un candidat reposé est plus performant qu'un candidat qui a bachoté.
 - **Ne générez jamais de fausses informations sur l'entreprise.** Si vous n'avez pas fait de recherches, dites-le — n'inventez pas d'affirmations sur la culture ou de détails techniques sur l'entreprise.
-- **N'inventez jamais d'affirmations pour le candidat.** La phrase d'ancrage et les points de discussion pré-entretien dans la référence rapide (Step 4) doivent être fondés sur ce que le candidat a réellement — `cv.md`, `article-digest.md` ou la banque d'histoires. Ne rédigez pas d'affirmations qui dépendent d'une expérience ou de mesures que le candidat n'a pas. Si une affirmation apparaît dans `interview-prep/retracted-claims.md`, ne l'incluez jamais.
+- **N'inventez jamais d'affirmations pour le candidat.** La phrase d'ancrage et les points de discussion pré-entretien dans la référence rapide (Step 4) doivent être fondés sur ce que le candidat a réellement — `workspace/profile/cv.md`, `workspace/profile/article-digest.md` ou la banque d'histoires. Ne rédigez pas d'affirmations qui dépendent d'une expérience ou de mesures que le candidat n'a pas. Si une affirmation apparaît dans `workspace/interviews/retracted-claims.md`, ne l'incluez jamais.

@@ -1,6 +1,25 @@
-# Data Contract
+# Private Workspace Contract
 
-This document defines which files belong to the **system** (auto-updatable) and which belong to the **user** (never touched by updates).
+The repository root contains product source. All personal content, generated
+documents and mutable runtime state live below one blanket-ignored
+`workspace/` boundary. A fresh clone contains no `workspace/` scaffolds and is
+therefore a real empty install.
+
+```
+workspace/
+├── profile/       CV, identity, targeting, preferences and writing sources
+├── search/        portals, URL inbox, blacklist and explicit filter overrides
+├── applications/ tracker, follow-ups, replies, offers and observations
+├── jobs/          cached job descriptions
+├── reports/       evaluations and analysis
+├── documents/     generated CVs, cover letters and other application files
+├── interviews/    story bank, company prep and sessions
+└── .state/        derived indexes, audit trails, locks and recovery journals
+```
+
+No subsystem may invent another user-data location. Canonical backend paths
+come from `src/paths.mjs`; the UI mirrors that closed layout in
+`ui/src/lib/root.ts`.
 
 ## User Layer (NEVER auto-updated)
 
@@ -17,42 +36,42 @@ boundary.
 
 | File | Purpose |
 |------|---------|
-| `cv.md` | Your CV in markdown |
-| `config/profile.yml` | Your identity, targets, comp range |
-| `config/cv-facts.json` | Your CV fact-check allowlist and forbidden phrases |
-| `config/benchmarks.yml` | Your market calibration benchmark overrides (optional; copy `templates/benchmarks.yml` here and edit — read by `src/analysis/funnel-velocity.mjs`) |
-| `modes/_profile.md` | Your archetypes, narrative, negotiation scripts |
-| `modes/_custom.md` | Your house rules, custom workflows & output preferences (procedural — survives updates) |
-| `voice-dna.md` | Your writing voice guardrail — banned words, anti-AI-slop rules, tone (optional; copy `templates/voice-dna.template.md` here and edit) |
-| `article-digest.md` | Your proof points from portfolio |
-| `interview-prep/story-bank.md` | Your accumulated STAR+R stories |
-| `interview-prep/{company}-{role}.md` | Company-specific interview prep reports (written by `/frontrunner interview-prep`) |
-| `interview-prep/sessions/*.md` | Interview sessions — real transcripts + mock sessions (sensitive: real names/companies; gitignored except scaffold). Drives `patterns` Step 1b targeting signal and `interview-redflag` analysis. Scaffold files (`README.md`, `.gitkeep`) are system-owned. |
-| `portals.yml` | Your customized company list |
-| `data/applications.md` | Your application tracker (source of truth) |
-| `data/applications.db` | Derived query index over `applications.md` (SQLite, rebuilt by `node src/tracker/tracker.mjs sync` — safe to delete) |
-| `data/pipeline.md` | Your URL inbox |
-| `data/prefilter-overrides.tsv` | Your explicit one-role exceptions to deterministic prefilter decisions: `{recorded_at}\t{url}\t{company}\t{title}\t{rule}\t{evidence}`. Written only after an “Assess anyway” confirmation; an exception matches the exact normalized URL and exact rule, so it cannot disable filtering broadly. |
-| `data/scan-history.tsv` | Your scan history (tab-separated, append-only trailing columns; col 8: local SimHash JD fingerprint for cross-listing detection, col 9: posting date, cols 10-11: trust score/flags, col 12: normalized company key for repost/name matching). Older rows may have fewer columns — readers index by position and tolerate the absence. |
-| `data/scan-runs.tsv` | Your per-run scan counters (appended by `src/scan/scan.mjs`, read by `src/analysis/stats.mjs`) |
-| `data/portal-health.tsv` | Consecutive reachability status for scanned portals (appended by `src/scan/scan.mjs`; statuses: `reachable`, `empty`, `slug_gone`, `network`, `auth`, `server`, `unknown` — the last three joined the vocabulary later, so older files carry only the first four) |
-| `data/follow-ups.md` | Your follow-up history |
-| `data/active-interviews.md` | Your active interview processes, incl. inline `[process-friction]` notes (read by `src/analysis/process-quality.mjs`) |
-| `data/agent-inbox.md` | Your append-only request queue drained at session start (written by `src/tracker/agent-inbox.mjs`) |
-| `data/.add-entry-PUBLISHING.json` | Temporary, mode-0600 recovery journal used only while a confirmed addition spans `cv.md` and `article-digest.md`; removed after both canonical sources are safely published |
-| `data/reply-candidates.json` | Your normalized employer-reply candidates (subject, body, sender, signal — read by `src/tracker/reply-watch.mjs`) |
-| `data/pdf-index.tsv` | PDF↔report linkage manifest (written by `src/cv/generate-pdf.mjs`, read by `find.mjs`, the interfaces, and the `email` mode) |
-| `data/offers/*` | Your received offers/contracts, promise notes, prep reports, and reply drafts (PII — gitignored, written by the `offer-prep` mode) |
-| `data/salary-observations.tsv` | Your append-only compensation observation log: `{tracker#}\t{date}\t{desired\|advertised\|actual}\t{amount}\t{currency}\t{source}\t{note}`. Written by interactive modes when a figure is stated/confirmed; never edited in place. Advertised figures come from reports' `advertised_comp` instead — reports are themselves observation sources. Read by `src/analysis/salary-gap.mjs` |
-| `status-log.tsv` (sibling of the active tracker file — `data/status-log.tsv` in the default layout) | Your append-only status transition ledger: `{tracker#}\t{date}\t{from}\t{to}\t{source}\t{note}`. Appended by `src/tracker/set-status.mjs` next to wherever the tracker lives, on every real status change (the tracker stays the source of truth for *state*; the ledger records *when* transitions happened); never edited in place — corrections are new `correction`-source lines. Read by `src/analysis/funnel-velocity.mjs` |
-| `data/upskill/*` | Your skill-gap analysis reports (written by the `upskill` mode) |
-| `data/blacklist.md` | Your do-not-apply company list (opt-in — absence = no filtering; never auto-populated: only you, or the agent on your explicit instruction, write to it. Respected by `src/scan/scan.mjs` and the `auto-pipeline`/`oferta`/`apply` gates; never a scoring input) |
-| `data/assessments.tsv` | Your append-only skills-assessment log: `{date}\t{company}\t{report#\|-}\t{platform}\t{subject}\t{threshold%\|-}\t{score%\|-}\t{stale_note}`. Appended by `node src/analysis/assessment-log.mjs add`; never edited in place. Empty stale_note = no staleness observed. Read by `src/analysis/assessment-log.mjs` |
-| `writing-samples/*` | Your personal writing samples for style calibration (except `writing-samples/README.md`, which is system-owned documentation delivered by updates) |
-| `cv-versions/*` | Your alternate and historical CV source files (except `cv-versions/README.md`, which is system-owned documentation delivered by updates) |
-| `reports/*` | Your evaluation reports |
-| `output/*` | Your generated PDFs |
-| `jds/*` | Your saved job descriptions |
+| `workspace/profile/cv.md` | Your CV in markdown |
+| `workspace/profile/profile.yml` | Your identity, targets, comp range |
+| `workspace/profile/cv-facts.json` | Your CV fact-check allowlist and forbidden phrases |
+| `workspace/profile/benchmarks.yml` | Your market calibration benchmark overrides (optional; copy `templates/benchmarks.yml` here and edit — read by `src/analysis/funnel-velocity.mjs`) |
+| `workspace/profile/targeting.md` | Your archetypes, narrative, negotiation scripts |
+| `workspace/profile/preferences.md` | Your house rules, custom workflows & output preferences (procedural — survives updates) |
+| `workspace/profile/voice-dna.md` | Your writing voice guardrail — banned words, anti-AI-slop rules, tone (optional; copy `templates/voice-dna.template.md` here and edit) |
+| `workspace/profile/article-digest.md` | Your proof points from portfolio |
+| `workspace/interviews/story-bank.md` | Your accumulated STAR+R stories |
+| `workspace/interviews/{company}-{role}.md` | Company-specific interview prep reports (written by `/frontrunner interview-prep`) |
+| `workspace/interviews/sessions/*.md` | Interview sessions — real transcripts + mock sessions (sensitive: real names/companies). Drives `patterns` Step 1b targeting signal and `interview-redflag` analysis. |
+| `workspace/search/portals.yml` | Your customized company list |
+| `workspace/applications/tracker.md` | Your application tracker (source of truth) |
+| `workspace/.state/applications.db` | Derived query index over `applications.md` (SQLite, rebuilt by `node src/tracker/tracker.mjs sync` — safe to delete) |
+| `workspace/search/pipeline.md` | Your URL inbox |
+| `workspace/search/prefilter-overrides.tsv` | Your explicit one-role exceptions to deterministic prefilter decisions: `{recorded_at}\t{url}\t{company}\t{title}\t{rule}\t{evidence}`. Written only after an “Assess anyway” confirmation; an exception matches the exact normalized URL and exact rule, so it cannot disable filtering broadly. |
+| `workspace/.state/scan-history.tsv` | Your scan history (tab-separated, append-only trailing columns; col 8: local SimHash JD fingerprint for cross-listing detection, col 9: posting date, cols 10-11: trust score/flags, col 12: normalized company key for repost/name matching). Older rows may have fewer columns — readers index by position and tolerate the absence. |
+| `workspace/.state/scan-runs.tsv` | Your per-run scan counters (appended by `src/scan/scan.mjs`, read by `src/analysis/stats.mjs`) |
+| `workspace/.state/portal-health.tsv` | Consecutive reachability status for scanned portals (appended by `src/scan/scan.mjs`; statuses: `reachable`, `empty`, `slug_gone`, `network`, `auth`, `server`, `unknown` — the last three joined the vocabulary later, so older files carry only the first four) |
+| `workspace/applications/follow-ups.md` | Your follow-up history |
+| `workspace/applications/active-interviews.md` | Your active interview processes, incl. inline `[process-friction]` notes (read by `src/analysis/process-quality.mjs`) |
+| `workspace/applications/agent-inbox.md` | Your append-only request queue drained at session start (written by `src/tracker/agent-inbox.mjs`) |
+| `workspace/.state/.add-entry-PUBLISHING.json` | Temporary, mode-0600 recovery journal used only while a confirmed addition spans `workspace/profile/cv.md` and `workspace/profile/article-digest.md`; removed after both canonical sources are safely published |
+| `workspace/applications/reply-candidates.json` | Your normalized employer-reply candidates (subject, body, sender, signal — read by `src/tracker/reply-watch.mjs`) |
+| `workspace/.state/pdf-index.tsv` | PDF↔report linkage manifest (written by `src/cv/generate-pdf.mjs`, read by `find.mjs`, the interfaces, and the `email` mode) |
+| `workspace/applications/offers/*` | Your received offers/contracts, promise notes, prep reports, and reply drafts (PII — gitignored, written by the `offer-prep` mode) |
+| `workspace/applications/salary-observations.tsv` | Your append-only compensation observation log: `{tracker#}\t{date}\t{desired\|advertised\|actual}\t{amount}\t{currency}\t{source}\t{note}`. Written by interactive modes when a figure is stated/confirmed; never edited in place. Advertised figures come from reports' `advertised_comp` instead — reports are themselves observation sources. Read by `src/analysis/salary-gap.mjs` |
+| `status-log.tsv` (sibling of the active tracker file — `workspace/applications/status-log.tsv` in the default layout) | Your append-only status transition ledger: `{tracker#}\t{date}\t{from}\t{to}\t{source}\t{note}`. Appended by `src/tracker/set-status.mjs` next to wherever the tracker lives, on every real status change (the tracker stays the source of truth for *state*; the ledger records *when* transitions happened); never edited in place — corrections are new `correction`-source lines. Read by `src/analysis/funnel-velocity.mjs` |
+| `workspace/reports/analysis/upskill/*` | Your skill-gap analysis reports (written by the `upskill` mode) |
+| `workspace/search/blacklist.md` | Your do-not-apply company list (opt-in — absence = no filtering; never auto-populated: only you, or the agent on your explicit instruction, write to it. Respected by `src/scan/scan.mjs` and the `auto-pipeline`/`oferta`/`apply` gates; never a scoring input) |
+| `workspace/applications/assessments.tsv` | Your append-only skills-assessment log: `{date}\t{company}\t{report#\|-}\t{platform}\t{subject}\t{threshold%\|-}\t{score%\|-}\t{stale_note}`. Appended by `node src/analysis/assessment-log.mjs add`; never edited in place. Empty stale_note = no staleness observed. Read by `src/analysis/assessment-log.mjs` |
+| `workspace/profile/writing-samples/*` | Your personal writing samples for style calibration |
+| `workspace/profile/cv-versions/*` | Your alternate and historical CV source files |
+| `workspace/reports/evaluations/*` | Your evaluation reports |
+| `workspace/documents/*` | Your generated PDFs |
+| `workspace/jobs/descriptions/*` | Your saved job descriptions |
 
 ## System Layer (safe to auto-update)
 
@@ -61,9 +80,9 @@ These files contain system logic, scripts, templates, and instructions that impr
 | File | Purpose |
 |------|---------|
 | `modes/_shared.md` | Scoring system, global rules, tools |
-| `modes/_custom.template.md` | Template seed for the user's `modes/_custom.md` |
-| `modes/_profile.template.md` | Template seed for the user's `modes/_profile.md` |
-| `templates/voice-dna.template.md` | Template seed for the user's `voice-dna.md` |
+| `modes/_custom.template.md` | Template seed for the user's `workspace/profile/preferences.md` |
+| `modes/_profile.template.md` | Template seed for the user's `workspace/profile/targeting.md` |
+| `templates/voice-dna.template.md` | Template seed for the user's `workspace/profile/voice-dna.md` |
 | `modes/oferta.md` | Evaluation mode instructions |
 | `modes/pdf.md` | PDF generation instructions |
 | `modes/cover.md` | Cover letter generation instructions |
@@ -127,8 +146,6 @@ These files contain system logic, scripts, templates, and instructions that impr
 | `docs/*` | Documentation |
 | `VERSION` | Current version number |
 | `DATA_CONTRACT.md` | This file |
-| `writing-samples/README.md` | System-owned onboarding documentation for the writing-samples directory |
-| `cv-versions/README.md` | System-owned onboarding documentation for the CV-versions directory |
 
 ## Application Trees
 
@@ -138,8 +155,14 @@ their own packages and are included as complete directory entries in
 
 ## The Rule
 
-**If a file is in the User Layer, no update process may read, modify, or delete it.**
+**The updater treats `workspace/` as an opaque, untouchable directory.**
 
 **If a file is in the System Layer, it can be safely replaced with the latest
 version from the official Frontrunner repository.** The parent career-ops
 repository is not an application update source.
+
+Older installations can preview their pre-workspace private paths with
+`node src/workspace/archive-legacy.mjs`. Adding `--apply` moves them, without
+deleting them, to a timestamped `workspace/.legacy-backup/` manifest. The
+archive is deliberately not imported into the active layout: onboarding starts
+from an empty workspace.

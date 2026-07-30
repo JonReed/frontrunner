@@ -4,12 +4,12 @@
  * jd-skill-gap.mjs — Zero-LLM JD skill-gap checker.
  *
  * Extracts an explicit skill/requirement list from a JD (regex-based, no LLM
- * call — see extractJdSkills()), then classifies each one against cv.md into
+ * call — see extractJdSkills()), then classifies each one against workspace/profile/cv.md into
  * three buckets so a CV can be tailored honestly instead of guessed at:
  *
- *   existing            — already a named skill in cv.md's Skills section
- *   supportedByResume    — not a named skill, but appears in prose elsewhere in cv.md
- *   gap                  — JD requires it, cv.md has no trace of it at all
+ *   existing            — already a named skill in workspace/profile/cv.md's Skills section
+ *   supportedByResume    — not a named skill, but appears in prose elsewhere in workspace/profile/cv.md
+ *   gap                  — JD requires it, workspace/profile/cv.md has no trace of it at all
  *   (nothing is ever auto-added — this tool only classifies and reports)
  *
  * Design note: the three-way classification (existing / supportedByResume / gap)
@@ -17,12 +17,12 @@
  * (Apache-2.0) — specifically their four-way verify_skill_target_plan() split.
  * This is an independent reimplementation, not a code port: different language,
  * zero LLM calls, and folded down to three buckets because frontrunner never
- * auto-adds a claim to cv.md either way (their jd_added/unsupported distinction
+ * auto-adds a claim to workspace/profile/cv.md either way (their jd_added/unsupported distinction
  * only matters if a tool is allowed to add something automatically).
  *
  * Usage:
- *   node src/analysis/jd-skill-gap.mjs jds/acme.md
- *   node src/analysis/jd-skill-gap.mjs jds/acme.md --summary
+ *   node src/analysis/jd-skill-gap.mjs workspace/jobs/descriptions/acme.md
+ *   node src/analysis/jd-skill-gap.mjs workspace/jobs/descriptions/acme.md --summary
  *   node src/analysis/jd-skill-gap.mjs --self-test
  */
 
@@ -32,7 +32,7 @@ import { canonicalize, extractSkills } from '../lib/skill-extract.mjs';
 
 // ── Config ──────────────────────────────────────────────────────────
 
-const CV_PATH = 'cv.md';
+const CV_PATH = 'workspace/profile/cv.md';
 
 // ── JD skill extraction (regex, no LLM) ─────────────────────────────
 //
@@ -186,7 +186,7 @@ const SKILLS_HEADING_RE = /^#{1,4}\s*Skills\s*$/i;
 const ANY_HEADING_RE = /^#{1,4}\s/;
 
 /**
- * Split cv.md into its named "Skills" section (if any) and the remaining
+ * Split workspace/profile/cv.md into its named "Skills" section (if any) and the remaining
  * prose, without relying on a Python-style end-of-string regex anchor.
  * @param {string} cvText
  * @returns {{namedSkillsText: string, proseText: string}}
@@ -220,7 +220,7 @@ function splitSkillsSection(cvText) {
 // ── Classification ───────────────────────────────────────────────────
 
 /**
- * Classify each JD skill against cv.md into existing / supportedByResume / gap.
+ * Classify each JD skill against workspace/profile/cv.md into existing / supportedByResume / gap.
  * @param {string[]} jdSkills
  * @param {string} cvText
  * @returns {{existing: string[], supportedByResume: string[], gap: string[]}}
@@ -316,7 +316,7 @@ Deployed services onto Kubernetes clusters and wrote FastAPI endpoints for inter
   eq('FastAPI classified as supportedByResume (prose only)', result.supportedByResume.includes('FastAPI'), true);
   eq('Rust classified as a real gap', result.gap.includes('Rust'), true);
 
-  // Regression: a Skills section that is the LAST section in cv.md, with no
+  // Regression: a Skills section that is the LAST section in workspace/profile/cv.md, with no
   // trailing heading after it. The original draft used a Python-style `\Z`
   // end-of-string anchor, which JS regex has no equivalent for — it either
   // failed to match this case at all, or matched a literal "Z" character

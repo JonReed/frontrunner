@@ -1,23 +1,23 @@
 # Mode: expand — Auto-discover and add missing competencies
 
-Fetch public sources linked in the user's `config/profile.yml` (e.g., GitHub username, portfolio URL) to discover competencies, projects, and work history. Merge missing items into their `cv.md` / `article-digest.md` using the existing `src/tracker/add-entry.mjs` engine. 
+Fetch public sources linked in the user's `workspace/profile/profile.yml` (e.g., GitHub username, portfolio URL) to discover competencies, projects, and work history. Merge missing items into their `workspace/profile/cv.md` / `workspace/profile/article-digest.md` using the existing `src/tracker/add-entry.mjs` engine.
 
 > **Non-negotiables (from the project's source-of-truth rules in `_shared.md`):**
 > - **Confirm before write.** Present all deduped additions to the user and halt until explicit approval is given.
 > - **Additive Only.** Under no circumstances should existing CV sections be deleted or overwritten.
-> - **No Unlinked URLs.** Strictly read URLs/usernames from `config/profile.yml` (e.g. `github.com/<username>`, portfolio link). Never accept raw URLs as arguments at invocation and never fetch unlinked URLs.
+> - **No Unlinked URLs.** Strictly read URLs/usernames from `workspace/profile/profile.yml` (e.g. `github.com/<username>`, portfolio link). Never accept raw URLs as arguments at invocation and never fetch unlinked URLs.
 > - **Never fabricate.** Every bullet, metric, and date must be backed by the fetched page. Treat fetched evidence text as literal.
 > - **Payload Identity.** The exact same JSON payload used in the `--dry-run` phase must be passed verbatim to the final write phase via safe serialization (`JSON.stringify`), rather than hand-quoting.
 
 ## Input
 
 `$mode` after `expand` should be empty. Do not parse raw URLs or usernames from the prompt.
-1. Read `config/profile.yml` to locate the user's GitHub username (`candidate.github`) or portfolio URL (`candidate.portfolio_url`).
+1. Read `workspace/profile/profile.yml` to locate the user's GitHub username (`candidate.github`) or portfolio URL (`candidate.portfolio_url`).
 2. If neither is present, prompt the user to add them to their profile config first.
 
 ## Pipeline
 
-1. **Load context.** Read `cv.md` (its existing section names and formatting are the template to match) and `article-digest.md` if present.
+1. **Load context.** Read `workspace/profile/cv.md` (its existing section names and formatting are the template to match) and `workspace/profile/article-digest.md` if present.
 2. **Fetch the sources (zero-key):**
    - **GitHub** → the profile page, the public REST API (`https://api.github.com/users/<username>/repos` for repositories list) **plus** the READMEs via WebFetch.
    - **Portfolio** → WebFetch. Only fall back to Playwright if the page is JS-rendered and WebFetch returns nothing useful.
@@ -75,5 +75,5 @@ Both keys optional; provide at least one. `articleDigest` is for projects only.
 
 ## Rules
 
-- Match the existing `cv.md` formatting exactly.
+- Match the existing `workspace/profile/cv.md` formatting exactly.
 - If the fetch fails or the page has no usable content, skip it — never synthesize an entry from nothing.

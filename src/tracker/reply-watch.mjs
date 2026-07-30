@@ -23,9 +23,9 @@ import {
 import { runCheckedSubprocess } from '../security/subprocess.mjs';
 
 import { ROOT as __dirname } from '#paths';
-const DEFAULT_CANDIDATES_PATH = path.join(__dirname, 'data', 'reply-candidates.json');
+const DEFAULT_CANDIDATES_PATH = path.join(__dirname, 'workspace', 'applications', 'reply-candidates.json');
 const APPS_FILE = resolveTrackerPath(__dirname);
-const FOLLOWUPS_FILE = path.join(__dirname, 'data', 'follow-ups.md');
+const FOLLOWUPS_FILE = path.join(__dirname, 'workspace', 'applications', 'follow-ups.md');
 
 // Helper to ask a question in the CLI
 function askQuestion(query) {

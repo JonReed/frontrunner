@@ -55,7 +55,7 @@ If the user wants details on specific files, show the actual diff for those file
 
 Before applying, check if the update might affect the user's customizations:
 
-1. **Read `modes/_profile.md`** (if it exists)
+1. **Read `workspace/profile/targeting.md`** (if it exists)
 2. **Diff `modes/_shared.md`**: Run `git diff HEAD..FETCH_HEAD -- modes/_shared.md`
 3. **Check for archetype changes**: If `_shared.md` has changes in the "Archetype Detection" section, and `_profile.md` references archetype names, warn the user:
    > "⚠️ The scoring system or archetypes were updated. Your customizations in `_profile.md` may reference outdated archetype names. I'll review them after the update."
@@ -82,10 +82,10 @@ If yes:
    - If the command exits with a non-zero code, treat validation as failed. Show the captured output and offer:
      > "⚠️ Validation failed after update. Want me to show the full error, or roll back with `/frontrunner update rollback`?"
    - Stop the flow here if validation failed — do not run reconciliation or show the success message.
-7. If Step 3 flagged archetype/scoring changes, reconcile `modes/_profile.md` against the new `modes/_shared.md`:
+7. If Step 3 flagged archetype/scoring changes, reconcile `workspace/profile/targeting.md` against the new `modes/_shared.md`:
    - Read both the pre-update version (`git show $PRE_UPDATE_REF:modes/_shared.md`) and the post-update version of `modes/_shared.md`.
    - Extract the canonical archetype identifiers from each version (archetype headings/definitions, plus any slug/alias fields).
-   - Read `modes/_profile.md` and look for tokens that match archetype names (inline text, Markdown links, YAML keys, code spans).
+   - Read `workspace/profile/targeting.md` and look for tokens that match archetype names (inline text, Markdown links, YAML keys, code spans).
    - Classify each reference:
      - **Unchanged**: exact match in the new `_shared.md` → no action.
      - **Renamed**: no exact match, but a single strong fuzzy match in the new `_shared.md` (e.g. Levenshtein similarity ≥ 0.7) → offer to rename.
@@ -110,10 +110,10 @@ If the user says "rollback" or runs `/frontrunner update rollback`:
 
 ## Rules
 
-- NEVER auto-modify User Layer files during update (cv.md, config/profile.yml, data/, reports/, output/, interview-prep/, jds/, article-digest.md, portals.yml)
-- `modes/_profile.md` is User Layer too: the compatibility check in Step 3 reads it strictly read-only
-- Exception: `modes/_profile.md` may be edited **only** in Step 4.7, and **only** after the user explicitly confirms each individual rename/removal. Never batch-edit without per-change consent.
-- User-specific customizations (archetypes, scoring weights, narrative) belong in `modes/_profile.md` or `config/profile.yml`, never in `modes/_shared.md`
+- NEVER auto-modify User Layer files during update (workspace/profile/cv.md, workspace/profile/profile.yml, data/, workspace/reports/evaluations/, workspace/documents/, workspace/interviews/, workspace/jobs/descriptions/, workspace/profile/article-digest.md, workspace/search/portals.yml)
+- `workspace/profile/targeting.md` is User Layer too: the compatibility check in Step 3 reads it strictly read-only
+- Exception: `workspace/profile/targeting.md` may be edited **only** in Step 4.7, and **only** after the user explicitly confirms each individual rename/removal. Never batch-edit without per-change consent.
+- User-specific customizations (archetypes, scoring weights, narrative) belong in `workspace/profile/targeting.md` or `workspace/profile/profile.yml`, never in `modes/_shared.md`
 - CLAUDE.md's local additions (everything after the two-line `@AGENTS.md` header) MUST be saved before apply and restored immediately after — on both the success AND failure path (Step 4.2, Step 4.4). `update-system.mjs apply` resets CLAUDE.md before it can fail partway through, so a failed apply still needs the restore. `apply` has no awareness of this content and will silently discard it otherwise.
 - If anything goes wrong, tell the user to run `node update-system.mjs rollback`
 - Keep the output concise — users don't want walls of text during an update

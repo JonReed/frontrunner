@@ -9,4 +9,4 @@ stages without evaluation.
 
 Apply Dutch-market vocabulary and rules from `modes/nl/_shared.md` and the
 selected Dutch evaluation mode. Human-facing output still follows
-`config/profile.yml` → `language.output`.
+`workspace/profile/profile.yml` → `language.output`.

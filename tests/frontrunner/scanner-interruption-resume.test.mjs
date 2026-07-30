@@ -128,7 +128,7 @@ test('failure after durable temporary write preserves the previous checkpoint', 
 
 test('checkpoint publication and removal enforce protected user data without preload', () => {
   const protectedRoot = mkdtempSync(join(tmpdir(), 'frontrunner-protected-checkpoint-'));
-  const cache = join(protectedRoot, 'data', 'cache');
+  const cache = join(protectedRoot, 'workspace', '.state', 'cache');
   const checkpointPath = join(cache, 'ats-full-checkpoint.json');
   const previousRoot = process.env.FRONTRUNNER_TEST_PROTECTED_ROOT;
   try {

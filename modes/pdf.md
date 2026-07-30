@@ -2,13 +2,13 @@
 
 ## Full pipeline
 
-1. Read `cv.md` as the source of truth
+1. Read `workspace/profile/cv.md` as the source of truth
 2. Ask the user for the JD if it is not in context (text or URL)
 3. Extract 15-20 keywords from the JD
-4. Run the zero-LLM skill-gap check before drafting anything: write the JD to a scratch file (e.g. `jds/{slug}.md`) if it isn't already one, then `node src/analysis/jd-skill-gap.mjs jds/{slug}.md --summary`. This classifies the JD's explicit requirements against `cv.md` into three buckets — never surface `result.gap` items as if the candidate has them:
-   - `existing` — already a named skill in cv.md's Skills section, safe to lead with
-   - `supportedByResume` — not a named skill yet, but cv.md's prose already demonstrates it; legitimate candidates for the Skills section in the user's own words (Step 12's competency grid draws from here first)
-   - `gap` — cv.md has no trace of it at all. **Tell the user explicitly which skills are gaps before generating the CV.** Never paper over a gap by inventing a claim, and never silently drop it from the conversation — the user decides whether to proceed, address it in the cover letter/interview, or skip the role
+4. Run the zero-LLM skill-gap check before drafting anything: write the JD to a scratch file (e.g. `workspace/jobs/descriptions/{slug}.md`) if it isn't already one, then `node src/analysis/jd-skill-gap.mjs workspace/jobs/descriptions/{slug}.md --summary`. This classifies the JD's explicit requirements against `workspace/profile/cv.md` into three buckets — never surface `result.gap` items as if the candidate has them:
+   - `existing` — already a named skill in workspace/profile/cv.md's Skills section, safe to lead with
+   - `supportedByResume` — not a named skill yet, but workspace/profile/cv.md's prose already demonstrates it; legitimate candidates for the Skills section in the user's own words (Step 12's competency grid draws from here first)
+   - `gap` — workspace/profile/cv.md has no trace of it at all. **Tell the user explicitly which skills are gaps before generating the CV.** Never paper over a gap by inventing a claim, and never silently drop it from the conversation — the user decides whether to proceed, address it in the cover letter/interview, or skip the role
 5. Detect JD language → CV language (EN default)
 6. Detect company location → paper format:
    - US/Canada → `letter`
@@ -21,21 +21,21 @@
 12. Build competency grid from JD requirements (6-8 keyword phrases), prioritizing `existing` and `supportedByResume` skills from Step 4 — never a `gap` skill
 13. Inject keywords naturally into existing achievements (NEVER invent)
 14. Apply the six-second clarity gate from `modes/heuristics/recruiter-side.md`: top third must make target role, strongest fit, and proof obvious
-15. Read `name` from `config/profile.yml` → normalize to kebab-case lowercase (e.g. "John Doe" → "john-doe") → `{candidate}`
+15. Read `name` from `workspace/profile/profile.yml` → normalize to kebab-case lowercase (e.g. "John Doe" → "john-doe") → `{candidate}`
 **Filename convention (IMPORTANT).** `{report}` is the zero-padded report
-number (`001`, `042`) — the same NNN used in `reports/NNN-…md`. It comes FIRST
+number (`001`, `042`) — the same NNN used in `workspace/reports/evaluations/NNN-…md`. It comes FIRST
 so that two roles at the same company cannot overwrite each other's CV. Without
 it, tailoring a second Monzo role silently destroys the first one's HTML, and
 its PDF too when both are generated on the same day. When there is no report
 number yet, use the tracker `#` instead; never omit it entirely.
 
 16. Build the render payload (see the **JSON Input Schema** below) from the tailored content — emit compact structured JSON, **not** full HTML markup — and write it to `/tmp/cv-{candidate}-{report}-{company}.json`
-17. Run: `node src/cv/build-cv-html.mjs /tmp/cv-{candidate}-{report}-{company}.json output/cv-{candidate}-{report}-{company}.html {template}` — where `{template}` is the path printed by **Selecting the template** below (omit the argument to use the base `cv-template.html`). The script merges the payload into that template, owning every tag, CSS class, and the HTML escaping. Write to `output/` (NOT a temp dir — the recorded HTML is the durable rendering source and must survive temp cleanup)
-18. Run the fact gate: `node src/cv/verify-cv-facts.mjs output/cv-{candidate}-{report}-{company}.html`
+17. Run: `node src/cv/build-cv-html.mjs /tmp/cv-{candidate}-{report}-{company}.json workspace/documents/cv-{candidate}-{report}-{company}.html {template}` — where `{template}` is the path printed by **Selecting the template** below (omit the argument to use the base `cv-template.html`). The script merges the payload into that template, owning every tag, CSS class, and the HTML escaping. Write to `workspace/documents/` (NOT a temp dir — the recorded HTML is the durable rendering source and must survive temp cleanup)
+18. Run the fact gate: `node src/cv/verify-cv-facts.mjs workspace/documents/cv-{candidate}-{report}-{company}.html`
     - This is a hard gate before PDF rendering.
-    - If it fails, stop and fix the generated HTML by removing invented metrics or adding verified evidence to `cv.md`, `article-digest.md`, or `config/cv-facts.json`.
-19. Execute: `node src/cv/generate-pdf.mjs output/cv-{candidate}-{report}-{company}.html output/cv-{candidate}-{report}-{company}-{YYYY-MM-DD}.pdf --format={letter|a4} --report={report number}`
-    - `{report number}` is the NNN from the report filename/link (e.g. `008` for `reports/008-acme-….md`), not the tracker `#` column. Pass it whenever the application has (or will have) a report; it records the PDF↔report linkage in `data/pdf-index.tsv` so scripts and interfaces can find the exact PDF. Omit it only for one-off CVs with no tracker entry.
+    - If it fails, stop and fix the generated HTML by removing invented metrics or adding verified evidence to `workspace/profile/cv.md`, `workspace/profile/article-digest.md`, or `workspace/profile/cv-facts.json`.
+19. Execute: `node src/cv/generate-pdf.mjs workspace/documents/cv-{candidate}-{report}-{company}.html workspace/documents/cv-{candidate}-{report}-{company}-{YYYY-MM-DD}.pdf --format={letter|a4} --report={report number}`
+    - `{report number}` is the NNN from the report filename/link (e.g. `008` for `workspace/reports/evaluations/008-acme-….md`), not the tracker `#` column. Pass it whenever the application has (or will have) a report; it records the PDF↔report linkage in `workspace/.state/pdf-index.tsv` so scripts and interfaces can find the exact PDF. Omit it only for one-off CVs with no tracker entry.
     - The rendered PDF has a two-page warning threshold by default. `--max-pages=N` accepts a positive integer; pass `--max-pages=1` when the user or market prefers a one-page CV.
     - If the rendered PDF exceeds its threshold, generation warns loudly with the actual and allowed page counts plus trimming guidance, then reports and indexes the unchanged PDF so existing longer-CV flows keep working.
     - Pass `--strict-pages` only when the user or market requires a hard limit. Strict overflow leaves the draft available for inspection but does not report or index it as successful; trim lower-priority content and rerun.
@@ -91,7 +91,7 @@ Examples of legitimate reformulation:
 
 ## Template HTML
 
-**Before generating: read `modes/_custom.md` (if it exists) and apply its formatting/content house rules to every CV in this session — including every item of a batch.** Rules recorded there (date formats, section-order preferences, content to always/never include) are persistent user instructions, not suggestions; if the user corrects the same thing twice in conversation, write it into `modes/_custom.md` so it stops drifting.
+**Before generating: read `workspace/profile/preferences.md` (if it exists) and apply its formatting/content house rules to every CV in this session — including every item of a batch.** Rules recorded there (date formats, section-order preferences, content to always/never include) are persistent user instructions, not suggestions; if the user corrects the same thing twice in conversation, write it into `workspace/profile/preferences.md` so it stops drifting.
 
 ### Selecting the template
 
@@ -100,7 +100,7 @@ Resolve which template to fill with the shared resolver (do not hardcode `cv-tem
 - If the user named a template this turn (e.g. "use the *modern* template"), run:
   `node src/cv/cv-templates.mjs resolve cv "<name>"`
 - Otherwise run: `node src/cv/cv-templates.mjs resolve cv`
-  (this returns the `cv.template` default from `config/profile.yml`, or the base `cv-template.html` when unset).
+  (this returns the `cv.template` default from `workspace/profile/profile.yml`, or the base `cv-template.html` when unset).
 
 The command prints the absolute path of the template to fill; a non-zero exit means the named template is missing or invalid — surface that message to the user instead of silently falling back.
 
@@ -136,7 +136,7 @@ Write a JSON file with this structure, then run `node src/cv/build-cv-html.mjs <
     "certifications": "Certifications",
     "skills": "Skills"
   },
-  "summary": "Personalized summary with JD keywords injected (honest vs cv.md).",
+  "summary": "Personalized summary with JD keywords injected (honest vs workspace/profile/cv.md).",
   "competencies": ["RAG Pipelines", "LLMOps", "Kubernetes & Docker"],
   "experience": [
     {
@@ -177,7 +177,7 @@ Write a JSON file with this structure, then run `node src/cv/build-cv-html.mjs <
 | `candidate.portfolio` | `{url, display}` | Optional — omit to drop the item and its separator. |
 | `candidate.location` | string | From `profile.yml`. |
 | `candidate.photo` | string | Opt-in profile photo (#264): a local path or `data:` URL. Empty/absent emits **no `<img>`**, rendering pixel-for-pixel identical to the photoless layout (US/UK/many-market ATS penalize photos; opt in for DACH/European markets). |
-| `candidate.photo_style` | string | Optional photo framing: `rounded` (default), `circle`, or `square`. Read it from `candidate.photo_style` in `config/profile.yml`; invalid values fail before HTML is written. |
+| `candidate.photo_style` | string | Optional photo framing: `rounded` (default), `circle`, or `square`. Read it from `candidate.photo_style` in `workspace/profile/profile.yml`; invalid values fail before HTML is written. |
 | `sections` | object | Optional localized section titles; any omitted key falls back to the English default shown above. |
 | `summary` | string | Personalized summary with keywords. |
 | `competencies` | string[] | 6-8 keyword phrases → competency tags. |
@@ -193,7 +193,7 @@ Write a JSON file with this structure, then run `node src/cv/build-cv-html.mjs <
 
 The `{{PHOTO}}` slot is **off by default** and intentionally market-specific:
 
-- **DACH / much of continental Europe** (Germany, Austria, Switzerland): a professional photo is standard and often expected. Opt in by setting `candidate.photo` in `config/profile.yml` (a local file path or a `data:` URL).
+- **DACH / much of continental Europe** (Germany, Austria, Switzerland): a professional photo is standard and often expected. Opt in by setting `candidate.photo` in `workspace/profile/profile.yml` (a local file path or a `data:` URL).
 - **US / UK / Canada / Australia and many ATS-first markets**: photos are discouraged and can trip bias-avoidance filters. Leave `candidate.photo` empty — the `{{PHOTO}}` line is dropped entirely, no `<img>` is emitted, and the CV renders **pixel-for-pixel identical** to today's photoless layout.
 
 When set, the photo floats into the top corner (mirrored for RTL/Arabic) and the header/summary text wraps beside it; `.cv-photo` in `cv-template.html` controls its size and framing.
@@ -207,12 +207,12 @@ generation, run:
 node src/cv/build-cv-html.mjs --preview /tmp/cv-{candidate}-{report}-{company}.json {template}
 ```
 
-The preview is written to `output/cv-preview.html`. A missing, unreadable, empty,
+The preview is written to `workspace/documents/cv-preview.html`. A missing, unreadable, empty,
 or unsupported photo fails with an actionable error before any output is written.
 
 ## Canva CV Generation (optional)
 
-If `config/profile.yml` has `cv.canva_resume_design_id` set, offer the user a choice before generating:
+If `workspace/profile/profile.yml` has `cv.canva_resume_design_id` set, offer the user a choice before generating:
 - **"HTML/PDF (fast, ATS-optimized)"** — existing flow above
 - **"Canva CV (visual, design-preserving)"** — new flow below
 
@@ -232,7 +232,7 @@ a. `get-design-content` on the new design → returns all text elements (richtex
 b. Map text elements to CV sections by content matching:
    - Look for the candidate's name → header section
    - Look for "Summary" or "Professional Summary" → summary section
-   - Look for company names from cv.md → experience sections
+   - Look for company names from workspace/profile/cv.md → experience sections
    - Look for degree/school names → education section
    - Look for skill keywords → skills section
 c. If mapping fails, show the user what was found and ask for guidance
@@ -275,12 +275,12 @@ f. `commit-editing-transaction` to save (ONLY after user approval)
 a. `export-design` the duplicate as PDF (format: a4 or letter based on JD location)
 b. **IMMEDIATELY** download the PDF using Bash:
    ```bash
-   curl -sL -o "output/cv-{candidate}-{report}-{company}-canva-{YYYY-MM-DD}.pdf" "{download_url}"
+   curl -sL -o "workspace/documents/cv-{candidate}-{report}-{company}-canva-{YYYY-MM-DD}.pdf" "{download_url}"
    ```
    The export URL is a pre-signed S3 link that expires in ~2 hours. Download it right away.
 c. Verify the download:
    ```bash
-   file output/cv-{candidate}-{report}-{company}-canva-{YYYY-MM-DD}.pdf
+   file workspace/documents/cv-{candidate}-{report}-{company}-canva-{YYYY-MM-DD}.pdf
    ```
    Must show "PDF document". If it shows XML or HTML, the URL expired — re-export and retry.
 d. Report: PDF path, file size, Canva design URL (for manual tweaking)
@@ -297,14 +297,14 @@ d. Report: PDF path, file size, Canva design URL (for manual tweaking)
 After generating the CV PDF, offer to generate a cover letter:
 
 ```text
-CV PDF generated: output/{path}
+CV PDF generated: workspace/documents/{path}
 
 Want a cover letter for this role too?
 - Say "yes" or "cover letter" to generate one now
 - Or run `/frontrunner cover {slug}` later
 ```
 
-Apply `voice-dna.md` (if present) to the cover letter — full guardrail, conversational voice included (Tier 1 + Tier 2). The CV PDF itself stays Tier 1 only (formal ATS register). See `_shared.md` → Voice DNA.
+Apply `workspace/profile/voice-dna.md` (if present) to the cover letter — full guardrail, conversational voice included (Tier 1 + Tier 2). The CV PDF itself stays Tier 1 only (formal ATS register). See `_shared.md` → Voice DNA.
 
 If the user says yes, run the full cover letter flow from `modes/cover.md` in slug mode:
 1. Load the existing `## Cover Letter Draft` from the evaluation report as a starting point

@@ -5,7 +5,7 @@
 # AND Senior Technical Instructor. See README.md in this folder for the
 # rationale and the interview-objection playbook.
 #
-# Copy this file to config/profile.yml and edit before using.
+# Copy this file to workspace/profile/profile.yml and edit before using.
 
 candidate:
   full_name: "Sam Rivera"

@@ -194,9 +194,9 @@ export async function runOpenAiTailoring({
   if (!jdPath || !reportPath) throw new Error('--jd and --report are required');
   const jdText = readBoundedFile(resolve(jdPath), 'JD file');
   const reportText = readBoundedFile(resolve(reportPath), 'report file');
-  const cv = readBoundedFile(join(rootDir, 'cv.md'), 'cv.md');
-  const profile = readBoundedFile(join(rootDir, 'config', 'profile.yml'), 'config/profile.yml');
-  const proof = readBoundedFile(join(rootDir, 'article-digest.md'), 'article-digest.md', {
+  const cv = readBoundedFile(join(rootDir, 'workspace/profile/cv.md'), 'workspace/profile/cv.md');
+  const profile = readBoundedFile(join(rootDir, 'workspace', 'profile', 'profile.yml'), 'workspace/profile/profile.yml');
+  const proof = readBoundedFile(join(rootDir, 'workspace/profile/article-digest.md'), 'workspace/profile/article-digest.md', {
     required: false,
   });
   const { endpoint, host } = endpointPolicy(baseUrl.replace(/\/+$/u, ''), apiKey);
@@ -225,7 +225,7 @@ export async function runOpenAiTailoring({
   const company = reportFilename.match(/^\d+-(.+?)-\d{4}-\d{2}-\d{2}\.md$/u)?.[1]
     ?? 'unknown-company';
   const filename = `cv-${slug(payload.candidate.name, 'candidate')}-${slug(company, 'company')}.html`;
-  const outputDir = join(rootDir, 'output');
+  const outputDir = join(rootDir, 'workspace', 'documents');
   const outputPath = join(outputDir, filename);
   const scratch = mkdtempSync(join(tmpdir(), 'frontrunner-openai-tailor-'));
 

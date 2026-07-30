@@ -17,7 +17,7 @@ PR or checking your own before opening it.
 
 ## What to check, in order
 
-1. **Data contract** — does the diff touch user files (`cv.md`, `config/profile.yml`, `data/`, `reports/`)? User files are never written without explicit opt-in. This is the one non-negotiable.
+1. **Data contract** — does the diff touch anything under `workspace/`? User files are never written without explicit opt-in. This is the one non-negotiable.
 2. **Tests** — does `node test-all.mjs` pass? Does new behavior come with a check? Files added at top level must be registered in `SYSTEM_PATHS` (update-system.mjs).
 3. **Scope** — does the diff match what the linked issue asked for? New
    features, modes, commands and architecture changes need prior discussion;

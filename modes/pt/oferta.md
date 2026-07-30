@@ -22,7 +22,7 @@ Tabela com:
 
 ## Bloco B -- Match com o Currículo
 
-Ler `cv.md`. Criar tabela com cada requisito do JD mapeado para linhas exatas do currículo.
+Ler `workspace/profile/cv.md`. Criar tabela com cada requisito do JD mapeado para linhas exatas do currículo.
 
 **Adaptado ao arquétipo:**
 - Se FDE → priorizar proof points de entrega rápida e proximidade com cliente
@@ -79,7 +79,7 @@ Top 5 mudanças no currículo + Top 5 mudanças no LinkedIn para maximizar o mat
 
 A coluna **Reflection** captura o que foi aprendido ou o que seria feito diferente. Isso sinaliza senioridade — candidatos juniores descrevem o que aconteceu, candidatos seniores extraem lições.
 
-**Story Bank:** Se `interview-prep/story-bank.md` existir, verificar se alguma dessas histórias já está lá. Se não, adicionar as novas. Com o tempo, isso constrói um banco reutilizável de 5-10 histórias-mestre que podem ser adaptadas para qualquer pergunta de entrevista.
+**Story Bank:** Se `workspace/interviews/story-bank.md` existir, verificar se alguma dessas histórias já está lá. Se não, adicionar as novas. Com o tempo, isso constrói um banco reutilizável de 5-10 histórias-mestre que podem ser adaptadas para qualquer pergunta de entrevista.
 
 **Selecionadas e enquadradas conforme o arquétipo:**
 - FDE → enfatizar velocidade de entrega e proximidade com cliente
@@ -101,7 +101,7 @@ Incluir também:
 
 ### 1. Salvar report .md
 
-Salvar avaliação completa em `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
+Salvar avaliação completa em `workspace/reports/evaluations/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 
 - `{###}` = próximo número sequencial (3 dígitos, zero-padded). Para alocar de forma atômica e evitar condições de corrida, você DEVE executar `node src/tracker/reserve-report-num.mjs` para reservar o número (a saída retornará `{###}`), escrever o relatório, e em seguida executar `node src/tracker/reserve-report-num.mjs --release {###}` para liberar o sentinel.
 - `{company-slug}` = nome da empresa em lowercase, sem espaços (usar hifens)
@@ -149,7 +149,7 @@ Salvar avaliação completa em `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 
 ### 2. Registrar no tracker
 
-**SEMPRE** registrar em `data/applications.md`:
+**SEMPRE** registrar em `workspace/applications/tracker.md`:
 - Próximo número sequencial
 - Data atual
 - Empresa
@@ -157,7 +157,7 @@ Salvar avaliação completa em `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 - Score: média do match (1-5)
 - Status: `Evaluated`
 - PDF: ❌ (ou ✅ se a auto-pipeline gerou PDF)
-- Report: link relativo ao report .md (ex: `[001](reports/001-company-2026-01-01.md)`)
+- Report: link relativo ao report .md (ex: `[001](workspace/reports/evaluations/001-company-2026-01-01.md)`)
 
 **Formato do tracker:**
 

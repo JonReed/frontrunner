@@ -1,7 +1,7 @@
 /**
  * rejects.ts — roles the prefilter rejected before any model call.
  *
- * These were never scored. A deterministic rule from config/prefilter.yml
+ * These were never scored. A deterministic rule from workspace/search/prefilter.yml
  * matched and the role was dropped, which is the whole point: it is how the
  * pipeline avoids spending the user's AI allowance on roles that cannot fit.
  *
@@ -16,8 +16,7 @@
 
 import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
-import { ROOT } from './roles';
+import { WORKSPACE } from './root';
 import { safeExternalUrl } from './urls';
 
 export interface RejectedRole {
@@ -48,12 +47,12 @@ export function describeRule(rule: string): string {
 }
 
 export async function readRejects(): Promise<RejectedRole[]> {
-  const file = join(ROOT, 'batch', 'prefilter-rejects.tsv');
+  const file = WORKSPACE.rejects;
   if (!existsSync(file)) return [];
 
   const [raw, overrideRaw] = await Promise.all([
     readFile(file, 'utf8'),
-    readFile(join(ROOT, 'data', 'prefilter-overrides.tsv'), 'utf8').catch(() => ''),
+    readFile(WORKSPACE.prefilterOverrides, 'utf8').catch(() => ''),
   ]);
   const overrides = new Set<string>();
   for (const line of overrideRaw.split(/\r?\n/u)) {

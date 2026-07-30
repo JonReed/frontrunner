@@ -25,7 +25,7 @@ Claude zal dan bestanden uit deze map lezen in plaats van `modes/`.
 
 ### Optie 2 -- Permanent
 
-Voeg in `config/profile.yml` toe:
+Voeg in `workspace/profile/profile.yml` toe:
 
 ```yaml
 language:
@@ -33,7 +33,7 @@ language:
   modes_dir: modes/nl
 ```
 
-Herinner Claude hieraan tijdens je eerste sessie ("Kijk in `config/profile.yml`, ik heb `language.modes_dir` geconfigureerd"). Claude gebruikt automatisch de Nederlandse modi.
+Herinner Claude hieraan tijdens je eerste sessie ("Kijk in `workspace/profile/profile.yml`, ik heb `language.modes_dir` geconfigureerd"). Claude gebruikt automatisch de Nederlandse modi.
 
 ## Welke modi zijn vertaald?
 
@@ -52,7 +52,7 @@ De andere modi (`scan`, `batch`, `pdf`, `tracker`, `auto-pipeline`, `deep`, `con
 
 Opzettelijk niet vertaald vanwege standaard technische woordenschat:
 
-- `cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`
+- `workspace/profile/cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`
 - Toolnamen (`Playwright`, `WebSearch`, `WebFetch`, `Read`, `Write`, `Edit`, `Bash`)
 - Statuswaarden in de tracker (`Evaluated`, `Applied`, `Interview`, `Offer`, `Rejected`)
 - Codefragmenten, paden, opdrachten

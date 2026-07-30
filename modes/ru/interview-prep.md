@@ -5,10 +5,10 @@
 ## Входные данные
 
 1. **Название компании** и **должность** (обязательно)
-2. **Отчёт оценки** в `reports/` (если есть)
-3. **Банк историй** `interview-prep/story-bank.md`
-4. **CV** `cv.md` + `article-digest.md`
-5. **Профиль** `config/profile.yml` + `modes/_profile.md`
+2. **Отчёт оценки** в `workspace/reports/evaluations/` (если есть)
+3. **Банк историй** `workspace/interviews/story-bank.md`
+4. **CV** `workspace/profile/cv.md` + `workspace/profile/article-digest.md`
+5. **Профиль** `workspace/profile/profile.yml` + `workspace/profile/targeting.md`
 
 ## Шаг 1 — Исследование
 
@@ -62,7 +62,7 @@ WebSearch-запросы. Извлекать структурированные 
 Вопросы, привязанные к конкретному JD (с учётом архетипа).
 
 ### Red flags в бэкграунде
-Вопросы, которые интервьюер вероятно задаст про пробелы, переходы или необычные элементы в бэкграунде. Читать `_profile.md` и `cv.md`.
+Вопросы, которые интервьюер вероятно задаст про пробелы, переходы или необычные элементы в бэкграунде. Читать `_profile.md` и `workspace/profile/cv.md`.
 
 ## Шаг 5 — Маппинг банка историй
 
@@ -117,7 +117,7 @@ WebSearch-запросы. Извлекать структурированные 
 
 ## Вывод
 
-Сохранить отчёт в `interview-prep/{company-slug}-{role-slug}.md`.
+Сохранить отчёт в `workspace/interviews/{company-slug}-{role-slug}.md`.
 
 ```markdown
 # Подготовка к собеседованию: {Компания} — {Роль}

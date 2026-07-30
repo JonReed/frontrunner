@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * sync-pdf-flags.mjs — Reconciles the tracker PDF column against data/pdf-index.tsv.
+ * sync-pdf-flags.mjs — Reconciles the tracker PDF column against workspace/.state/pdf-index.tsv.
  *
  * When a PDF is generated AFTER the initial evaluation, the tracker's PDF column
  * might still show ❌ (or '—'). This script reads the canonical pdf manifest and
@@ -21,7 +21,7 @@ import { rebuildRow, resolveTrackerPath, openTrackerTransaction } from './tracke
 
 import { ROOT as FRONTRUNNER } from '#paths';
 const APPS_FILE = resolveTrackerPath(FRONTRUNNER);
-const PDF_MANIFEST = process.env.FRONTRUNNER_PDF_INDEX || join(FRONTRUNNER, 'data', 'pdf-index.tsv');
+const PDF_MANIFEST = process.env.FRONTRUNNER_PDF_INDEX || join(FRONTRUNNER, 'workspace', '.state', 'pdf-index.tsv');
 
 const flags = { dryRun: false, json: false };
 for (const arg of process.argv.slice(2)) {

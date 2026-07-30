@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // The SUPPLY loop, ZERO tokens: "new matches this week" = roles surfaced by past
-// free scans (data/scan-history.tsv) in the last N days that the user hasn't
+// free scans (workspace/.state/scan-history.tsv) in the last N days that the user hasn't
 // evaluated yet. No scan runs here — it reads the history a past scan already
 // wrote, so the home stays instant + free (directly answers the #1 token-cost
 // complaint). cols: url, first_seen, portal, title, company, status, location.

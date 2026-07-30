@@ -4,7 +4,7 @@
  *
  * Pulls public VC portfolio company lists (Y Combinator, Andreessen Horowitz)
  * and emits company entries compatible with the existing ATS scan/discovery
- * path (same shape as tracked_companies entries in portals.yml).
+ * path (same shape as tracked_companies entries in workspace/search/portals.yml).
  *
  * Design constraints:
  *  - Zero auth — public sources only, no login, no API keys.

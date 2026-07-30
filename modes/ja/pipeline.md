@@ -9,4 +9,4 @@ stages without evaluation.
 
 Apply Japan-market vocabulary and rules from `modes/ja/_shared.md` and the
 selected Japanese evaluation mode. Human-facing output still follows
-`config/profile.yml` → `language.output`.
+`workspace/profile/profile.yml` → `language.output`.

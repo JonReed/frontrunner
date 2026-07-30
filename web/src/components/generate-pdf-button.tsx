@@ -7,7 +7,7 @@ import { useJobs } from "@/components/jobs/job-store";
 import { CostBadge } from "@/components/cost/cost-badge";
 
 // Fires the real frontrunner `pdf` mode (worker kind "pdf") to generate an
-// ATS-optimized CV tailored to THIS offer → output/cv-… + marks the tracker.
+// ATS-optimized CV tailored to THIS offer → workspace/documents/cv-… + marks the tracker.
 // Once a tailored CV exists (tracker PDF ✅, or a pdf worker just finished), it
 // becomes a "View tailored CV" link (served by /api/cv-pdf) + a regenerate icon.
 export function GeneratePdfButton({ n, company, pdfReady }: { n: string; company: string; pdfReady: boolean }) {

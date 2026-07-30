@@ -12,7 +12,7 @@ import yaml from 'js-yaml';
 import { ROOT as __dirname } from '#paths';
 const DEFAULT_TEMPLATES_DIR = resolve(__dirname, 'templates');
 const DEFAULT_PROFILE_PATH =
-  process.env.FRONTRUNNER_PROFILE || resolve(__dirname, 'config', 'profile.yml');
+  process.env.FRONTRUNNER_PROFILE || resolve(__dirname, 'workspace', 'profile', 'profile.yml');
 
 export const KINDS = {
   cv: {

@@ -16,7 +16,7 @@ By choosing a CLI that supports custom model configurations and routing it to a 
 
 ## 2. Pick Your Spend Tier
 
-Before diving into CLI configuration, know that frontrunner has a built-in knob for controlling evaluation cost: the `spend_tier` setting in [`config/profile.yml`](../config/profile.example.yml). It controls which model tier your CLI uses to evaluate offers — no provider setup required.
+Before diving into CLI configuration, know that frontrunner has a built-in knob for controlling evaluation cost: the `spend_tier` setting in [`workspace/profile/profile.yml`](../config/profile.example.yml). It controls which model tier your CLI uses to evaluate offers — no provider setup required.
 
 | Tier | Behaviour |
 |------|-----------|
@@ -29,7 +29,7 @@ The **economy** tier is the high-volume scanning choice — it processes the mos
 Set it once in your profile:
 
 ```yaml
-# config/profile.yml
+# workspace/profile/profile.yml
 spend_tier: standard
 ```
 
@@ -177,7 +177,7 @@ When choosing a budget-friendly model, you need strong reasoning capabilities to
 > OPENAI_BASE_URL=https://openrouter.ai/api/v1 \
 > OPENAI_MODEL=deepseek/deepseek-chat \
 > OPENAI_API_KEY=your_key \
-> node src/evaluate/openai-eval.mjs --file ./jds/job.txt
+> node src/evaluate/openai-eval.mjs --file ./workspace/jobs/descriptions/job.txt
 > ```
 > Run `node src/evaluate/openai-eval.mjs --help` for per-provider examples. For 100% local/private use, point `--url` at a local server (LM Studio / llama.cpp / vLLM) or use `node src/evaluate/ollama-eval.mjs`.
 
@@ -205,7 +205,7 @@ Running 32B or 70B models locally requires substantial system resources:
 To prevent unnecessary API costs or hitting rate limits, implement the following practices:
 
 1. **Use the Batch Limit Flag**:
-   Instead of manually splitting `batch/batch-input.tsv`, use the `--limit <N>` flag to process only a small capped number of offers (e.g. 5-10) in a single run. This lets you inspect the output quality before committing to a larger run:
+   Instead of manually splitting `workspace/.state/batch-input.tsv`, use the `--limit <N>` flag to process only a small capped number of offers (e.g. 5-10) in a single run. This lets you inspect the output quality before committing to a larger run:
    ```bash
    ./batch/batch-runner.sh --limit 5
    ```
@@ -237,24 +237,24 @@ The portal scanner queries ATS APIs directly using Playwright and standard HTTPS
 node src/scan/scan.mjs
 ```
 **Cost:** 0 tokens, $0.00.
-*(This generates a list of new job URLs and populates `data/pipeline.md`.)*
+*(This generates a list of new job URLs and populates `workspace/search/pipeline.md`.)*
 
 ### Step 2: Fetch the Job Description (0 Tokens)
-Open one of the URLs found by the scanner, copy the text of the job description, and save it locally (e.g., `jds/my-target-role.txt`).
+Open one of the URLs found by the scanner, copy the text of the job description, and save it locally (e.g., `workspace/jobs/descriptions/my-target-role.txt`).
 
 ### Step 3: Evaluate the Offer (~4,500 Tokens)
-We'll run the evaluation against OpenRouter's DeepSeek V3 endpoint. The script reads your `cv.md` and the job description, then generates the full A-G evaluation report and tracker entry.
+We'll run the evaluation against OpenRouter's DeepSeek V3 endpoint. The script reads your `workspace/profile/cv.md` and the job description, then generates the full A-G evaluation report and tracker entry.
 
 ```bash
 OPENAI_API_KEY="sk-or-your_openrouter_key" \
 node src/evaluate/openai-eval.mjs \
   --url https://openrouter.ai/api/v1 \
   --model deepseek/deepseek-chat \
-  --file ./jds/my-target-role.txt
+  --file ./workspace/jobs/descriptions/my-target-role.txt
 ```
 
 **Approximate Token Usage:**
-- **Input:** ~3,500 tokens (System prompt + your `cv.md` + JD)
+- **Input:** ~3,500 tokens (System prompt + your `workspace/profile/cv.md` + JD)
 - **Output:** ~1,000 tokens (The A-G evaluation report)
 - **Cost:** ~4,500 tokens total. At DeepSeek V3 prices (~$0.14/1M input, ~$0.28/1M output), this costs **less than $0.001** per evaluation.
 
@@ -267,18 +267,18 @@ OPENAI_API_KEY="sk-or-your_openrouter_key" \
 node src/evaluate/openai-tailor.mjs \
   --url https://openrouter.ai/api/v1 \
   --model deepseek/deepseek-chat \
-  --jd ./jds/my-target-role.txt \
-  --report reports/001-companyname-2026-07-07.md
+  --jd ./workspace/jobs/descriptions/my-target-role.txt \
+  --report workspace/reports/evaluations/001-companyname-2026-07-07.md
 ```
 
-**Cost:** ~3,000 tokens (less than $0.001). This outputs a customized HTML file in the `output/` directory.
+**Cost:** ~3,000 tokens (less than $0.001). This outputs a customized HTML file in the `workspace/documents/` directory.
 
 ### Step 5: Generate ATS-Optimized PDF (0 Tokens)
 
 Once you have the tailored HTML file, the PDF generator uses Playwright to compile it into a tailored CV PDF.
 
 ```bash
-node src/cv/generate-pdf.mjs output/cv-candidate-companyname.html output/cv-candidate-companyname-2026-07-07.pdf --format=letter --report=001
+node src/cv/generate-pdf.mjs workspace/documents/cv-candidate-companyname.html workspace/documents/cv-candidate-companyname-2026-07-07.pdf --format=letter --report=001
 ```
 
 **Cost:** 0 tokens, $0.00.
@@ -302,7 +302,7 @@ No Claude Code CLI required — uses OpenRouter free models with automatic fallb
 
 ```bash
 npm run or:scan        # Scan portals for new listings (Greenhouse API, 0 tokens)
-npm run or:pipeline    # Process all pending URLs from data/pipeline.md
+npm run or:pipeline    # Process all pending URLs from workspace/search/pipeline.md
 npm run or:eval        # Evaluate a single offer (paste URL or text)
 npm run or:apply       # Generate draft application answers for a report
 ```

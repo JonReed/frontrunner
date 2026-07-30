@@ -47,7 +47,7 @@ export async function saveDetails(save: ProfileSave): Promise<{ written: string[
       return { error: 'Something in that form is not a field Frontrunner can save. Nothing was changed.' };
     }
     if (/could not be parsed/iu.test(detail)) {
-      return { error: 'Your config/profile.yml has a syntax error, so it was left untouched. Fix or delete it, then try again.' };
+      return { error: 'Your workspace/profile/profile.yml has a syntax error, so it was left untouched. Fix or delete it, then try again.' };
     }
     if (/lock timeout|busy/iu.test(detail)) {
       return { error: 'Your profile is being written by something else. Wait a moment, then try again.' };
@@ -125,7 +125,7 @@ export async function scanForRoles(): PipelineActionResult {
   return startPipelineAction(startScanRun);
 }
 
-/** Assess the roles already waiting in data/pipeline.md. */
+/** Assess the roles already waiting in workspace/search/pipeline.md. */
 export async function assessWaitingRoles(): PipelineActionResult {
   return startPipelineAction(() => startPipelineRun(false));
 }
@@ -230,7 +230,7 @@ export async function moveRole(
   } catch (error) {
     const detail = error instanceof Error ? error.message : '';
     if (/ambiguous|candidate/iu.test(detail)) {
-      return { error: 'More than one tracker row matches this role, so nothing was changed. Open data/applications.md to resolve the duplicate.' };
+      return { error: 'More than one tracker row matches this role, so nothing was changed. Open workspace/applications/tracker.md to resolve the duplicate.' };
     }
     if (/lock|busy/iu.test(detail)) {
       return { error: 'The tracker is being written by something else. Wait a moment, then try again.' };

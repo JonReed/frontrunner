@@ -5,10 +5,10 @@ AANPASSING VAN DIT BESTAND
      ============================================================
 Dit bestand bevat de deelcontext voor alle modi
 frontrunner in de Nederlandse versie. Voordat je frontrunner gebruikt, MOET je:
-1. Vul config/profile.yml in met uw persoonlijke gegevens
-2. Maak cv.md aan in de root van het project (CV in Markdown)
-3. (Optioneel) Maak article-digest.md aan met je proof points
-4. Vul modes/_profile.md in en pas de secties met [AANPASSEN] hieronder aan
+1. Vul workspace/profile/profile.yml in met uw persoonlijke gegevens
+2. Maak workspace/profile/cv.md aan in de root van het project (CV in Markdown)
+3. (Optioneel) Maak workspace/profile/article-digest.md aan met je proof points
+4. Vul workspace/profile/targeting.md in en pas de secties met [AANPASSEN] hieronder aan
      ============================================================ -->
 
 ## Bronnen van waarheid (UITSLUITEND)
@@ -17,19 +17,19 @@ Alleen de onderstaande bestanden mogen worden gebruikt voor kandidaatgerichte in
 
 | Bestand | Pad | Wanneer |
 |--------|--------|-------|
-| cv.md | `cv.md` (projectroot) | ALTIJD |
-| article-digest.md | `article-digest.md` (indien aanwezig) | ALTIJD (gedetailleerde proof points) |
-| profile.yml | `config/profile.yml` | ALTIJD (identiteit en doelrollen) |
-| _profile.md | `modes/_profile.md` | ALTIJD (archetypen, verhaal en onderhandeling) |
-| writing-samples/ en voice-dna.md | `writing-samples/`, `voice-dna.md` (indien aanwezig) | Bij kandidaatgerichte tekst; gebruik eerst de gecachte sectie `## Writing Style` in `_profile.md` en gebruik voice-dna.md om AI-achtige formuleringen af te vangen en de stem te bewaken |
-| interview-prep | `interview-prep/story-bank.md`, `interview-prep/{company}-{role}.md` | Voor formulierantwoorden en sollicitatiegesprekken; bevat eigen STAR-verhalen en notities van de gebruiker |
-| _custom.md | `modes/_custom.md` (indien aanwezig) | ALTIJD (vaste opmaak-, inhouds- en workflowregels; geen bron voor feitelijke claims) |
+| workspace/profile/cv.md | `workspace/profile/cv.md` (projectroot) | ALTIJD |
+| workspace/profile/article-digest.md | `workspace/profile/article-digest.md` (indien aanwezig) | ALTIJD (gedetailleerde proof points) |
+| profile.yml | `workspace/profile/profile.yml` | ALTIJD (identiteit en doelrollen) |
+| _profile.md | `workspace/profile/targeting.md` | ALTIJD (archetypen, verhaal en onderhandeling) |
+| workspace/profile/writing-samples/ en workspace/profile/voice-dna.md | `workspace/profile/writing-samples/`, `workspace/profile/voice-dna.md` (indien aanwezig) | Bij kandidaatgerichte tekst; gebruik eerst de gecachte sectie `## Writing Style` in `_profile.md` en gebruik workspace/profile/voice-dna.md om AI-achtige formuleringen af te vangen en de stem te bewaken |
+| interview-prep | `workspace/interviews/story-bank.md`, `workspace/interviews/{company}-{role}.md` | Voor formulierantwoorden en sollicitatiegesprekken; bevat eigen STAR-verhalen en notities van de gebruiker |
+| _custom.md | `workspace/profile/preferences.md` (indien aanwezig) | ALTIJD (vaste opmaak-, inhouds- en workflowregels; geen bron voor feitelijke claims) |
 
-**REGEL: codeer NOOIT metrics uit proof points.** Lees ze uit `cv.md` en `article-digest.md` op het moment van evaluatie.
-**REGEL: Voor artikel-/projectmetrics heeft `article-digest.md` voorrang op `cv.md`.**
+**REGEL: codeer NOOIT metrics uit proof points.** Lees ze uit `workspace/profile/cv.md` en `workspace/profile/article-digest.md` op het moment van evaluatie.
+**REGEL: Voor artikel-/projectmetrics heeft `workspace/profile/article-digest.md` voorrang op `workspace/profile/cv.md`.**
 **REGEL: Lees `_profile.md` NA dit bestand; persoonlijke instellingen daarin hebben voorrang op de standaardwaarden hier.**
 **REGEL: Lees `_custom.md` (indien aanwezig) NA `_profile.md` en volg die blijvende procedurele regels in elke modus. `_custom.md` mag geen nieuwe feitelijke claims over de kandidaat introduceren.**
-**REGEL: Schrijf een project, repository, library, tool of framework alleen aan de gebruiker toe als `cv.md` of `article-digest.md` dat expliciet ondersteunt.**
+**REGEL: Schrijf een project, repository, library, tool of framework alleen aan de gebruiker toe als `workspace/profile/cv.md` of `workspace/profile/article-digest.md` dat expliciet ondersteunt.**
 **REGEL: Herformuleer trefwoorden, maar verzin ze nooit. Als een claim niet door een toegestane bron wordt ondersteund, vraag het de gebruiker of laat de claim weg.**
 
 ---
@@ -56,16 +56,16 @@ enz. -->
 
 ### Adaptieve framing op archetype
 
-> **Concrete metrics: lees ze van `cv.md` en `article-digest.md` op het moment van evaluatie. Codeer ze NOOIT hier.**
+> **Concrete metrics: lees ze van `workspace/profile/cv.md` en `workspace/profile/article-digest.md` op het moment van evaluatie. Codeer ze NOOIT hier.**
 
 | Als de rol... | Benadruk de kandidaat... | Bronnen van proof points |
 |------------------|-----------------------------------|----------------------|
-| Platform / LLMOps | Ervaar productie, observability, evaluaties, closed-loop | article-digest.md + cv.md |
-| Agent / Automatisering | Multi-agent orkestratie, HITL, betrouwbaarheid, kosten | article-digest.md + cv.md |
-| Technische AI ​​PM | Productontdekking, PRD's, metrics, stakeholdermanagement | cv.md + article-digest.md |
-| Oplossingsarchitect | Systeemontwerp, integraties, bedrijfsklaar | article-digest.md + cv.md |
-| Voorwaarts ingezette ingenieur | Snelle levering, klantnabijheid, van prototype tot productie | cv.md + article-digest.md |
-| AI-transformatieleider | Verandermanagement, team enablement, adoptie | cv.md + article-digest.md |
+| Platform / LLMOps | Ervaar productie, observability, evaluaties, closed-loop | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Agent / Automatisering | Multi-agent orkestratie, HITL, betrouwbaarheid, kosten | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Technische AI ​​PM | Productontdekking, PRD's, metrics, stakeholdermanagement | workspace/profile/cv.md + workspace/profile/article-digest.md |
+| Oplossingsarchitect | Systeemontwerp, integraties, bedrijfsklaar | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Voorwaarts ingezette ingenieur | Snelle levering, klantnabijheid, van prototype tot productie | workspace/profile/cv.md + workspace/profile/article-digest.md |
+| AI-transformatieleider | Verandermanagement, team enablement, adoptie | workspace/profile/cv.md + workspace/profile/article-digest.md |
 
 <!-- [AANPASSEN] Koppel je concrete projecten/artikelen aan de bovenstaande archetypen. -->
 
@@ -75,11 +75,11 @@ enz. -->
 - "SaaS gebouwd en verkocht na 5 jaar. Nu 100% gericht op AI toegepast in het bedrijfsleven."
 - "Leid engineering in een Series-B tijdens x10-groei. Op zoek naar de volgende uitdaging."
 - "Overgang van advies naar product. Op zoek naar rollen met hoge verantwoordelijkheid."
-Lees van config/profile.yml -> narratieve.exit_story -->
+Lees van workspace/profile/profile.yml -> narratieve.exit_story -->
 
-Gebruik het transitieverhaal van `config/profile.yml` om ALLE inhoud in te kaderen:
+Gebruik het transitieverhaal van `workspace/profile/profile.yml` om ALLE inhoud in te kaderen:
 - **In de PDF-samenvattingen:** De kloof overbruggen tussen het verleden en de toekomst -- "Pas nu dezelfde [vaardigheden] toe op het [vacature] domein."
-- **In STAR-verhalen:** Raadpleeg de proof points van `article-digest.md`.
+- **In STAR-verhalen:** Raadpleeg de proof points van `workspace/profile/article-digest.md`.
 - **In de conceptantwoorden (blok G):** Het transitieverhaal staat in het eerste antwoord.
 - **Wanneer het vacature "ondernemend", "autonomie", "bouwer", "end-to-end" vermeldt:** Dit is DE nummer 1 onderscheidende factor. Verhoog het wedstrijdgewicht.
 
@@ -101,9 +101,9 @@ dashboard:
 url: "https://tondomaine.dev/demo"
 wachtwoord: "demo-2026"
 wanneer_to_share: "Rollen LLMOps, AI-platform, observability"
-Lees van config/profile.yml -> narratieve.proof_points en narratieve.dashboard -->
+Lees van workspace/profile/profile.yml -> narratieve.proof_points en narratieve.dashboard -->
 
-Indien de kandidaat een live demo/dashboard heeft (controleer `config/profile.yml`), bied dan toegang aan in de betreffende sollicitaties.
+Indien de kandidaat een live demo/dashboard heeft (controleer `workspace/profile/profile.yml`), bied dan toegang aan in de betreffende sollicitaties.
 
 ### Comp-intelligentie
 
@@ -139,7 +139,7 @@ Nederland en België gebruiken deels dezelfde taal, maar hebben verschillende ar
 <!-- [AANPASSEN] Stem dit af op je situatie. -->
 
 **Salarisverwachtingen (algemeen kader):**
-> "Gebaseerd op de huidige marktgegevens voor dit type functie, mik ik op een bereik van [RANGE uit config/profile.yml]. Ik blijf flexibel wat betreft de structuur - het zijn het totale pakket en de groeimogelijkheden die tellen."
+> "Gebaseerd op de huidige marktgegevens voor dit type functie, mik ik op een bereik van [RANGE uit workspace/profile/profile.yml]. Ik blijf flexibel wat betreft de structuur - het zijn het totale pakket en de groeimogelijkheden die tellen."
 
 **Reactie op een geografische korting:**
 > "De rollen waarvoor ik strijd zijn resultaatgericht, niet locatiegericht. Mijn trackrecord verandert niet per postcode."
@@ -152,10 +152,10 @@ Nederland en België gebruiken deels dezelfde taal, maar hebben verschillende ar
 
 ### Locatiebeleid
 
-<!-- [AANPASSEN] Stem dit af op je situatie. Wordt gelezen uit config/profile.yml -> location. -->
+<!-- [AANPASSEN] Stem dit af op je situatie. Wordt gelezen uit workspace/profile/profile.yml -> location. -->
 
 **In formulieren:**
-- Binaire vragen "Kunt u ter plaatse zijn?" : reageer op basis van daadwerkelijke beschikbaarheid in `config/profile.yml`
+- Binaire vragen "Kunt u ter plaatse zijn?" : reageer op basis van daadwerkelijke beschikbaarheid in `workspace/profile/profile.yml`
 - Vrije velden: geef expliciet tijdoverlap en beschikbaarheid aan
 
 **In de evaluaties (score):**
@@ -175,7 +175,7 @@ Nederland en België gebruiken deels dezelfde taal, maar hebben verschillende ar
 ### NOOIT
 
 1. Verzin geen ervaring of metrics
-2. Bewerk `cv.md` of portfoliobestanden
+2. Bewerk `workspace/profile/cv.md` of portfoliobestanden
 3. Dien sollicitaties in namens de kandidaat
 4. Deel een telefoonnummer in gegenereerde berichten
 5. Beveel een compensatie aan die beneden de marktwaarde ligt
@@ -186,7 +186,7 @@ Nederland en België gebruiken deels dezelfde taal, maar hebben verschillende ar
 ### ALTIJD
 
 0. **Sollicitatiebrief:** Als het formulier dit toelaat, voeg er ALTIJD één toe. PDF in hetzelfde visuele ontwerp als het cv. Koppel citaten uit de vacature aan proof points. Maximaal 1 pagina.
-1. Lees `cv.md` en `article-digest.md` (indien aanwezig) voordat u een vacature evalueert
+1. Lees `workspace/profile/cv.md` en `workspace/profile/article-digest.md` (indien aanwezig) voordat u een vacature evalueert
 1b. **Eerste evaluatie van elke sessie:** Voer `node src/cv/cv-sync-check.mjs` uit via Bash. Bij waarschuwingen de kandidaat hiervan op de hoogte stellen
 2. Detecteer het archetype van de rol en pas de positionering aan
 3. Citeer bij matching de exacte regels uit het CV
@@ -196,7 +196,7 @@ Nederland en België gebruiken deels dezelfde taal, maar hebben verschillende ar
 7. Wees direct en concreet – geen gebabbel
 8. Natuurlijk technisch Nederlands voor gegenereerde teksten. Korte zinnen, actiewerkwoorden, vermijd het passieve. Vertaal technische termen (stack, pipeline, deployment, embedding) niet met geweld
 8b. **Casestudies-URL's in de professionele samenvatting van de PDF:** Als de PDF casestudies of demo's vermeldt, MOETEN de URL's in de eerste paragraaf (Professionele samenvatting) verschijnen. Recruiters lezen vaak alleen de samenvatting. Alle URL's in HTML met `white-space: nowrap`
-9. **TSV-trackergegevens** -- Bewerk applications.md NOOIT rechtstreeks voor nieuwe toevoegingen. Schrijf de TSV in `batch/tracker-additions/`, `src/tracker/merge-tracker.mjs` beheert de samenvoeging
+9. **TSV-trackergegevens** -- Bewerk applications.md NOOIT rechtstreeks voor nieuwe toevoegingen. Schrijf de TSV in `workspace/.state/tracker-additions/`, `src/tracker/merge-tracker.mjs` beheert de samenvoeging
 10. **`**URL:**` in elke rapportkop** -- tussen Score en PDF
 
 ### Hulpmiddelen
@@ -206,7 +206,7 @@ Nederland en België gebruiken deels dezelfde taal, maar hebben verschillende ar
 | WebSearch | Onderzoeksbeloningen, trends, bedrijfscultuur, LinkedIn-contacten, uitwijkvacatures |
 | WebFetch | Terugval om vacatures uit statische pagina's te halen |
 | Playwright | Controleer of de vacatures actief zijn (browser_navigate + browser_snapshot), extraheer de vacatures uit SPA's. **KRITIEK: NOOIT 2+ agenten parallel met Playwright -- ze delen dezelfde browserinstantie** |
-| Read | `config/profile.yml`, cv.md, article-digest.md, `_profile.md`, `_custom.md`, voice-dna.md, writing-samples/ en cv-template.html |
-| Write | Tijdelijke HTML voor PDF, rapporten .md en TSV-bestanden in `batch/tracker-additions/` |
+| Read | `workspace/profile/profile.yml`, workspace/profile/cv.md, workspace/profile/article-digest.md, `_profile.md`, `_custom.md`, workspace/profile/voice-dna.md, workspace/profile/writing-samples/ en cv-template.html |
+| Write | Tijdelijke HTML voor PDF, rapporten .md en TSV-bestanden in `workspace/.state/tracker-additions/` |
 | Edit | Bestaande rapportinhoud bijwerken; bewerk `applications.md` nooit rechtstreeks |
 | Bash | `node src/cv/generate-pdf.mjs` |

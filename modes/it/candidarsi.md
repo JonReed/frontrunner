@@ -12,7 +12,7 @@ Modalità interattiva per quando il candidato compila un modulo di candidatura (
 ```
 1. RILEVARE      -> Leggere la scheda attiva del browser (screenshot/URL/titolo)
 2. IDENTIFICARE  -> Estrarre azienda + ruolo dalla pagina
-3. CERCARE       -> Trovare corrispondenze con i report esistenti in reports/
+3. CERCARE       -> Trovare corrispondenze con i report esistenti in workspace/reports/evaluations/
 4. CARICARE      -> Leggere il report completo + Blocco G (se esiste)
 5. CONFRONTARE   -> Il ruolo a schermo corrisponde a quello valutato? Se cambia -> avvisare
 6. ANALIZZARE    -> Identificare TUTTE le domande visibili nel modulo
@@ -32,7 +32,7 @@ Modalità interattiva per quando il candidato compila un modulo di candidatura (
 ## Fase 2 -- Identificare e caricare il contesto
 
 1. Estrarre il nome dell'azienda e il titolo del ruolo dalla pagina.
-2. Cercare in `reports/` per nome azienda (Grep case-insensitive).
+2. Cercare in `workspace/reports/evaluations/` per nome azienda (Grep case-insensitive).
 3. Se c'è corrispondenza -> caricare il report completo.
 4. Se il Blocco G è presente -> usare le bozze precedenti come base di partenza.
 5. Se NON c'è corrispondenza -> avvisare il candidato e proporre un auto-pipeline rapido.
@@ -56,7 +56,7 @@ Identificare tutte le domande visibili a schermo:
 
 Classificare ogni domanda:
 - **Già nel Blocco G:** riprendere la risposta esistente
-- **Nuova domanda:** generare la risposta partendo dal report e da `cv.md`
+- **Nuova domanda:** generare la risposta partendo dal report e da `workspace/profile/cv.md`
 
 ## Fase 5 -- Generare le risposte
 

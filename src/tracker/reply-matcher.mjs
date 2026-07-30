@@ -89,11 +89,11 @@ const SHARED_DOMAINS = [
 
 // Dot-separated labels ending in a letters-only TLD. Rejects the shapes tracker
 // prose produces: sentence-final words ("gaps."), bare numerics ("3.34.5."), and
-// paths or filenames ("output/cv-2026-06-23.pdf").
+// paths or filenames ("workspace/documents/cv-2026-06-23.pdf").
 const DOMAIN_SHAPE = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*\.[a-z]{2,}$/;
 
 // Extensions of the artifacts frontrunner writes into tracker notes. Several parse
-// as a valid TLD, so shape alone cannot tell a filename from a hostname: "cv.md"
+// as a valid TLD, so shape alone cannot tell a filename from a hostname: "workspace/profile/cv.md"
 // would otherwise read as a Moldovan domain. Deliberately excludes extensions that
 // are common employer TLDs (io, co, ai, sh, me, dev, app).
 const FILE_EXTENSIONS = [
@@ -127,7 +127,7 @@ export function getAppDomains(app, followups) {
       if (w.includes('.') && !w.includes('@')) {
         // Notes are prose, so trim the punctuation wrapping the token rather than
         // deleting every disallowed character: dropping "/" would splice a path
-        // like "output/cv-2026-06-23.pdf" into one plausible-looking hostname.
+        // like "workspace/documents/cv-2026-06-23.pdf" into one plausible-looking hostname.
         addDomain(domains, w.replace(/^[^A-Za-z0-9]+/, '').replace(/[^A-Za-z0-9]+$/, ''));
       }
     }

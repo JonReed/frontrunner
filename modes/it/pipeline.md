@@ -9,4 +9,4 @@ stages without evaluation.
 
 Apply Italian-market vocabulary and rules from `modes/it/_shared.md` and the
 selected Italian evaluation mode. Human-facing output still follows
-`config/profile.yml` → `language.output`.
+`workspace/profile/profile.yml` → `language.output`.

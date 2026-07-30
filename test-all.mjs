@@ -326,10 +326,10 @@ for (const f of mjsFiles) {
 console.log('\n2. Script execution (graceful on empty data)');
 
 const scripts = [
-  { name: 'src/cv/cv-sync-check.mjs', expectExit: 1, allowFail: true }, // fails without cv.md (normal in repo)
+  { name: 'src/cv/cv-sync-check.mjs', expectExit: 1, allowFail: true }, // fails without workspace/profile/cv.md (normal in repo)
   { name: 'src/tracker/verify-pipeline.mjs', expectExit: 0 },
   // --dry-run: these scripts resolve ROOT from import.meta.url and write
-  // data/applications.md (or data/pipeline.md) in place. On a provisioned working
+  // workspace/applications/tracker.md (or workspace/search/pipeline.md) in place. On a provisioned working
   // copy with a real tracker present, running them without --dry-run mutates user
   // data. Harmless in this repo (no tracker shipped), risky for end users who run
   // tests inside their active frontrunner workspace.
@@ -376,7 +376,7 @@ const scripts = [
   // exited 0 no matter what, which is how five unregistered files shipped.
   // It now runs from ROOT in section 5.
   // Missing-file run: must exit 0 gracefully and hit no network. Do not use the
-  // default portals.yml because end-user workspaces often have a real user-layer
+  // default workspace/search/portals.yml because end-user workspaces often have a real user-layer
   // portals file that would trigger a live remote sweep during tests.
   { name: 'src/scan/verify-portals.mjs --file .tmp-test-missing-portals.yml', expectExit: 0 },
   { name: 'src/scan/archive-posting.mjs --help', expectExit: 0 },
@@ -1130,7 +1130,7 @@ for (const f of skillEntrypoints) {
 
 // Check user files are NOT tracked (gitignored)
 const userFiles = [
-  'config/profile.yml', 'modes/_profile.md', 'portals.yml',
+  'workspace/profile/profile.yml', 'workspace/profile/targeting.md', 'workspace/search/portals.yml',
 ];
 for (const f of userFiles) {
   const tracked = run('git', ['ls-files', f]);
@@ -1352,7 +1352,7 @@ try {
   if (threw) {
     pass('validateCvSectionOrder throws on a reordered CV by default (--allow-reorder unset)');
   } else {
-    fail('validateCvSectionOrder should throw by default when section order diverges from cv.md');
+    fail('validateCvSectionOrder should throw by default when section order diverges from workspace/profile/cv.md');
   }
 
   const originalWarn = console.warn;
@@ -1575,13 +1575,13 @@ try {
   try {
     writeFileSync(
       join(crlfGuardTmp, 'crlf-fixture.md'),
-      'language:\r\n  # Output language for human-facing prose\r\n  output: en\r\n\r\nWrite HTML to `output/cv-x.html`\r\n\r\n```bash\r\nnode src\/cv\/generate-pdf.mjs \\\r\n  output/cv-x.html \\\r\n  output/cv-x.pdf\r\n```\r\n'
+      'language:\r\n  # Output language for human-facing prose\r\n  output: en\r\n\r\nWrite HTML to `workspace/documents/cv-x.html`\r\n\r\n```bash\r\nnode src\/cv\/generate-pdf.mjs \\\r\n  workspace/documents/cv-x.html \\\r\n  workspace/documents/cv-x.pdf\r\n```\r\n'
     );
     const crlfGuardContent = readTextLF(`${basename(crlfGuardTmp)}/crlf-fixture.md`);
     if (
       !crlfGuardContent.includes('\r') &&
       /language:\s*\n(?:\s*#.*\n)*\s*output:\s*["']?en["']?/.test(crlfGuardContent) &&
-      crlfGuardContent.match(/node src\/cv\/generate-pdf\.mjs \\\n\s+([^\s\\]+) \\/)?.[1] === 'output/cv-x.html'
+      crlfGuardContent.match(/node src\/cv\/generate-pdf\.mjs \\\n\s+([^\s\\]+) \\/)?.[1] === 'workspace/documents/cv-x.html'
     ) {
       pass('doc assertions tolerate CRLF checkouts via readTextLF normalization');
     } else {
@@ -1707,7 +1707,7 @@ if (
 
 // SECTION_ALIASES held English titles only, so a CV rendered in one of the
 // shipped non-English modes produced zero sections comparable against the
-// English cv.md: validateCvSectionOrder() saw fewer than two comparable
+// English workspace/profile/cv.md: validateCvSectionOrder() saw fewer than two comparable
 // sections and early-returned, and the guard silently did nothing. Polish
 // (modes/pl) is covered here — a Polish CV that hoisted Education above
 // Doświadczenie zawodowe used to render without complaint while the identical
@@ -1760,8 +1760,8 @@ if (pdfModule) {
   }
   if (keysOk) pass(`sectionKey resolves all ${keyCases.length} PL/EN heading spellings`);
 
-  // Hermetic cv.md stand-in: passed in directly, so the test does not depend on
-  // a cv.md existing in the checkout (it is gitignored).
+  // Hermetic workspace/profile/cv.md stand-in: passed in directly, so the test does not depend on
+  // a workspace/profile/cv.md existing in the checkout (it is gitignored).
   const cvMd = [
     '# CV', '## Professional Summary', '## Work Experience',
     '## Education', '## Certifications', '## Skills',
@@ -1791,9 +1791,9 @@ if (pdfModule) {
   }
 
   if (!throws(plCorrect)) {
-    pass('Polish CV in cv.md order is accepted');
+    pass('Polish CV in workspace/profile/cv.md order is accepted');
   } else {
-    fail('Polish CV in cv.md order was wrongly rejected');
+    fail('Polish CV in workspace/profile/cv.md order was wrongly rejected');
   }
 
   if (throws(enMisordered)) {
@@ -1853,14 +1853,14 @@ const markersAppearInOrder = (text, markers) => {
   return true;
 };
 if (
-  shared.includes('| _custom.md | `modes/_custom.md` (if exists) |') &&
+  shared.includes('| _custom.md | `workspace/profile/preferences.md` (if exists) |') &&
   markersAppearInOrder(shared, [
     'Read _profile.md AFTER this file',
     'Read _custom.md (if it exists) AFTER _profile.md',
     'honor its house rules in every mode',
   ]) &&
   shared.includes('does not expire between sessions or between items in a batch') &&
-  pdfModeCustom.includes('read `modes/_custom.md` (if it exists) and apply its formatting/content house rules')
+  pdfModeCustom.includes('read `workspace/profile/preferences.md` (if it exists) and apply its formatting/content house rules')
 ) {
   pass('_custom.md is wired into the read path: Sources of Truth row + honor rule in _shared.md + explicit read in pdf.md (#1388)');
 } else {
@@ -1901,12 +1901,12 @@ if (
   emailMode.includes('cold_application') &&
   emailMode.includes('Attachment checklist') &&
   emailMode.includes('candidate.wechat') &&
-  emailMode.includes('data/pdf-index.tsv') &&
-  emailMode.includes('voice-dna.md') &&
-  emailMode.includes('cv.md') &&
-  emailMode.includes('article-digest.md') &&
-  emailMode.includes('config/profile.yml') &&
-  emailMode.includes('modes/_profile.md')
+  emailMode.includes('workspace/.state/pdf-index.tsv') &&
+  emailMode.includes('workspace/profile/voice-dna.md') &&
+  emailMode.includes('workspace/profile/cv.md') &&
+  emailMode.includes('workspace/profile/article-digest.md') &&
+  emailMode.includes('workspace/profile/profile.yml') &&
+  emailMode.includes('workspace/profile/targeting.md')
 ) {
   pass('email mode covers formal drafts, no-send safety, variants, attachments, contact fields, and source boundaries');
 } else {
@@ -1930,29 +1930,29 @@ for (const skillPath of ['.claude/skills/frontrunner/SKILL.md', '.agents/skills/
   const sharedModeOrder = sectionOrder(
     '### Modes that require `_shared.md` + their mode file',
     '### Standalone modes',
-    ['modes/_shared.md', 'modes/_profile.md', 'modes/_custom.md', 'modes/{mode}.md'],
+    ['modes/_shared.md', 'workspace/profile/targeting.md', 'workspace/profile/preferences.md', 'modes/{mode}.md'],
   );
   const standaloneModeOrder = sectionOrder(
     '### Standalone modes',
     '### Modes delegated to subagent',
-    ['modes/_profile.md', 'modes/_custom.md', 'modes/{mode}.md'],
+    ['workspace/profile/targeting.md', 'workspace/profile/preferences.md', 'modes/{mode}.md'],
   );
   const delegatedModeOrder = sectionOrder(
     '### Modes delegated to subagent',
     'Execute the instructions from the loaded mode file.',
-    ['content of modes/_shared.md', 'content of modes/_profile.md if exists', 'content of modes/_custom.md if exists', 'content of modes/{mode}.md'],
+    ['content of modes/_shared.md', 'content of workspace/profile/targeting.md if exists', 'content of workspace/profile/preferences.md if exists', 'content of modes/{mode}.md'],
   );
 
   if (
-    skill.includes('modes/_custom.md') &&
-    skill.includes('[content of modes/_custom.md if exists]') &&
+    skill.includes('workspace/profile/preferences.md') &&
+    skill.includes('[content of workspace/profile/preferences.md if exists]') &&
     sharedModeOrder &&
     standaloneModeOrder &&
     delegatedModeOrder
   ) {
-    pass(`${skillPath} loads modes/_custom.md after _profile.md and before the selected mode for direct and delegated modes`);
+    pass(`${skillPath} loads workspace/profile/preferences.md after _profile.md and before the selected mode for direct and delegated modes`);
   } else {
-    fail(`${skillPath} does not load modes/_custom.md in the required _profile → _custom → mode order (#1388)`);
+    fail(`${skillPath} does not load workspace/profile/preferences.md in the required _profile → _custom → mode order (#1388)`);
   }
 }
 
@@ -2014,8 +2014,8 @@ try {
       { field: 'Compensation expectation', value: '$150k base' },
     ],
     files: [
-      { field: 'CV', path: 'output/acme-cv.pdf', version: 'v3' },
-      { field: 'Cover letter', path: 'output/acme-cover-letter.pdf' },
+      { field: 'CV', path: 'workspace/documents/acme-cv.pdf', version: 'v3' },
+      { field: 'Cover letter', path: 'workspace/documents/acme-cover-letter.pdf' },
     ],
   };
 
@@ -2027,7 +2027,7 @@ try {
     section.includes('Why this role?') &&
     section.includes('Node.js, Go, LLM evaluation') &&
     section.includes('Compensation expectation') &&
-    section.includes('output/acme-cv.pdf (v3)')
+    section.includes('workspace/documents/acme-cv.pdf (v3)')
   ) {
     pass('application answers formatter captures free text, selections, field values, files, date, and state');
   } else {
@@ -2191,7 +2191,7 @@ if (
 if (
   offerPrepMode.includes('section headings and the first clause') &&
   offerPrepMode.includes('if the contract is not in English, stop') &&
-  offerPrepMode.includes('data/offers/') &&
+  offerPrepMode.includes('workspace/applications/offers/') &&
   offerPrepMode.includes('notes.md') &&
   offerPrepMode.includes('Notable absences') &&
   offerPrepMode.includes('incorporates by reference') &&
@@ -2212,7 +2212,7 @@ if (
   offerPrepMode.includes('Step 8 — Reply draft (optional, on request)') &&
   offerPrepMode.includes('Never auto-generate') &&
   offerPrepMode.includes('no prep report, no reply draft') &&
-  offerPrepMode.includes('data/offers/{company-slug}/reply-draft-{YYYY-MM-DD}.md') &&
+  offerPrepMode.includes('workspace/applications/offers/{company-slug}/reply-draft-{YYYY-MM-DD}.md') &&
   offerPrepMode.includes('trace back to a line in the prep report') &&
   offerPrepMode.includes('Never submit. Never send email. Never click send.') &&
   offerPrepMode.includes('never demands') &&
@@ -2348,10 +2348,9 @@ const dataContractDoc = readFile('DATA_CONTRACT.md');
 const gitignoreDoc = readFile('.gitignore');
 const updaterSrc = readFile('update-system.mjs');
 if (
-  dataContractDoc.includes('data/offers/') &&
+  dataContractDoc.includes('workspace/applications/offers/') &&
   dataContractDoc.includes('modes/offer-prep.md') &&
-  gitignoreDoc.includes('data/offers/*') &&
-  gitignoreDoc.includes('!data/offers/.gitkeep') &&
+  /^\/workspace\/$/m.test(gitignoreDoc) &&
   updaterSrc.includes("'modes/offer-prep.md'")
 ) {
   pass('offer-prep registered in data contract, gitignore, and updater manifest');
@@ -2453,7 +2452,7 @@ const pipelineMode = readFile('modes/pipeline.md');
 if (
   pipelineMode.includes('npm run pipeline') &&
   pipelineMode.includes('src/pipeline/run.mjs') &&
-  pipelineMode.includes('batch/liveness-results.tsv') &&
+  pipelineMode.includes('workspace/.state/liveness-results.tsv') &&
   pipelineMode.includes('provider APIs') &&
   pipelineMode.includes('Playwright') &&
   pipelineMode.includes('Uncertain liveness results are kept')
@@ -2803,16 +2802,16 @@ try {
   const fixtureRoot = mkdtempSync(join(tmpdir(), 'frontrunner-missing-pipeline-'));
   const originalCwd = process.cwd();
   try {
-    mkdirSync(join(fixtureRoot, 'data'), { recursive: true });
+    mkdirSync(join(fixtureRoot, 'workspace', 'search'), { recursive: true });
     process.chdir(fixtureRoot);
     await appendToPipeline([{ url: 'https://jobs.example.com/1', company: 'Acme', title: 'Engineer' }]);
-    const pipeline = readFileSync(join(fixtureRoot, 'data', 'pipeline.md'), 'utf-8');
+    const pipeline = readFileSync(join(fixtureRoot, 'workspace', 'search', 'pipeline.md'), 'utf-8');
     if (
       pipeline.includes('# Pipeline') &&
       pipeline.includes('## Pending') &&
       pipeline.includes('- [ ] https://jobs.example.com/1 | Acme | Engineer')
     ) {
-      pass('src/scan/scan.mjs creates data/pipeline.md before appending offers on fresh installs (#1252)');
+      pass('src/scan/scan.mjs creates workspace/search/pipeline.md before appending offers on fresh installs (#1252)');
     } else {
       fail(`src/scan/scan.mjs fresh-install pipeline contents wrong: ${JSON.stringify(pipeline)}`);
     }
@@ -2832,9 +2831,9 @@ try {
   let prevTimeout;
   let prevRetry;
   try {
-    mkdirSync(join(fixtureRoot, 'data'), { recursive: true });
+    mkdirSync(join(fixtureRoot, 'workspace', 'search'), { recursive: true });
     process.chdir(fixtureRoot);
-    const pipelinePath = join(fixtureRoot, 'data', 'pipeline.md');
+    const pipelinePath = join(fixtureRoot, 'workspace', 'search', 'pipeline.md');
     // Hold the exact lock appendToPipeline() takes, then confirm it genuinely
     // blocks on it (times out) rather than racing straight through to its
     // read-modify-write. The env overrides keep this assertion in the
@@ -2892,7 +2891,7 @@ try {
   }
 
   // Path casing: src\/scan\/scan.mjs and src\/scan\/scan-ats-full.mjs can reach the identical Workday
-  // posting via different path casing (curated portals.yml entry vs. reverse-ATS
+  // posting via different path casing (curated workspace/search/portals.yml entry vs. reverse-ATS
   // dataset). A case-sensitive key files them as two roles and pipeline.md gets
   // a duplicate, so the path is lowercased.
   const wdMixed = 'https://Kyndryl.wd5.myworkdayjobs.com/KyndrylProfessionalCareers/job/Network-Engineer_R-64949';
@@ -2913,9 +2912,9 @@ try {
   const fixtureRoot = mkdtempSync(join(tmpdir(), 'frontrunner-seen-urls-'));
   const originalCwd = process.cwd();
   try {
-    mkdirSync(join(fixtureRoot, 'data'), { recursive: true });
+    mkdirSync(join(fixtureRoot, 'workspace', '.state'), { recursive: true });
     writeFileSync(
-      join(fixtureRoot, 'data', 'scan-history.tsv'),
+      join(fixtureRoot, 'workspace', '.state', 'scan-history.tsv'),
       `url\tfirst_seen\tportal\ttitle\tcompany\tstatus\tlocation\n${withLang}\t2026-07-06\tpersonio-feed\tPM\tAcme\tadded\tRemote\n`,
       'utf-8',
     );
@@ -2955,7 +2954,7 @@ try {
   fail(`src/scan/scan.mjs normalizeUrlForDedup test crashed: ${err.message}`);
 }
 
-// Company blacklist (#1742): data/blacklist.md is the user's do-not-apply
+// Company blacklist (#1742): workspace/search/blacklist.md is the user's do-not-apply
 // list. parseBlacklist keys rows by the shared normalizeCompany() so matching
 // is case- and punctuation-insensitive; loadBlacklist on an absent file is a
 // no-op (empty Map — the scan filter never fires).
@@ -3001,7 +3000,7 @@ try {
     writeFileSync(join(fixtureRoot, 'data', 'blacklist.md'), '| Company | Since | Scope | Reason |\n|---|---|---|---|\n| Initech | 2026-03-01 | company | example |\n', 'utf-8');
     const present = loadBlacklist(join(fixtureRoot, 'data', 'blacklist.md'));
     if (present.size === 1 && present.get('initech')?.reason === 'example') {
-      pass('src/scan/scan.mjs loadBlacklist reads data/blacklist.md when present (#1742)');
+      pass('src/scan/scan.mjs loadBlacklist reads workspace/search/blacklist.md when present (#1742)');
     } else {
       fail('src/scan/scan.mjs loadBlacklist did not parse a present blacklist file');
     }
@@ -3033,13 +3032,13 @@ if (
   const autoGate = readFile('modes/auto-pipeline.md');
   const applyGate = readFile('modes/apply.md');
   if (
-    ofertaGate.includes('## Blacklist gate') && ofertaGate.includes('data/blacklist.md') &&
-    autoGate.includes('Blacklist gate') && autoGate.includes('data/blacklist.md') &&
-    applyGate.includes('Blacklist check') && applyGate.includes('data/blacklist.md')
+    ofertaGate.includes('## Blacklist gate') && ofertaGate.includes('workspace/search/blacklist.md') &&
+    autoGate.includes('Blacklist gate') && autoGate.includes('workspace/search/blacklist.md') &&
+    applyGate.includes('Blacklist check') && applyGate.includes('workspace/search/blacklist.md')
   ) {
-    pass('modes gate on data/blacklist.md before evaluation and form filling (#1742)');
+    pass('modes gate on workspace/search/blacklist.md before evaluation and form filling (#1742)');
   } else {
-    fail('modes missing the data/blacklist.md gate (oferta/auto-pipeline/apply)');
+    fail('modes missing the workspace/search/blacklist.md gate (oferta/auto-pipeline/apply)');
   }
 }
 
@@ -3096,10 +3095,10 @@ if (
   }
 }
 
-if (readFile('DATA_CONTRACT.md').includes('data/blacklist.md')) {
-  pass('DATA_CONTRACT.md registers data/blacklist.md as user layer (#1742)');
+if (readFile('DATA_CONTRACT.md').includes('workspace/search/blacklist.md')) {
+  pass('DATA_CONTRACT.md registers workspace/search/blacklist.md as user layer (#1742)');
 } else {
-  fail('DATA_CONTRACT.md does not register data/blacklist.md');
+  fail('DATA_CONTRACT.md does not register workspace/search/blacklist.md');
 }
 
 if (fileExists('templates/blacklist.example.md') && readFile('templates/blacklist.example.md').includes('| Company | Since | Scope | Reason |')) {
@@ -3278,14 +3277,14 @@ try {
     audited.offers[0].blacklisted === true &&
     audited.offers[0].note.includes('blacklisted: example reason') &&
     offers[0].blacklisted === undefined;
-  if (ok) pass('scan-ats-full filters data/blacklist.md matches by default and annotates them under --include-blacklisted (#1911)');
+  if (ok) pass('scan-ats-full filters workspace/search/blacklist.md matches by default and annotates them under --include-blacklisted (#1911)');
   else fail('scan-ats-full missing blacklist filter/audit semantics (#1911)');
 } catch (e) {
   fail(`scan-ats-full blacklist test crashed: ${e.message}`);
 }
 
 // Reverse-scan content_filter wiring (#1846) — src\/scan\/scan-ats-full.mjs previously
-// imported only buildTitleFilter/buildLocationFilter, so portals.yml's
+// imported only buildTitleFilter/buildLocationFilter, so workspace/search/portals.yml's
 // content_filter (incl. #1638's per-title-keyword scoping) had zero effect
 // on reverse scans. passesFilters() is the shared gate runSeedScan() uses;
 // exercise it directly with buildContentFilter/matchedTitleKeywords from
@@ -3513,16 +3512,16 @@ try {
     '',
     '| # | Date | Company | Role | Score | Status | PDF | Report | Notes |',
     '|---|------|---------|------|-------|--------|-----|--------|-------|',
-    '| 1 | 2026-06-01 | Acme | Dev | 4.0/5 | Evaluated | y | [r1](reports/1.md) | a |',
-    '| 2 | 2026-06-02 | Beta | Eng | 3.5/5 | Applied | y | [r2](reports/2.md) | b |',
-    '| 3 | 2026-06-03 | Gamma | Lead | 4.5/5 | Interview | y | [r3](reports/3.md) | c |',
+    '| 1 | 2026-06-01 | Acme | Dev | 4.0/5 | Evaluated | y | [r1](workspace/reports/evaluations/1.md) | a |',
+    '| 2 | 2026-06-02 | Beta | Eng | 3.5/5 | Applied | y | [r2](workspace/reports/evaluations/2.md) | b |',
+    '| 3 | 2026-06-03 | Gamma | Lead | 4.5/5 | Interview | y | [r3](workspace/reports/evaluations/3.md) | c |',
     '',
   ].join('\n');
   const r2 = removeRowByNum(md, 2);
   const miss = removeRowByNum(md, 99);
   const ok =
     r2.removed && r2.removedCount === 1 &&
-    r2.report === '[r2](reports/2.md)' &&            // report column (index 7) surfaced for orphan note
+    r2.report === '[r2](workspace/reports/evaluations/2.md)' &&            // report column (index 7) surfaced for orphan note
     !r2.newContent.includes('| 2 |') &&              // the target row is gone
     r2.newContent.includes('| 1 |') && r2.newContent.includes('| 3 |') && // other rows kept
     r2.newContent.includes('# Applications') &&      // non-table line preserved
@@ -4457,10 +4456,10 @@ overrideOut?.includes('Acme') && overrideOut?.includes('staff-engineer')
   ? pass('dry-run: --company and --role overrides respected')
   : fail('dry-run: --company / --role overrides not reflected in output');
 
-// dry-run: output always contains a local:jds/ reference and today's date
+// dry-run: output always contains a local:workspace/jobs/descriptions/ reference and today's date
 const refOut = run(NODE, ['src/scan/archive-posting.mjs', '--dry-run', 'https://boards.greenhouse.io/openai/jobs/123']);
-refOut?.includes('local:jds/') && refOut?.includes(todayStr)
-  ? pass('dry-run: local:jds/ reference and date emitted')
+refOut?.includes('local:workspace/jobs/descriptions/') && refOut?.includes(todayStr)
+  ? pass('dry-run: local:workspace/jobs/descriptions/ reference and date emitted')
   : fail('dry-run: reference or date missing from output');
 
 // argument validation: no args → shows help, exits 0
@@ -4509,7 +4508,7 @@ try {
       resolveHostname: async () => ['93.184.216.34'],
     },
   );
-  const pdf = join(ROOT, 'jds', result.filename);
+  const pdf = join(ROOT, 'workspace', 'jobs', 'descriptions', result.filename);
   const bytes = readFileSync(pdf);
   if (closed && bytes.length === fakePdf.length && bytes.subarray(0, 5).toString('ascii') === '%PDF-') {
     pass(`fixture archive: complete PDF published locally (${(bytes.length / 1024).toFixed(0)} KB)`);
@@ -5474,7 +5473,7 @@ try {
   );
   if (added.result.cv.status === 'added' && added.result.articleDigest.status === 'created' &&
       added.cv.includes('FraudShield') && added.articleDigest.includes('## FraudShield')) {
-    pass('applyAdd adds a new CV entry and creates article-digest.md when absent');
+    pass('applyAdd adds a new CV entry and creates workspace/profile/article-digest.md when absent');
   } else {
     fail(`applyAdd fresh-add => ${JSON.stringify(added.result)}`);
   }
@@ -5496,11 +5495,11 @@ try {
   if (articleDigestHasEntry(added.articleDigest, 'fraud shield')) pass('articleDigestHasEntry matches normalized heading');
   else fail('articleDigestHasEntry failed to match');
 
-  // guardrails: cv add against a missing cv.md throws; empty payload throws
+  // guardrails: cv add against a missing workspace/profile/cv.md throws; empty payload throws
   let threwNoCv = false;
   try { applyAdd({ cv: { section: 'Projects', dedupKey: 'X', entry: '- x' } }, { cvText: null }); } catch { threwNoCv = true; }
-  if (threwNoCv) pass('applyAdd refuses to add to a missing cv.md');
-  else fail('applyAdd should throw when cv.md is absent');
+  if (threwNoCv) pass('applyAdd refuses to add to a missing workspace/profile/cv.md');
+  else fail('applyAdd should throw when workspace/profile/cv.md is absent');
 
   let threwEmpty = false;
   try { applyAdd({}, { cvText: sampleCv }); } catch { threwEmpty = true; }
@@ -5532,8 +5531,9 @@ try {
   // idempotent. Exercised against isolated fixture files via env overrides.
   const cliTmp = mkdtempSync(join(tmpdir(), 'frontrunner-add-cli-'));
   try {
-    const cvPath = join(cliTmp, 'cv.md');
-    const adPath = join(cliTmp, 'article-digest.md');
+    mkdirSync(join(cliTmp, 'workspace', 'profile'), { recursive: true });
+    const cvPath = join(cliTmp, 'workspace/profile/cv.md');
+    const adPath = join(cliTmp, 'workspace/profile/article-digest.md');
     writeFileSync(cvPath, '# CV\n\n## Projects\n\n- **Existing** (OSS) -- here\n');
     const payloadPath = join(cliTmp, 'p.json');
     writeFileSync(payloadPath, JSON.stringify({
@@ -5549,7 +5549,7 @@ try {
     const realOut = JSON.parse(execFileSync(NODE, [join(ROOT, 'src/tracker/add-entry.mjs'), payloadPath], { env, encoding: 'utf-8' }));
     if (realOut.cv.status === 'added' && realOut.articleDigest.status === 'created' &&
         readFileSync(cvPath, 'utf-8').includes('- **CliProj**') && readFileSync(adPath, 'utf-8').includes('## CliProj')) {
-      pass('add-entry CLI real run writes cv.md + creates article-digest.md');
+      pass('add-entry CLI real run writes workspace/profile/cv.md + creates workspace/profile/article-digest.md');
     } else {
       fail(`add-entry CLI real run => ${JSON.stringify(realOut)}`);
     }
@@ -5572,12 +5572,12 @@ console.log('\n12. Tracker report-link normalization');
 try {
   const { normalizeReportLink } = await import(pathToFileURL(join(ROOT, 'src/tracker/tracker-links.mjs')).href);
   const repo = '/repo';
-  const dataDir = join(repo, 'data');
+  const dataDir = join(repo, 'workspace', 'applications');
 
-  // data/ layout: root-relative TSV link → ../reports/...
-  const fromTsv = normalizeReportLink('[12](reports/012-acme-2026-01-04.md)', dataDir, repo);
-  if (fromTsv === '[12](../reports/012-acme-2026-01-04.md)') {
-    pass('data/ layout: root-relative link rewritten to ../reports/...');
+  // data/ layout: root-relative TSV link → ../reports/evaluations/...
+  const fromTsv = normalizeReportLink('[12](workspace/reports/evaluations/012-acme-2026-01-04.md)', dataDir, repo);
+  if (fromTsv === '[12](../reports/evaluations/012-acme-2026-01-04.md)') {
+    pass('data/ layout: root-relative link rewritten to ../reports/evaluations/...');
   } else {
     fail(`data/ layout normalization wrong: ${fromTsv}`);
   }
@@ -5590,26 +5590,26 @@ try {
     fail(`normalization not idempotent: ${twice}`);
   }
 
-  // Root layout: tracker at repo root → link stays reports/...
-  const atRoot = normalizeReportLink('[12](reports/012-acme-2026-01-04.md)', repo, repo);
-  if (atRoot === '[12](reports/012-acme-2026-01-04.md)') {
-    pass('root layout: link stays root-relative reports/...');
+  // Root layout: tracker at repo root → link stays workspace/reports/evaluations/...
+  const atRoot = normalizeReportLink('[12](workspace/reports/evaluations/012-acme-2026-01-04.md)', repo, repo);
+  if (atRoot === '[12](workspace/reports/evaluations/012-acme-2026-01-04.md)') {
+    pass('root layout: link stays root-relative workspace/reports/evaluations/...');
   } else {
     fail(`root layout normalization wrong: ${atRoot}`);
   }
 
   // Non-report links are left untouched — including external URLs that happen
-  // to contain an embedded "/reports/" segment (must not be rewritten).
-  const other = normalizeReportLink('[site](https://example.com/reports/foo.md)', dataDir, repo);
-  if (other === '[site](https://example.com/reports/foo.md)') {
-    pass('non-report links (incl. URLs with embedded /reports/) are left untouched');
+  // to contain an embedded "/workspace/reports/evaluations/" segment (must not be rewritten).
+  const other = normalizeReportLink('[site](https://example.com/workspace/reports/evaluations/foo.md)', dataDir, repo);
+  if (other === '[site](https://example.com/workspace/reports/evaluations/foo.md)') {
+    pass('non-report links (incl. URLs with embedded /workspace/reports/evaluations/) are left untouched');
   } else {
     fail(`non-report link altered: ${other}`);
   }
 
-  const pipelineProcessed = normalizeReportLink('[12](reports/012-acme-2026-01-04.md)', join(repo, 'data'), repo);
-  if (pipelineProcessed === '[12](../reports/012-acme-2026-01-04.md)') {
-    pass('pipeline processed links are relative to data/pipeline.md (#1126)');
+  const pipelineProcessed = normalizeReportLink('[12](workspace/reports/evaluations/012-acme-2026-01-04.md)', join(repo, 'workspace', 'search'), repo);
+  if (pipelineProcessed === '[12](../reports/evaluations/012-acme-2026-01-04.md)') {
+    pass('pipeline processed links are relative to workspace/search/pipeline.md (#1126)');
   } else {
     fail(`pipeline processed link normalization wrong (#1126): ${pipelineProcessed}`);
   }
@@ -5617,21 +5617,21 @@ try {
   // End-to-end migration against a fictional fixture tracker (no personal data)
   const tmpDir = mkdtempSync(join(tmpdir(), 'frontrunner-migrate-'));
   try {
-    mkdirSync(join(tmpDir, 'data'));
-    mkdirSync(join(tmpDir, 'reports'));
-    writeFileSync(join(tmpDir, 'reports', '012-acme-2026-01-04.md'), '# fixture\n');
-    const tracker = join(tmpDir, 'data', 'applications.md');
+    mkdirSync(join(tmpDir, 'workspace', 'applications'), { recursive: true });
+    mkdirSync(join(tmpDir, 'workspace', 'reports', 'evaluations'), { recursive: true });
+    writeFileSync(join(tmpDir, 'workspace', 'reports', 'evaluations', '012-acme-2026-01-04.md'), '# fixture\n');
+    const tracker = join(tmpDir, 'workspace', 'applications', 'tracker.md');
     writeFileSync(tracker,
       '# Applications Tracker\n\n' +
       '| # | Date | Company | Role | Score | Status | PDF | Report | Notes |\n' +
       '|---|------|---------|------|-------|--------|-----|--------|-------|\n' +
-      '| 12 | 2026-01-04 | Acme | Engineer | 4.2/5 | Evaluated | ✅ | [12](reports/012-acme-2026-01-04.md) | ok |\n');
+      '| 12 | 2026-01-04 | Acme | Engineer | 4.2/5 | Evaluated | ✅ | [12](workspace/reports/evaluations/012-acme-2026-01-04.md) | ok |\n');
 
     // Migrate by pointing the script at the fixture tracker via env override.
     run(NODE, ['src/tracker/merge-tracker.mjs', '--migrate'], { env: { ...process.env, FRONTRUNNER_TRACKER: tracker } });
     const after = readFileSync(tracker, 'utf-8');
-    if (after.includes('[12](../reports/012-acme-2026-01-04.md)')) {
-      pass('migration rewrites fixture tracker links to ../reports/...');
+    if (after.includes('[12](../reports/evaluations/012-acme-2026-01-04.md)')) {
+      pass('migration rewrites fixture tracker links to ../reports/evaluations/...');
     } else {
       fail('migration did not rewrite fixture tracker link');
     }
@@ -5642,20 +5642,20 @@ try {
   const { resolveReportPath } = await import(pathToFileURL(join(ROOT, 'src/tracker/followup-cadence.mjs')).href);
   const followupTmp = mkdtempSync(join(tmpdir(), 'frontrunner-followup-link-'));
   try {
-    mkdirSync(join(followupTmp, 'data'), { recursive: true });
-    mkdirSync(join(followupTmp, 'reports'), { recursive: true });
-    const reportFile = join(followupTmp, 'reports', '012-acme-2026-01-04.md');
+    mkdirSync(join(followupTmp, 'workspace', 'applications'), { recursive: true });
+    mkdirSync(join(followupTmp, 'workspace', 'reports', 'evaluations'), { recursive: true });
+    const reportFile = join(followupTmp, 'workspace', 'reports', 'evaluations', '012-acme-2026-01-04.md');
     writeFileSync(reportFile, '# fixture\n');
-    const appsFile = join(followupTmp, 'data', 'applications.md');
-    const resolved = resolveReportPath('[12](../reports/012-acme-2026-01-04.md)', appsFile, followupTmp);
-    if (resolved === 'reports/012-acme-2026-01-04.md') {
+    const appsFile = join(followupTmp, 'workspace', 'applications', 'tracker.md');
+    const resolved = resolveReportPath('[12](../reports/evaluations/012-acme-2026-01-04.md)', appsFile, followupTmp);
+    if (resolved === 'workspace/reports/evaluations/012-acme-2026-01-04.md') {
       pass('follow-up reportPath is repo-root relative for data/ tracker links (#1126)');
     } else {
       fail(`follow-up reportPath wrong (#1126): ${resolved}`);
     }
     const escaped = resolveReportPath('[99](../../outside.md)', appsFile, followupTmp);
     if (escaped === null) {
-      pass('follow-up reportPath rejects links outside reports/ (#1126)');
+      pass('follow-up reportPath rejects links outside workspace/reports/evaluations/ (#1126)');
     } else {
       fail(`follow-up reportPath allowed escaped link (#1126): ${escaped}`);
     }
@@ -5738,10 +5738,10 @@ try {
 
   const trackerParseApi = await import(pathToFileURL(join(ROOT, 'src/tracker/tracker-parse.mjs')).href);
   const complexLinkNums = trackerParseApi.extractTrackerReportNumbers(
-    '[22](../reports/021-acme_(us)-2026-07-15.md "US role")',
+    '[22](../reports/evaluations/021-acme_(us)-2026-07-15.md "US role")',
   );
   const angleLinkNums = trackerParseApi.extractTrackerReportNumbers(
-    '[23](<../reports/023-acme role-(eu)-2026-07-15.md> \'EU role\')',
+    '[23](<../reports/evaluations/023-acme role-(eu)-2026-07-15.md> \'EU role\')',
   );
   if (complexLinkNums.join(',') === '22,21' && angleLinkNums.join(',') === '23') {
     pass('tracker report-link parsing supports balanced parentheses, spaces, and optional titles');
@@ -5766,7 +5766,7 @@ try {
     '# Applications Tracker\n\n' +
     '| # | Date | Company | Role | Score | Status | PDF | Report | Notes |\n' +
     '|---|------|---------|------|-------|--------|-----|--------|-------|\n' +
-    '| 7 | 2026-01-01 | Acme | Engineer | 4.0/5 | Evaluated | ❌ | [12](../reports/012-acme-2026-01-01.md) | fixture |\n');
+    '| 7 | 2026-01-01 | Acme | Engineer | 4.0/5 | Evaluated | ❌ | [12](../reports/evaluations/012-acme-2026-01-01.md) | fixture |\n');
   const afterTracker = reserveRun([], join(trackerTmp, 'reports'), trackerFile);
   if (afterTracker === '013') {
     pass('reservation accounts for tracker row IDs and linked report IDs');
@@ -5982,9 +5982,10 @@ console.log('\n🧪 Testing verify-pipeline duplicate/orphan report checks...');
 try {
   const vpTmp = mkdtempSync(join(tmpdir(), 'frontrunner-verify-reports-'));
   try {
-    const vpReports = join(vpTmp, 'reports');
+    const vpReports = join(vpTmp, 'workspace', 'reports', 'evaluations');
     mkdirSync(vpReports, { recursive: true });
-    const vpTracker = join(vpTmp, 'applications.md');
+    const vpTracker = join(vpTmp, 'workspace', 'applications', 'tracker.md');
+    mkdirSync(dirname(vpTracker), { recursive: true });
     const vpEnv = { ...process.env, FRONTRUNNER_TRACKER: vpTracker, FRONTRUNNER_REPORTS: vpReports };
 
     const report = (company, role) =>
@@ -6001,8 +6002,8 @@ try {
       '# Applications Tracker\n\n' +
       '| # | Date | Company | Role | Score | Status | PDF | Report | Notes |\n' +
       '|---|------|---------|------|-------|--------|-----|--------|-------|\n' +
-      '| 1 | 2026-01-04 | Acme | Staff AI Engineer | 4.2/5 | Evaluated | ❌ | [1](reports/001-acme-2026-01-04.md) | ok |\n' +
-      '| 2 | 2026-01-05 | Acme | Platform Engineer | 4.0/5 | Evaluated | ❌ | [2](reports/002-acme-2026-01-05.md) | ok |\n');
+      '| 1 | 2026-01-04 | Acme | Staff AI Engineer | 4.2/5 | Evaluated | ❌ | [1](../reports/evaluations/001-acme-2026-01-04.md) | ok |\n' +
+      '| 2 | 2026-01-05 | Acme | Platform Engineer | 4.0/5 | Evaluated | ❌ | [2](../reports/evaluations/002-acme-2026-01-05.md) | ok |\n');
 
     const vpOut = run(NODE, ['src/tracker/verify-pipeline.mjs'], { env: vpEnv, stdio: ['pipe', 'pipe', 'pipe'] });
     if (vpOut === null) {
@@ -6123,7 +6124,7 @@ try {
 // src\/tracker\/dedup-tracker.mjs used to ship an older fuzzy role matcher than
 // src\/tracker\/merge-tracker.mjs. That weaker matcher collapsed sibling roles at the same
 // company when they shared generic title words such as "Full Stack Engineer",
-// and could delete an already-Applied row because data/applications.md is
+// and could delete an already-Applied row because workspace/applications/tracker.md is
 // normally gitignored. The matcher is now shared, and dedup protects advanced
 // application states from fuzzy-only deletion.
 console.log('\n🧪 Testing shared role matcher and dedup-tracker safety...');
@@ -6405,24 +6406,24 @@ try {
       '# Applications Tracker\n\n' +
       '| # | Date | Company | Role | Score | Status | PDF | Report | Notes |\n' +
       '|---|------|---------|------|-------|--------|-----|--------|-------|\n' +
-      '| 21 | 2026-01-08 | Acme | Full Stack Engineer, Foundation | 3.9/5 | Applied | ❌ | [21](../reports/021-foundation.md) | applied sibling |\n' +
-      '| 22 | 2026-01-08 | Acme | Full Stack Engineer, Guarded Releases | 4.3/5 | Evaluated | ❌ | [22](../reports/022-guarded.md) | evaluated sibling |\n' +
-      '| 23 | 2026-01-08 | Acme | Staff Software Engineer, API | 4.0/5 | Evaluated | ❌ | [23](../reports/023-api.md) | acronym sibling |\n' +
-      '| 24 | 2026-01-08 | Acme | Staff Software Engineer, SDK | 4.2/5 | Evaluated | ❌ | [24](../reports/024-sdk.md) | acronym sibling |\n' +
-      '| 25 | 2026-01-08 | Acme | Product Engineer, Growth | 3.8/5 | Evaluated | ❌ | [25](../reports/025-growth-old.md) | duplicate old |\n' +
-      '| 26 | 2026-01-09 | Acme | Product Engineer, Growth | 4.0/5 | Evaluated | ❌ | [26](../reports/026-growth-new.md) | duplicate new |\n' +
-      '| 27 | 2026-01-08 | Acme | Solutions Engineer, Revenue | 3.0/5 | Applied | ❌ | [27](../reports/027-revenue-applied.md) | applied exact-title row |\n' +
-      '| 28 | 2026-01-09 | Acme | Solutions Engineer, Revenue | 4.6/5 | Evaluated | ❌ | [28](../reports/028-revenue-eval.md) | evaluated exact-title row |\n' +
-      '| 29 | 2026-01-08 | Acme | Data Engineer, Search | 3.1/5 | Applied | ❌ | [29](../reports/029-search-old.md) | malformed duplicate-number old row |\n' +
-      '| 29 | 2026-01-09 | Acme | Data Engineer, Search | 4.1/5 | Evaluated | ❌ | [30](../reports/030-search-new.md) | malformed duplicate-number new row |\n' +
+      '| 21 | 2026-01-08 | Acme | Full Stack Engineer, Foundation | 3.9/5 | Applied | ❌ | [21](../reports/evaluations/021-foundation.md) | applied sibling |\n' +
+      '| 22 | 2026-01-08 | Acme | Full Stack Engineer, Guarded Releases | 4.3/5 | Evaluated | ❌ | [22](../reports/evaluations/022-guarded.md) | evaluated sibling |\n' +
+      '| 23 | 2026-01-08 | Acme | Staff Software Engineer, API | 4.0/5 | Evaluated | ❌ | [23](../reports/evaluations/023-api.md) | acronym sibling |\n' +
+      '| 24 | 2026-01-08 | Acme | Staff Software Engineer, SDK | 4.2/5 | Evaluated | ❌ | [24](../reports/evaluations/024-sdk.md) | acronym sibling |\n' +
+      '| 25 | 2026-01-08 | Acme | Product Engineer, Growth | 3.8/5 | Evaluated | ❌ | [25](../reports/evaluations/025-growth-old.md) | duplicate old |\n' +
+      '| 26 | 2026-01-09 | Acme | Product Engineer, Growth | 4.0/5 | Evaluated | ❌ | [26](../reports/evaluations/026-growth-new.md) | duplicate new |\n' +
+      '| 27 | 2026-01-08 | Acme | Solutions Engineer, Revenue | 3.0/5 | Applied | ❌ | [27](../reports/evaluations/027-revenue-applied.md) | applied exact-title row |\n' +
+      '| 28 | 2026-01-09 | Acme | Solutions Engineer, Revenue | 4.6/5 | Evaluated | ❌ | [28](../reports/evaluations/028-revenue-eval.md) | evaluated exact-title row |\n' +
+      '| 29 | 2026-01-08 | Acme | Data Engineer, Search | 3.1/5 | Applied | ❌ | [29](../reports/evaluations/029-search-old.md) | malformed duplicate-number old row |\n' +
+      '| 29 | 2026-01-09 | Acme | Data Engineer, Search | 4.1/5 | Evaluated | ❌ | [30](../reports/evaluations/030-search-new.md) | malformed duplicate-number new row |\n' +
       // Distinct sibling roles at one company that the old fuzzy matcher
       // false-merged (shared [software, engineer, infrastructure] → Jaccard 0.6).
       // Exact company+title matching must keep both openings.
-      '| 31 | 2026-01-10 | Cohere | Software Engineer, Data Infrastructure | 3.4/5 | Evaluated | ❌ | [31](../reports/013-cohere-data-infra.md) | distinct role — must survive |\n' +
-      '| 32 | 2026-01-10 | Cohere | Senior Software Engineer, Agent Infrastructure | 4.0/5 | Evaluated | ❌ | [32](../reports/014-cohere-agent-infra.md) | distinct role — higher score |\n' +
+      '| 31 | 2026-01-10 | Cohere | Software Engineer, Data Infrastructure | 3.4/5 | Evaluated | ❌ | [31](../reports/evaluations/013-cohere-data-infra.md) | distinct role — must survive |\n' +
+      '| 32 | 2026-01-10 | Cohere | Senior Software Engineer, Agent Infrastructure | 4.0/5 | Evaluated | ❌ | [32](../reports/evaluations/014-cohere-agent-infra.md) | distinct role — higher score |\n' +
       // Exact company+role duplicate of #32 (same title, both Evaluated) — must
       // collapse to one, keeping the higher score.
-      '| 33 | 2026-01-11 | Cohere | Senior Software Engineer, Agent Infrastructure | 3.7/5 | Evaluated | ❌ | [33](../reports/033-cohere-agent-dup.md) | exact-title duplicate |\n');
+      '| 33 | 2026-01-11 | Cohere | Senior Software Engineer, Agent Infrastructure | 3.7/5 | Evaluated | ❌ | [33](../reports/evaluations/033-cohere-agent-dup.md) | exact-title duplicate |\n');
 
     const dedupResult = run(NODE, ['src/tracker/dedup-tracker.mjs'], { env: { ...process.env, FRONTRUNNER_TRACKER: tracker } });
     if (dedupResult === null) {
@@ -6507,8 +6508,8 @@ try {
       '# Applications Tracker\n\n' +
       '| # | Date | Company | Role | Score | Status | PDF | Report | Notes |\n' +
       '|---|------|---------|------|-------|--------|-----|--------|-------|\n' +
-      '| 50 | 2026-02-01 | Globex | Widget Engineer | 4.5/5 | Rejected | ❌ | [50](../reports/050-widget.md) | KEEPER_NOTE_SENTINEL\n' +
-      '| 51 | 2026-02-02 | Globex | Widget Engineer | 3.0/5 | Evaluated | ❌ | [51](../reports/051-widget.md) | dup row |\n');
+      '| 50 | 2026-02-01 | Globex | Widget Engineer | 4.5/5 | Rejected | ❌ | [50](../reports/evaluations/050-widget.md) | KEEPER_NOTE_SENTINEL\n' +
+      '| 51 | 2026-02-02 | Globex | Widget Engineer | 3.0/5 | Evaluated | ❌ | [51](../reports/evaluations/051-widget.md) | dup row |\n');
 
     const r = run(NODE, ['src/tracker/dedup-tracker.mjs'], { env: { ...process.env, FRONTRUNNER_TRACKER: tracker } });
     if (r === null) {
@@ -6624,19 +6625,19 @@ try {
   const rows = parseTrackerRows([
     '| # | Date | Company | Role | Score | Status | PDF | Report | Notes |',
     '|---|------|---------|------|-------|--------|-----|--------|-------|',
-    '| 3 | 2026-06-01 | Acme Labs | Platform Engineer | 4.2/5 | **Applied** (2026-06-02) | ✅ | [12](reports/012-acme-labs-2026-06-01.md) | strong fit |',
-    '| 12 | 2026-06-10 | Globex | Data Engineer | 3.8/5 | Evaluated | ❌ | [15](reports/015-globex-2026-06-10.md) | — |',
+    '| 3 | 2026-06-01 | Acme Labs | Platform Engineer | 4.2/5 | **Applied** (2026-06-02) | ✅ | [12](workspace/reports/evaluations/012-acme-labs-2026-06-01.md) | strong fit |',
+    '| 12 | 2026-06-10 | Globex | Data Engineer | 3.8/5 | Evaluated | ❌ | [15](workspace/reports/evaluations/015-globex-2026-06-10.md) | — |',
   ].join('\n'));
   const pdfIndex = parsePdfIndex(
     '# report\tpdf\thtml\tformat\tdate — written by src/cv/generate-pdf.mjs, do not edit\n' +
-    '012\toutput/cv-acme-labs.pdf\toutput/cv-acme-labs.html\tats\t2026-06-01\n');
+    '012\tworkspace/documents/cv-acme-labs.pdf\tworkspace/documents/cv-acme-labs.html\tats\t2026-06-01\n');
 
   const byTracker = findMatches(rows, '3', pdfIndex);
   if (byTracker.length === 1 && byTracker[0].company === 'Acme Labs' &&
       byTracker[0].trackerNum === 3 && byTracker[0].reportNum === '12' &&
-      byTracker[0].reportPath === 'reports/012-acme-labs-2026-06-01.md' &&
+      byTracker[0].reportPath === 'workspace/reports/evaluations/012-acme-labs-2026-06-01.md' &&
       byTracker[0].status === 'Applied' &&
-      byTracker[0].pdfPath === 'output/cv-acme-labs.pdf') {
+      byTracker[0].pdfPath === 'workspace/documents/cv-acme-labs.pdf') {
     pass('find.mjs resolves a tracker# to company, report#, canonical status, and PDF path');
   } else {
     fail(`find.mjs tracker# lookup wrong: ${JSON.stringify(byTracker)}`);
@@ -6736,18 +6737,18 @@ try {
       '# Applications Tracker\n\n' +
       '| # | Date | Company | Role | Score | Status | PDF | Report | Notes |\n' +
       '|---|------|---------|------|-------|--------|-----|--------|-------|\n' +
-      '| 1 | 2026-01-04 | StreamCo | Full Stack Engineer 5, Ads Reporting | 4.4/5 | Evaluated | ❌ | [1](../reports/001-streamco-2026-01-04.md) | existing |\n' +
-      '| 2 | 2026-01-04 | Uber | Senior Software Engineer, Consumer Fulfillment (UberEats) | 4.2/5 | Evaluated | ❌ | [2](../reports/002-uber-2026-01-04.md) | existing |\n');
+      '| 1 | 2026-01-04 | StreamCo | Full Stack Engineer 5, Ads Reporting | 4.4/5 | Evaluated | ❌ | [1](../reports/evaluations/001-streamco-2026-01-04.md) | existing |\n' +
+      '| 2 | 2026-01-04 | Uber | Senior Software Engineer, Consumer Fulfillment (UberEats) | 4.2/5 | Evaluated | ❌ | [2](../reports/evaluations/002-uber-2026-01-04.md) | existing |\n');
     for (const n of ['001-streamco-2026-01-04', '002-uber-2026-01-04', '003-streamco-2026-01-05', '004-uber-2026-01-05', '005-streamco-2026-01-06']) {
       writeFileSync(join(mergeTmp, 'reports', `${n}.md`), '# fixture\n');
     }
     // Two DISTINCT roles (long shared prefix / shared brand token) + one true repost (score bump).
     writeFileSync(join(additionsDir, '003-streamco.tsv'),
-      '3\t2026-01-05\tStreamCo\tFull-Stack Engineer 5, AI Insights & Visualizations\tEvaluated\t4.6/5\t❌\t[3](reports/003-streamco-2026-01-05.md)\tdistinct role\n');
+      '3\t2026-01-05\tStreamCo\tFull-Stack Engineer 5, AI Insights & Visualizations\tEvaluated\t4.6/5\t❌\t[3](workspace/reports/evaluations/003-streamco-2026-01-05.md)\tdistinct role\n');
     writeFileSync(join(additionsDir, '004-uber.tsv'),
-      '4\t2026-01-05\tUber\tSenior Software Engineer, UberEats Feed\tEvaluated\t4.1/5\t❌\t[4](reports/004-uber-2026-01-05.md)\tdistinct team (#751)\n');
+      '4\t2026-01-05\tUber\tSenior Software Engineer, UberEats Feed\tEvaluated\t4.1/5\t❌\t[4](workspace/reports/evaluations/004-uber-2026-01-05.md)\tdistinct team (#751)\n');
     writeFileSync(join(additionsDir, '005-streamco.tsv'),
-      '5\t2026-01-06\tStreamCo\tFull Stack Engineer 5, Ads Reporting\tEvaluated\t4.5/5\t❌\t[5](reports/005-streamco-2026-01-06.md)\trepost\n');
+      '5\t2026-01-06\tStreamCo\tFull Stack Engineer 5, Ads Reporting\tEvaluated\t4.5/5\t❌\t[5](workspace/reports/evaluations/005-streamco-2026-01-06.md)\trepost\n');
 
     const mergeResult = run(NODE, ['src/tracker/merge-tracker.mjs'], { env: { ...process.env, FRONTRUNNER_TRACKER: tracker, FRONTRUNNER_ADDITIONS: additionsDir } });
     if (mergeResult === null) {
@@ -6803,16 +6804,16 @@ try {
       '| # | Date | Company | Role | Score | Status | PDF | Report | Notes |\n' +
       '|---|------|---------|------|-------|--------|-----|--------|-------|\n' +
       '| 1 | 2026-01-05 | Globex | Senior Software Engineer, Infrastructure | N/A | Applied | ❌ | - | source=applied |\n' +
-      '| 2 | 2026-01-08 | Acme | Senior Platform Engineer, Observability | 3.9/5 | Applied | ❌ | [2](../reports/002-acme-2026-01-08.md) | existing |\n');
+      '| 2 | 2026-01-08 | Acme | Senior Platform Engineer, Observability | 3.9/5 | Applied | ❌ | [2](../reports/evaluations/002-acme-2026-01-08.md) | existing |\n');
     for (const n of ['002-acme-2026-01-08', '003-globex-2026-01-09', '004-acme-2026-01-09']) {
       writeFileSync(join(clobberTmp, 'reports', `${n}.md`), '# fixture\n');
     }
     // Sibling req whose only qualifier is a slashed acronym → must be ADDED.
     writeFileSync(join(additionsDir, '003-globex.tsv'),
-      '3\t2026-01-09\tGlobex\tSenior Software Engineer, Infrastructure (CI/CD)\tEvaluated\t4.5/5\t✅\t[3](reports/003-globex-2026-01-09.md)\tdistinct req\n');
+      '3\t2026-01-09\tGlobex\tSenior Software Engineer, Infrastructure (CI/CD)\tEvaluated\t4.5/5\t✅\t[3](workspace/reports/evaluations/003-globex-2026-01-09.md)\tdistinct req\n');
     // True repost with reworded title → fuzzy update keeps the EXISTING title.
     writeFileSync(join(additionsDir, '004-acme.tsv'),
-      '4\t2026-01-09\tAcme\tSr Platform Engineer, Observability (Remote)\tEvaluated\t4.2/5\t❌\t[4](reports/004-acme-2026-01-09.md)\trepost re-eval\n');
+      '4\t2026-01-09\tAcme\tSr Platform Engineer, Observability (Remote)\tEvaluated\t4.2/5\t❌\t[4](workspace/reports/evaluations/004-acme-2026-01-09.md)\trepost re-eval\n');
 
     const clobberResult = run(NODE, ['src/tracker/merge-tracker.mjs'], { env: { ...process.env, FRONTRUNNER_TRACKER: tracker, FRONTRUNNER_ADDITIONS: additionsDir } });
     if (clobberResult === null) {
@@ -6879,7 +6880,7 @@ try {
       '# Applications Tracker\n\n' +
       '| # | Date | Company | Role | Score | Status | PDF | Report | Notes |\n' +
       '|---|------|---------|------|-------|--------|-----|--------|-------|\n' +
-      '| 7 | 2026-02-01 | Initech | Staff Data Engineer, Batch Pipelines | 3.6/5 | Applied | ❌ | [21](../reports/021-initech-2026-02-01.md) | existing |\n');
+      '| 7 | 2026-02-01 | Initech | Staff Data Engineer, Batch Pipelines | 3.6/5 | Applied | ❌ | [21](../reports/evaluations/021-initech-2026-02-01.md) | existing |\n');
     for (const n of ['021-initech-2026-02-01', '022-initech-2026-02-02']) {
       writeFileSync(join(tier2Tmp, 'reports', `${n}.md`), '# fixture\n');
     }
@@ -6888,7 +6889,7 @@ try {
     // the only tier that can match: the roles are far too different to fuzzy
     // match, which is what isolates tier-2 here.
     writeFileSync(join(additionsDir, '007-initech.tsv'),
-      '7\t2026-02-02\tInitech\tTechnical Program Manager, Compliance\tEvaluated\t4.4/5\t❌\t[22](reports/022-initech-2026-02-02.md)\tnum collision, distinct role\n');
+      '7\t2026-02-02\tInitech\tTechnical Program Manager, Compliance\tEvaluated\t4.4/5\t❌\t[22](workspace/reports/evaluations/022-initech-2026-02-02.md)\tnum collision, distinct role\n');
 
     // The isolation above is load-bearing: if these two titles ever DID fuzzy
     // match, tier-3 could satisfy the assertions below and this would silently
@@ -6949,7 +6950,7 @@ try {
       '# Applications Tracker\n\n' +
       '| # | Date | Company | Via | Role | Score | Status | PDF | Report | Notes |\n' +
       '|---|------|---------|-----|------|-------|--------|-----|--------|-------|\n' +
-      '| 1 | 2026-01-04 | ? | リクルート | Backend Engineer, Payments Platform | 4.0/5 | Evaluated | ❌ | [1](../reports/001-unknown-2026-01-04.md) | agency listing |\n');
+      '| 1 | 2026-01-04 | ? | リクルート | Backend Engineer, Payments Platform | 4.0/5 | Evaluated | ❌ | [1](../reports/evaluations/001-unknown-2026-01-04.md) | agency listing |\n');
     for (const n of ['001-unknown-2026-01-04', '002-unknown-2026-01-05', '003-unknown-2026-01-06']) {
       writeFileSync(join(viaTmp, 'reports', `${n}.md`), '# fixture\n');
     }
@@ -6957,10 +6958,10 @@ try {
     // submission that must be ADDED as its own row. (Role carries a
     // discriminating token — roleFuzzyMatch rejects baseline-only titles.)
     writeFileSync(join(additionsDir, '002-unknown.tsv'),
-      '2\t2026-01-05\t?\tBackend Engineer, Payments Platform\tEvaluated\t4.1/5\t❌\t[2](reports/002-unknown-2026-01-05.md)\tsecond agency\tvia=パーソル\n');
+      '2\t2026-01-05\t?\tBackend Engineer, Payments Platform\tEvaluated\t4.1/5\t❌\t[2](workspace/reports/evaluations/002-unknown-2026-01-05.md)\tsecond agency\tvia=パーソル\n');
     // Same role, SAME agency re-blasting the listing → duplicate, update in place.
     writeFileSync(join(additionsDir, '003-unknown.tsv'),
-      '3\t2026-01-06\t?\tBackend Engineer, Payments Platform\tEvaluated\t4.2/5\t❌\t[3](reports/003-unknown-2026-01-06.md)\tre-blast\tvia=リクルート\n');
+      '3\t2026-01-06\t?\tBackend Engineer, Payments Platform\tEvaluated\t4.2/5\t❌\t[3](workspace/reports/evaluations/003-unknown-2026-01-06.md)\tre-blast\tvia=リクルート\n');
 
     const viaResult = run(NODE, ['src/tracker/merge-tracker.mjs'], { env: { ...process.env, FRONTRUNNER_TRACKER: tracker, FRONTRUNNER_ADDITIONS: additionsDir } });
     if (viaResult === null) {
@@ -7057,19 +7058,19 @@ try {
       '# Applications Tracker\n\n' +
       '| # | Date | Company | Role | Score | Status | PDF | Report | Notes |\n' +
       '|---|------|---------|------|-------|--------|-----|--------|-------|\n' +
-      '| 1 | 2026-01-04 | AnchorCo | Platform Engineer | 4.0/5 | Evaluated | ❌ | [1](../reports/001-anchorco-2026-01-04.md) | existing |\n');
+      '| 1 | 2026-01-04 | AnchorCo | Platform Engineer | 4.0/5 | Evaluated | ❌ | [1](../reports/evaluations/001-anchorco-2026-01-04.md) | existing |\n');
     for (const n of ['001-anchorco-2026-01-04', '002-swapco-2026-01-05', '003-ambigco-2026-01-05', '004-boldco-2026-01-05']) {
       writeFileSync(join(colTmp, 'reports', `${n}.md`), '# fixture\n');
     }
     // Swapped order: score BEFORE status (4.6/5 then Evaluated).
     writeFileSync(join(additionsDir, '002-swapco.tsv'),
-      '2\t2026-01-05\tSwapCo\tData Engineer\t4.6/5\tEvaluated\t❌\t[2](reports/002-swapco-2026-01-05.md)\tswapped cols\n');
+      '2\t2026-01-05\tSwapCo\tData Engineer\t4.6/5\tEvaluated\t❌\t[2](workspace/reports/evaluations/002-swapco-2026-01-05.md)\tswapped cols\n');
     // Undecidable: two status-like cells, no score → must be skipped, not merged.
     writeFileSync(join(additionsDir, '003-ambigco.tsv'),
-      '3\t2026-01-05\tAmbigCo\tAnalyst\tEvaluated\tApplied\t❌\t[3](reports/003-ambigco-2026-01-05.md)\tno score\n');
+      '3\t2026-01-05\tAmbigCo\tAnalyst\tEvaluated\tApplied\t❌\t[3](workspace/reports/evaluations/003-ambigco-2026-01-05.md)\tno score\n');
     // Bold score cell → detected AND persisted write-canonical (unbolded).
     writeFileSync(join(additionsDir, '004-boldco.tsv'),
-      '4\t2026-01-05\tBoldCo\tSRE\tEvaluated\t**4.7/5**\t❌\t[4](reports/004-boldco-2026-01-05.md)\tbold score\n');
+      '4\t2026-01-05\tBoldCo\tSRE\tEvaluated\t**4.7/5**\t❌\t[4](workspace/reports/evaluations/004-boldco-2026-01-05.md)\tbold score\n');
 
     const mergeResult = run(NODE, ['src/tracker/merge-tracker.mjs'], { env: { ...process.env, FRONTRUNNER_TRACKER: tracker, FRONTRUNNER_ADDITIONS: additionsDir } });
     if (mergeResult === null) {
@@ -7105,21 +7106,22 @@ try {
 
 // ── MERGE-TRACKER PDF FLAG SYNC (#1429) ─────────────────────────
 // src\/cv\/generate-pdf.mjs can run after the tracker row already exists. The
-// gitignored data/pdf-index.tsv manifest is the source of truth that the row's
+// gitignored workspace/.state/pdf-index.tsv manifest is the source of truth that the row's
 // PDF was generated, so merge-tracker should flip only matching ❌ cells to ✅.
-console.log('\n🧪 Testing merge-tracker PDF flag sync from data/pdf-index.tsv (#1429)...');
+console.log('\n🧪 Testing merge-tracker PDF flag sync from workspace/.state/pdf-index.tsv (#1429)...');
 try {
   const runPdfSyncFixture = (name, trackerRow, pdfIndex = null, additions = []) => {
     const tmp = mkdtempSync(join(tmpdir(), `frontrunner-merge-pdf-${name}-`));
-    mkdirSync(join(tmp, 'data'), { recursive: true });
+    mkdirSync(join(tmp, 'workspace', 'applications'), { recursive: true });
+    mkdirSync(join(tmp, 'workspace', '.state'), { recursive: true });
     const additionsDir = join(tmp, 'additions');
-    const tracker = join(tmp, 'data', 'applications.md');
+    const tracker = join(tmp, 'workspace', 'applications', 'tracker.md');
     writeFileSync(tracker,
       '# Applications Tracker\n\n' +
       '| # | Date | Company | Role | Score | Status | PDF | Report | Notes |\n' +
       '|---|------|---------|------|-------|--------|-----|--------|-------|\n' +
       trackerRow + '\n');
-    if (pdfIndex !== null) writeFileSync(join(tmp, 'data', 'pdf-index.tsv'), pdfIndex);
+    if (pdfIndex !== null) writeFileSync(join(tmp, 'workspace', '.state', 'pdf-index.tsv'), pdfIndex);
     if (additions.length > 0) {
       mkdirSync(additionsDir, { recursive: true });
       for (const addition of additions) {
@@ -7140,11 +7142,11 @@ try {
 
   const matching = runPdfSyncFixture(
     'match',
-    '| 7 | 2026-01-04 | Acme | Engineer | 4.2/5 | Evaluated | ❌ | [12](../reports/012-acme-2026-01-04.md) | ok |',
+    '| 7 | 2026-01-04 | Acme | Engineer | 4.2/5 | Evaluated | ❌ | [12](../reports/evaluations/012-acme-2026-01-04.md) | ok |',
     '# report\tpdf\thtml\tformat\tdate\n' +
       '012\toutput/cv-acme.pdf\toutput/cv-acme.html\tletter\t2026-01-04\n',
   );
-  if (matching.result !== null && matching.merged.includes('| ✅ | [12](../reports/012-acme-2026-01-04.md) |')) {
+  if (matching.result !== null && matching.merged.includes('| ✅ | [12](../reports/evaluations/012-acme-2026-01-04.md) |')) {
     pass('merge-tracker flips a stale ❌ PDF cell when pdf-index.tsv has the row report number');
   } else {
     fail('merge-tracker did not flip the matching PDF cell from ❌ to ✅');
@@ -7152,11 +7154,11 @@ try {
 
   const nonMatching = runPdfSyncFixture(
     'miss',
-    '| 8 | 2026-01-05 | Globex | Analyst | 3.8/5 | Evaluated | ❌ | [22](../reports/022-globex-2026-01-05.md) | ok |',
+    '| 8 | 2026-01-05 | Globex | Analyst | 3.8/5 | Evaluated | ❌ | [22](../reports/evaluations/022-globex-2026-01-05.md) | ok |',
     '# report\tpdf\thtml\tformat\tdate\n' +
       '023\toutput/cv-other.pdf\toutput/cv-other.html\tletter\t2026-01-05\n',
   );
-  if (nonMatching.result !== null && nonMatching.merged.includes('| ❌ | [22](../reports/022-globex-2026-01-05.md) |')) {
+  if (nonMatching.result !== null && nonMatching.merged.includes('| ❌ | [22](../reports/evaluations/022-globex-2026-01-05.md) |')) {
     pass('merge-tracker leaves PDF ❌ when the report number is absent from pdf-index.tsv');
   } else {
     fail('merge-tracker produced a false-positive PDF sync for a missing report number');
@@ -7164,10 +7166,10 @@ try {
 
   const missingManifest = runPdfSyncFixture(
     'missing',
-    '| 9 | 2026-01-06 | Initech | Manager | 3.9/5 | Evaluated | ❌ | [31](../reports/031-initech-2026-01-06.md) | ok |',
+    '| 9 | 2026-01-06 | Initech | Manager | 3.9/5 | Evaluated | ❌ | [31](../reports/evaluations/031-initech-2026-01-06.md) | ok |',
   );
-  if (missingManifest.result !== null && missingManifest.merged.includes('| ❌ | [31](../reports/031-initech-2026-01-06.md) |')) {
-    pass('merge-tracker runs successfully when data/pdf-index.tsv does not exist');
+  if (missingManifest.result !== null && missingManifest.merged.includes('| ❌ | [31](../reports/evaluations/031-initech-2026-01-06.md) |')) {
+    pass('merge-tracker runs successfully when workspace/.state/pdf-index.tsv does not exist');
   } else {
     fail('merge-tracker crashed or changed the PDF cell when pdf-index.tsv was missing');
   }
@@ -7179,10 +7181,10 @@ try {
       '041\toutput/cv-umbrella.pdf\toutput/cv-umbrella.html\tletter\t2026-01-07\n',
     [{
       name: '001-umbrella.tsv',
-      content: '1\t2026-01-07\tUmbrella\tEngineer\t4.1/5\tEvaluated\t❌\t[41](../reports/041-umbrella-2026-01-07.md)\tok\n',
+      content: '1\t2026-01-07\tUmbrella\tEngineer\t4.1/5\tEvaluated\t❌\t[41](../reports/evaluations/041-umbrella-2026-01-07.md)\tok\n',
     }],
   );
-  if (newAddition.result !== null && newAddition.merged.includes('| 1 | 2026-01-07 | Umbrella | Engineer | 4.1/5 | Evaluated | ✅ | [41](../reports/041-umbrella-2026-01-07.md) | ok |')) {
+  if (newAddition.result !== null && newAddition.merged.includes('| 1 | 2026-01-07 | Umbrella | Engineer | 4.1/5 | Evaluated | ✅ | [41](../reports/evaluations/041-umbrella-2026-01-07.md) | ok |')) {
     pass('merge-tracker applies pdf-index.tsv to a newly merged tracker row in the same run');
   } else {
     fail('merge-tracker left a newly merged row at ❌ despite a matching pdf-index.tsv entry');
@@ -7199,23 +7201,23 @@ console.log('\n🧪 Testing merge-tracker report-number cross-company collision 
 try {
   const col912Tmp = mkdtempSync(join(tmpdir(), 'frontrunner-merge-912-'));
   try {
-    mkdirSync(join(col912Tmp, 'data'));
-    mkdirSync(join(col912Tmp, 'reports'));
+    mkdirSync(join(col912Tmp, 'workspace', 'applications'), { recursive: true });
+    mkdirSync(join(col912Tmp, 'workspace', 'reports', 'evaluations'), { recursive: true });
     const col912Additions = join(col912Tmp, 'additions');
     mkdirSync(col912Additions);
 
-    const col912Tracker = join(col912Tmp, 'data', 'applications.md');
+    const col912Tracker = join(col912Tmp, 'workspace', 'applications', 'tracker.md');
     writeFileSync(col912Tracker,
       '# Applications Tracker\n\n' +
       '| # | Date | Company | Role | Score | Status | PDF | Report | Notes |\n' +
       '|---|------|---------|------|-------|--------|-----|--------|-------|\n' +
-      '| 1 | 2026-01-01 | OtherCo | Staff Engineer | 4.0/5 | Evaluated | ❌ | [1](../reports/001-otherco-2026-01-01.md) | original |\n');
-    writeFileSync(join(col912Tmp, 'reports', '001-otherco-2026-01-01.md'), '# fixture\n');
-    writeFileSync(join(col912Tmp, 'reports', '001-newco-2026-01-05.md'), '# fixture\n');
+      '| 1 | 2026-01-01 | OtherCo | Staff Engineer | 4.0/5 | Evaluated | ❌ | [1](../reports/evaluations/001-otherco-2026-01-01.md) | original |\n');
+    writeFileSync(join(col912Tmp, 'workspace', 'reports', 'evaluations', '001-otherco-2026-01-01.md'), '# fixture\n');
+    writeFileSync(join(col912Tmp, 'workspace', 'reports', 'evaluations', '001-newco-2026-01-05.md'), '# fixture\n');
 
     // NewCo TSV also carries report number [1] — cross-company collision
     writeFileSync(join(col912Additions, '001-newco.tsv'),
-      '1\t2026-01-05\tNewCo\tNew Role\tEvaluated\t2.7/5\t❌\t[1](reports/001-newco-2026-01-05.md)\tcollision\n');
+      '1\t2026-01-05\tNewCo\tNew Role\tEvaluated\t2.7/5\t❌\t[1](workspace/reports/evaluations/001-newco-2026-01-05.md)\tcollision\n');
 
     const col912Result = run(NODE, ['src/tracker/merge-tracker.mjs'], {
       env: { ...process.env, FRONTRUNNER_TRACKER: col912Tracker, FRONTRUNNER_ADDITIONS: col912Additions },
@@ -7226,7 +7228,7 @@ try {
       const col912Merged = readFileSync(col912Tracker, 'utf-8');
       const col912Rows = col912Merged.split('\n').filter(l => l.startsWith('| ') && !l.startsWith('| #') && !l.startsWith('|---'));
       const otherCoUnchanged = col912Rows.some((row) =>
-        /^\| 1 \| 2026-01-01 \| OtherCo \| Staff Engineer \| 4\.0\/5 \| Evaluated \| [❌✅] \| \[1\]\(\.\.\/reports\/001-otherco-2026-01-01\.md\) \| original \|$/.test(row.trim())
+        /^\| 1 \| 2026-01-01 \| OtherCo \| Staff Engineer \| 4\.0\/5 \| Evaluated \| [❌✅] \| \[1\]\(\.\.\/reports\/evaluations\/001-otherco-2026-01-01\.md\) \| original \|$/.test(row.trim())
       );
 
       if (col912Rows.length === 2) {
@@ -7242,7 +7244,7 @@ try {
       }
 
       const newCoAppended = col912Rows.some((row) =>
-        /^\| 2 \| 2026-01-05 \| NewCo \| New Role \| 2\.7\/5 \| Evaluated \| [❌✅] \| \[1\]\(\.\.\/reports\/001-newco-2026-01-05\.md\) \| collision \|$/.test(row.trim())
+        /^\| 2 \| 2026-01-05 \| NewCo \| New Role \| 2\.7\/5 \| Evaluated \| [❌✅] \| \[1\]\(\.\.\/reports\/evaluations\/001-newco-2026-01-05\.md\) \| collision \|$/.test(row.trim())
       );
       if (newCoAppended) {
         pass('report-number collision (#912): NewCo appended as a new entry with correct data');
@@ -7354,7 +7356,7 @@ try {
       '| 10 | 2026-01-10 | LaterCo | Engineer | 4.0/5 | Evaluated | ❌ | — | finished first |\n');
 
     writeFileSync(join(reservedAdditions, '005-early.tsv'),
-      '5\t2026-01-05\tEarlyCo\tEngineer\tEvaluated\t4.1/5\t❌\t[5](reports/005-early-2026-01-05.md)\treserved first\n');
+      '5\t2026-01-05\tEarlyCo\tEngineer\tEvaluated\t4.1/5\t❌\t[5](workspace/reports/evaluations/005-early-2026-01-05.md)\treserved first\n');
     const preserveResult = run(NODE, ['src/tracker/merge-tracker.mjs'], {
       env: { ...process.env, FRONTRUNNER_TRACKER: reservedTracker, FRONTRUNNER_ADDITIONS: reservedAdditions },
     });
@@ -7421,9 +7423,9 @@ try {
     // (a Spanish company name). Both must be visible to dedup.
     const hRows =
       '| 2 | 2026-01-05 | Acme Corp | Director, Data Platform | 4.3/5 | Evaluated | ❌ | ' +
-      '[2](../reports/002-acme-corp-2026-01-05.md) | URL slug says Senior-Engineer---Platform-Team. |\n' +
+      '[2](../reports/evaluations/002-acme-corp-2026-01-05.md) | URL slug says Senior-Engineer---Platform-Team. |\n' +
       '| 1 | 2026-01-05 | Empresa Ejemplo | Data Lead | 3.9/5 | Evaluated | ❌ | ' +
-      '[1](../reports/001-empresa-ejemplo-2026-01-05.md) | Madrid hybrid. |\n';
+      '[1](../reports/evaluations/001-empresa-ejemplo-2026-01-05.md) | Madrid hybrid. |\n';
     writeFileSync(hTracker, hHeader + hRows);
     for (const r of ['002-acme-corp-2026-01-05.md', '001-empresa-ejemplo-2026-01-05.md']) {
       writeFileSync(join(hReports, r), '# fixture\n');
@@ -7433,10 +7435,10 @@ try {
     // is two in-place updates and zero new rows.
     writeFileSync(join(hAdditions, '002-acme-corp.tsv'),
       '2\t2026-01-06\tAcme Corp\tDirector, Data Platform\tEvaluated\t4.8/5\t❌\t' +
-      '[2](reports/002-acme-corp-2026-01-05.md)\tre-evaluated after JD update\n');
+      '[2](workspace/reports/evaluations/002-acme-corp-2026-01-05.md)\tre-evaluated after JD update\n');
     writeFileSync(join(hAdditions, '001-empresa-ejemplo.tsv'),
       '1\t2026-01-06\tEmpresa Ejemplo\tData Lead\tEvaluated\t4.1/5\t❌\t' +
-      '[1](reports/001-empresa-ejemplo-2026-01-05.md)\tre-evaluated after JD update\n');
+      '[1](workspace/reports/evaluations/001-empresa-ejemplo-2026-01-05.md)\tre-evaluated after JD update\n');
 
     const hOut = run(NODE, ['src/tracker/merge-tracker.mjs'], {
       env: { ...process.env, FRONTRUNNER_TRACKER: hTracker, FRONTRUNNER_ADDITIONS: hAdditions },
@@ -7595,9 +7597,9 @@ try {
       '# Applications Tracker\n\n' +
       '| # | Date | Company | Role | Score | Status | PDF | Report | Notes |\n' +
       '|---|------|---------|------|-------|--------|-----|--------|-------|\n' +
-      '| 1 | 2026-01-01 | Fabrikam | Learning Development Designer III | 3.8/5 | Evaluated | ❌ | [1](../reports/001-fabrikam-2026-01-01.md) | Req R_1000001 |\n' +
-      '| 2 | 2026-01-01 | Fabrikam | Curriculum Program Coordinator | 3.5/5 | Evaluated | ❌ | [2](../reports/002-fabrikam-2026-01-01.md) | no req number here |\n' +
-      '| 3 | 2026-01-01 | Northwind | Operations Analyst | 3.6/5 | Evaluated | ❌ | [3](../reports/003-northwind-2026-01-01.md) | Job 2026-55501 |\n');
+      '| 1 | 2026-01-01 | Fabrikam | Learning Development Designer III | 3.8/5 | Evaluated | ❌ | [1](../reports/evaluations/001-fabrikam-2026-01-01.md) | Req R_1000001 |\n' +
+      '| 2 | 2026-01-01 | Fabrikam | Curriculum Program Coordinator | 3.5/5 | Evaluated | ❌ | [2](../reports/evaluations/002-fabrikam-2026-01-01.md) | no req number here |\n' +
+      '| 3 | 2026-01-01 | Northwind | Operations Analyst | 3.6/5 | Evaluated | ❌ | [3](../reports/evaluations/003-northwind-2026-01-01.md) | Job 2026-55501 |\n');
     for (const n of [
       '001-fabrikam-2026-01-01', '002-fabrikam-2026-01-01', '003-northwind-2026-01-01',
       '004-fabrikam-2026-01-02', '005-fabrikam-2026-01-02', '006-fabrikam-2026-01-02', '007-northwind-2026-01-02',
@@ -7607,16 +7609,16 @@ try {
 
     // (a) Same-looking title, DIFFERENT req number → must NOT be treated as a duplicate.
     writeFileSync(join(reqAdditions, '004-fabrikam.tsv'),
-      '4\t2026-01-02\tFabrikam\tLearning Development Curriculum Designer\tEvaluated\t4.5/5\t❌\t[4](reports/004-fabrikam-2026-01-02.md)\tReq R_1000002 — distinct posting (#1524)\n');
+      '4\t2026-01-02\tFabrikam\tLearning Development Curriculum Designer\tEvaluated\t4.5/5\t❌\t[4](workspace/reports/evaluations/004-fabrikam-2026-01-02.md)\tReq R_1000002 — distinct posting (#1524)\n');
     // (b) Same-looking title, SAME req number → still a duplicate (lower score → skipped, row untouched).
     writeFileSync(join(reqAdditions, '005-fabrikam.tsv'),
-      '5\t2026-01-02\tFabrikam\tLearning Development Designer III (Repost)\tEvaluated\t3.0/5\t❌\t[5](reports/005-fabrikam-2026-01-02.md)\tReq R_1000001 — same posting repost\n');
+      '5\t2026-01-02\tFabrikam\tLearning Development Designer III (Repost)\tEvaluated\t3.0/5\t❌\t[5](workspace/reports/evaluations/005-fabrikam-2026-01-02.md)\tReq R_1000001 — same posting repost\n');
     // (c) No req number on either side → existing fuzzy-match behavior unchanged (still deduped).
     writeFileSync(join(reqAdditions, '006-fabrikam.tsv'),
-      '6\t2026-01-02\tFabrikam\tCurriculum Program Coordinator II\tEvaluated\t3.9/5\t❌\t[6](reports/006-fabrikam-2026-01-02.md)\tno req number, higher score\n');
+      '6\t2026-01-02\tFabrikam\tCurriculum Program Coordinator II\tEvaluated\t3.9/5\t❌\t[6](workspace/reports/evaluations/006-fabrikam-2026-01-02.md)\tno req number, higher score\n');
     // (d) Req number on only one side → can't prove a mismatch, falls back to fuzzy-match (still deduped).
     writeFileSync(join(reqAdditions, '007-northwind.tsv'),
-      '7\t2026-01-02\tNorthwind\tOperations Analyst\tEvaluated\t3.2/5\t❌\t[7](reports/007-northwind-2026-01-02.md)\tno req number on this side\n');
+      '7\t2026-01-02\tNorthwind\tOperations Analyst\tEvaluated\t3.2/5\t❌\t[7](workspace/reports/evaluations/007-northwind-2026-01-02.md)\tno req number on this side\n');
 
     const reqResult = run(NODE, ['src/tracker/merge-tracker.mjs'], { env: { ...process.env, FRONTRUNNER_TRACKER: reqTracker, FRONTRUNNER_ADDITIONS: reqAdditions } });
     if (reqResult === null) {
@@ -7771,9 +7773,9 @@ try {
       writeFileSync(join(mergeTmp, 'reports', '010-alpha-2026-01-07.md'), '# fixture\n');
       writeFileSync(join(mergeTmp, 'reports', '011-beta-2026-01-07.md'), '# fixture\n');
       writeFileSync(join(additionsA, '010-alpha.tsv'),
-        '10\t2026-01-07\tAlpha\tPlatform Engineer\tEvaluated\t4.1/5\t❌\t[10](reports/010-alpha-2026-01-07.md)\tfirst concurrent merge\n');
+        '10\t2026-01-07\tAlpha\tPlatform Engineer\tEvaluated\t4.1/5\t❌\t[10](workspace/reports/evaluations/010-alpha-2026-01-07.md)\tfirst concurrent merge\n');
       writeFileSync(join(additionsB, '011-beta.tsv'),
-        '11\t2026-01-07\tBeta\tData Engineer\tEvaluated\t4.2/5\t❌\t[11](reports/011-beta-2026-01-07.md)\tsecond concurrent merge\n');
+        '11\t2026-01-07\tBeta\tData Engineer\tEvaluated\t4.2/5\t❌\t[11](workspace/reports/evaluations/011-beta-2026-01-07.md)\tsecond concurrent merge\n');
 
       const first = spawnMerge(additionsA, 350);
       await waitForReady(first.ready, 10_000); // Widen to 10s
@@ -7831,9 +7833,9 @@ try {
 
   // Fully provisioned env: all 4 present → must NOT onboard.
   const ready = mkdtempSync(join(tmpdir(), 'co-ready-'));
-  mkdirSync(join(ready, 'config'), { recursive: true });
-  mkdirSync(join(ready, 'modes'), { recursive: true });
-  for (const f of ['cv.md', 'config/profile.yml', 'modes/_profile.md', 'portals.yml']) {
+  mkdirSync(join(ready, 'workspace', 'profile'), { recursive: true });
+  mkdirSync(join(ready, 'workspace', 'search'), { recursive: true });
+  for (const f of ['workspace/profile/cv.md', 'workspace/profile/profile.yml', 'workspace/profile/targeting.md', 'workspace/search/portals.yml']) {
     writeFileSync(join(ready, f), 'x');
   }
   const r = JSON.parse(run(NODE, ['doctor.mjs', '--json', '--target', ready]) || '{}');
@@ -7844,12 +7846,13 @@ try {
   }
   rmSync(ready, { recursive: true, force: true });
 
-  // Auto-copy template: when modes/_profile.md or modes/_custom.md is missing but template exists,
+  // Auto-copy template: when workspace/profile/targeting.md or workspace/profile/preferences.md is missing but template exists,
   // doctor --json auto-copies them, records them in autoCopied, and does not report them as missing (#1369).
   const autoCopy = mkdtempSync(join(tmpdir(), 'co-autocopy-'));
-  mkdirSync(join(autoCopy, 'config'), { recursive: true });
+  mkdirSync(join(autoCopy, 'workspace', 'profile'), { recursive: true });
+  mkdirSync(join(autoCopy, 'workspace', 'search'), { recursive: true });
   mkdirSync(join(autoCopy, 'modes'), { recursive: true });
-  for (const f of ['cv.md', 'config/profile.yml', 'portals.yml']) {
+  for (const f of ['workspace/profile/cv.md', 'workspace/profile/profile.yml', 'workspace/search/portals.yml']) {
     writeFileSync(join(autoCopy, f), 'x');
   }
   writeFileSync(join(autoCopy, 'modes/_profile.template.md'), '# profile template\n');
@@ -7860,14 +7863,14 @@ try {
     Array.isArray(ac.missing) &&
     ac.missing.length === 0 &&
     Array.isArray(ac.autoCopied) &&
-    ac.autoCopied.includes('modes/_profile.md') &&
-    ac.autoCopied.includes('modes/_custom.md') &&
-    existsSync(join(autoCopy, 'modes/_profile.md')) &&
-    readFileSync(join(autoCopy, 'modes/_profile.md'), 'utf-8') === '# profile template\n' &&
-    existsSync(join(autoCopy, 'modes/_custom.md')) &&
-    readFileSync(join(autoCopy, 'modes/_custom.md'), 'utf-8') === '# custom template\n'
+    ac.autoCopied.includes('workspace/profile/targeting.md') &&
+    ac.autoCopied.includes('workspace/profile/preferences.md') &&
+    existsSync(join(autoCopy, 'workspace/profile/targeting.md')) &&
+    readFileSync(join(autoCopy, 'workspace/profile/targeting.md'), 'utf-8') === '# profile template\n' &&
+    existsSync(join(autoCopy, 'workspace/profile/preferences.md')) &&
+    readFileSync(join(autoCopy, 'workspace/profile/preferences.md'), 'utf-8') === '# custom template\n'
   ) {
-    pass('Auto-copy template → modes/_profile.md and modes/_custom.md copied silently in --json mode (#1369)');
+    pass('Auto-copy template → workspace/profile/targeting.md and workspace/profile/preferences.md copied silently in --json mode (#1369)');
   } else {
     fail(`Auto-copy template failed in --json mode: ${JSON.stringify(ac)}`);
   }
@@ -7917,8 +7920,8 @@ if (!sqliteAvailable) {
         '# Applications Tracker\n\n' +
         '| # | Date | Company | Role | Score | Status | PDF | Report | Notes |\n' +
         '|---|------|---------|------|-------|--------|-----|--------|-------|\n' +
-        '| 2 | 2026-01-05 | Beta | Designer | 4.0/5 | Applied | ✅ | [2](../reports/002-beta-2026-01-05.md) | second |\n' +
-        '| 1 | 2026-01-04 | Acme | Engineer | 4.2/5 | Evaluated | ❌ | [1](../reports/001-acme-2026-01-04.md) | first |\n';
+        '| 2 | 2026-01-05 | Beta | Designer | 4.0/5 | Applied | ✅ | [2](../reports/evaluations/002-beta-2026-01-05.md) | second |\n' +
+        '| 1 | 2026-01-04 | Acme | Engineer | 4.2/5 | Evaluated | ❌ | [1](../reports/evaluations/001-acme-2026-01-04.md) | first |\n';
       writeFileSync(md, clean);
       if (trackerRun(['sync']) === null) {
         fail('tracker sync crashed on clean fixture');
@@ -7959,7 +7962,7 @@ if (!sqliteAvailable) {
 
       // 3. Staleness: query after an md edit must auto-resync (no stale reads).
       writeFileSync(md, clean +
-        '| 3 | 2026-01-07 | Delta | Analyst | 4.5/5 | Applied | ✅ | [3](../reports/003-delta-2026-01-07.md) | new |\n');
+        '| 3 | 2026-01-07 | Delta | Analyst | 4.5/5 | Applied | ✅ | [3](../reports/evaluations/003-delta-2026-01-07.md) | new |\n');
       const fresh = JSON.parse(trackerRun(['query', '--company', 'Delta', '--json']) || '[]');
       if (fresh.length === 1) {
         pass('query auto-resyncs when applications.md changed since last sync');
@@ -8135,7 +8138,7 @@ console.log('\n13. Batch rate-limit pause');
 
 function writeToollessBatchFixture(root, urls) {
   const evaluateDir = join(root, 'src', 'evaluate');
-  const jdsDir = join(root, 'jds');
+  const jdsDir = join(root, 'workspace', 'jobs', 'descriptions');
   mkdirSync(evaluateDir, { recursive: true });
   mkdirSync(jdsDir, { recursive: true });
   const rows = ['url\tfile'];
@@ -8170,10 +8173,12 @@ function writeToollessBatchFixture(root, urls) {
 try {
   const tmp = mkdtempSync(join(tmpdir(), 'co-batch-rate-'));
   const batchDir = join(tmp, 'batch');
+  const stateDir = join(tmp, 'workspace', '.state');
   const fakeBin = join(tmp, 'bin');
   mkdirSync(batchDir, { recursive: true });
-  mkdirSync(join(tmp, 'reports'), { recursive: true });
-  mkdirSync(join(tmp, 'data'), { recursive: true });
+  mkdirSync(stateDir, { recursive: true });
+  mkdirSync(join(tmp, 'workspace', 'reports', 'evaluations'), { recursive: true });
+  mkdirSync(join(tmp, 'workspace', 'applications'), { recursive: true });
   mkdirSync(fakeBin, { recursive: true });
 
   writeFileSync(join(batchDir, 'batch-runner.sh'), readFileSync(join(ROOT, 'batch/batch-runner.sh'), 'utf-8').replace(/\r\n/g, '\n'));
@@ -8194,7 +8199,7 @@ try {
     "writeFileSync(val('--rejects'), 'url\\tcompany\\ttitle\\trule\\tevidence\\n');",
   ].join('\n'));
   writeFileSync(join(batchDir, 'batch-prompt.md'), 'URL={{URL}}\nJD={{JD_FILE}}\nREPORT={{REPORT_NUM}}\n');
-  writeFileSync(join(batchDir, 'batch-input.tsv'), [
+  writeFileSync(join(stateDir, 'batch-input.tsv'), [
     'id\turl\tsource\tnotes',
     '1\thttps://example.com/one\tfixture\t-',
     '2\thttps://example.com/two\tfixture\t-',
@@ -8226,7 +8231,7 @@ try {
     env,
     stdio: ['pipe', 'pipe', 'pipe'],
   }) || '';
-  const state = readFileSync(join(batchDir, 'batch-state.tsv'), 'utf-8').trim().split('\n');
+  const state = readFileSync(join(stateDir, 'batch-state.tsv'), 'utf-8').trim().split('\n');
   const first = state[1]?.split('\t') || [];
 
   if (state.length === 2 && first[0] === '1' && first[2] === 'paused_rate_limit' && first[8] === '0') {
@@ -8235,7 +8240,7 @@ try {
     fail(`session-limit pause wrong: lines=${state.length}, first=${JSON.stringify(first)}, out=${JSON.stringify(out.slice(-240))}`);
   }
 
-  writeFileSync(join(batchDir, 'batch-state.tsv'), [
+  writeFileSync(join(stateDir, 'batch-state.tsv'), [
     'id\turl\tstatus\tstarted_at\tcompleted_at\treport_num\tscore\terror\tretries',
     '1\thttps://example.com/one\tpaused_rate_limit\t2026-01-01T00:00:00Z\t2026-01-01T00:00:01Z\t001\t-\tsession-limit; paused\t0',
     '2\thttps://example.com/two\tfailed\t2026-01-01T00:00:00Z\t2026-01-01T00:00:01Z\t002\t-\tworker-crash\t1',
@@ -8251,10 +8256,10 @@ try {
     fail(`--resume-paused selection wrong: ${dry}`);
   }
 
-  rmSync(join(batchDir, 'batch-input.tsv'), { force: true });
+  rmSync(join(stateDir, 'batch-input.tsv'), { force: true });
   rmSync(join(batchDir, 'batch-prompt.md'), { force: true });
   rmSync(join(fakeBin, 'claude'), { force: true });
-  writeFileSync(join(batchDir, 'batch-state.tsv'), [
+  writeFileSync(join(stateDir, 'batch-state.tsv'), [
     'id\turl\tstatus\tstarted_at\tcompleted_at\treport_num\tscore\terror\tretries',
     '1\thttps://example.com/one\tcompleted\t2026-01-01T00:00:00Z\t2026-01-01T00:00:01Z\t001\t4.5\t-\t0',
     '2\thttps://example.com/two\tcompleted\t2026-01-01T00:00:00Z\t2026-01-01T00:00:01Z\t002\tbad);system("oops")\t-\t0',
@@ -8287,11 +8292,13 @@ function makeTierFixture(profileYml) {
   const tmp = mkdtempSync(join(tmpdir(), 'co-batch-tier-'));
   const batchDir = join(tmp, 'batch');
   const fakeBin = join(tmp, 'bin');
-  const configDir = join(tmp, 'config');
+  const profileDir = join(tmp, 'workspace', 'profile');
   mkdirSync(batchDir, { recursive: true });
-  mkdirSync(configDir, { recursive: true });
-  mkdirSync(join(tmp, 'reports'), { recursive: true });
-  mkdirSync(join(tmp, 'data'), { recursive: true });
+  mkdirSync(profileDir, { recursive: true });
+  const stateDir = join(tmp, 'workspace', '.state');
+  mkdirSync(stateDir, { recursive: true });
+  mkdirSync(join(tmp, 'workspace', 'reports', 'evaluations'), { recursive: true });
+  mkdirSync(join(tmp, 'workspace', 'applications'), { recursive: true });
   mkdirSync(fakeBin, { recursive: true });
 
   writeFileSync(join(batchDir, 'batch-runner.sh'), readFileSync(join(ROOT, 'batch/batch-runner.sh'), 'utf-8').replace(/\r\n/g, '\n'));
@@ -8312,12 +8319,12 @@ function makeTierFixture(profileYml) {
     "writeFileSync(val('--rejects'), 'url\\tcompany\\ttitle\\trule\\tevidence\\n');",
   ].join('\n'));
   writeFileSync(join(batchDir, 'batch-prompt.md'), 'URL={{URL}}\nJD={{JD_FILE}}\nREPORT={{REPORT_NUM}}\n');
-  writeFileSync(join(batchDir, 'batch-input.tsv'), [
+  writeFileSync(join(stateDir, 'batch-input.tsv'), [
     'id\turl\tsource\tnotes',
     '1\thttps://example.com/one\tfixture\t-',
   ].join('\n') + '\n');
   writeToollessBatchFixture(tmp, ['https://example.com/one']);
-  writeFileSync(join(configDir, 'profile.yml'), profileYml);
+  writeFileSync(join(profileDir, 'profile.yml'), profileYml);
   writeFileSync(join(fakeBin, 'claude'), [
     '#!/usr/bin/env bash',
     'printf "%s\\n" "$@" > "$BATCH_ARG_FILE"',
@@ -8427,7 +8434,7 @@ try {
       'set -euo pipefail',
       `source "${toBashPath(join(batchDir, 'batch-runner.lib.sh'))}"`,
       'log_discard "7" "https://example.com/mismatch" "wrong seniority band"',
-      `cat "${toBashPath(join(batchDir, 'logs', 'discard.log'))}"`,
+      `cat "${toBashPath(join(tmp, 'workspace', '.state', 'logs', 'discard.log'))}"`,
     ].join('\n');
     const out = run(getBash(), ['-c', script], { cwd: tmp, stdio: ['pipe', 'pipe', 'pipe'] }) || '';
     const line = out.trim().split('\n').pop() || '';
@@ -8440,7 +8447,7 @@ try {
       cols[2] === 'https://example.com/mismatch' &&
       cols[3] === 'wrong seniority band'
     ) {
-      pass('log_discard appends a one-line, auditable {timestamp, id, url, reason} record to batch/logs/discard.log');
+      pass('log_discard appends a one-line, auditable {timestamp, id, url, reason} record to workspace/.state/logs/discard.log');
     } else {
       fail(`log_discard output malformed: ${JSON.stringify(out)}`);
     }
@@ -8989,7 +8996,7 @@ try {
   }
 
   // The photo is an opt-in {{PHOTO}} slot, empty by default. The agent fills it
-  // only when config/profile.yml sets candidate.photo; otherwise it stays empty.
+  // only when workspace/profile/profile.yml sets candidate.photo; otherwise it stays empty.
   if (cvTemplate.includes('{{PHOTO}}')) {
     pass('cv-template.html exposes a {{PHOTO}} opt-in slot (empty by default)');
   } else {
@@ -9046,7 +9053,7 @@ try {
   }
 
   // The photo is an opt-in {{PHOTO}} slot, empty by default. The agent fills it
-  // only when config/profile.yml sets candidate.photo; otherwise it stays empty.
+  // only when workspace/profile/profile.yml sets candidate.photo; otherwise it stays empty.
   if (resumeTemplate.includes('{{PHOTO}}')) {
     pass('resume-template.html exposes a {{PHOTO}} opt-in slot (empty by default)');
   } else {
@@ -9086,7 +9093,7 @@ try {
 
 // ── 29. CUSTOM INSTRUCTIONS extension point (user-layer, #1198) ────
 
-console.log('\n29. Custom instructions extension point (modes/_custom.md, #1198)');
+console.log('\n29. Custom instructions extension point (workspace/profile/preferences.md, #1198)');
 
 try {
   // The template MUST ship — it seeds the user file on first run.
@@ -9102,10 +9109,10 @@ try {
   // the user's house rules — that is the whole point of #1198. Anchor to the
   // USER_PATHS array block so a stray match elsewhere can't give a false pass.
   const userBlock = (updater.match(/USER_PATHS\s*=\s*\[([\s\S]*?)\]/) || [, ''])[1];
-  if (userBlock.includes("'modes/_custom.md'")) {
-    pass('modes/_custom.md is in USER_PATHS (custom rules survive update-system.mjs)');
+  if (userBlock.includes("'workspace/'")) {
+    pass('the complete workspace is in USER_PATHS (custom rules survive update-system.mjs)');
   } else {
-    fail('modes/_custom.md is NOT in USER_PATHS — custom instructions would be wiped on update (#1198)');
+    fail('workspace/ is NOT in USER_PATHS — private content could be overwritten');
   }
 
   // .claude/settings.json holds user-configured permissions and hooks (e.g. auto-backup).
@@ -9132,9 +9139,9 @@ try {
   const sourceBoundaryEnd = agentsMd.indexOf('Anything not in this list', sourceBoundaryStart);
   const sourceBoundary = agentsMd.slice(sourceBoundaryStart, sourceBoundaryEnd);
   if (
-    agentsMd.includes('modes/_custom.md') &&
+    agentsMd.includes('workspace/profile/preferences.md') &&
     agentsMd.includes('modes/_custom.template.md') &&
-    sourceBoundary.includes('modes/_custom.md') &&
+    sourceBoundary.includes('workspace/profile/preferences.md') &&
     sourceBoundary.includes('procedural/style rules only') &&
     sourceBoundary.includes('never introduces factual claims') &&
     claudeMd.trim().startsWith('@AGENTS.md')
@@ -9150,7 +9157,7 @@ try {
     guardedPaths.includes('/^modes\\/_custom\\.md$/') &&
     guardedPaths.includes('/^voice-dna\\.md$/')
   ) {
-    pass('no-user-data guard protects modes/_custom.md and voice-dna.md as user layer');
+    pass('no-user-data guard protects workspace/profile/preferences.md and workspace/profile/voice-dna.md as user layer');
   } else {
     fail('no-user-data guard has the wrong custom/user-layer paths (#1736)');
   }
@@ -9469,20 +9476,10 @@ try {
 
 console.log('\n52. Interview session producer (#1242 transcript contract)');
 
-// Scaffold is system-owned and MUST ship (tracked) so the updater can deliver it.
-for (const f of ['interview-prep/sessions/.gitkeep', 'interview-prep/sessions/README.md']) {
-  if (!fileExists(f)) {
-    fail(`Missing session scaffold: ${f}`);
-  } else if (run('git', ['ls-files', f])) {
-    pass(`Session scaffold shipped (tracked): ${f}`);
-  } else {
-    fail(`Session scaffold exists but is NOT tracked (won't ship): ${f}`);
-  }
-}
-
-// Real session files contain real names/companies — they MUST be gitignored.
+// The complete private boundary is ignored; no tracked scaffold can make a
+// fresh clone look initialized or create an updater overlap.
 {
-  const real = 'interview-prep/sessions/acme-corp-instructional-designer-behavioral-2026-06-01.md';
+  const real = 'workspace/interviews/sessions/acme-corp-instructional-designer-behavioral-2026-06-01.md';
   if (run('git', ['check-ignore', real])) {
     pass('Real session files are gitignored (PII never committed)');
   } else {
@@ -9490,39 +9487,21 @@ for (const f of ['interview-prep/sessions/.gitkeep', 'interview-prep/sessions/RE
   }
 }
 
-// ...but the scaffold itself must be force-included past that ignore rule.
-for (const f of ['interview-prep/sessions/.gitkeep', 'interview-prep/sessions/README.md']) {
-  if (run('git', ['check-ignore', f])) {
-    fail(`Session scaffold is gitignored (won't ship): ${f}`);
-  } else {
-    pass(`Session scaffold is force-included past the ignore rule: ${f}`);
-  }
-}
-
-// The scaffold must be in SYSTEM_PATHS (the updater delivers/refreshes it).
 {
   const updater = readFile('update-system.mjs');
   const sysBlock = (updater.match(/SYSTEM_PATHS\s*=\s*\[([\s\S]*?)\]/) || [, ''])[1];
-  for (const p of ['interview-prep/sessions/.gitkeep', 'interview-prep/sessions/README.md']) {
-    if (sysBlock.includes(`'${p}'`)) {
-      pass(`Session scaffold in SYSTEM_PATHS: ${p}`);
-    } else {
-      fail(`Session scaffold NOT in SYSTEM_PATHS (won't update): ${p}`);
-    }
-  }
-  // Never ship the directory itself — that would let an update wipe user sessions.
-  if (sysBlock.includes("'interview-prep/sessions/'")) {
-    fail("interview-prep/sessions/ dir is in SYSTEM_PATHS — an update could overwrite user sessions");
+  if (sysBlock.includes("'workspace/")) {
+    fail('SYSTEM_PATHS contains workspace content — an update could overwrite private data');
   } else {
-    pass('interview-prep/sessions/ dir is NOT a SYSTEM_PATHS entry (user sessions safe)');
+    pass('SYSTEM_PATHS contains no private-workspace scaffold');
   }
 }
 
 // Both producers must document writing a session transcript with competency tags.
 for (const mode of ['modes/interview/debrief.md', 'modes/interview/practice.md']) {
   const body = readFile(mode);
-  if (body.includes('interview-prep/sessions/')) {
-    pass(`${mode} writes to interview-prep/sessions/`);
+  if (body.includes('workspace/interviews/sessions/')) {
+    pass(`${mode} writes to workspace/interviews/sessions/`);
   } else {
     fail(`${mode} does not write a session transcript (producer missing)`);
   }
@@ -9530,23 +9509,6 @@ for (const mode of ['modes/interview/debrief.md', 'modes/interview/practice.md']
     pass(`${mode} emits the competency tag`);
   } else {
     fail(`${mode} does not emit the <!-- competency: --> tag`);
-  }
-}
-
-// The README is the consumer contract — it must document speaker labels + tag format.
-if (!fileExists('interview-prep/sessions/README.md')) {
-  fail('sessions/README.md missing — cannot verify the consumer contract');
-} else {
-  const readme = readFile('interview-prep/sessions/README.md');
-  if (readme.includes('**Interviewer:**') && readme.includes('**Candidate:**')) {
-    pass('sessions/README documents Interviewer/Candidate speaker labels');
-  } else {
-    fail('sessions/README missing speaker-label contract');
-  }
-  if (readme.includes('<!-- competency:')) {
-    pass('sessions/README documents the competency tag format');
-  } else {
-    fail('sessions/README missing competency tag format');
   }
 }
 
@@ -9684,19 +9646,19 @@ try {
     fail(`src/evaluate/prepare-application.mjs missing jobs.eu.lever.co from: ${missing}`);
   }
 
-  // Must read config/profile.yml
-  if (/config\/profile\.yml/.test(src)) {
-    pass('src/evaluate/prepare-application.mjs reads config/profile.yml');
+  // Must read workspace/profile/profile.yml
+  if (/workspace\/profile\/profile\.yml/.test(src)) {
+    pass('src/evaluate/prepare-application.mjs reads workspace/profile/profile.yml');
   } else {
-    fail('src/evaluate/prepare-application.mjs does not read config/profile.yml');
+    fail('src/evaluate/prepare-application.mjs does not read workspace/profile/profile.yml');
   }
 
-  // Must restrict PDF to output/ directory — either the legacy startsWith
+  // Must restrict PDF to workspace/documents/ directory — either the legacy startsWith
   // prefix check or the path.relative() containment guard counts.
-  if (/output[^'"`\n]*startsWith|startsWith.*output|relative\(outputDir/.test(src)) {
-    pass('src/evaluate/prepare-application.mjs restricts PDF path to output/');
+  if (/documents[^'"`\n]*startsWith|startsWith.*documents|relative\(outputDir/.test(src)) {
+    pass('src/evaluate/prepare-application.mjs restricts PDF path to workspace/documents/');
   } else {
-    fail('src/evaluate/prepare-application.mjs missing output/ directory restriction for --pdf');
+    fail('src/evaluate/prepare-application.mjs missing workspace/documents/ directory restriction for --pdf');
   }
 
   // Must enforce https-only
@@ -10022,7 +9984,7 @@ try {
 }
 
 // ── 58. TITLES MODE (#1632) ─────────────────────────────────────
-// CV → adjacent job-title suggestions → confirm-gated portals.yml writes.
+// CV → adjacent job-title suggestions → confirm-gated workspace/search/portals.yml writes.
 // The mode is judgment-only (no script), so these checks pin the behavioral
 // contract: evidence-required suggestions, the confirm gate, user-layer-only
 // writes, and dedup that mirrors the src\/scan\/scan.mjs matcher.
@@ -10057,13 +10019,13 @@ try {
 
   if (
     titlesFlat.includes('exact YAML diff') &&
-    titlesFlat.includes('Never write to `portals.yml` without explicit user confirmation') &&
+    titlesFlat.includes('Never write to `workspace/search/portals.yml` without explicit user confirmation') &&
     titlesFlat.includes('the only file this mode writes by default') &&
     titlesFlat.includes('keywords, not raw titles')
   ) {
-    pass('titles mode confirm gate: exact YAML diff, explicit confirmation, portals.yml default-only, keywords not raw titles');
+    pass('titles mode confirm gate: exact YAML diff, explicit confirmation, workspace/search/portals.yml default-only, keywords not raw titles');
   } else {
-    fail('titles mode missing the confirm-gate contract (diff preview / explicit confirmation / portals.yml default-only / keywords)');
+    fail('titles mode missing the confirm-gate contract (diff preview / explicit confirmation / workspace/search/portals.yml default-only / keywords)');
   }
 
   if (
@@ -10079,7 +10041,7 @@ try {
     titlesMode.includes('src/scan/scan.mjs') &&
     titlesMode.includes('case-insensitive substring') &&
     titlesMode.includes('deal-breakers') &&
-    titlesMode.includes('modes/_profile.md')
+    titlesMode.includes('workspace/profile/targeting.md')
   ) {
     pass('titles mode dedups against existing keywords via src/scan/scan.mjs semantics and filters by _profile.md deal-breakers');
   } else {
@@ -10087,13 +10049,13 @@ try {
   }
 
   if (
-    titlesMode.includes('cv.md') &&
-    titlesMode.includes('config/profile.yml') &&
+    titlesMode.includes('workspace/profile/cv.md') &&
+    titlesMode.includes('workspace/profile/profile.yml') &&
     titlesMode.includes('title_filter.positive')
   ) {
-    pass('titles mode reads cv.md, profile archetypes, and the current title_filter.positive');
+    pass('titles mode reads workspace/profile/cv.md, profile archetypes, and the current title_filter.positive');
   } else {
-    fail('titles mode missing required inputs (cv.md / config/profile.yml / title_filter.positive)');
+    fail('titles mode missing required inputs (workspace/profile/cv.md / workspace/profile/profile.yml / title_filter.positive)');
   }
 
   if (
@@ -10108,20 +10070,20 @@ try {
   if (
     titlesFlat.includes('Separately-confirmed exception') &&
     titlesFlat.includes('own YAML diff and its own separate confirmation') &&
-    titlesFlat.includes('never bundle the `portals.yml` and `config/profile.yml` writes into one confirmation')
+    titlesFlat.includes('never bundle the `workspace/search/portals.yml` and `workspace/profile/profile.yml` writes into one confirmation')
   ) {
-    pass('titles mode gates config/profile.yml archetype writes behind a separate diff + confirmation (never bundled)');
+    pass('titles mode gates workspace/profile/profile.yml archetype writes behind a separate diff + confirmation (never bundled)');
   } else {
-    fail('titles mode missing the separately-confirmed exception for config/profile.yml archetype writes');
+    fail('titles mode missing the separately-confirmed exception for workspace/profile/profile.yml archetype writes');
   }
 
   if (
-    titlesFlat.includes('`config/profile.yml` or `modes/_profile.md` missing → **hard stop**: do not generate suggestions') &&
+    titlesFlat.includes('`workspace/profile/profile.yml` or `workspace/profile/targeting.md` missing → **hard stop**: do not generate suggestions') &&
     titlesFlat.includes('can propose exactly what the user excluded')
   ) {
-    pass('titles mode hard-stops on missing config/profile.yml or modes/_profile.md (deal-breakers unavailable)');
+    pass('titles mode hard-stops on missing workspace/profile/profile.yml or workspace/profile/targeting.md (deal-breakers unavailable)');
   } else {
-    fail('titles mode should hard stop (not best-effort from cv.md) when config/profile.yml or modes/_profile.md is missing');
+    fail('titles mode should hard stop (not best-effort from workspace/profile/cv.md) when workspace/profile/profile.yml or workspace/profile/targeting.md is missing');
   }
 
   if (titlesMode.includes('#1353')) {
@@ -10143,9 +10105,9 @@ try {
     titlesMode.includes('onboarding') &&
     titlesMode.includes('templates/portals.example.yml')
   ) {
-    pass('titles mode handles missing cv.md (onboarding) and missing portals.yml (create from template)');
+    pass('titles mode handles missing workspace/profile/cv.md (onboarding) and missing workspace/search/portals.yml (create from template)');
   } else {
-    fail('titles mode missing error handling for absent cv.md / portals.yml');
+    fail('titles mode missing error handling for absent workspace/profile/cv.md / workspace/search/portals.yml');
   }
 } catch (e) {
   fail(`modes/titles.md missing or unreadable: ${e.message}`);
@@ -10210,7 +10172,7 @@ console.log('\n59. CV template resolver (src/cv/cv-templates.mjs)');
   else fail('CLI: list cv did not return JSON');
 
   // Hermetic: point at a nonexistent profile so this exercises the unset -> base
-  // fallback regardless of the developer's real config/profile.yml (cv.template).
+  // fallback regardless of the developer's real workspace/profile/profile.yml (cv.template).
   const noProfile = { env: { ...process.env, FRONTRUNNER_PROFILE: join(tmpdir(), 'frontrunner-no-such-profile.yml') } };
   const resolved = run(NODE, ['src/cv/cv-templates.mjs', 'resolve', 'cv'], noProfile);
   if (resolved && resolved.endsWith('cv-template.html')) pass('CLI: resolve cv (unset) -> base template');

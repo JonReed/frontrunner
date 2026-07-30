@@ -13,7 +13,7 @@
 
 import { spawn } from 'node:child_process';
 import { join } from 'node:path';
-import { ROOT } from './roles';
+import { ROOT } from './root';
 
 const STATUS_CONTROL = join(ROOT, 'src', 'application', 'status-control.mjs');
 const RESPONSE_LIMIT = 64 * 1024;

@@ -184,13 +184,13 @@ export default {
   async fetch(entry, ctx) {
     const { days, size, fetchDetails, detailLimit, keywords: ownKeywords } = parseVdabConfig(entry);
     let keywords = ownKeywords;
-    // Fall back to config/profile.yml's target_roles when this entry has no
+    // Fall back to workspace/profile/profile.yml's target_roles when this entry has no
     // vdab.keywords[] of its own — most users who onboarded already have
     // target roles recorded, so this avoids duplicating that into every
     // keyword-required provider's config by hand.
     if (!keywords.length) keywords = resolveProfileKeywords();
     if (!keywords.length) {
-      throw new Error(`vdab: entry "${entry.name || '(unnamed)'}" has no vdab.keywords[] and no config/profile.yml target_roles to fall back to`);
+      throw new Error(`vdab: entry "${entry.name || '(unnamed)'}" has no vdab.keywords[] and no workspace/profile/profile.yml target_roles to fall back to`);
     }
 
     // Scoped to this fetch() call: try the hardcoded key first (fast path);

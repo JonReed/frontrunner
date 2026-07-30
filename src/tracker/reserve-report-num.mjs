@@ -48,7 +48,7 @@ export function formatReportNumber(num) {
 function reportsDirFor(options = {}) {
   return resolve(options.reportsDir
     || process.env.FRONTRUNNER_REPORTS_DIR
-    || join(options.rootDir || ROOT, 'reports'));
+    || join(options.rootDir || ROOT, 'workspace', 'reports', 'evaluations'));
 }
 
 function trackerPathFor(options = {}) {

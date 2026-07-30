@@ -4,7 +4,7 @@
 **Archetype:** AI Platform / LLMOps Engineer
 **Score:** 4.2/5
 **URL:** https://jobs.example.com/acme-ai-senior-engineer
-**PDF:** output/cv-candidate-acme-ai-2026-04-01.pdf
+**PDF:** workspace/documents/cv-candidate-acme-ai-2026-04-01.pdf
 
 ---
 
@@ -24,10 +24,10 @@
 
 | JD Requirement | CV Match | Source |
 |----------------|----------|--------|
-| "Production LLM systems" | Built real-time fraud detection + LLM eval toolkit | cv.md: TechFin Corp |
-| "Model monitoring and observability" | Drift detection, Grafana dashboards, retraining triggers | cv.md: ML Platform Lead |
-| "Python + distributed systems" | Python, Kafka, Kubernetes, Redis | cv.md: Skills |
-| "CI/CD for ML" | Reduced deploy from 2 weeks to 4 hours | cv.md: TechFin Corp |
+| "Production LLM systems" | Built real-time fraud detection + LLM eval toolkit | workspace/profile/cv.md: TechFin Corp |
+| "Model monitoring and observability" | Drift detection, Grafana dashboards, retraining triggers | workspace/profile/cv.md: ML Platform Lead |
+| "Python + distributed systems" | Python, Kafka, Kubernetes, Redis | workspace/profile/cv.md: Skills |
+| "CI/CD for ML" | Reduced deploy from 2 weeks to 4 hours | workspace/profile/cv.md: TechFin Corp |
 
 ### Gaps
 

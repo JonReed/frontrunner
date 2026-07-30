@@ -18,10 +18,10 @@ Después de una entrevista real, captura qué se preguntó, evalúa qué funcion
 2. **Nombre y rol del entrevistador** — informa la predicción de la siguiente ronda
 3. **Resultado de la ronda** (si se conoce) — avanzó / rechazado / pendiente
 4. **Detalles de la siguiente ronda** (si se conocen) — formato, entrevistadores, plazos
-5. **Banco de preguntas** en `interview-prep/question-bank.md` — actualizar con datos reales
-6. **Banco de historias** en `interview-prep/story-bank.md` — agregar nuevas historias si surgieron
-7. **CV** en `cv.md` + `article-digest.md` (si está presente) — para fundamentar las respuestas sugeridas en la experiencia real
-8. **Afirmaciones retractadas** en `interview-prep/retracted-claims.md` (si está presente) — barrera estricta (hard gate); nunca uses una afirmación retractada en una respuesta sugerida, incluso si el candidato la dijo en la entrevista
+5. **Banco de preguntas** en `workspace/interviews/question-bank.md` — actualizar con datos reales
+6. **Banco de historias** en `workspace/interviews/story-bank.md` — agregar nuevas historias si surgieron
+7. **CV** en `workspace/profile/cv.md` + `workspace/profile/article-digest.md` (si está presente) — para fundamentar las respuestas sugeridas en la experiencia real
+8. **Afirmaciones retractadas** en `workspace/interviews/retracted-claims.md` (si está presente) — barrera estricta (hard gate); nunca uses una afirmación retractada en una respuesta sugerida, incluso si el candidato la dijo en la entrevista
 9. **Archivo de preparación específico del rol** — para adjuntar las notas del análisis
 
 ---
@@ -61,7 +61,7 @@ Sé directo. Si perdieron el concepto central que la pregunta estaba evaluando, 
 
 ## Step 3 — Update Question Bank
 
-Para cada pregunta analizada, actualiza `interview-prep/question-bank.md`:
+Para cada pregunta analizada, actualiza `workspace/interviews/question-bank.md`:
 - Cambia el estado a ✅ / 🟡 / 🔴 según el rendimiento real
 - Agrega notas de carencias del análisis
 - Agrega cualquier nueva pregunta que haya aparecido y que aún no estuviera en el banco
@@ -77,7 +77,7 @@ Para cada 🔴 carencia identificada:
 1. **Explica la respuesta correcta** — clara, concisa, con un ejemplo desarrollado (código, cálculo, diagrama) si es útil
 2. **Conecta con una historia real** si es posible — "realmente tienes esto en tu [historia existente del banco de historias] — aquí te muestro cómo usarlo"
 3. **Agrega al archivo de preparación del rol** bajo una sección "Gaps to Close Before Round N"
-4. **Agrega a `interview-prep/interview-prep-guide.md`** (si el candidato mantiene uno) cuando sea un principio reutilizable que se aplique más allá de este rol
+4. **Agrega a `workspace/interviews/interview-prep-guide.md`** (si el candidato mantiene uno) cuando sea un principio reutilizable que se aplique más allá de este rol
 
 ---
 
@@ -87,7 +87,7 @@ A veces, una entrevista real saca a relucir una historia que el candidato no hab
 
 > "Mencionaste [X] en tu respuesta — parece que podría convertirse en una historia STAR+R adecuada. ¿Quieres desarrollarla ahora que está fresca?"
 
-Si dice que sí, desarróllala como una historia STAR+R (Situación, Tarea, Acción, Resultado, Reflexión) y agrégala a `interview-prep/story-bank.md`.
+Si dice que sí, desarróllala como una historia STAR+R (Situación, Tarea, Acción, Resultado, Reflexión) y agrégala a `workspace/interviews/story-bank.md`.
 
 ---
 
@@ -124,7 +124,7 @@ Sé honesto. Un rango de probabilidad con un razonamiento claro es más útil qu
 
 ## Step 8 — Save Debrief
 
-Agrega a `interview-prep/{company-slug}-{role-slug}.md`:
+Agrega a `workspace/interviews/{company-slug}-{role-slug}.md`:
 
 ```markdown
 ## Round [N] Debrief — [YYYY-MM-DD]
@@ -155,7 +155,7 @@ Agrega a `interview-prep/{company-slug}-{role-slug}.md`:
 
 ## Step 9 — Write Session Transcript
 
-Después del análisis, escribe también una transcripción de la sesión legible por máquina en `interview-prep/sessions/{company-slug}-{role-slug}-{round}-{YYYY-MM-DD}.md`. Este es un registro estructurado de la ronda para modos de análisis posteriores; los turnos etiquetados por hablante permiten a un consumidor leer cualquier lado sin tener que volver a inferir quién habló. El contrato completo vive en `interview-prep/sessions/README.md`.
+Después del análisis, escribe también una transcripción de la sesión legible por máquina en `workspace/interviews/sessions/{company-slug}-{role-slug}-{round}-{YYYY-MM-DD}.md`. Este es un registro estructurado de la ronda para modos de análisis posteriores; los turnos etiquetados por hablante permiten a un consumidor leer cualquier lado sin tener que volver a inferir quién habló. El contrato completo vive en `workspace/interviews/sessions/README.md`.
 
 Formato:
 
@@ -192,9 +192,9 @@ Reglas para la transcripción:
 
 - **Analiza inmediatamente.** La memoria de los detalles de la entrevista se degrada rápidamente — en cuestión de horas, las preguntas y reacciones específicas se olvidan. Ejecuta esta habilidad el mismo día.
 - **No suavices las carencias.** Una carencia 🔴 que se llama 🟡 por amabilidad volverá a aparecer en la siguiente ronda.
-- **Nunca pongas afirmaciones inventadas en boca del candidato.** Las respuestas correctas/completas pueden basarse en el conocimiento general del dominio, pero cualquier afirmación personal o métrica sugerida debe provenir de lo que dijo el candidato, `cv.md`, `article-digest.md` o el banco de historias.
-- **Las afirmaciones retractadas son una barrera estricta.** Si una afirmación aparece en `interview-prep/retracted-claims.md`, nunca sugieras que el candidato la use — incluso si la dijo en la entrevista real. Márcala: "Esa afirmación está en tu lista de retractadas — no es defendible bajo presión. Aquí tienes una versión que no depende de ella."
-- **Registra nuevas retractaciones.** Si el análisis revela una afirmación que el candidato usó en la entrevista real y que ahora acepta que no es defendible, ofrece agregarla a `interview-prep/retracted-claims.md`: `**"[afirmación]"** ([contexto]). Razón: [razón de una línea + encuadre correcto si aplica].`
-- **Extrae las carencias de vocabulario de forma explícita.** Si el candidato usó un término impreciso donde existe uno preciso, agrégalo a `interview-prep/interview-prep-guide.md` en la sección de vocabulario (si el candidato mantiene uno).
+- **Nunca pongas afirmaciones inventadas en boca del candidato.** Las respuestas correctas/completas pueden basarse en el conocimiento general del dominio, pero cualquier afirmación personal o métrica sugerida debe provenir de lo que dijo el candidato, `workspace/profile/cv.md`, `workspace/profile/article-digest.md` o el banco de historias.
+- **Las afirmaciones retractadas son una barrera estricta.** Si una afirmación aparece en `workspace/interviews/retracted-claims.md`, nunca sugieras que el candidato la use — incluso si la dijo en la entrevista real. Márcala: "Esa afirmación está en tu lista de retractadas — no es defendible bajo presión. Aquí tienes una versión que no depende de ella."
+- **Registra nuevas retractaciones.** Si el análisis revela una afirmación que el candidato usó en la entrevista real y que ahora acepta que no es defendible, ofrece agregarla a `workspace/interviews/retracted-claims.md`: `**"[afirmación]"** ([contexto]). Razón: [razón de una línea + encuadre correcto si aplica].`
+- **Extrae las carencias de vocabulario de forma explícita.** Si el candidato usó un término impreciso donde existe uno preciso, agrégalo a `workspace/interviews/interview-prep-guide.md` en la sección de vocabulario (si el candidato mantiene uno).
 - **Una carencia = una solución.** No abrumes con un plan de estudio completo para cada carencia. Prioriza las 1 o 2 con mayor probabilidad de ser evaluadas en la siguiente ronda.
 - **Celebra lo que funcionó.** El análisis no se trata solo de carencias. Nombra lo que fue sólido — refuerza el comportamiento correcto y construye confianza para la próxima ronda.

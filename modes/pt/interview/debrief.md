@@ -18,10 +18,10 @@ Após uma entrevista real, registre o que foi perguntado, avalie o que funcionou
 2. **Nome e cargo do entrevistador** — orienta a previsão da próxima rodada
 3. **Resultado da rodada** (se souber) — avançou / rejeitado / pendente
 4. **Detalhes da próxima rodada** (se souber) — formato, entrevistadores, prazos
-5. **Question bank** em `interview-prep/question-bank.md` — atualize com dados reais
-6. **Story bank** em `interview-prep/story-bank.md` — adicione novas histórias se surgirem
-7. **CV** em `cv.md` + `article-digest.md` (se existir) — para ancorar respostas sugeridas em experiência real
-8. **Alegações retiradas** em `interview-prep/retracted-claims.md` (se existir) — barreira rígida; nunca use uma alegação retirada em uma resposta sugerida, mesmo que o candidato a tenha dito na entrevista
+5. **Question bank** em `workspace/interviews/question-bank.md` — atualize com dados reais
+6. **Story bank** em `workspace/interviews/story-bank.md` — adicione novas histórias se surgirem
+7. **CV** em `workspace/profile/cv.md` + `workspace/profile/article-digest.md` (se existir) — para ancorar respostas sugeridas em experiência real
+8. **Alegações retiradas** em `workspace/interviews/retracted-claims.md` (se existir) — barreira rígida; nunca use uma alegação retirada em uma resposta sugerida, mesmo que o candidato a tenha dito na entrevista
 9. **Arquivo de preparação específico da vaga** — acrescente as notas do debrief
 
 ---
@@ -61,7 +61,7 @@ Seja direto. Se ele errou o conceito central que a pergunta testava, diga isso. 
 
 ## Step 3 — Update Question Bank
 
-Para cada pergunta do debrief, atualize `interview-prep/question-bank.md`:
+Para cada pergunta do debrief, atualize `workspace/interviews/question-bank.md`:
 - Mude o status para ✅ / 🟡 / 🔴 com base no desempenho real
 - Acrescente notas de lacuna a partir do debrief
 - Acrescente quaisquer novas perguntas que apareceram e ainda não estavam na bank
@@ -77,7 +77,7 @@ Para cada lacuna 🔴 identificada:
 1. **Explique a resposta correta** — clara, concisa, com um exemplo resolvido (código, cálculo, diagrama) onde ajudar
 2. **Conecte a uma história real** se possível — "você na verdade tem isto na sua [história existente da story bank] — veja como usá-la"
 3. **Acrescente ao arquivo de preparação da vaga** sob uma seção "Gaps to Close Before Round N"
-4. **Acrescente a `interview-prep/interview-prep-guide.md`** (se o candidato mantiver um) quando for um princípio reutilizável que se aplica além desta vaga
+4. **Acrescente a `workspace/interviews/interview-prep-guide.md`** (se o candidato mantiver um) quando for um princípio reutilizável que se aplica além desta vaga
 
 ---
 
@@ -87,7 +87,7 @@ Para cada lacuna 🔴 identificada:
 
 > "Você mencionou [X] na sua resposta — parece que isso poderia virar uma história STAR+R completa. Quer montá-la agora enquanto está fresca?"
 
-Se sim, monte-a como uma história STAR+R (Situation, Task, Action, Result, Reflection) e acrescente-a a `interview-prep/story-bank.md`.
+Se sim, monte-a como uma história STAR+R (Situation, Task, Action, Result, Reflection) e acrescente-a a `workspace/interviews/story-bank.md`.
 
 ---
 
@@ -124,7 +124,7 @@ Seja honesto. Uma faixa de probabilidade com raciocínio claro é mais útil do 
 
 ## Step 8 — Save Debrief
 
-Acrescente a `interview-prep/{company-slug}-{role-slug}.md`:
+Acrescente a `workspace/interviews/{company-slug}-{role-slug}.md`:
 
 ```markdown
 ## Round [N] Debrief — [YYYY-MM-DD]
@@ -155,7 +155,7 @@ Acrescente a `interview-prep/{company-slug}-{role-slug}.md`:
 
 ## Step 9 — Write Session Transcript
 
-Após o debrief, escreva também uma transcrição da sessão legível por máquina em `interview-prep/sessions/{company-slug}-{role-slug}-{round}-{YYYY-MM-DD}.md`. Este é um registro estruturado da rodada para modos de análise posteriores; os turnos com rótulo de quem fala permitem que um consumidor leia qualquer um dos lados sem reinferir quem falou. O contrato completo está em `interview-prep/sessions/README.md`.
+Após o debrief, escreva também uma transcrição da sessão legível por máquina em `workspace/interviews/sessions/{company-slug}-{role-slug}-{round}-{YYYY-MM-DD}.md`. Este é um registro estruturado da rodada para modos de análise posteriores; os turnos com rótulo de quem fala permitem que um consumidor leia qualquer um dos lados sem reinferir quem falou. O contrato completo está em `workspace/interviews/sessions/README.md`.
 
 Formato:
 
@@ -192,9 +192,9 @@ Regras para a transcrição:
 
 - **Faça o debrief imediatamente.** A memória dos detalhes da entrevista degrada rápido — em horas, perguntas e reações específicas são esquecidas. Rode esta skill no mesmo dia.
 - **Não suavize as lacunas.** Uma lacuna 🔴 chamada de 🟡 por gentileza vai reaparecer na próxima rodada.
-- **Nunca coloque alegações inventadas na boca do candidato.** As respostas corretas/completas podem recorrer a conhecimento geral da área, mas qualquer alegação pessoal ou métrica sugerida deve vir do que o candidato disse, de `cv.md`, `article-digest.md` ou da story bank.
-- **Alegações retiradas são uma barreira rígida.** Se uma alegação aparecer em `interview-prep/retracted-claims.md`, nunca sugira que o candidato a use — mesmo que ele a tenha dito na entrevista real. Sinalize-a: "Essa alegação está na sua lista de retiradas — não é defensável sob pressão. Aqui está uma versão que não depende dela."
-- **Registre novas retratações.** Se o debrief revelar uma alegação que o candidato usou na entrevista real e que agora concorda não ser defensável, ofereça-se para acrescentá-la a `interview-prep/retracted-claims.md`: `**"[claim]"** ([context]). Reason: [one-line reason + correct framing if applicable].`
-- **Extraia lacunas de vocabulário explicitamente.** Se o candidato usou um termo impreciso onde existe um preciso, acrescente-o a `interview-prep/interview-prep-guide.md` na seção de vocabulário (se o candidato mantiver uma).
+- **Nunca coloque alegações inventadas na boca do candidato.** As respostas corretas/completas podem recorrer a conhecimento geral da área, mas qualquer alegação pessoal ou métrica sugerida deve vir do que o candidato disse, de `workspace/profile/cv.md`, `workspace/profile/article-digest.md` ou da story bank.
+- **Alegações retiradas são uma barreira rígida.** Se uma alegação aparecer em `workspace/interviews/retracted-claims.md`, nunca sugira que o candidato a use — mesmo que ele a tenha dito na entrevista real. Sinalize-a: "Essa alegação está na sua lista de retiradas — não é defensável sob pressão. Aqui está uma versão que não depende dela."
+- **Registre novas retratações.** Se o debrief revelar uma alegação que o candidato usou na entrevista real e que agora concorda não ser defensável, ofereça-se para acrescentá-la a `workspace/interviews/retracted-claims.md`: `**"[claim]"** ([context]). Reason: [one-line reason + correct framing if applicable].`
+- **Extraia lacunas de vocabulário explicitamente.** Se o candidato usou um termo impreciso onde existe um preciso, acrescente-o a `workspace/interviews/interview-prep-guide.md` na seção de vocabulário (se o candidato mantiver uma).
 - **Uma lacuna = uma correção.** Não sobrecarregue com um plano de estudo completo para cada lacuna. Priorize as 1–2 com maior probabilidade de serem testadas na próxima rodada.
 - **Celebre o que funcionou.** O debrief não é só sobre lacunas. Nomeie o que foi forte — isso reforça o comportamento certo e constrói confiança para a próxima rodada.

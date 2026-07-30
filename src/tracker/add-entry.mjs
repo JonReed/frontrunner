@@ -5,7 +5,7 @@
  * The `add` mode (agent) does the fetching, extraction, ATS-bullet writing,
  * preview, and confirm-before-write gate. This helper does ONE thing: take a
  * structured payload of already-written markdown and insert it into the user's
- * `cv.md` and/or `article-digest.md` idempotently — skipping anything that is
+ * `workspace/profile/cv.md` and/or `workspace/profile/article-digest.md` idempotently — skipping anything that is
  * already there. It never fabricates or rewrites content; it only places the
  * blocks the agent produced.
  *
@@ -44,10 +44,10 @@ import { pathToFileURL } from 'url';
 
 import { ROOT as FRONTRUNNER } from '#paths';
 import { mutateAddEntrySources } from './add-entry-publication.mjs';
-const CV_FILE = process.env.FRONTRUNNER_CV || join(FRONTRUNNER, 'cv.md');
-const ARTICLE_DIGEST_FILE = process.env.FRONTRUNNER_ARTICLE_DIGEST || join(FRONTRUNNER, 'article-digest.md');
+const CV_FILE = process.env.FRONTRUNNER_CV || join(FRONTRUNNER, 'workspace/profile/cv.md');
+const ARTICLE_DIGEST_FILE = process.env.FRONTRUNNER_ARTICLE_DIGEST || join(FRONTRUNNER, 'workspace/profile/article-digest.md');
 const PUBLICATION_JOURNAL = process.env.FRONTRUNNER_ADD_ENTRY_JOURNAL
-  || join(FRONTRUNNER, 'data', '.add-entry-PUBLISHING.json');
+  || join(FRONTRUNNER, 'workspace', '.state', '.add-entry-PUBLISHING.json');
 
 // Normalize a title/heading for duplicate detection: lowercase, collapse to
 // alphanumerics only. "FraudShield", "Fraud-Shield", "fraud shield" all match.
@@ -117,7 +117,7 @@ export function insertIntoCvSection(md, section, entry) {
   return rebuilt.replace(/\n{3,}/g, '\n\n');
 }
 
-// article-digest.md is a sequence of `## <name> -- <tagline>` blocks separated
+// workspace/profile/article-digest.md is a sequence of `## <name> -- <tagline>` blocks separated
 // by `---`. Dedup on the name (the heading text before the dash), matched by
 // normalized equality or prefix so "## FraudShield -- Detection" matches the key
 // "FraudShield" without a short key colliding on unrelated heading text.
@@ -159,7 +159,7 @@ export function applyAdd(payload, { cvText = null, articleText = null } = {}) {
     // dedupKey is what makes the insert idempotent — refuse to add without one
     // rather than silently allowing duplicate re-runs.
     if (!normalizeKey(dedupKey)) throw new Error('payload.cv requires a non-empty dedupKey (used for dedup/idempotency)');
-    if (cvText === null) throw new Error(`cv.md not found — cannot add to a CV that does not exist`);
+    if (cvText === null) throw new Error(`workspace/profile/cv.md not found — cannot add to a CV that does not exist`);
     if (cvHasEntry(cvText, section, dedupKey)) {
       result.cv = { status: 'duplicate', section };
     } else {
@@ -172,7 +172,7 @@ export function applyAdd(payload, { cvText = null, articleText = null } = {}) {
     const { dedupKey, entry } = payload.articleDigest;
     if (!entry) throw new Error('payload.articleDigest requires { entry }');
     if (!normalizeKey(dedupKey)) throw new Error('payload.articleDigest requires a non-empty dedupKey (used for dedup/idempotency)');
-    // article-digest.md is optional; create it from a header when missing.
+    // workspace/profile/article-digest.md is optional; create it from a header when missing.
     const current = articleText === null
       ? '# Article Digest -- Proof Points\n\nCompact proof points from portfolio projects. Read by frontrunner at evaluation time.\n'
       : articleText;

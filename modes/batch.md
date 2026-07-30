@@ -27,7 +27,7 @@ Run `npm run pipeline:prepare` to build the batch input. The shell runner also
 runs `src/scan/prefilter.mjs` itself and fails closed when the module is absent.
 This applies to every spend tier; no model is used for the prefilter.
 
-Every rejection is recorded in `batch/prefilter-rejects.tsv` with the exact
+Every rejection is recorded in `workspace/.state/prefilter-rejects.tsv` with the exact
 rule and matching evidence.
 
 ## Files
@@ -44,7 +44,7 @@ batch/
 
 ## Mode A: Conductor --chrome
 
-1. **Read state**: `batch/batch-state.tsv` → identify what has already been processed
+1. **Read state**: `workspace/.state/batch-state.tsv` → identify what has already been processed
 2. **Navigate portal**: Chrome → search URL
 3. **Extract URLs**: Read results DOM → extract URL list → append to `batch-input.tsv`
 4. **For each pending URL**:
@@ -70,7 +70,7 @@ During a conductor run, the operator has two primary live interfaces to monitor:
 1. **The headed Chrome window:** Watch the browser navigate the portals, login to sessions, and interact with the job description pages in real time.
 2. **The agent CLI conversation:** Follow the agent's turn-by-turn narration in the shell.
 
-The individual worker tasks spawn headlessly in the background and write their stdout/stderr logs to `batch/logs/{report_num}-{id}.log`, which can be inspected on demand.
+The individual worker tasks spawn headlessly in the background and write their stdout/stderr logs to `workspace/.state/logs/{report_num}-{id}.log`, which can be inspected on demand.
 
 ### Manual multi-agent fan-out
 
@@ -81,7 +81,7 @@ node src/tracker/reserve-report-num.mjs --count 8
 # stdout: 042-049  → worker 1 gets 042, worker 2 gets 043, ...
 ```
 
-Each number is backed by a sentinel file in `reports/`, so concurrent reservations from other windows cannot collide. After all reports are written, release leftovers in one call:
+Each number is backed by a sentinel file in `workspace/reports/evaluations/`, so concurrent reservations from other windows cannot collide. After all reports are written, release leftovers in one call:
 
 ```bash
 node src/tracker/reserve-report-num.mjs --release 042-049
@@ -134,9 +134,9 @@ Valid statuses include `pending`, `processing`, `completed`, `failed`, `skipped`
 Each worker receives `batch-prompt.md` as a system prompt. It is self-contained. Use your CLI's headless command — see the **Headless / Batch Mode** table in `AGENTS.md`.
 
 The worker produces:
-1. `.md` report in `reports/`
-2. PDF in `output/`
-3. Tracker line in `batch/tracker-additions/{id}.tsv`
+1. `.md` report in `workspace/reports/evaluations/`
+2. PDF in `workspace/documents/`
+3. Tracker line in `workspace/.state/tracker-additions/{id}.tsv`
 4. Result JSON via stdout
 
 ## Error handling

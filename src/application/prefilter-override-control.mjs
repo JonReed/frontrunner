@@ -28,9 +28,9 @@ import { APPLICATION_API_VERSION } from './contract.mjs';
 import { readBoundedRequest } from './run.mjs';
 
 const CONTROL_KEYS = new Set(['version', 'action', 'url', 'rule']);
-const PIPELINE = join(ROOT, 'data', 'pipeline.md');
-const REJECTS = join(ROOT, 'batch', 'prefilter-rejects.tsv');
-const ACTIVE_INPUT = join(ROOT, 'batch', 'liveness-active.tsv');
+const PIPELINE = join(ROOT, 'workspace', 'search', 'pipeline.md');
+const REJECTS = join(ROOT, 'workspace', '.state', 'prefilter-rejects.tsv');
+const ACTIVE_INPUT = join(ROOT, 'workspace', '.state', 'liveness-active.tsv');
 
 function controlError(message, code = 'INVALID_PREFILTER_OVERRIDE_REQUEST') {
   const error = new Error(message);

@@ -6,10 +6,10 @@
  * turned up, in the two states it can leave them in.
  *
  *   Not assessed yet   nothing has judged these. They are simply queued.
- *   Ruled out          a deterministic rule in config/prefilter.yml matched,
+ *   Ruled out          a deterministic rule in workspace/search/prefilter.yml matched,
  *                      and the role was dropped before any model call.
  *
- * The second half was previously invisible. batch/prefilter-rejects.tsv was
+ * The second half was previously invisible. workspace/.state/prefilter-rejects.tsv was
  * written and never read, so roles vanished with no way to see them or
  * disagree — a bad default when the judgement came from a config file rather
  * than an assessment. Each one now shows the rule that fired and the evidence
@@ -231,7 +231,7 @@ export default async function FoundPage({
                   <span className="min-w-0">
                     <span className="block text-[15px] font-semibold">{g.label}</span>
                     {/*
-                      The literal key from config/prefilter.yml. Shown because
+                      The literal key from workspace/search/prefilter.yml. Shown because
                       this is a judgement made on the user's behalf and they
                       should be able to find the thing that made it — but not
                       in monospace, which would make their own config look

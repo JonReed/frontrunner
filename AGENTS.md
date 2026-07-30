@@ -17,7 +17,8 @@ src/evaluate/        model-backed evaluation and tailoring
 src/application/     local operations, persistent jobs, supervision, cancellation
 src/lib/             shared helpers
 tests/               ALL tests (see the two conventions below)
-templates/ modes/ providers/ config/ data/ reports/ jds/   (unchanged)
+templates/ modes/ providers/ config/   versioned system content
+workspace/                              private/generated/runtime content
 ```
 
 Root holds only entry points: `doctor`, `find`, `test-all`, `update-system`,
@@ -100,10 +101,10 @@ its stages ad hoc in an agent prompt. Only evaluation costs model tokens.
 It holds one owner-verified cross-process lease across the complete run, so
 never bypass it to work around an "already active" result; a second run would
 otherwise race shared artifacts and duplicate token spend.
-`fetch-jds` writes `jds/` + `jds/index.tsv`; liveness uses provider APIs before
+`fetch-jds` writes `workspace/jobs/descriptions/` + `workspace/jobs/descriptions/index.tsv`; liveness uses provider APIs before
 Playwright; prefilter logs every rejection to
-`batch/prefilter-rejects.tsv`; and liveness decisions are written to
-`batch/liveness-results.tsv`. Check both audit files for false rejects and
+`workspace/.state/prefilter-rejects.tsv`; and liveness decisions are written to
+`workspace/.state/liveness-results.tsv`. Check both audit files for false rejects and
 inconclusive providers.
 All JD publishers must use `src/scan/jd-cache-store.mjs`; it owns containment,
 bounded atomic files, manifest locking and concurrent merge semantics.
@@ -165,8 +166,10 @@ remote and browser fixtures; never weaken or bypass those barriers.
 - Reintroduce upstream branding: `career-ops.org`, their Discord, the manifesto
   promo, or funding config pointing at them.
 - Add a terminal UI. The target user is not in a terminal.
-- Write user data into tracked files. `cv.md`, `config/*.yml`, `data/`,
-  `reports/`, `jds/` are gitignored and must stay that way.
+- Write user data outside `workspace/`, add tracked scaffolds beneath it, or
+  construct private paths outside `src/paths.mjs` (the UI uses its closed
+  server-only mirror in `ui/src/lib/root.ts`). The updater treats the complete
+  boundary as untouchable.
 
 ---
 
@@ -182,7 +185,9 @@ Built and used by [santifer](https://santifer.io) to evaluate 740+ offers, gener
 
 Two layers — full list in `DATA_CONTRACT.md`:
 
-- **User Layer (NEVER auto-updated; personalization goes HERE):** `cv.md`, `config/profile.yml`, `modes/_profile.md`, `modes/_custom.md`, `article-digest.md`, `portals.yml`, `data/*`, `reports/*`, `output/*`, `interview-prep/*`
+- **Private workspace (NEVER auto-updated):** all personal content, generated
+  artifacts and mutable state live below `workspace/`; no exceptions and no
+  tracked placeholders.
 - **System Layer (auto-updatable; DON'T put user data here):** `modes/_shared.md` and all other modes, `AGENTS.md`, `CLAUDE.md`, `CODEX.md`, `GEMINI.md`, `*.mjs` scripts, `templates/*`, `batch/*`
 - **Application trees:** `web/*` and `ui/*` are versioned interface code,
   contain no user data, and are updated from the official Frontrunner
@@ -190,22 +195,22 @@ Two layers — full list in `DATA_CONTRACT.md`:
   web runtime; `web/` is archived source whose start commands and request path
   deliberately fail closed.
 
-**THE RULE: When the user asks to customize facts or targeting (archetypes, narrative, negotiation scripts, proof points, location policy, comp targets), ALWAYS write to `modes/_profile.md` or `config/profile.yml`. When they ask for procedural house rules, custom workflows, output preferences, or automations, write to `modes/_custom.md` (copy it from `modes/_custom.template.md` if missing). NEVER edit `modes/_shared.md` for user-specific content.** This ensures system updates don't overwrite their customizations.
+**THE RULE: When the user asks to customize facts or targeting (archetypes, narrative, negotiation scripts, proof points, location policy, comp targets), ALWAYS write to `workspace/profile/targeting.md` or `workspace/profile/profile.yml`. When they ask for procedural house rules, custom workflows, output preferences, or automations, write to `workspace/profile/preferences.md` (copy it from `modes/_custom.template.md` if missing). NEVER edit `modes/_shared.md` for user-specific content.** This ensures system updates don't overwrite their customizations.
 
 ## Source-of-Truth Boundary (CRITICAL)
 
 User-facing content (CV, cover letters, application emails, form answers, recruiter outreach) is generated **exclusively** from these files plus statements the user makes directly in the current conversation:
 
-- `cv.md` · `article-digest.md` · `config/profile.yml` · `modes/_profile.md` · `writing-samples/`
-- `modes/_custom.md` (procedural/style rules only — never introduces factual claims)
-- `voice-dna.md` (voice/style only — never introduces factual claims)
-- `interview-prep/story-bank.md` and `interview-prep/{company}-{role}.md` (the user's own STAR stories and prep notes — same trust level as `cv.md`; consumed by `interview` and `apply`/`match-star`)
+- `workspace/profile/cv.md` · `workspace/profile/article-digest.md` · `workspace/profile/profile.yml` · `workspace/profile/targeting.md` · `workspace/profile/writing-samples/`
+- `workspace/profile/preferences.md` (procedural/style rules only — never introduces factual claims)
+- `workspace/profile/voice-dna.md` (voice/style only — never introduces factual claims)
+- `workspace/interviews/story-bank.md` and `workspace/interviews/{company}-{role}.md` (the user's own STAR stories and prep notes — same trust level as `workspace/profile/cv.md`; consumed by `interview` and `apply`/`match-star`)
 
 Everything else is **out of scope for content generation**: auto-memory (see below), any directory outside the frontrunner project (parent/sibling repos, other codebases on the machine), knowledge from other Claude Code projects on the same machine, and cross-session inferences not written into an in-scope file.
 
 **Rule from the original design:** *"Keywords get reformulated, never fabricated."* Reorder, reframe, emphasise — but never invent. If a claim isn't backed by an in-scope file, ask the user; if they don't add it, the output goes without it. Silence on a topic is fine; manufactured detail is not.
 
-**Authorship claims are non-negotiable.** Never claim the user authored a project, repo, library, tool, framework, or open-source artefact unless explicitly attributed to them in `cv.md` or `article-digest.md`. Tool-of-trade conflation (the user uses X → the user built X) is the most common fabrication pattern and is explicitly forbidden.
+**Authorship claims are non-negotiable.** Never claim the user authored a project, repo, library, tool, framework, or open-source artefact unless explicitly attributed to them in `workspace/profile/cv.md` or `workspace/profile/article-digest.md`. Tool-of-trade conflation (the user uses X → the user built X) is the most common fabrication pattern and is explicitly forbidden.
 
 ### Auto-memory scope (clarification, not exception)
 
@@ -242,31 +247,31 @@ OpenAI-compatible endpoints, OpenRouter and local Ollama.
 
 - **Interactive:** run `codex` in the repo root; if `/frontrunner` is unavailable, ask Codex to run the mode directly.
 - **Headless:** `codex exec "prompt"` for one-shot workers.
-- **Examples:** `Run frontrunner scan mode`, `Run frontrunner pipeline mode for data/pipeline.md`, `Run frontrunner pdf mode`, `Run frontrunner tracker mode`, `Evaluate this JD with frontrunner auto-pipeline: https://company.com/jobs/123`
+- **Examples:** `Run frontrunner scan mode`, `Run frontrunner pipeline mode for workspace/search/pipeline.md`, `Run frontrunner pdf mode`, `Run frontrunner tracker mode`, `Evaluate this JD with frontrunner auto-pipeline: https://company.com/jobs/123`
 
 ### Main Files
 
 | File | Function |
 |------|----------|
-| `data/applications.md` | Application tracker |
-| `data/pipeline.md` | Inbox of pending URLs |
-| `data/scan-history.tsv` | Scanner dedup history |
-| `data/scan-runs.tsv` | Per-run scan counters (appended by `src/scan/scan.mjs`, read by `src/analysis/stats.mjs`) |
-| `data/follow-ups.md` | Follow-up history tracker |
-| `data/blacklist.md` | Do-not-apply companies (user layer, opt-in, never auto-populated; respected by `src/scan/scan.mjs` and the `auto-pipeline`/`oferta`/`apply` gates) |
-| `data/salary-observations.tsv` | Append-only salary observation log (user layer) |
-| `data/assessments.tsv` | Append-only skills-assessment log (user layer, created on first `add`) |
-| `portals.yml` | Query and company config |
+| `workspace/applications/tracker.md` | Application tracker |
+| `workspace/search/pipeline.md` | Inbox of pending URLs |
+| `workspace/.state/scan-history.tsv` | Scanner dedup history |
+| `workspace/.state/scan-runs.tsv` | Per-run scan counters (appended by `src/scan/scan.mjs`, read by `src/analysis/stats.mjs`) |
+| `workspace/applications/follow-ups.md` | Follow-up history tracker |
+| `workspace/search/blacklist.md` | Do-not-apply companies (user layer, opt-in, never auto-populated; respected by `src/scan/scan.mjs` and the `auto-pipeline`/`oferta`/`apply` gates) |
+| `workspace/applications/salary-observations.tsv` | Append-only salary observation log (user layer) |
+| `workspace/applications/assessments.tsv` | Append-only skills-assessment log (user layer, created on first `add`) |
+| `workspace/search/portals.yml` | Query and company config |
 | `templates/cv-template.html` | HTML template for CVs |
 | `templates/cv-template.tex` | LaTeX/Overleaf template for CVs |
-| `article-digest.md` | Compact proof points from portfolio (optional) |
-| `interview-prep/story-bank.md` | Accumulated STAR+R stories |
-| `interview-prep/{company}-{role}.md` | Company-specific interview intel |
+| `workspace/profile/article-digest.md` | Compact proof points from portfolio (optional) |
+| `workspace/interviews/story-bank.md` | Accumulated STAR+R stories |
+| `workspace/interviews/{company}-{role}.md` | Company-specific interview intel |
 | `src/cv/generate-pdf.mjs` | Playwright: HTML to PDF |
 | `src/cv/generate-latex.mjs` | LaTeX CV validator + pdflatex compiler |
 | `src/scan/scan.mjs` | Zero-token portal scanner (Greenhouse/Ashby/Lever APIs, zero LLM cost) |
-| `src/scan/discover-ats.mjs` | Zero-token company-to-ATS resolver; preview-only unless `--write`, then validates and appends unique boards to `portals.yml` under the shared durable-state lock |
-| `src/scan/scan-ats-full.mjs` | Reverse-ATS keyword-first scanner over full public ATS datasets (Greenhouse/Lever/Ashby/Workday/iCIMS), filtered by portals.yml `title_filter`/`location_filter` — no company list needed; checkpoints every 500 companies, `--resume` continues an interrupted sweep |
+| `src/scan/discover-ats.mjs` | Zero-token company-to-ATS resolver; preview-only unless `--write`, then validates and appends unique boards to `workspace/search/portals.yml` under the shared durable-state lock |
+| `src/scan/scan-ats-full.mjs` | Reverse-ATS keyword-first scanner over full public ATS datasets (Greenhouse/Lever/Ashby/Workday/iCIMS), filtered by workspace/search/portals.yml `title_filter`/`location_filter` — no company list needed; checkpoints every 500 companies, `--resume` continues an interrupted sweep |
 | `src/scan/check-liveness.mjs` / `src/scan/liveness-core.mjs` | Job posting liveness checker + shared logic (expired signals win over generic Apply text) |
 | `src/scan/liveness-service.mjs` | Canonical API-first liveness boundary with lazy Playwright fallback |
 | `src/pipeline/run.mjs` | Canonical scan → cache → liveness → prefilter → evaluation orchestrator |
@@ -277,18 +282,18 @@ OpenAI-compatible endpoints, OpenRouter and local Ollama.
 | `src/evaluate/model-blacklist.mjs` | Locked atomic failed-model blacklist shared across processes |
 | `src/tracker/set-status.mjs` | Canonical tracker-row update: `node src/tracker/set-status.mjs <report#\|company> <State> [--note] [--force]` — strict states.yml validation, report-link mismatch guard, shared lock, atomic write |
 | `src/tracker/invite-match.mjs` | Fuzzy-match a pasted interview invite (company, date, req ID) against the tracker, ranking candidates when a company has multiple entries (JSON or `--summary`) |
-| `src/tracker/paste-reply.mjs` | Manual/no-Gmail input into reply-watch classification — bounds and normalizes a pasted/file email, then appends it to `data/reply-candidates.json` with locked atomic replacement; never classifies or touches the tracker |
+| `src/tracker/paste-reply.mjs` | Manual/no-Gmail input into reply-watch classification — bounds and normalizes a pasted/file email, then appends it to `workspace/applications/reply-candidates.json` with locked atomic replacement; never classifies or touches the tracker |
 | `src/analysis/analyze-patterns.mjs` | Pattern analysis incl. per-ATS-vendor advance rate (JSON) |
-| `src/analysis/upskill.mjs` | Weighted skill-gap map from tracked reports; known skills from `cv.md`/`config/profile.yml` excluded (JSON) |
+| `src/analysis/upskill.mjs` | Weighted skill-gap map from tracked reports; known skills from `workspace/profile/cv.md`/`workspace/profile/profile.yml` excluded (JSON) |
 | `src/analysis/stats.mjs` | Lifetime pipeline stats: tracker roll-up, canonical `ever*` funnel, scan totals, portal coverage, follow-up compliance, scan-run trends (JSON or `--summary`) |
 | `src/tracker/followup-cadence.mjs` | Follow-up cadence calculator (JSON) |
-| `src/tracker/followup-seed.mjs` | Seeds `data/follow-ups.md` with a pinned first follow-up date when a row turns Applied (JSON) |
+| `src/tracker/followup-seed.mjs` | Seeds `workspace/applications/follow-ups.md` with a pinned first follow-up date when a row turns Applied (JSON) |
 | `src/analysis/detect-reposts.mjs` | Flags roles re-listed 2+ times in 90 days from `scan-history.tsv` (JSON or `--summary`) |
-| `src/analysis/process-quality.mjs` | Per-company recruiting-friction rate from `[process-friction]` tags in `data/active-interviews.md` Notes (JSON or `--summary`) |
-| `src/analysis/salary-gap.mjs` | Desired/advertised/actual comp gap analyzer — folds report `advertised_comp` + `data/salary-observations.tsv` (JSON or `--summary`) |
-| `src/analysis/assessment-log.mjs` | Skills-assessment logger — `add` safely appends platform/subject/threshold/score + staleness note to `data/assessments.tsv` under the shared durable-state lock (JSON or `--summary`) |
-| `src/analysis/jd-skill-gap.mjs` | Zero-LLM JD skill classifier vs `cv.md`: existing / supportedByResume / gap; never auto-adds claims to `cv.md` (JSON or `--summary`) |
-| `reports/` | Evaluation reports `{###}-{company-slug}-{YYYY-MM-DD}.md` — Blocks A-G + Risk Summary + `## Machine Summary` YAML for downstream analysis |
+| `src/analysis/process-quality.mjs` | Per-company recruiting-friction rate from `[process-friction]` tags in `workspace/applications/active-interviews.md` Notes (JSON or `--summary`) |
+| `src/analysis/salary-gap.mjs` | Desired/advertised/actual comp gap analyzer — folds report `advertised_comp` + `workspace/applications/salary-observations.tsv` (JSON or `--summary`) |
+| `src/analysis/assessment-log.mjs` | Skills-assessment logger — `add` safely appends platform/subject/threshold/score + staleness note to `workspace/applications/assessments.tsv` under the shared durable-state lock (JSON or `--summary`) |
+| `src/analysis/jd-skill-gap.mjs` | Zero-LLM JD skill classifier vs `workspace/profile/cv.md`: existing / supportedByResume / gap; never auto-adds claims to `workspace/profile/cv.md` (JSON or `--summary`) |
+| `workspace/reports/evaluations/` | Evaluation reports `{###}-{company-slug}-{YYYY-MM-DD}.md` — Blocks A-G + Risk Summary + `## Machine Summary` YAML for downstream analysis |
 
 ### First Run — Onboarding (IMPORTANT)
 
@@ -298,7 +303,7 @@ OpenAI-compatible endpoints, OpenRouter and local Ollama.
 node doctor.mjs --json
 ```
 
-Output: `{"onboardingNeeded": <bool>, "missing": [...], "warnings": [...], "autoCopied": [...]}` — `missing` lists whichever of `cv.md`, `config/profile.yml`, `modes/_profile.md`, `portals.yml` are absent; `warnings` is reserved for non-blocking setup signals; `autoCopied` lists customization files (`modes/_profile.md` or `modes/_custom.md`) doctor copied from `modes/_profile.template.md` / `modes/_custom.template.md`.
+Output: `{"onboardingNeeded": <bool>, "missing": [...], "warnings": [...], "autoCopied": [...]}` — `missing` lists whichever of `workspace/profile/cv.md`, `workspace/profile/profile.yml`, `workspace/profile/targeting.md`, `workspace/search/portals.yml` are absent; `warnings` is reserved for non-blocking setup signals; `autoCopied` lists customization files (`workspace/profile/targeting.md` or `workspace/profile/preferences.md`) doctor copied from `modes/_profile.template.md` / `modes/_custom.template.md`.
 
 **If `onboardingNeeded` is true, enter onboarding mode.** Do NOT proceed with evaluations, scans, or any other mode until the basics are in place. Guide the user step by step:
 
@@ -310,7 +315,7 @@ Only if the user mentions cost, pricing, budget, or free alternatives:
 If the user is already on a paid plan (Claude Max, Google AI, etc.) or does not mention cost, skip this step silently.
 
 #### Step 1: CV (required)
-If `cv.md` is missing, ask:
+If `workspace/profile/cv.md` is missing, ask:
 > "I don't have your CV yet. You can either:
 > 1. Paste your CV here and I'll convert it to markdown
 > 2. Paste your LinkedIn URL and I'll extract the key info
@@ -318,10 +323,10 @@ If `cv.md` is missing, ask:
 >
 > Which do you prefer?"
 
-Create `cv.md` from whatever they provide — clean markdown with standard sections (Summary, Experience, Projects, Education, Skills).
+Create `workspace/profile/cv.md` from whatever they provide — clean markdown with standard sections (Summary, Experience, Projects, Education, Skills).
 
 #### Step 2: Profile (required)
-If `config/profile.yml` is missing, copy from `config/profile.example.yml` and ask:
+If `workspace/profile/profile.yml` is missing, copy from `config/profile.example.yml` and ask:
 > "I need a few details to personalize the system:
 > - Your full name and email
 > - Your location and timezone
@@ -334,16 +339,16 @@ If `config/profile.yml` is missing, copy from `config/profile.example.yml` and a
 >
 > I'll set everything up for you."
 
-Fill in `config/profile.yml` (including `spend_tier`, default `standard`). Archetypes and targeting narrative go to `modes/_profile.md` or `config/profile.yml` — never `modes/_shared.md`.
+Fill in `workspace/profile/profile.yml` (including `spend_tier`, default `standard`). Archetypes and targeting narrative go to `workspace/profile/targeting.md` or `workspace/profile/profile.yml` — never `modes/_shared.md`.
 
 #### Step 3: Portals (recommended)
-If `portals.yml` is missing:
+If `workspace/search/portals.yml` is missing:
 > "I'll set up the job scanner with 45+ pre-configured companies. Want me to customize the search keywords for your target roles?"
 
-Copy `templates/portals.example.yml` → `portals.yml`; if they gave target roles in Step 2, update `title_filter.positive`.
+Copy `templates/portals.example.yml` → `workspace/search/portals.yml`; if they gave target roles in Step 2, update `title_filter.positive`.
 
 #### Step 4: Tracker
-If `data/applications.md` doesn't exist, create it:
+If `workspace/applications/tracker.md` doesn't exist, create it:
 ```markdown
 # Applications Tracker
 
@@ -363,9 +368,9 @@ After the basics, proactively ask for more context:
 >
 > The more context you give me, the better I filter. Think of it as onboarding a recruiter — the first week I need to learn about you, then I become invaluable."
 
-Store insights in `config/profile.yml` (narrative), `modes/_profile.md`, or `article-digest.md` (proof points) — never in `modes/_shared.md`.
+Store insights in `workspace/profile/profile.yml` (narrative), `workspace/profile/targeting.md`, or `workspace/profile/article-digest.md` (proof points) — never in `modes/_shared.md`.
 
-**After every evaluation, learn.** "This score is too high" or "you missed my experience in X" → update `modes/_profile.md`, `config/profile.yml`, or `article-digest.md`. The system gets smarter with every interaction without putting personalization into system-layer files.
+**After every evaluation, learn.** "This score is too high" or "you missed my experience in X" → update `workspace/profile/targeting.md`, `workspace/profile/profile.yml`, or `workspace/profile/article-digest.md`. The system gets smarter with every interaction without putting personalization into system-layer files.
 
 #### Step 6: Ready
 Once all files exist, confirm:
@@ -387,12 +392,12 @@ If the user accepts, use the `/loop` or `/schedule` skill (if available) to set 
 
 This system is designed to be customized by YOU (AI Agent). When the user asks, edit directly:
 
-- Archetypes / targeting → `modes/_profile.md` or `config/profile.yml`
+- Archetypes / targeting → `workspace/profile/targeting.md` or `workspace/profile/profile.yml`
 - Translate modes → files in `modes/`
-- Add companies → `portals.yml`
-- Profile details → `config/profile.yml`
+- Add companies → `workspace/search/portals.yml`
+- Profile details → `workspace/profile/profile.yml`
 - CV template design → `templates/cv-template.html`
-- Scoring weights → `modes/_profile.md` for the user; `modes/_shared.md` + `batch/batch-prompt.md` only when changing shared defaults for everyone
+- Scoring weights → `workspace/profile/targeting.md` for the user; `modes/_shared.md` + `batch/batch-prompt.md` only when changing shared defaults for everyone
 
 ### Language Modes
 
@@ -409,7 +414,7 @@ Default modes are in `modes/` (English). Market-specific mode sets (each include
 
 ### Output Language vs Market Modes
 
-`config/profile.yml` may set:
+`workspace/profile/profile.yml` may set:
 
 ```yaml
 language:
@@ -430,10 +435,10 @@ Two separate axes:
 
 **When to use a market mode set** (same rule for every market in the table above): the user is targeting job postings in that language or market, lives in that market, or explicitly asks for it. Any of these selects it:
 1. User says "use {market} modes" → read from that dir instead of `modes/`
-2. User sets `language.modes_dir: modes/de` (or their market's dir) in `config/profile.yml` → always use that dir
+2. User sets `language.modes_dir: modes/de` (or their market's dir) in `workspace/profile/profile.yml` → always use that dir
 3. You detect a JD written in that language → *suggest* switching
 
-**When NOT to switch market modes:** If the user applies to English-language roles, even at companies from those markets, use the default English market modes — *unless* the user has explicitly requested another market mode in this conversation, or `language.modes_dir` is set in `config/profile.yml` (the explicit user preference always wins over JD-language detection). This does not override `language.output`; prose still follows `language.output`.
+**When NOT to switch market modes:** If the user applies to English-language roles, even at companies from those markets, use the default English market modes — *unless* the user has explicitly requested another market mode in this conversation, or `language.modes_dir` is set in `workspace/profile/profile.yml` (the explicit user preference always wins over JD-language detection). This does not override `language.output`; prose still follows `language.output`.
 
 ### Skill Modes
 
@@ -452,7 +457,7 @@ Two separate axes:
 | Wants to check if a company is safe to join (red-flag analysis) | `interview-redflag` |
 | Wants to generate CV/PDF | `pdf` |
 | Wants the LaTeX/Overleaf CV path | `latex` |
-| Maintains their own hand-tuned `.tex` CV and wants it tailored in place (opt-in; cv.md stays the default) | `latex-tex` |
+| Maintains their own hand-tuned `.tex` CV and wants it tailored in place (opt-in; workspace/profile/cv.md stays the default) | `latex-tex` |
 | Wants a cover letter | `cover` |
 | Wants to add a role to the tracker manually | `add` |
 | Wants to discover CV competencies they forgot to write down | `expand` |
@@ -475,8 +480,8 @@ Two separate axes:
 
 ### CV Source of Truth
 
-- `cv.md` in project root is the canonical CV
-- `article-digest.md` has detailed proof points (optional)
+- `workspace/profile/cv.md` is the canonical CV
+- `workspace/profile/article-digest.md` has detailed proof points (optional)
 - **NEVER hardcode metrics** -- read them from these files at evaluation time
 
 ---
@@ -545,20 +550,24 @@ examples, not support commitments.
 ## Stack and Conventions
 
 - Node.js (`.mjs`), Playwright (PDF + scraping), YAML (config), HTML/CSS (template), Markdown (data), Canva MCP (optional visual CV)
-- Output in `output/` (gitignored) · Reports in `reports/` · JDs in `jds/` (referenced as `local:jds/{file}` in pipeline.md) · Batch in `batch/` (gitignored except scripts and prompt)
+- Output in `workspace/documents/` · Reports in `workspace/reports/evaluations/`
+  · JDs in `workspace/jobs/descriptions/` (referenced as
+  `local:workspace/jobs/descriptions/{file}` in pipeline.md) · Mutable batch
+  state and audit files in `workspace/.state/`; `batch/` contains system code
+  and prompts only.
 - Report numbering: sequential 3-digit zero-padded, max existing + 1
 - **RULE: After each batch of evaluations, run `node src/tracker/merge-tracker.mjs`** to merge tracker additions and avoid duplications.
 - **RULE: NEVER create new entries in applications.md if company+role already exists.** Update the existing entry.
 
 ### TSV Format for Tracker Additions
 
-One TSV file per evaluation at `batch/tracker-additions/{num}-{company-slug}.tsv`. Single line, 9 tab-separated columns:
+One TSV file per evaluation at `workspace/.state/tracker-additions/{num}-{company-slug}.tsv`. Single line, 9 tab-separated columns:
 
 ```
-{num}\t{date}\t{company}\t{role}\t{status}\t{score}/5\t{pdf_emoji}\t[{num}](reports/{num}-{slug}-{date}.md)\t{note}
+{num}\t{date}\t{company}\t{role}\t{status}\t{score}/5\t{pdf_emoji}\t[{num}](workspace/reports/evaluations/{num}-{slug}-{date}.md)\t{note}
 ```
 
-**Column order (IMPORTANT -- status BEFORE score):** 1 `num` (integer) · 2 `date` (YYYY-MM-DD) · 3 `company` · 4 `role` · 5 `status` (canonical) · 6 `score` (`X.X/5`) · 7 `pdf` (`✅`/`❌`) · 8 `report` (markdown link, always **root-relative**: `[num](reports/...)`) · 9 `notes` (one line).
+**Column order (IMPORTANT -- status BEFORE score):** 1 `num` (integer) · 2 `date` (YYYY-MM-DD) · 3 `company` · 4 `role` · 5 `status` (canonical) · 6 `score` (`X.X/5`) · 7 `pdf` (`✅`/`❌`) · 8 `report` (markdown link, always **root-relative**: `[num](workspace/reports/evaluations/...)`) · 9 `notes` (one line).
 
 **Note:** In applications.md, score comes BEFORE status; `src/tracker/merge-tracker.mjs` handles the swap automatically.
 
@@ -566,13 +575,13 @@ One TSV file per evaluation at `batch/tracker-additions/{num}-{company-slug}.tsv
 
 **Optional Via field (#1596):** applications through an agency/recruiter append a **tagged** extra field `via={Agency}` (e.g. `via=Hays`) after notes — never positional; the tag is mandatory. A single untagged extra keeps its legacy meaning (location). Unknown end employer → `?` as company (locale-invariant marker, never "Confidential") + a descriptor in notes. `src/tracker/merge-tracker.mjs` rejects ambiguous extras loudly; `--migrate-via` adds the column to an existing tracker.
 
-**Report link normalization:** the TSV always carries a root-relative `[num](reports/...)` link; `src/tracker/merge-tracker.mjs` rewrites it relative to the tracker's own directory (`../reports/...` at `data/applications.md`, `reports/...` at root) so links stay clickable. Idempotent; fix an existing tracker with `node src/tracker/merge-tracker.mjs --migrate` (#760).
+**Report link normalization:** the TSV always carries a root-relative `[num](workspace/reports/evaluations/...)` link; `src/tracker/merge-tracker.mjs` rewrites it relative to the tracker's own directory (`../reports/evaluations/...` at `workspace/applications/tracker.md`, `workspace/reports/evaluations/...` at root) so links stay clickable. Idempotent; fix an existing tracker with `node src/tracker/merge-tracker.mjs --migrate` (#760).
 
 **Req/posting ID in notes disambiguates same-title postings (#1524, #2009):** when a company posts two genuinely different requisitions whose titles fuzzy-match (e.g. a leveled variant and its bare title, or two sibling team roles), put the req/job/posting ID in the **notes** column on both rows. `src/tracker/merge-tracker.mjs` reads it (`REQ_NUMBER_RE`) and treats rows carrying *different* recognizable IDs as distinct openings, overriding fuzzy title matching. Recognized forms are a `job id` / `posting id` / `requisition` / `req` / `jr` / `job` / `posting` / `ref` / `r_` label followed by an alphanumeric ID containing at least one digit — e.g. `req JR-10423`, `job id 88214`, `ref R_2291`. Prefer this whenever the JD exposes an ID; it is the only signal that survives near-identical titles.
 
 ### Pipeline Integrity
 
-1. **NEVER edit applications.md to ADD new entries** -- write TSV in `batch/tracker-additions/` and let `src/tracker/merge-tracker.mjs` merge.
+1. **NEVER edit applications.md to ADD new entries** -- write TSV in `workspace/.state/tracker-additions/` and let `src/tracker/merge-tracker.mjs` merge.
 2. **UPDATE status/notes of existing entries via `node src/tracker/set-status.mjs <report#|company> <State> [--note]`** — the canonical (locked, validated, atomic) write path. Do not hand-edit the table.
 3. All reports MUST include `**URL:**` in the header (between Score and PDF), and `**Legitimacy:** {tier}` (see Block G in `modes/oferta.md`).
 4. All statuses MUST be canonical (see `templates/states.yml`).

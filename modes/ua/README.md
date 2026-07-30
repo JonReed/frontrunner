@@ -29,7 +29,7 @@ Claude буде читати файли з цього каталогу. Якщо
 
 ### Спосіб 2 — Постійно, через профіль
 
-Додай у `config/profile.yml`:
+Додай у `workspace/profile/profile.yml`:
 
 ```yaml
 language:
@@ -59,12 +59,12 @@ language:
 
 Свідомо не перекладено, бо це стандартний tech-словник:
 
-- `cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`, `proof point`
+- `workspace/profile/cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`, `proof point`
 - Імена інструментів (`Playwright`, `WebSearch`, `WebFetch`, `Read`, `Write`, `Edit`, `Bash`)
 - Статуси в трекері (`Evaluated`, `Applied`, `Interview`, `Offer`, `Rejected`)
 - Код, шляхи, команди
 
-Режими використовують технічну українську, як нею говорять у реальних командах: український текст, англійські терміни там, де вони загальноприйняті. Жодної примусової українізації "pipeline" → "конвеєр", "cv.md" → "файл-резюме".
+Режими використовують технічну українську, як нею говорять у реальних командах: український текст, англійські терміни там, де вони загальноприйняті. Жодної примусової українізації "pipeline" → "конвеєр", "workspace/profile/cv.md" → "файл-резюме".
 
 ## Словник
 

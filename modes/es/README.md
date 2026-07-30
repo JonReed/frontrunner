@@ -25,7 +25,7 @@ El agente leerá entonces los archivos de esta carpeta en lugar de `modes/`.
 
 ### Opción 2 -- De forma permanente
 
-Añade en `config/profile.yml`:
+Añade en `workspace/profile/profile.yml`:
 
 ```yaml
 language:
@@ -52,7 +52,7 @@ Los demás modos (`scan`, `batch`, `pdf`, `tracker`, `auto-pipeline`, `deep`, `c
 
 No traducido intencionadamente, por ser vocabulario técnico estándar:
 
-- `cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`, `proof point`
+- `workspace/profile/cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`, `proof point`
 - Nombres de herramientas (`Playwright`, `WebSearch`, `WebFetch`, `Read`, `Write`, `Edit`, `Bash`)
 - Valores de estado en el tracker (`Evaluated`, `Applied`, `Interview`, `Offer`, `Rejected`)
 - Fragmentos de código, rutas, comandos

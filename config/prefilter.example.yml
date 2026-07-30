@@ -1,14 +1,14 @@
 # prefilter.example.yml — deterministic pre-scoring rules for prefilter.mjs
 #
-# Copy to config/prefilter.yml and edit for YOUR search. That file is
+# Copy to workspace/search/prefilter.yml and edit for YOUR search. That file is
 # gitignored (user layer); this example is tracked so the defaults ship.
 #
-#     cp config/prefilter.example.yml config/prefilter.yml
+#     cp config/prefilter.example.yml workspace/search/prefilter.yml
 #
 # WHAT THIS DOES
 # --------------
 # Rejects roles that cannot fit, BEFORE any model is invoked. Every rejection
-# is logged with the rule and the matched text to batch/prefilter-rejects.tsv,
+# is logged with the rule and the matched text to workspace/.state/prefilter-rejects.tsv,
 # so nothing is dropped silently and you can tune from evidence.
 #
 # DESIGN RULE: bias toward keeping. An unclear role passes through to the LLM.
@@ -88,7 +88,7 @@ ic_families: []
 # sales lines below are correct for an engineer and catastrophic for a sales
 # director. Uncomment only the groups that are wrong for YOU.
 #
-# Check batch/prefilter-rejects.tsv after your first run — if something you
+# Check workspace/.state/prefilter-rejects.tsv after your first run — if something you
 # wanted got rejected, the rule that did it is named in the log.
 # ---------------------------------------------------------------------------
 wrong_functions: []
@@ -168,7 +168,7 @@ hard_blockers:
 
 # ---------------------------------------------------------------------------
 # comp — reject on published salary. The floor is read from
-# config/profile.yml -> compensation.minimum, so it lives with your other
+# workspace/profile/profile.yml -> compensation.minimum, so it lives with your other
 # personal data and never appears here.
 #
 # clearance_margin: published figures are usually BASE; your floor is usually

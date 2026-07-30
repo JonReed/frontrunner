@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * followup-seed.mjs — Seed data/follow-ups.md when a row is marked Applied (#1430)
+ * followup-seed.mjs — Seed workspace/applications/follow-ups.md when a row is marked Applied (#1430)
  *
  * WHY: the follow-up system was "born dead". Marking a tracker row Applied only
- * updated applications.md — data/follow-ups.md stayed empty until the user ran
+ * updated applications.md — workspace/applications/follow-ups.md stayed empty until the user ran
  * the `followup` mode by hand and it happened to notice the row. In practice
  * that meant most applications never got a scheduled next-follow-up date at
  * all, silently defeating the entire cadence feature. This script closes that
@@ -65,7 +65,7 @@ import {
 } from './followup-cadence.mjs';
 
 import { ROOT as FRONTRUNNER } from '#paths';
-/** Canonical header written when data/follow-ups.md doesn't exist yet. */
+/** Canonical header written when workspace/applications/follow-ups.md doesn't exist yet. */
 export const FOLLOWUPS_HEADER = [
   '# Follow-ups',
   '',
@@ -159,15 +159,15 @@ export function formatWorkflowMarker(appNum, token) {
 function resolveTrackerPath(override) {
   if (override) return override;
   if (process.env.FRONTRUNNER_TRACKER) return process.env.FRONTRUNNER_TRACKER;
-  return existsSync(join(FRONTRUNNER, 'data/applications.md'))
-    ? join(FRONTRUNNER, 'data/applications.md')
+  return existsSync(join(FRONTRUNNER, 'workspace/applications/tracker.md'))
+    ? join(FRONTRUNNER, 'workspace/applications/tracker.md')
     : join(FRONTRUNNER, 'applications.md');
 }
 
 function resolveFollowupsPath(override) {
   if (override) return override;
   if (process.env.FRONTRUNNER_FOLLOWUPS) return process.env.FRONTRUNNER_FOLLOWUPS;
-  return join(FRONTRUNNER, 'data/follow-ups.md');
+  return join(FRONTRUNNER, 'workspace/applications/follow-ups.md');
 }
 
 function envInt(name, fallback) {
@@ -250,7 +250,7 @@ function appendPins(existingContent, pinLines) {
 // --- Core: seed one application --------------------------------------------
 
 /**
- * Seed data/follow-ups.md with a pin directive for one Applied application.
+ * Seed workspace/applications/follow-ups.md with a pin directive for one Applied application.
  *
  * Silent-no-op-forever by default: once a pin or a follow-up table row exists
  * for `appNum`, subsequent calls return `{seeded:false, reason:'already-seeded'}`

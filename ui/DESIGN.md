@@ -225,10 +225,10 @@ user looking for a search box that does not exist.
 It holds both halves of what the scan produced, which is the point:
 
 - **Not assessed yet** — queued; nothing has judged them either way.
-- **Ruled out** — a rule in `config/prefilter.yml` matched and the role was
+- **Ruled out** — a rule in `workspace/search/prefilter.yml` matched and the role was
   dropped before any model call.
 
-The second half used to be invisible: `batch/prefilter-rejects.tsv` was
+The second half used to be invisible: `workspace/.state/prefilter-rejects.tsv` was
 written and never read, so roles vanished silently. That is the wrong default
 when the judgement came from a config file rather than an assessment. Each one
 now shows the rule that fired and the evidence that triggered it — *matched on

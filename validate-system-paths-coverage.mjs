@@ -47,9 +47,9 @@ const EXCLUDES = [
   '.editorconfig',
   '.gitignore',
   'renovate.json',
-  'batch/logs/.gitkeep',
-  'batch/tracker-additions/.gitkeep',
-  'interview-prep/.gitkeep',
+  'workspace/.state/logs/.gitkeep',
+  'workspace/.state/tracker-additions/.gitkeep',
+  'workspace/interviews/.gitkeep',
 ];
 
 // No tracked application tree is exempt from updater coverage. `ui/` and

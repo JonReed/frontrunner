@@ -28,7 +28,7 @@ function cvRequest(overrides = {}) {
       input: {
         roleNum: 12,
         jobUrl: 'https://jobs.example.com/12',
-        reportPath: 'reports/012-example.md',
+        reportPath: 'workspace/reports/evaluations/012-example.md',
       },
       idempotencyKey: 'cv:12',
     },
@@ -63,8 +63,8 @@ test('job-control accepts every versioned catalog operation and contained job re
 
   for (const operation of [
     { operation: 'scan.run', input: {} },
-    { operation: 'pipeline.prepare', input: { scan: true, input: 'data/pipeline.md' } },
-    { operation: 'pipeline.run', input: { engine: 'claude', scan: true, input: 'data/pipeline.md' } },
+    { operation: 'pipeline.prepare', input: { scan: true, input: 'workspace/search/pipeline.md' } },
+    { operation: 'pipeline.run', input: { engine: 'claude', scan: true, input: 'workspace/search/pipeline.md' } },
   ]) {
     const generic = validateJobControlRequest({
       version: '1',
@@ -345,7 +345,7 @@ test('job-control exposes a stable bounded busy response for conflicting operati
         request: {
           version: '1',
           operation: 'pipeline.run',
-          input: { engine: 'claude', scan: true, input: 'data/pipeline.md' },
+          input: { engine: 'claude', scan: true, input: 'workspace/search/pipeline.md' },
         },
       })]),
       output: output.stream,

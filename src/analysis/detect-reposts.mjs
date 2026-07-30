@@ -2,7 +2,7 @@
 /**
  * detect-reposts.mjs — Repost Detector for frontrunner
  *
- * Reads data/scan-history.tsv, groups rows by company, fuzzy-matches role
+ * Reads workspace/.state/scan-history.tsv, groups rows by company, fuzzy-matches role
  * titles with roleFuzzyMatch from src/tracker/role-matcher.mjs, and flags any
  * company+role that appears 2+ times with different URLs within a 90-day
  * window. Such clusters are almost certainly the same opening being
@@ -29,7 +29,7 @@ import { roleFuzzyMatch } from '../tracker/role-matcher.mjs';
 import { normalizeCompanyName } from '../tracker/invite-match.mjs';
 
 import { ROOT as FRONTRUNNER } from '#paths';
-const SCAN_HISTORY_PATH = join(FRONTRUNNER, 'data/scan-history.tsv');
+const SCAN_HISTORY_PATH = join(FRONTRUNNER, 'workspace/.state/scan-history.tsv');
 const DEFAULT_WINDOW_DAYS = 90;
 
 // --- CLI args ---

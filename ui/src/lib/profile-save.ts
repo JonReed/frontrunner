@@ -13,7 +13,7 @@
 
 import { spawn } from 'node:child_process';
 import { join } from 'node:path';
-import { ROOT } from './roles';
+import { ROOT } from './root';
 
 const PROFILE_CONTROL = join(ROOT, 'src', 'application', 'profile-control.mjs');
 const RESPONSE_LIMIT = 256 * 1024;

@@ -81,10 +81,10 @@ phantom subdirectory.
 
 ```bash
 npm run eval:golden -- --replay --model cheap-stub   # offline, deterministic, $0
-npm run eval:golden -- --live   --model gpt-4o-mini  # real call via openai-eval.mjs (needs key + cv.md)
+npm run eval:golden -- --live   --model gpt-4o-mini  # real call via openai-eval.mjs (needs key + workspace/profile/cv.md)
 ```
 
-Replay is the CI-friendly path: no API keys, no `cv.md`, fully deterministic.
+Replay is the CI-friendly path: no API keys, no `workspace/profile/cv.md`, fully deterministic.
 The harness reports per-case archetype/score agreement, mean |Δscore|, median
 latency (live only), and a placeholder $/run, then exits `0/1` on the archetype
 agreement gate.

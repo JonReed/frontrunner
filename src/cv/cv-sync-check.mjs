@@ -4,10 +4,10 @@
  * cv-sync-check.mjs — Validates that the frontrunner setup is consistent.
  *
  * Checks:
- * 1. cv.md exists
- * 2. config/profile.yml exists and has required fields
+ * 1. workspace/profile/cv.md exists
+ * 2. workspace/profile/profile.yml exists and has required fields
  * 3. No hardcoded metrics in _shared.md or batch/batch-prompt.md
- * 4. article-digest.md freshness (if exists)
+ * 4. workspace/profile/article-digest.md freshness (if exists)
  */
 
 import { readFileSync, existsSync, statSync } from 'fs';
@@ -20,27 +20,27 @@ const projectRoot = __dirname;
 const warnings = [];
 const errors = [];
 
-// 1. Check cv.md exists
-const cvPath = join(projectRoot, 'cv.md');
+// 1. Check workspace/profile/cv.md exists
+const cvPath = join(projectRoot, 'workspace/profile/cv.md');
 if (!existsSync(cvPath)) {
-  errors.push('cv.md not found in project root. Create it with your CV in markdown format.');
+  errors.push('workspace/profile/cv.md not found in project root. Create it with your CV in markdown format.');
 } else {
   const cvContent = readFileSync(cvPath, 'utf-8');
   if (cvContent.trim().length < 100) {
-    warnings.push('cv.md seems too short. Make sure it contains your full CV.');
+    warnings.push('workspace/profile/cv.md seems too short. Make sure it contains your full CV.');
   }
 }
 
 // 2. Check profile.yml exists
-const profilePath = join(projectRoot, 'config', 'profile.yml');
+const profilePath = join(projectRoot, 'workspace', 'profile', 'profile.yml');
 if (!existsSync(profilePath)) {
-  errors.push('config/profile.yml not found. Copy from config/profile.example.yml and fill in your details.');
+  errors.push('workspace/profile/profile.yml not found. Copy from config/profile.example.yml and fill in your details.');
 } else {
   const profileContent = readFileSync(profilePath, 'utf-8');
   const requiredFields = ['full_name', 'email', 'location'];
   for (const field of requiredFields) {
     if (!profileContent.includes(field) || profileContent.includes(`"Jane Smith"`)) {
-      warnings.push(`config/profile.yml may still have example data. Check field: ${field}`);
+      warnings.push(`workspace/profile/profile.yml may still have example data. Check field: ${field}`);
       break;
     }
   }
@@ -66,18 +66,18 @@ for (const { path, name } of filesToCheck) {
     if (line.includes('NEVER hardcode') || line.includes('NUNCA hardcode') || line.startsWith('#') || line.startsWith('<!--')) continue;
     const matches = line.match(metricPattern);
     if (matches) {
-      warnings.push(`${name}:${i + 1} — Possible hardcoded metric: "${matches[0]}". Should this be read from cv.md/article-digest.md?`);
+      warnings.push(`${name}:${i + 1} — Possible hardcoded metric: "${matches[0]}". Should this be read from workspace/profile/cv.md/article-digest.md?`);
     }
   }
 }
 
-// 4. Check article-digest.md freshness
-const digestPath = join(projectRoot, 'article-digest.md');
+// 4. Check workspace/profile/article-digest.md freshness
+const digestPath = join(projectRoot, 'workspace/profile/article-digest.md');
 if (existsSync(digestPath)) {
   const stats = statSync(digestPath);
   const daysSinceModified = (Date.now() - stats.mtimeMs) / (1000 * 60 * 60 * 24);
   if (daysSinceModified > 30) {
-    warnings.push(`article-digest.md is ${Math.round(daysSinceModified)} days old. Consider updating if your projects have new metrics.`);
+    warnings.push(`workspace/profile/article-digest.md is ${Math.round(daysSinceModified)} days old. Consider updating if your projects have new metrics.`);
   }
 }
 

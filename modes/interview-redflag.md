@@ -8,14 +8,14 @@ This mode answers: *"Even if I win this process — is this company safe to join
 
 ## Dependency
 
-Requires transcripts produced by `modes/interview/debrief.md` or `modes/interview/practice.md` (#956). Each transcript must be saved under `interview-prep/sessions/` (gitignored). If no session files exist, exit gracefully with an onboarding message.
+Requires transcripts produced by `modes/interview/debrief.md` or `modes/interview/practice.md` (#956). Each transcript must be saved under `workspace/interviews/sessions/` (gitignored). If no session files exist, exit gracefully with an onboarding message.
 
 ## Inputs
 
-- `interview-prep/sessions/` — Session transcripts (debrief + practice outputs). One file per round.
-- `interview-prep/{company}-{role}.md` — Company intel file (for context + output target).
-- `config/profile.yml` — User profile (for role/archetype context).
-- **Original JD text (user-provided, for Step 2b only)** — the posted job description for the role under analysis. Same "user-provided input, not automated scraping" pattern used elsewhere in this codebase (e.g. `src/analysis/jd-skill-gap.mjs`): paste it, or point at `local:jds/{file}` if it's already saved under `jds/`. Without it, Step 2b is skipped — every other step runs as normal.
+- `workspace/interviews/sessions/` — Session transcripts (debrief + practice outputs). One file per round.
+- `workspace/interviews/{company}-{role}.md` — Company intel file (for context + output target).
+- `workspace/profile/profile.yml` — User profile (for role/archetype context).
+- **Original JD text (user-provided, for Step 2b only)** — the posted job description for the role under analysis. Same "user-provided input, not automated scraping" pattern used elsewhere in this codebase (e.g. `src/analysis/jd-skill-gap.mjs`): paste it, or point at `local:workspace/jobs/descriptions/{file}` if it's already saved under `workspace/jobs/descriptions/`. Without it, Step 2b is skipped — every other step runs as normal.
 
 Expected transcript filename convention (from #956):
 ```
@@ -24,7 +24,7 @@ Expected transcript filename convention (from #956):
 
 ## Minimum Threshold
 
-Check: does `interview-prep/sessions/` contain at least **1** file?
+Check: does `workspace/interviews/sessions/` contain at least **1** file?
 
 If not:
 > "No session transcripts found yet. Run `/frontrunner interview` on a role after your next interview to generate a debrief, then come back to check for red flags."
@@ -33,7 +33,7 @@ Exit gracefully.
 
 ## Step 1 — Discover Sessions
 
-List all `.md` files in `interview-prep/sessions/`. Parse each filename using the `YYYY-MM-DD` date segment as the anchor:
+List all `.md` files in `workspace/interviews/sessions/`. Parse each filename using the `YYYY-MM-DD` date segment as the anchor:
 
 ```
 {company-slug}-{role-slug}-{round}-{YYYY-MM-DD}.md
@@ -109,7 +109,7 @@ Compute a **red-flag score**:
 
 ## Step 5 — Generate Output
 
-**Output routing:** Red-flag analysis is company-wide (signals aggregate across rounds regardless of role). Write to a single company-level file: `interview-prep/{company-slug}-redflags.md`. Create it if absent. If sessions span multiple role slugs, note all roles in the header. Do not append to per-role intel files — those are role-specific, this is company-specific. This file is cross-referenced by the evaluation report's `## Risk Summary` block (see `modes/oferta.md`), which surfaces its warning level plus a relative link — keep the `**Warning level:**` line intact.
+**Output routing:** Red-flag analysis is company-wide (signals aggregate across rounds regardless of role). Write to a single company-level file: `workspace/interviews/{company-slug}-redflags.md`. Create it if absent. If sessions span multiple role slugs, note all roles in the header. Do not append to per-role intel files — those are role-specific, this is company-specific. This file is cross-referenced by the evaluation report's `## Risk Summary` block (see `modes/oferta.md`), which surfaces its warning level plus a relative link — keep the `**Warning level:**` line intact.
 
 Write the following structure:
 
@@ -141,17 +141,17 @@ Write the following structure:
 - "Before accepting: ask [specific questions] to verify the concern."
 - "Reconsider: the pattern across {N} rounds suggests [specific risk]."}
 
-{If Warning level is 🚩 Reconsider (score 4+), append a blacklist suggestion sub-block. Synthesize the one-line reason from the signal table in Step 3/4 — name the specific pattern(s) at 2+ sessions, not a generic label. This is a suggestion only: present the row in `data/blacklist.md`'s table format so the user can copy it in themselves. Never write to `data/blacklist.md`. Render the heading and instructional sentences in `{language.output}` per the project's language-mode rules (see AGENTS.md § "Output Language vs Market Modes") — only the table's column headers (`Company | Since | Scope | Reason`) and the literal `company` scope value stay fixed, since they must match `data/blacklist.md`'s actual file format regardless of output language.
+{If Warning level is 🚩 Reconsider (score 4+), append a blacklist suggestion sub-block. Synthesize the one-line reason from the signal table in Step 3/4 — name the specific pattern(s) at 2+ sessions, not a generic label. This is a suggestion only: present the row in `workspace/search/blacklist.md`'s table format so the user can copy it in themselves. Never write to `workspace/search/blacklist.md`. Render the heading and instructional sentences in `{language.output}` per the project's language-mode rules (see AGENTS.md § "Output Language vs Market Modes") — only the table's column headers (`Company | Since | Scope | Reason`) and the literal `company` scope value stay fixed, since they must match `workspace/search/blacklist.md`'s actual file format regardless of output language.
 
 #### Consider adding to blacklist [heading — render in {language.output}]
 
-[Render in {language.output}: an instruction telling the user that if they agree with this assessment, they should copy the row below into `data/blacklist.md` (see `templates/blacklist.example.md` for the file's column format).]
+[Render in {language.output}: an instruction telling the user that if they agree with this assessment, they should copy the row below into `workspace/search/blacklist.md` (see `templates/blacklist.example.md` for the file's column format).]
 
 | Company | Since | Scope | Reason |
 |---------|-------|-------|--------|
 | {Company} | {today's date, YYYY-MM-DD} | company | {1-line reason drawn from the Step 3/4 signal breakdown, e.g. "2+ rounds: defensive closure + evaluator competency gap"} |
 
-[Render in {language.output}: a note that this is a suggestion only — nothing is written to `data/blacklist.md` automatically.]}
+[Render in {language.output}: a note that this is a suggestion only — nothing is written to `workspace/search/blacklist.md` automatically.]}
 
 *Analysis based on interviewer behaviour only. Candidate decides.*
 ```
@@ -194,13 +194,13 @@ Signals:
   • Scope/Compensation Mismatch: {round} ({date}) — {off-JD topic} asked at {the actual seniority label captured in Step 2b, e.g. junior/associate/coordinator-tier/entry-level} pay [{exact JD pay figure/band, or exact user-notes below-market benchmark/classification that qualified condition 2}] — {"single-instance observation" OR "corroborated by [coffee chat note / other source]"}
   ...}
 
-→ Full analysis written to interview-prep/{company-slug}-redflags.md
+→ Full analysis written to workspace/interviews/{company-slug}-redflags.md
 ```
 
 If the warning level is `🚩 Reconsider`, add one line noting the suggestion is in the file — do not repeat the full blacklist row in the console summary. Render this line in `{language.output}` (see AGENTS.md § "Output Language vs Market Modes"); only the file path is a fixed literal:
 
 ```text
-→ [render in {language.output}, e.g. "Blacklist entry suggested — see"] interview-prep/{company-slug}-redflags.md
+→ [render in {language.output}, e.g. "Blacklist entry suggested — see"] workspace/interviews/{company-slug}-redflags.md
 ```
 
 If multiple companies were analysed in one run, show a summary table:
@@ -215,9 +215,9 @@ Company          Rounds   Level
 
 ## Scope / Non-Goals
 
-- **No auto-action** — never edits `portals.yml`, `modes/_profile.md`, `data/applications.md`, or `data/blacklist.md`. At `🚩 Reconsider`, the output suggests a ready-to-copy blacklist row; the user (or their agent, on explicit instruction) still has to add it themselves. Advisory only.
+- **No auto-action** — never edits `workspace/search/portals.yml`, `workspace/profile/targeting.md`, `workspace/applications/tracker.md`, or `workspace/search/blacklist.md`. At `🚩 Reconsider`, the output suggests a ready-to-copy blacklist row; the user (or their agent, on explicit instruction) still has to add it themselves. Advisory only.
 - **No new dependencies** — prompt-level analysis over local files.
 - **Privacy** — reads only local, gitignored session files. Nothing leaves the machine.
 - **Not a Glassdoor replacement** — analyses this candidate's live experience in this process, not crowd-sourced opinion.
 - **Candidate-side analysis is out of scope** — use `realign-targeting` (#960) for that.
-- **Scope/Compensation Mismatch (Step 2b) is descriptive, not actionable-in-the-moment** — by the time it's detected, the interview that produced it is already over, so it can't protect the candidate in that specific round. It's written to the company-level file as a record: if a later round with the same company happens, or the candidate considers re-applying, this is the place to check first. It is not fed automatically into `interview-prep/{company}-{role}.md` or any future prep step — the candidate re-reads it manually, the same way every other output of this mode is advisory-only.
+- **Scope/Compensation Mismatch (Step 2b) is descriptive, not actionable-in-the-moment** — by the time it's detected, the interview that produced it is already over, so it can't protect the candidate in that specific round. It's written to the company-level file as a record: if a later round with the same company happens, or the candidate considers re-applying, this is the place to check first. It is not fed automatically into `workspace/interviews/{company}-{role}.md` or any future prep step — the candidate re-reads it manually, the same way every other output of this mode is advisory-only.

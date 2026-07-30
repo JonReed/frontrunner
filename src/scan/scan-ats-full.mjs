@@ -3,14 +3,14 @@
 /**
  * scan-ats-full.mjs — Reverse ATS discovery scanner. Part of #230.
  *
- * Where scan.mjs scans the companies you track in portals.yml, this script
+ * Where scan.mjs scans the companies you track in workspace/search/portals.yml, this script
  * inverts the direction: it walks public directories of companies per ATS
  * (Greenhouse, Lever, Ashby, Workday, iCIMS) and surfaces fresh postings that match
- * your portals.yml `title_filter` / `location_filter` — no manual company
+ * your workspace/search/portals.yml `title_filter` / `location_filter` — no manual company
  * curation needed.
  *
  * Company directories come from the public job-board-aggregator dataset
- * (github.com/Feashliaa/job-board-aggregator), cached in data/cache/ for 24h.
+ * (github.com/Feashliaa/job-board-aggregator), cached in workspace/.state/cache/ for 24h.
  *
  * Zero LLM tokens — pure HTTP + JSON, same providers/ modules as scan.mjs.
  * Postings without a usable publish date are skipped: a reverse scan is only
@@ -23,7 +23,7 @@
  *   node src/scan/scan-ats-full.mjs --limit 200          # max companies per ATS (default: all)
  *   node src/scan/scan-ats-full.mjs --dry-run            # preview without writing files
  *   node src/scan/scan-ats-full.mjs --liveness           # Playwright-verify matches before writing
- *   node src/scan/scan-ats-full.mjs --include-blacklisted # audit: let data/blacklist.md matches through, annotated
+ *   node src/scan/scan-ats-full.mjs --include-blacklisted # audit: let workspace/search/blacklist.md matches through, annotated
  *   node src/scan/scan-ats-full.mjs --verbose            # log per-board fetch failures
  *   node src/scan/scan-ats-full.mjs --md-out <dir>       # also write a dated markdown digest to <dir>
  *   node src/scan/scan-ats-full.mjs --resume             # continue an interrupted sweep from its checkpoint
@@ -51,9 +51,9 @@ import { normalizeCompany } from '../tracker/tracker-utils.mjs';
 
 // ── Config ──────────────────────────────────────────────────────────
 
-const PORTALS_PATH = process.env.FRONTRUNNER_PORTALS || 'portals.yml';
-const PIPELINE_PATH = 'data/pipeline.md';
-const CACHE_DIR = 'data/cache/ats-companies';
+const PORTALS_PATH = process.env.FRONTRUNNER_PORTALS || 'workspace/search/portals.yml';
+const PIPELINE_PATH = 'workspace/search/pipeline.md';
+const CACHE_DIR = 'workspace/.state/cache/ats-companies';
 const CACHE_TTL_HOURS = 24;
 // Tracks `main` deliberately: the dataset's value is freshness (new boards
 // appear weekly), so pinning a commit would defeat the purpose. Integrity rests
@@ -72,7 +72,7 @@ const RESOLVER_FAILURE_LIMIT = 50;
 // Crash insurance for multi-hour directory sweeps: progress + matches are
 // checkpointed every CHECKPOINT_EVERY companies so --resume can continue a
 // dead run (with its ORIGINAL date window) instead of restarting from zero.
-const CHECKPOINT_PATH = process.env.FRONTRUNNER_ATS_CHECKPOINT || 'data/cache/ats-full-checkpoint.json';
+const CHECKPOINT_PATH = process.env.FRONTRUNNER_ATS_CHECKPOINT || 'workspace/.state/cache/ats-full-checkpoint.json';
 const CHECKPOINT_EVERY = 500;
 
 export function loadCheckpoint(file = CHECKPOINT_PATH) {
@@ -255,7 +255,7 @@ const USAGE = `Usage:
   node src/scan/scan-ats-full.mjs --limit 200          # max companies per ATS (default: all)
   node src/scan/scan-ats-full.mjs --dry-run            # preview without writing files
   node src/scan/scan-ats-full.mjs --liveness           # Playwright-verify matches before writing
-  node src/scan/scan-ats-full.mjs --include-blacklisted # audit: let data/blacklist.md matches through, annotated
+  node src/scan/scan-ats-full.mjs --include-blacklisted # audit: let workspace/search/blacklist.md matches through, annotated
   node src/scan/scan-ats-full.mjs --verbose            # log per-board fetch failures
   node src/scan/scan-ats-full.mjs --md-out <dir>       # also write a dated markdown digest to <dir>
   node src/scan/scan-ats-full.mjs --resume             # continue an interrupted sweep from its checkpoint
@@ -454,7 +454,7 @@ const SEED_PROVIDERS = [greenhouse, lever, ashby];
  * Scan a VC portfolio seed source and return matching job offers.
  * Companies are converted to PortalEntry shape, then each ATS provider's
  * detect() is tried in order (greenhouse → lever → ashby). The first hit
- * wins and its fetch() is called — identical to how portals.yml tracked
+ * wins and its fetch() is called — identical to how workspace/search/portals.yml tracked
  * companies flow through scan.mjs.
  *
  * @param {string}   seedId      Key from SEED_SOURCES (e.g. 'yc').
@@ -632,17 +632,17 @@ async function main() {
   const progress = (s) => { if (!opts.json) process.stdout.write(s); };
 
   if (!existsSync(PORTALS_PATH)) {
-    console.error('Error: portals.yml not found. Run onboarding first — the reverse scan reuses its title_filter/location_filter.');
+    console.error('Error: workspace/search/portals.yml not found. Run onboarding first — the reverse scan reuses its title_filter/location_filter.');
     process.exit(1);
   }
   const config = yaml.load(readFileSync(PORTALS_PATH, 'utf-8'));
   const titleFilter = buildTitleFilter(config?.title_filter);
   const locationFilter = buildLocationFilter(config?.location_filter);
   // Same content_filter (incl. by_title_keyword scoping) scan.mjs applies —
-  // see #1846. Built once here from the same portals.yml config.
+  // see #1846. Built once here from the same workspace/search/portals.yml config.
   const contentFilter = buildContentFilter(config?.content_filter);
   if (!config?.title_filter?.positive?.length) {
-    console.error('⚠️  portals.yml has no title_filter.positive — every fresh posting on every board will match. Consider adding keywords.');
+    console.error('⚠️  workspace/search/portals.yml has no title_filter.positive — every fresh posting on every board will match. Consider adding keywords.');
   }
   // Attach filters to opts so runSeedScan can use them without extra parameters.
   opts.titleFilter = titleFilter;
@@ -961,7 +961,7 @@ async function main() {
     await appendToPipeline(offers);
     await appendToScanHistory(offers, date);
     saved = true;
-    log(`\nResults saved to ${PIPELINE_PATH} and data/scan-history.tsv`);
+    log(`\nResults saved to ${PIPELINE_PATH} and workspace/.state/scan-history.tsv`);
 
     if (opts.mdOut) {
       try {

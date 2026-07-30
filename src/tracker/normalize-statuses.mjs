@@ -25,7 +25,7 @@ const APPS_FILE = resolveTrackerPath(FRONTRUNNER);
 const DRY_RUN = process.argv.includes('--dry-run');
 
 // Ensure required directories exist (fresh setup)
-mkdirSync(join(FRONTRUNNER, 'data'), { recursive: true });
+mkdirSync(join(FRONTRUNNER, 'workspace', 'applications'), { recursive: true });
 
 // Canonical status mapping
 function normalizeStatus(raw) {

@@ -8,7 +8,7 @@
 
 import { spawn } from 'node:child_process';
 import { join } from 'node:path';
-import { ROOT } from './roles';
+import { ROOT } from './root';
 
 const OVERRIDE_CONTROL = join(ROOT, 'src', 'application', 'prefilter-override-control.mjs');
 const RESPONSE_LIMIT = 8 * 1024;

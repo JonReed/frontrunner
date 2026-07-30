@@ -5,9 +5,9 @@
      ============================================================
      Denne fil indeholder den delte kontekst for alle frontrunner-modes
      i den danske version. Før du bruger frontrunner, SKAL du:
-     1. Udfylde config/profile.yml med dine personlige oplysninger
-     2. Oprette cv.md i projektets rod (CV i Markdown)
-     3. (Valgfrit) Oprette article-digest.md med dine proof points
+     1. Udfylde workspace/profile/profile.yml med dine personlige oplysninger
+     2. Oprette workspace/profile/cv.md i projektets rod (CV i Markdown)
+     3. (Valgfrit) Oprette workspace/profile/article-digest.md med dine proof points
      4. Tilpasse de afsnit, der er markeret med [TILPAS] nedenfor
      ============================================================ -->
 
@@ -15,12 +15,12 @@
 
 | Fil | Sti | Hvornår |
 |-----|-----|---------|
-| cv.md | `cv.md` (projektets rod) | ALTID |
-| article-digest.md | `article-digest.md` (hvis den findes) | ALTID (detaljerede proof points) |
-| profile.yml | `config/profile.yml` | ALTID (identitet og målroller) |
+| workspace/profile/cv.md | `workspace/profile/cv.md` (projektets rod) | ALTID |
+| workspace/profile/article-digest.md | `workspace/profile/article-digest.md` (hvis den findes) | ALTID (detaljerede proof points) |
+| profile.yml | `workspace/profile/profile.yml` | ALTID (identitet og målroller) |
 
-**REGEL: Aldrig hardcode metrics fra proof points.** Læs dem fra `cv.md` og `article-digest.md` på evalueringstidspunktet.
-**REGEL: For metrics om artikler/projekter har `article-digest.md` forrang frem for `cv.md`** (`cv.md` kan indeholde ældre tal).
+**REGEL: Aldrig hardcode metrics fra proof points.** Læs dem fra `workspace/profile/cv.md` og `workspace/profile/article-digest.md` på evalueringstidspunktet.
+**REGEL: For metrics om artikler/projekter har `workspace/profile/article-digest.md` forrang frem for `workspace/profile/cv.md`** (`workspace/profile/cv.md` kan indeholde ældre tal).
 
 ---
 
@@ -46,16 +46,16 @@ Dette skill behandler ALLE målroller med samme omhu. Ingen er primær eller sek
 
 ### Adaptiv framing efter arketype
 
-> **Konkrete metrics: læs dem fra `cv.md` og `article-digest.md` på evalueringstidspunktet. ALDRIG hardcode dem her.**
+> **Konkrete metrics: læs dem fra `workspace/profile/cv.md` og `workspace/profile/article-digest.md` på evalueringstidspunktet. ALDRIG hardcode dem her.**
 
 | Hvis rollen er... | Fremhæv hos kandidaten... | Kilder til proof points |
 |-------------------|---------------------------|-------------------------|
-| Platform / LLMOps | Produktionserfaring, observability, evals, closed-loop | article-digest.md + cv.md |
-| Agentic / Automation | Multi-agent-orkestrering, HITL, pålidelighed, omkostninger | article-digest.md + cv.md |
-| Technical AI PM | Product discovery, PRDs, metrics, stakeholder-styring | cv.md + article-digest.md |
-| Solutions Architect | Systemdesign, integrationer, enterprise-klar | article-digest.md + cv.md |
-| Forward Deployed Engineer | Hurtig levering, kundenærhed, prototype til produktion | cv.md + article-digest.md |
-| AI Transformation Lead | Forandringsledelse, team-enablement, adoption | cv.md + article-digest.md |
+| Platform / LLMOps | Produktionserfaring, observability, evals, closed-loop | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Agentic / Automation | Multi-agent-orkestrering, HITL, pålidelighed, omkostninger | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Technical AI PM | Product discovery, PRDs, metrics, stakeholder-styring | workspace/profile/cv.md + workspace/profile/article-digest.md |
+| Solutions Architect | Systemdesign, integrationer, enterprise-klar | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Forward Deployed Engineer | Hurtig levering, kundenærhed, prototype til produktion | workspace/profile/cv.md + workspace/profile/article-digest.md |
+| AI Transformation Lead | Forandringsledelse, team-enablement, adoption | workspace/profile/cv.md + workspace/profile/article-digest.md |
 
 <!-- [TILPAS] Knyt dine konkrete projekter/artikler til arketyperne ovenfor -->
 
@@ -65,11 +65,11 @@ Dette skill behandler ALLE målroller med samme omhu. Ingen er primær eller sek
      - "SaaS bygget og solgt efter 5 år. Nu 100% fokus på anvendt AI i enterprise."
      - "Engineering-lead i en Series-B under 10x vækst. Søger den næste udfordring."
      - "Skift fra konsulent til produkt. Søger roller med højt ansvar."
-     Læses fra config/profile.yml -> narrative.exit_story -->
+     Læses fra workspace/profile/profile.yml -> narrative.exit_story -->
 
-Brug overgangsnarrativet fra `config/profile.yml` til at ramme ALT indhold ind:
+Brug overgangsnarrativet fra `workspace/profile/profile.yml` til at ramme ALT indhold ind:
 - **I PDF-summaries:** Byg bro mellem fortid og fremtid -- "Anvender nu de samme [kompetencer] på [opslagets domæne]."
-- **I STAR-stories:** Referér til proof points fra `article-digest.md`.
+- **I STAR-stories:** Referér til proof points fra `workspace/profile/article-digest.md`.
 - **I draft-svar (Blok G):** Overgangsnarrativet hører til i det første svar.
 - **Når opslaget nævner "entrepreneurial", "ownership", "builder", "end-to-end":** Det er DEN vigtigste differentiator nr. 1. Øg match-vægten.
 
@@ -91,7 +91,7 @@ Positionér "Builder" som et professionelt signal -- ikke som "hobbyist". De æg
        url: "https://ditdomæne.dev/demo"
        password: "demo-2026"
        when_to_share: "LLMOps, AI Platform, Observability-roller"
-     Læses fra config/profile.yml -> narrative.proof_points og narrative.dashboard -->
+     Læses fra workspace/profile/profile.yml -> narrative.proof_points og narrative.dashboard -->
 
 Hvis kandidaten har en live demo / et dashboard (tjek `profile.yml`), så tilbyd adgang i relevante ansøgninger.
 
@@ -144,7 +144,7 @@ I danske opslag og forhandlinger optræder visse termer, som ikke findes på EN/
 
 ### Lokationspolitik (Location Policy)
 
-<!-- [TILPAS] Tilpas til din situation. Læses fra config/profile.yml -> location -->
+<!-- [TILPAS] Tilpas til din situation. Læses fra workspace/profile/profile.yml -> location -->
 
 **I formularer:**
 - Binære spørgsmål "Kan du være på kontoret?": svar efter den reelle tilgængelighed i `profile.yml`
@@ -166,7 +166,7 @@ I danske opslag og forhandlinger optræder visse termer, som ikke findes på EN/
 ### ALDRIG
 
 1. Opfinde erfaring eller metrics
-2. Ændre `cv.md` eller portfolio-filer
+2. Ændre `workspace/profile/cv.md` eller portfolio-filer
 3. Indsende ansøgninger på kandidatens vegne
 4. Dele et telefonnummer i genererede beskeder
 5. Anbefale aflønning under markedsniveau
@@ -177,7 +177,7 @@ I danske opslag og forhandlinger optræder visse termer, som ikke findes på EN/
 ### ALTID
 
 0. **Ansøgning (følgebrev):** Hvis formularen tillader det, så inkludér ALTID én. PDF i samme visuelle design som CV'et. Citater fra opslaget mappet til proof points. Maks. 1 side.
-1. Læs `cv.md` og `article-digest.md` (hvis den findes), før et opslag evalueres
+1. Læs `workspace/profile/cv.md` og `workspace/profile/article-digest.md` (hvis den findes), før et opslag evalueres
 1b. **Første evaluering i hver session:** Kør `node src/cv/cv-sync-check.mjs` via Bash. Ved advarsler, informér kandidaten
 2. Detektér rollens arketype og tilpas framingen
 3. Citér eksakte linjer fra CV'et ved matching
@@ -187,7 +187,7 @@ I danske opslag og forhandlinger optræder visse termer, som ikke findes på EN/
 7. Vær direkte og konkret -- ingen smøren
 8. Naturligt tech-dansk til genererede tekster. Korte sætninger, aktive verber, undgå passiv. Oversæt ikke tekniske termer med tvang (stack, pipeline, deployment, embedding)
 8b. **Case-study-URL'er i PDF'ens Professional Summary:** Hvis PDF'en nævner case studies eller demoer, SKAL URL'erne optræde i det første afsnit (Professional Summary). Rekrutterere læser ofte kun summary. Alle URL'er i HTML med `white-space: nowrap`
-9. **Tracker-poster som TSV** -- rediger ALDRIG applications.md direkte for nye tilføjelser. Skriv TSV i `batch/tracker-additions/`, `src/tracker/merge-tracker.mjs` håndterer sammenfletningen
+9. **Tracker-poster som TSV** -- rediger ALDRIG applications.md direkte for nye tilføjelser. Skriv TSV i `workspace/.state/tracker-additions/`, `src/tracker/merge-tracker.mjs` håndterer sammenfletningen
 10. **`**URL:**` i hver report-header** -- mellem Score og PDF
 
 ### Værktøjer
@@ -197,7 +197,7 @@ I danske opslag og forhandlinger optræder visse termer, som ikke findes på EN/
 | WebSearch | Lønundersøgelse, tendenser, virksomhedskultur, LinkedIn-kontakter, fallback for opslag |
 | WebFetch | Fallback til at udtrække opslag fra statiske sider |
 | Playwright | Tjek om opslag er aktive (browser_navigate + browser_snapshot), udtræk opslag fra SPAs. **KRITISK: ALDRIG 2+ agenter parallelt med Playwright -- de deler den samme browser-instans** |
-| Read | cv.md, article-digest.md, cv-template.html |
+| Read | workspace/profile/cv.md, workspace/profile/article-digest.md, cv-template.html |
 | Write | Midlertidig HTML til PDF, applications.md, reports .md |
 | Edit | Opdatér trackeren |
 | Bash | `node src/cv/generate-pdf.mjs` |

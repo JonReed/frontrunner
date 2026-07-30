@@ -9,12 +9,12 @@ Conduza uma entrevista simulada realista — uma pergunta de cada vez — e dê 
 1. **Tipo de rodada** (obrigatório) — triagem/recrutador, triagem/gestor, técnica/específica da área, design/estudo de caso, comportamental
 2. **Persona do entrevistador** (se souber) — nome, cargo, empresa; define o estilo e a profundidade das perguntas
 3. **Lista de perguntas** (opcional) — perguntas específicas a cobrir; se não fornecida, gere a partir do tipo de rodada
-4. **CV** em `cv.md` + `article-digest.md` (se existir) — para verificar alegações nas respostas e ancorar versões mais fortes em experiência real
-5. **Perfil** em `config/profile.yml` + `modes/_profile.md` — narrativa do candidato, deal-breakers, objetivos de remuneração
-6. **Story bank** em `interview-prep/story-bank.md` — para verificar a exatidão das histórias no feedback
-7. **Question bank** em `interview-prep/question-bank.md` — para atualizar o status após cada resposta
+4. **CV** em `workspace/profile/cv.md` + `workspace/profile/article-digest.md` (se existir) — para verificar alegações nas respostas e ancorar versões mais fortes em experiência real
+5. **Perfil** em `workspace/profile/profile.yml` + `workspace/profile/targeting.md` — narrativa do candidato, deal-breakers, objetivos de remuneração
+6. **Story bank** em `workspace/interviews/story-bank.md` — para verificar a exatidão das histórias no feedback
+7. **Question bank** em `workspace/interviews/question-bank.md` — para atualizar o status após cada resposta
 8. **Arquivo de preparação específico da vaga** — para informações sobre a empresa, perguntas pesquisadas, estratégia de remuneração
-9. **Alegações retiradas** em `interview-prep/retracted-claims.md` (se existir) — alegações que o candidato rejeitou explicitamente como indefensáveis; trate como barreira rígida
+9. **Alegações retiradas** em `workspace/interviews/retracted-claims.md` (se existir) — alegações que o candidato rejeitou explicitamente como indefensáveis; trate como barreira rígida
 
 ---
 
@@ -24,10 +24,10 @@ Conduza uma entrevista simulada realista — uma pergunta de cada vez — e dê 
 
 Antes de montar o cenário, confirme quais arquivos existem:
 
-- `interview-prep/question-bank.md` (ou um equivalente específico da empresa)
-- O arquivo de preparação específico da vaga (`interview-prep/{company}-{role}.md`)
-- `cv.md`
-- `interview-prep/retracted-claims.md`
+- `workspace/interviews/question-bank.md` (ou um equivalente específico da empresa)
+- O arquivo de preparação específico da vaga (`workspace/interviews/{company}-{role}.md`)
+- `workspace/profile/cv.md`
+- `workspace/interviews/retracted-claims.md`
 
 Se tanto a question bank quanto o arquivo de preparação da vaga estiverem ausentes, diga ao candidato com clareza:
 
@@ -97,11 +97,11 @@ Mantenha o feedback enxuto. Um ou dois pontos a aprimorar por resposta — não 
 
 **Regra dos dois minutos.** Se uma resposta passar de dois minutos, registre. Entrevistadores param de ouvir. A correção quase sempre é enunciar a resposta primeiro e depois explicar — não cortar conteúdo. *Numa sessão digitada você não consegue cronometrar a entrega — substitua por uma verificação de estrutura:* sinalize respostas que enterram a manchete (mais de 4–5 frases de contexto antes de o ponto aparecer) e diga ao candidato: ritmo e palavras de preenchimento só podem ser diagnosticados em voz alta — grave-se ou refaça esta pergunta verbalmente.
 
-**Verifique alegações suspeitas antes de treiná-las.** Quando o candidato afirma uma métrica ou alegação de escopo específica (número de pessoas gerenciadas, AUM, faturamento, percentual de melhoria) que você não consegue confirmar pelo contexto anterior, verifique-a em `cv.md`, `article-digest.md` e `interview-prep/retracted-claims.md` antes de dar feedback. Se a alegação não tiver respaldo, sinalize: "Não encontro esse número no seu CV — ele é defensável se pressionarem? Se não, aqui está uma versão que não depende dele." Nunca treine um candidato a repetir uma alegação que não consegue sustentar.
+**Verifique alegações suspeitas antes de treiná-las.** Quando o candidato afirma uma métrica ou alegação de escopo específica (número de pessoas gerenciadas, AUM, faturamento, percentual de melhoria) que você não consegue confirmar pelo contexto anterior, verifique-a em `workspace/profile/cv.md`, `workspace/profile/article-digest.md` e `workspace/interviews/retracted-claims.md` antes de dar feedback. Se a alegação não tiver respaldo, sinalize: "Não encontro esse número no seu CV — ele é defensável se pressionarem? Se não, aqui está uma versão que não depende dele." Nunca treine um candidato a repetir uma alegação que não consegue sustentar.
 
-**Nunca invente experiência ou métricas.** A versão mais forte só pode usar fatos que o candidato realmente declarou, ou alegações que existam em `cv.md`, `article-digest.md` ou na story bank. Apertar o enquadramento é o trabalho — acrescentar conquistas é fabricação. Se uma alegação aparecer em `interview-prep/retracted-claims.md`, não a use em uma versão mais forte, mesmo que o candidato a tenha dito.
+**Nunca invente experiência ou métricas.** A versão mais forte só pode usar fatos que o candidato realmente declarou, ou alegações que existam em `workspace/profile/cv.md`, `workspace/profile/article-digest.md` ou na story bank. Apertar o enquadramento é o trabalho — acrescentar conquistas é fabricação. Se uma alegação aparecer em `workspace/interviews/retracted-claims.md`, não a use em uma versão mais forte, mesmo que o candidato a tenha dito.
 
-**Ofereça-se para registrar retratações.** Quando o candidato admite no meio da sessão que uma alegação não é defensável ("você tem razão, não consigo sustentar isso"), ofereça-se para acrescentá-la a `interview-prep/retracted-claims.md`: "Quer que eu adicione isso à sua lista de retiradas, para que não apareça de novo?" Se sim, acrescente: `**"[claim]"** ([context]). Reason: [one-line reason + correct framing if applicable].`
+**Ofereça-se para registrar retratações.** Quando o candidato admite no meio da sessão que uma alegação não é defensável ("você tem razão, não consigo sustentar isso"), ofereça-se para acrescentá-la a `workspace/interviews/retracted-claims.md`: "Quer que eu adicione isso à sua lista de retiradas, para que não apareça de novo?" Se sim, acrescente: `**"[claim]"** ([context]). Reason: [one-line reason + correct framing if applicable].`
 
 **Quando as informações sobre a empresa estiverem escassas no meio da sessão.** Se o candidato visivelmente trava numa pergunta de "por que esta empresa / por que esta vaga" porque o arquivo de preparação da vaga carece dessas informações, não fabrique e não fique em silêncio. Saia do personagem, rode a etapa de pesquisa do `interview-prep` para aquela única pergunta (o mesmo caminho de pesquisa com fontes que o `interview-prep.md` domina) e volte com 2–3 ângulos concretos e citados. Depois retome o personagem. Se a pesquisa não produzir nada aproveitável, diga isso com clareza. Isto não é um segundo loop de busca — é invocar a etapa de pesquisa existente na hora certa, quando o pipeline anterior não foi executado antes.
 
@@ -133,7 +133,7 @@ Mantenha o feedback enxuto. Um ou dois pontos a aprimorar por resposta — não 
 
 ### Write Session Transcript
 
-Após o resumo, escreva uma transcrição da sessão legível por máquina em `interview-prep/sessions/{company-slug}-{role-slug}-{round}-{YYYY-MM-DD}.md` (use `practice` para o slug de empresa/função se esta não foi uma sessão específica de empresa). Este é um registro estruturado da rodada para modos de análise posteriores; os turnos com rótulo de quem fala permitem que um consumidor leia qualquer um dos lados sem reinferir quem falou. O contrato completo está em `interview-prep/sessions/README.md`.
+Após o resumo, escreva uma transcrição da sessão legível por máquina em `workspace/interviews/sessions/{company-slug}-{role-slug}-{round}-{YYYY-MM-DD}.md` (use `practice` para o slug de empresa/função se esta não foi uma sessão específica de empresa). Este é um registro estruturado da rodada para modos de análise posteriores; os turnos com rótulo de quem fala permitem que um consumidor leia qualquer um dos lados sem reinferir quem falou. O contrato completo está em `workspace/interviews/sessions/README.md`.
 
 Formato:
 
@@ -170,7 +170,7 @@ Regras para a transcrição:
 
 Se nenhuma lista de perguntas for fornecida, obtenha as perguntas nesta ordem de precedência:
 
-1. **Perguntas reais de `interview-prep/question-bank.md`** — perguntas que esta empresa (ou uma rodada anterior) realmente fez, capturadas por debriefs. Maior valor: empiricamente fundamentadas.
+1. **Perguntas reais de `workspace/interviews/question-bank.md`** — perguntas que esta empresa (ou uma rodada anterior) realmente fez, capturadas por debriefs. Maior valor: empiricamente fundamentadas.
 2. **Perguntas pesquisadas do arquivo de preparação da vaga** — perguntas que a pesquisa do interview-prep.md encontrou e citou. Use-as como estão; mantenha as citações fora da sessão, mas respeite a redação.
 3. **Os conjuntos padrão abaixo** — fallback gerado para uma primeira sessão ainda sem pesquisa. Preencha os campos entre colchetes a partir da descrição da vaga.
 
@@ -246,7 +246,7 @@ Inclua pelo menos 2 perguntas situacionais / voltadas ao futuro do conjunto abai
 - **Uma pergunta de cada vez.** Nunca antecipe várias perguntas. Entrevistadores reais fazem uma de cada vez.
 - **Sem dicas antes da resposta.** Não prepare o candidato com "isto é sobre X". Pergunte sem aviso.
 - **Apenas feedback honesto.** O falso encorajamento é pior que o silêncio — manda o candidato despreparado para uma entrevista real.
-- **Sem alegações fabricadas nas respostas sugeridas.** As versões mais fortes recorrem apenas ao que o candidato disse ou ao que está em `cv.md`, `article-digest.md` ou na story bank — nunca experiências ou métricas inventadas.
-- **Alegações retiradas são uma barreira rígida.** Se uma alegação aparecer em `interview-prep/retracted-claims.md`, nunca a use em uma versão mais forte — mesmo que o candidato a tenha dito na resposta. Sinalize-a em vez disso.
-- **Acompanhe o status.** Atualize `interview-prep/question-bank.md` após a sessão, se ele existir.
+- **Sem alegações fabricadas nas respostas sugeridas.** As versões mais fortes recorrem apenas ao que o candidato disse ou ao que está em `workspace/profile/cv.md`, `workspace/profile/article-digest.md` ou na story bank — nunca experiências ou métricas inventadas.
+- **Alegações retiradas são uma barreira rígida.** Se uma alegação aparecer em `workspace/interviews/retracted-claims.md`, nunca a use em uma versão mais forte — mesmo que o candidato a tenha dito na resposta. Sinalize-a em vez disso.
+- **Acompanhe o status.** Atualize `workspace/interviews/question-bank.md` após a sessão, se ele existir.
 - **Pare quando pedirem.** Se o candidato disser "vamos pausar" ou "por hoje chega", respeite. Não insista por mais uma pergunta.

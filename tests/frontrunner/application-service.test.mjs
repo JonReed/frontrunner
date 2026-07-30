@@ -58,7 +58,7 @@ test('contract normalizes the current CV-build inputs into frozen application da
   const normalized = validateApplicationRequest(request('cv.build', {
     roleNum: 42,
     jobUrl: 'https://jobs.example.com/roles/42?from=tracker',
-    reportPath: '../reports/042-example-2026-07-29.md',
+    reportPath: '../reports/evaluations/042-example-2026-07-29.md',
   }, { idempotencyKey: 'cv:42' }));
 
   assert.deepEqual(normalized, {
@@ -67,7 +67,7 @@ test('contract normalizes the current CV-build inputs into frozen application da
     input: {
       roleNum: 42,
       jobUrl: 'https://jobs.example.com/roles/42?from=tracker',
-      reportPath: 'reports/042-example-2026-07-29.md',
+      reportPath: 'workspace/reports/evaluations/042-example-2026-07-29.md',
       model: null,
     },
     idempotencyKey: 'cv:42',
@@ -88,9 +88,9 @@ test('contract rejects command injection, unknown fields, unsafe paths, and unbo
       jobUrl: 'https://example.com/job',
       reportPath: '../../etc/passwd',
     }),
-    request('pipeline.run', { engine: 'claude; rm -rf .', input: 'data/pipeline.md' }),
+    request('pipeline.run', { engine: 'claude; rm -rf .', input: 'workspace/search/pipeline.md' }),
     request('pipeline.run', { engine: 'claude', input: '../cv.md' }),
-    request('pipeline.run', { engine: 'claude', input: join(ROOT, 'data/pipeline.md') }),
+    request('pipeline.run', { engine: 'claude', input: join(ROOT, 'workspace/search/pipeline.md') }),
     { ...request('scan.run'), cwd: '/tmp' },
   ];
   for (const candidate of invalid) {
@@ -111,7 +111,7 @@ test('operation catalog fixes executable, script, cwd, flags, timeout, and spend
   const cv = resolveApplicationOperation(request('cv.build', {
     roleNum: 7,
     jobUrl: 'https://jobs.example.com/7',
-    reportPath: 'reports/007-example-2026-07-29.md',
+    reportPath: 'workspace/reports/evaluations/007-example-2026-07-29.md',
     model: 'claude-sonnet-5',
   }));
   assert.equal(cv.command, process.execPath);
@@ -120,7 +120,7 @@ test('operation catalog fixes executable, script, cwd, flags, timeout, and spend
   assert.deepEqual(cv.args.slice(1), [
     '--url', 'https://jobs.example.com/7',
     '--tracker', '7',
-    '--report', 'reports/007-example-2026-07-29.md',
+    '--report', 'workspace/reports/evaluations/007-example-2026-07-29.md',
     '--model', 'claude-sonnet-5',
   ]);
   assert.equal(cv.costsTokens, true);
@@ -130,7 +130,7 @@ test('operation catalog fixes executable, script, cwd, flags, timeout, and spend
 
   const prepare = resolveApplicationOperation(request('pipeline.prepare', {
     scan: false,
-    input: 'data/pipeline.md',
+    input: 'workspace/search/pipeline.md',
   }));
   assert.equal(prepare.command, process.execPath);
   assert.equal(prepare.args[0], join(ROOT, 'src/pipeline/run.mjs'));
@@ -324,6 +324,22 @@ test('the stdin protocol rejects oversized and malformed request bodies before e
   await assert.rejects(
     readBoundedRequest(Readable.from(['{"version":'])),
     SyntaxError,
+  );
+});
+
+test('request-size exceptions are explicit and do not weaken the generic protocol cap', async () => {
+  const body = JSON.stringify({ value: 'x'.repeat(96 * 1024) });
+  await assert.rejects(
+    readBoundedRequest(Readable.from([body])),
+    /application request exceeds 65536 bytes/,
+  );
+  assert.deepEqual(
+    await readBoundedRequest(Readable.from([body]), { maxBytes: 128 * 1024 }),
+    JSON.parse(body),
+  );
+  await assert.rejects(
+    readBoundedRequest(Readable.from(['{}']), { maxBytes: 0 }),
+    /maxBytes must be a positive safe integer/,
   );
 });
 

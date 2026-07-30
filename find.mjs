@@ -5,7 +5,7 @@
  *
  * "Apply to #13" is ambiguous: report numbers and tracker row numbers diverge,
  * and mapping company ↔ report# ↔ tracker# ↔ PDF used to require opening three
- * files (applications.md, reports/, data/pdf-index.tsv). This read-only tool
+ * files (applications.md, workspace/reports/evaluations/, workspace/.state/pdf-index.tsv). This read-only tool
  * answers it in one lookup.
  *
  * Usage:
@@ -19,9 +19,9 @@
  * the shared fuzzy matcher (src/tracker/role-matcher.mjs) as fallback for multi-word
  * phrases.
  *
- * Zero dependencies and strictly read-only: parses data/applications.md via
+ * Zero dependencies and strictly read-only: parses workspace/applications/tracker.md via
  * the shared header-aware column mapping (src/tracker/tracker-parse.mjs) and the PDF
- * manifest data/pdf-index.tsv (written by src/cv/generate-pdf.mjs).
+ * manifest workspace/.state/pdf-index.tsv (written by src/cv/generate-pdf.mjs).
  */
 
 import { readFileSync, existsSync } from 'fs';
@@ -44,8 +44,8 @@ const cleanStatus = (s) =>
  * Parse the tracker markdown into lookup rows.
  *
  * The report number and path come from the Report cell's markdown link. The
- * path is normalized to be root-relative: trackers at `data/applications.md`
- * carry `../reports/...` links (relative to the tracker file, see #760), which
+ * path is normalized to be root-relative: trackers at `workspace/applications/tracker.md`
+ * carry `../reports/evaluations/...` links (relative to the tracker file, see #760), which
  * would be misleading when printed from the frontrunner root.
  *
  * @param {string} text - Full contents of applications.md.
@@ -74,7 +74,7 @@ export function parseTrackerRows(text) {
 }
 
 /**
- * Parse data/pdf-index.tsv (report \t pdf \t html \t format \t date) into a
+ * Parse workspace/.state/pdf-index.tsv (report \t pdf \t html \t format \t date) into a
  * normalized-report# → PDF-path map. Comment lines and rows generated without
  * a report number are skipped.
  *
@@ -134,7 +134,7 @@ function main() {
     return;
   }
 
-  const trackerPath = process.env.FRONTRUNNER_TRACKER || resolve(ROOT, 'data', 'applications.md');
+  const trackerPath = process.env.FRONTRUNNER_TRACKER || join(ROOT, 'workspace', 'applications', 'tracker.md');
   if (!existsSync(trackerPath)) {
     console.error(`Error: ${trackerPath} not found — nothing to search.`);
     process.exitCode = 1;
@@ -142,7 +142,7 @@ function main() {
   }
   const rows = parseTrackerRows(readFileSync(trackerPath, 'utf-8'));
 
-  const manifestPath = resolve(ROOT, 'data', 'pdf-index.tsv');
+  const manifestPath = join(ROOT, 'workspace', '.state', 'pdf-index.tsv');
   const pdfIndex = existsSync(manifestPath)
     ? parsePdfIndex(readFileSync(manifestPath, 'utf-8'))
     : new Map();

@@ -31,7 +31,7 @@ Claude は `modes/` の代わりにこのフォルダのファイルを読み込
 
 ### 方法 2 -- プロファイルで恒久設定
 
-`config/profile.yml` に言語設定を追加します：
+`workspace/profile/profile.yml` に言語設定を追加します：
 
 ```yaml
 language:
@@ -62,12 +62,12 @@ language:
 
 これらは意図的に翻訳していません。標準的なテック用語だからです：
 
-- `cv.md`、`pipeline`、`tracker`、`report`、`score`、`archetype`、`proof point`
+- `workspace/profile/cv.md`、`pipeline`、`tracker`、`report`、`score`、`archetype`、`proof point`
 - ツール名（`Playwright`、`WebSearch`、`WebFetch`、`Read`、`Write`、`Edit`、`Bash`）
 - tracker のステータス値（`Evaluated`、`Applied`、`Interview`、`Offer`、`Rejected`）
 - コードスニペット、ファイルパス、コマンド
 
-モードは、東京・大阪・福岡の実際のエンジニアリングチームで使われているような自然な日本語テック表現を使います：地の文は日本語、定着しているテック用語は英語のままです。「pipeline」を「配管」と訳したり、「cv.md」を「履歴書.md」にしたりはしません。
+モードは、東京・大阪・福岡の実際のエンジニアリングチームで使われているような自然な日本語テック表現を使います：地の文は日本語、定着しているテック用語は英語のままです。「pipeline」を「配管」と訳したり、「workspace/profile/cv.md」を「履歴書.md」にしたりはしません。
 
 ## 参考用語集
 

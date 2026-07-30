@@ -10,7 +10,7 @@ If the input is a **URL** (not pasted JD text), follow this strategy to extract 
 
 1. **Provider API/cache:** Use the same Greenhouse, Lever, Ashby, or Workday
    structured endpoint as `src/scan/liveness-service.mjs` and
-   `src/scan/fetch-jds.mjs`. Reuse `jds/index.tsv` when the URL is cached.
+   `src/scan/fetch-jds.mjs`. Reuse `workspace/jobs/descriptions/index.tsv` when the URL is cached.
 2. **Playwright fallback:** only when the API/cache cannot resolve the URL.
    Use the compact CLI extractor when configured, otherwise navigate and take a
    snapshot.
@@ -30,23 +30,23 @@ inconclusive. Do this before spending tokens on the A-G evaluation.
 1. From the Step 0 snapshot/fetched content, classify the posting:
    - **active posting evidence:** title/role + a real job description or an application/apply path
    - **closed posting evidence:** expired/closed/"no longer accepting applications", missing JD with only nav/footer, hard redirect to a generic careers/search page, or 404/410
-2. If the posting appears closed or the page is a dead/fallback shell, **stop here**: do not run Step 1–Step 4. Tell the candidate the link is dead, and if the entry came from `data/pipeline.md`, mark it `- [x] ~~Company | Role~~ — oferta nieaktywna`.
+2. If the posting appears closed or the page is a dead/fallback shell, **stop here**: do not run Step 1–Step 4. Tell the candidate the link is dead, and if the entry came from `workspace/search/pipeline.md`, mark it `- [x] ~~Company | Role~~ — oferta nieaktywna`.
 3. If only JD text was pasted (no URL), there is no link to verify — skip the gate and proceed.
 
 Do not continue to Step 1 until this gate is resolved.
 
 ## Step 0.6 — Blacklist gate (#1742)
 
-If `data/blacklist.md` exists, check the posting's company against it before running any evaluation — the file is the candidate's own do-not-apply list (user layer, opt-in; absent file = skip this gate). Match case- and punctuation-insensitively.
+If `workspace/search/blacklist.md` exists, check the posting's company against it before running any evaluation — the file is the candidate's own do-not-apply list (user layer, opt-in; absent file = skip this gate). Match case- and punctuation-insensitively.
 
-On a hit, **stop before Step 1** and surface the candidate's own recorded decision: tell them which entry matched and quote their recorded reason ("{Company} is on your blacklist (since {Since}): *{Reason}*. Do you still want me to evaluate it?"). Wait for an explicit answer — never silently refuse, never silently proceed. The candidate's call always wins (same HITL spirit as the score < 4.0 rule): an explicit yes continues to Step 1 as normal; anything else stops the pipeline here, and if the entry came from `data/pipeline.md`, mark it `- [x] ~~Company | Role~~ — blacklisted`. A blacklist entry never changes any score.
+On a hit, **stop before Step 1** and surface the candidate's own recorded decision: tell them which entry matched and quote their recorded reason ("{Company} is on your blacklist (since {Since}): *{Reason}*. Do you still want me to evaluate it?"). Wait for an explicit answer — never silently refuse, never silently proceed. The candidate's call always wins (same HITL spirit as the score < 4.0 rule): an explicit yes continues to Step 1 as normal; anything else stops the pipeline here, and if the entry came from `workspace/search/pipeline.md`, mark it `- [x] ~~Company | Role~~ — blacklisted`. A blacklist entry never changes any score.
 
 ## Step 1 — A-G Evaluation
 
 Execute the same as the `oferta` mode. Model-backed script evaluators must pass
 `src/evaluate/evaluation-gate.mjs` first and use the versioned JSON contract in
 `src/evaluate/scoring-contract.mjs`; code renders Blocks A-G. Read
-`modes/_custom.md` → Evaluation Rules when present.
+`workspace/profile/preferences.md` → Evaluation Rules when present.
 
 **Agency-mediated postings (#1596):** if the JD smells like a recruiter/agency listing ("our client", agency domain, no employer named), ask the user which agency it came through BEFORE writing the tracker row. Record the end employer as `?` (never "Confidential"), the agency in the Via field / `via=` TSV tag, and a distinguishing descriptor in Notes — see `modes/oferta.md` and `modes/tracker.md` for the full convention and reveal workflow.
 
@@ -54,12 +54,12 @@ The evaluation inherits `oferta`'s bounded research budget. Company, compensatio
 
 ## Step 2 — Save Report .md
 
-Save the full evaluation in `reports/{###}-{company-slug}-{YYYY-MM-DD}.md` (see format in `modes/oferta.md`).
+Save the full evaluation in `workspace/reports/evaluations/{###}-{company-slug}-{YYYY-MM-DD}.md` (see format in `modes/oferta.md`).
 Include Block G in the saved report. Add **URL:** {url} and **Legitimacy:** {tier} to the report header.
 
 ## Step 3 — Generate PDF
 
-Read `config/profile.yml`. Check `cv.output_format`:
+Read `workspace/profile/profile.yml`. Check `cv.output_format`:
 
 - If `"latex"`, execute the full pipeline from `modes/latex.md`
 - Otherwise (default), execute the full pipeline from `modes/pdf.md`
@@ -102,6 +102,6 @@ If the final score is >= 4.5, generate a draft of responses for the application 
 
 ## Step 5 — Update Tracker
 
-Record it in `data/applications.md` with all columns including Report and PDF as ✅.
+Record it in `workspace/applications/tracker.md` with all columns including Report and PDF as ✅.
 
 **If any step fails**, continue with the next ones and mark the failed step as pending in the tracker.

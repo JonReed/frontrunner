@@ -8,7 +8,7 @@ import { CompanyLogo } from "@/components/company-logo";
 export type FollowUp = { num?: number; company: string; role?: string; status?: string; appliedDate?: string; notes?: string };
 
 // One-tap overdue follow-up row (demand loop). "Mark followed up" appends to
-// data/follow-ups.md (append-only) and optimistically clears the row; "Snooze" is
+// workspace/applications/follow-ups.md (append-only) and optimistically clears the row; "Snooze" is
 // a client dismiss. The cadence is the core's — we just surface + record.
 export function FollowUpCard({ followup, onLogged }: { followup: FollowUp; onLogged?: () => void }) {
   const [state, setState] = useState<"idle" | "logging" | "done" | "snoozed">("idle");

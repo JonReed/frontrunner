@@ -74,16 +74,16 @@ const TRACKER_9 = `# Applications Tracker
 
 | # | Date | Company | Role | Score | Status | PDF | Report | Notes |
 |---|------|---------|------|-------|--------|-----|--------|-------|
-| 1 | 2026-06-01 | Acme | Backend Engineer | 4.2/5 | Evaluated | ✅ | [1](../reports/001-acme-2026-06-01.md) | strong infra fit |
-| 2 | 2026-06-02 | Globex | Platform Engineer | 4.0/5 | Evaluated | ✅ | [2](../reports/002-globex-2026-06-02.md) | — |
-| 3 | 2026-06-03 | Acme | Data Engineer | 3.9/5 | Evaluated | ❌ | [3](../reports/003-acme-2026-06-03.md) | pipeline heavy |
+| 1 | 2026-06-01 | Acme | Backend Engineer | 4.2/5 | Evaluated | ✅ | [1](../reports/evaluations/001-acme-2026-06-01.md) | strong infra fit |
+| 2 | 2026-06-02 | Globex | Platform Engineer | 4.0/5 | Evaluated | ✅ | [2](../reports/evaluations/002-globex-2026-06-02.md) | — |
+| 3 | 2026-06-03 | Acme | Data Engineer | 3.9/5 | Evaluated | ❌ | [3](../reports/evaluations/003-acme-2026-06-03.md) | pipeline heavy |
 `;
 
 const TRACKER_10 = `# Applications Tracker
 
 | # | Date | Company | Role | Location | Score | Status | PDF | Report | Notes |
 |---|------|---------|------|----------|-------|--------|-----|--------|-------|
-| 1 | 2026-06-01 | Initech | AI Engineer | Remote | 4.5/5 | Evaluated | ✅ | [1](../reports/001-initech-2026-06-01.md) | — |
+| 1 | 2026-06-01 | Initech | AI Engineer | Remote | 4.5/5 | Evaluated | ✅ | [1](../reports/evaluations/001-initech-2026-06-01.md) | — |
 `;
 
 // Two unrelated rows share tracker number 5 (the #1704 bug: src/tracker/merge-tracker.mjs
@@ -102,7 +102,7 @@ const TRACKER_REPORT_MISMATCH = `# Applications Tracker
 
 | # | Date | Company | Role | Score | Status | PDF | Report | Notes |
 |---|------|---------|------|-------|--------|-----|--------|-------|
-| 2 | 2026-06-02 | DriftCo | Platform Engineer | 4.0/5 | Evaluated | ✅ | [7](../reports/007-driftco-2026-06-02.md) | migrated badly |
+| 2 | 2026-06-02 | DriftCo | Platform Engineer | 4.0/5 | Evaluated | ✅ | [7](../reports/evaluations/007-driftco-2026-06-02.md) | migrated badly |
 `;
 
 // ── 1. Update by report number ──────────────────────────────────
@@ -210,7 +210,7 @@ const TRACKER_REPORT_MISMATCH = `# Applications Tracker
 
 | # | Date | Company | Role | Score | Status | PDF | Report | Notes |
 |---|------|---------|------|-------|--------|-----|--------|-------|
-| 1 | 2026-06-01 | Contoso | C++ Engineer | 4.0/5 | Evaluated | ✅ | [1](../reports/001-contoso-2026-06-01.md) | — |
+| 1 | 2026-06-01 | Contoso | C++ Engineer | 4.0/5 | Evaluated | ✅ | [1](../reports/evaluations/001-contoso-2026-06-01.md) | — |
 `;
   const sb = makeSandbox(TRACKER_SYMBOL);
   const before = readTracker(sb);

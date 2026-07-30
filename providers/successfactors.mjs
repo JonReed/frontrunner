@@ -22,7 +22,7 @@ import { decodeEntities } from './_html-entities.mjs';
 // Detection: branded RMK hosts (jobs.zf.com) contain no "successfactors" string,
 // so detect() only auto-claims literal *.successfactors.eu/.com and jobs2web
 // URLs. The branded portals are wired up with an explicit `provider:
-// successfactors` in portals.yml (which bypasses detect()); `api:` may override
+// successfactors` in workspace/search/portals.yml (which bypasses detect()); `api:` may override
 // careers_url when the public careers_url isn't the RMK origin.
 //
 // RMK carries no posting date in the list fragment, so postedAt is always

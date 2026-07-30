@@ -119,8 +119,8 @@ console.log('6. first add on the default path self-heals .gitignore (idempotent)
   });
   addOnce(); addOnce();
   const gi = readFileSync(join(repo, '.gitignore'), 'utf8');
-  const ruleCount = gi.split('\n').filter((l) => l.trim() === 'data/agent-inbox.md').length;
-  check('.gitignore gains exactly one data/agent-inbox.md rule', ruleCount === 1, `count=${ruleCount}`);
+  const ruleCount = gi.split('\n').filter((l) => l.trim() === 'workspace/applications/agent-inbox.md').length;
+  check('.gitignore gains exactly one workspace/applications/agent-inbox.md rule', ruleCount === 1, `count=${ruleCount}`);
 }
 
 console.log(`\nResults: ${passed} passed, ${failed} failed`);

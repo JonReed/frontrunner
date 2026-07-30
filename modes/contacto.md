@@ -1,6 +1,6 @@
 # Mode: contacto -- Outreach messages
 
-> Apply `voice-dna.md` (if present) to every generated message — full guardrail, conversational voice included (Tier 1 + Tier 2). See `_shared.md` → Voice DNA.
+> Apply `workspace/profile/voice-dna.md` (if present) to every generated message — full guardrail, conversational voice included (Tier 1 + Tier 2). See `_shared.md` → Voice DNA.
 
 This mode has two variants that share the same persona engine (recruiter → hard
 requirements; hiring manager → impact/vision):
@@ -62,7 +62,7 @@ short message; otherwise run the LinkedIn power move below.
 6. **Alternative targets** with justification for why they are good second choices
 
 **Contact channel preference:** Read `contact_preferences.preferred_channel` from
-`config/profile.yml`. If it is absent or set to `"either"`, write the CTA
+`workspace/profile/profile.yml`. If it is absent or set to `"either"`, write the CTA
 sentence exactly as specified above — no change. If it is set to `"email"` or
 `"phone"`, steer the CTA toward that channel instead of the generic default
 (e.g. Recruiter's CTA becomes "Happy to share my CV over email if this aligns
@@ -100,12 +100,12 @@ that there is **no contact discovery**.
    - **Recruiter** → hard requirements met (role, years, stack, location, availability)
    - **Hiring Manager / Founder** → impact and vision (a result that maps to their goal)
 
-3. **Synthesize the top 3 match points** between the JD and `cv.md` (same JD↔profile
+3. **Synthesize the top 3 match points** between the JD and `workspace/profile/cv.md` (same JD↔profile
    fit logic the LinkedIn flow uses). These are the raw material — you will surface
    only the strongest one or two that fit the budget.
 
 4. **Compose ONE message within the character budget.**
-   - **Budget:** read `outreach.greeting_max_chars` from `config/profile.yml`.
+   - **Budget:** read `outreach.greeting_max_chars` from `workspace/profile/profile.yml`.
      **Default 150** when the key is absent. The message MUST fit — count and trim.
    - **Lead with a specific value proposition** (the single strongest match point),
      not an introduction. Punchy sentences, not paragraphs.
@@ -124,6 +124,6 @@ that there is **no contact discovery**.
 - Platform-agnostic — never assume LinkedIn; works for any chat/opener surface.
 - Within `outreach.greeting_max_chars` (default 150). Never exceed it.
 - Same non-fabrication rule as the rest of frontrunner: reformulate real experience
-  from `cv.md`, never invent a skill, metric, or claim.
+  from `workspace/profile/cv.md`, never invent a skill, metric, or claim.
 - NO corporate-speak, NO "I'm passionate about...", NEVER share a phone number.
 - Persona changes the EMPHASIS, not the structure.

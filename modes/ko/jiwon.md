@@ -12,7 +12,7 @@
 ```text
 1. DETECT      -> 활성 Chrome 탭 읽기 (스크린샷/URL/title)
 2. IDENTIFY    -> 페이지에서 회사 + 역할 추출
-3. SEARCH      -> reports/ 안의 기존 report와 매칭
+3. SEARCH      -> workspace/reports/evaluations/ 안의 기존 report와 매칭
 4. LOAD        -> 전체 report + 블록 G(있다면) 읽기
 5. COMPARE     -> 화면의 역할이 평가한 역할과 같은지 확인. 바뀌었다면 알림
 6. ANALYZE     -> 화면에 보이는 모든 지원서 질문 식별
@@ -32,7 +32,7 @@
 ## Step 2 -- context 식별 및 불러오기
 
 1. 페이지에서 회사명과 역할명을 추출합니다.
-2. `reports/`에서 회사명으로 검색합니다 (case-insensitive grep).
+2. `workspace/reports/evaluations/`에서 회사명으로 검색합니다 (case-insensitive grep).
 3. 매칭되는 report가 있으면 전체 report를 불러옵니다.
 4. 블록 G가 있으면 이전 답변 초안을 base로 불러옵니다.
 5. 매칭되는 report가 없으면 후보자에게 알리고 빠른 auto-pipeline 실행을 제안합니다.
@@ -56,7 +56,7 @@
 
 각 질문을 분류합니다.
 - **이미 블록 G에서 답변한 질문** -> 기존 답변을 가져와 조정
-- **새 질문** -> report + `cv.md`를 바탕으로 답변 생성
+- **새 질문** -> report + `workspace/profile/cv.md`를 바탕으로 답변 생성
 
 ## Step 5 -- 답변 생성
 
@@ -74,7 +74,7 @@
 - **근무 가능 지역 / 출근 가능 여부** -> 실제 가능한 지역과 출근 빈도를 명확히 작성
 - **비자 / 근무 자격** -> 사실에 맞게 간결히 답변
 - **언어 능력** -> 실제 수준에 맞춰 작성. 필요하면 CEFR 또는 비즈니스/실무 가능 수준으로 표현
-- **포트폴리오 / GitHub / 블로그** -> `profile.yml`, `cv.md`, `article-digest.md`에 있는 검증된 링크만 사용
+- **포트폴리오 / GitHub / 블로그** -> `profile.yml`, `workspace/profile/cv.md`, `workspace/profile/article-digest.md`에 있는 검증된 링크만 사용
 
 **출력 형식:**
 
@@ -103,7 +103,7 @@ Notes:
 ## Step 6 -- 지원 후 처리 (선택)
 
 후보자가 지원서를 제출했다고 확인하면:
-1. tracker status 변경은 `data/applications.md`를 직접 수정하지 않습니다. `batch/tracker-additions/`에 `Applied` 상태의 TSV update를 쓰고 `node src/tracker/merge-tracker.mjs`로 병합합니다.
+1. tracker status 변경은 `workspace/applications/tracker.md`를 직접 수정하지 않습니다. `workspace/.state/tracker-additions/`에 `Applied` 상태의 TSV update를 쓰고 `node src/tracker/merge-tracker.mjs`로 병합합니다.
 2. 최종 답변을 report의 블록 G에 업데이트합니다.
 3. 다음 단계로 `/frontrunner contacto`를 제안해 hiring manager 또는 recruiter에게 LinkedIn outreach를 할 수 있게 합니다.
 

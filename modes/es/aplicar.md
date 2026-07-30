@@ -12,7 +12,7 @@ Modo interactivo para el momento en que el candidato rellena un formulario de ca
 ```
 1. DETECTAR     -> Leer la pestaña activa de Chrome (captura/URL/título)
 2. IDENTIFICAR  -> Extraer empresa + rol desde la página
-3. BUSCAR       -> Hacer match con los reports existentes en reports/
+3. BUSCAR       -> Hacer match con los reports existentes en workspace/reports/evaluations/
 4. CARGAR       -> Leer el report completo + Bloque G (si existe)
 5. COMPARAR     -> ¿El rol en pantalla coincide con el evaluado? Si cambió -> avisar
 6. ANALIZAR     -> Identificar TODAS las preguntas visibles del formulario
@@ -32,7 +32,7 @@ Modo interactivo para el momento en que el candidato rellena un formulario de ca
 ## Paso 2 -- Identificar y cargar el contexto
 
 1. Extraer el nombre de la empresa y el título del puesto desde la página
-2. Buscar en `reports/` por nombre de empresa (Grep case-insensitive)
+2. Buscar en `workspace/reports/evaluations/` por nombre de empresa (Grep case-insensitive)
 3. Si hay match -> cargar el report completo
 4. Si hay Bloque G -> cargar los borradores de respuestas previos como base
 5. Si NO hay match -> avisar al candidato y proponer un auto-pipeline rápido
@@ -56,7 +56,7 @@ Identificar TODAS las preguntas visibles:
 
 Clasificar cada pregunta:
 - **Ya respondida en el Bloque G** -> retomar la respuesta existente
-- **Pregunta nueva** -> generar la respuesta desde el report + `cv.md`
+- **Pregunta nueva** -> generar la respuesta desde el report + `workspace/profile/cv.md`
 
 ## Paso 5 -- Generar las respuestas
 

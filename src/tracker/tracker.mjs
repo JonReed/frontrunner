@@ -3,7 +3,7 @@
 /**
  * tracker.mjs — SQLite derived index for the applications tracker (RFC #918, phase 1).
  *
- * data/applications.md stays the source of truth. The SQLite DB is a derived
+ * workspace/applications/tracker.md stays the source of truth. The SQLite DB is a derived
  * index, built and rebuilt from the markdown — safe to delete at any time, it
  * regenerates on the next sync. Tools and agents READ through the index for
  * schema-validated, model-independent results; all writes keep going to the
@@ -45,7 +45,7 @@ import {
 } from './tracker-utils.mjs';
 import { copyFileAtomic } from '../lib/locked-file.mjs';
 
-const MD_PATH = process.env.FRONTRUNNER_TRACKER || 'data/applications.md';
+const MD_PATH = process.env.FRONTRUNNER_TRACKER || 'workspace/applications/tracker.md';
 const DB_PATH = process.env.FRONTRUNNER_TRACKER_DB
   || (MD_PATH.endsWith('.md') ? MD_PATH.slice(0, -3) + '.db' : MD_PATH + '.db');
 

@@ -4,7 +4,7 @@
  *
  * Recruiter calendar/ATS invite emails frequently name only the company
  * (generic subject lines like "Schedule Your Phone Screen") with no job
- * title or req number. Finding which `data/applications.md` row an invite
+ * title or req number. Finding which `workspace/applications/tracker.md` row an invite
  * belongs to otherwise means a manual grep every time.
  *
  * This script extracts a company name (and, if present, a date and a
@@ -28,8 +28,8 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { resolveColumns, parseTrackerRow } from './tracker-parse.mjs';
 
 import { ROOT as FRONTRUNNER } from '#paths';
-const APPS_FILE = existsSync(join(FRONTRUNNER, 'data/applications.md'))
-  ? join(FRONTRUNNER, 'data/applications.md')
+const APPS_FILE = existsSync(join(FRONTRUNNER, 'workspace/applications/tracker.md'))
+  ? join(FRONTRUNNER, 'workspace/applications/tracker.md')
   : join(FRONTRUNNER, 'applications.md');
 
 // --- CLI args ---

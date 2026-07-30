@@ -9,4 +9,4 @@ stages without evaluation.
 
 Apply Turkey-market vocabulary and rules from `modes/tr/_shared.md` and the
 selected Turkish evaluation mode. Human-facing output still follows
-`config/profile.yml` → `language.output`.
+`workspace/profile/profile.yml` → `language.output`.

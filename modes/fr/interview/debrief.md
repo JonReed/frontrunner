@@ -18,10 +18,10 @@ Après un véritable entretien, capturez ce qui a été demandé, évaluez ce qu
 2. **Nom et rôle de l'intervieweur** — informe la prédiction pour le prochain round
 3. **Résultat du round** (si connu) — avance / rejeté / en attente
 4. **Détails du prochain round** (si connu) — format, intervieweurs, calendrier
-5. **Banque de questions** dans `interview-prep/question-bank.md` — mise à jour avec de vraies données
-6. **Banque d'histoires** dans `interview-prep/story-bank.md` — ajoute de nouvelles histoires si elles font surface
-7. **CV** dans `cv.md` + `article-digest.md` (si présent) — pour ancrer les réponses suggérées dans une expérience réelle
-8. **Affirmations rétractées** dans `interview-prep/retracted-claims.md` (si présent) — barrière stricte ; n'utilisez jamais une affirmation rétractée dans une réponse suggérée même si le candidat l'a dite pendant l'entretien
+5. **Banque de questions** dans `workspace/interviews/question-bank.md` — mise à jour avec de vraies données
+6. **Banque d'histoires** dans `workspace/interviews/story-bank.md` — ajoute de nouvelles histoires si elles font surface
+7. **CV** dans `workspace/profile/cv.md` + `workspace/profile/article-digest.md` (si présent) — pour ancrer les réponses suggérées dans une expérience réelle
+8. **Affirmations rétractées** dans `workspace/interviews/retracted-claims.md` (si présent) — barrière stricte ; n'utilisez jamais une affirmation rétractée dans une réponse suggérée même si le candidat l'a dite pendant l'entretien
 9. **Fichier de préparation spécifique au rôle** — ajoutez les notes de débriefing
 
 ---
@@ -63,7 +63,7 @@ Soyez direct. S'ils ont raté le concept central que la question testait, dites-
 
 ## Step 3 — Update Question Bank
 
-Pour chaque question débriefée, mettez à jour `interview-prep/question-bank.md` :
+Pour chaque question débriefée, mettez à jour `workspace/interviews/question-bank.md` :
 
 - Changez le statut en ✅ / 🟡 / 🔴 en fonction de la performance réelle
 - Ajoutez des notes de lacune à partir du débriefing
@@ -80,7 +80,7 @@ Pour chaque 🔴 lacune identifiée :
 1. **Expliquez la bonne réponse** — claire, concise, avec un exemple travaillé (code, calcul, diagramme) là où cela aide
 2. **Connectez à une vraie histoire** si possible — "vous avez en fait cela dans votre [histoire existante de la banque d'histoires] — voici comment l'utiliser"
 3. **Ajoutez au fichier de préparation spécifique au rôle** sous une section "Lacunes à combler avant le round N"
-4. **Ajoutez à `interview-prep/interview-prep-guide.md`** (si le candidat en maintient un) quand il s'agit d'un principe réutilisable qui s'applique au-delà de ce rôle
+4. **Ajoutez à `workspace/interviews/interview-prep-guide.md`** (si le candidat en maintient un) quand il s'agit d'un principe réutilisable qui s'applique au-delà de ce rôle
 
 ---
 
@@ -90,7 +90,7 @@ Parfois, un vrai entretien fait ressortir une histoire que le candidat n'avait p
 
 > "Vous avez mentionné [X] dans votre réponse — cela ressemble à ce qui pourrait devenir une vraie histoire STAR+R. Voulez-vous la construire maintenant pendant que c'est frais ?"
 
-Si oui, construisez-la comme une histoire STAR+R (Situation, Tâche, Action, Résultat, Réflexion) et ajoutez-la à `interview-prep/story-bank.md`.
+Si oui, construisez-la comme une histoire STAR+R (Situation, Tâche, Action, Résultat, Réflexion) et ajoutez-la à `workspace/interviews/story-bank.md`.
 
 ---
 
@@ -128,7 +128,7 @@ Soyez honnête. Une fourchette de probabilité avec un raisonnement clair est pl
 
 ## Step 8 — Save Debrief
 
-Ajoutez à `interview-prep/{company-slug}-{role-slug}.md` :
+Ajoutez à `workspace/interviews/{company-slug}-{role-slug}.md` :
 
 ```markdown
 ## Round [N] Debrief — [YYYY-MM-DD]
@@ -159,7 +159,7 @@ Ajoutez à `interview-prep/{company-slug}-{role-slug}.md` :
 
 ## Step 9 — Write Session Transcript
 
-Après le débriefing, rédigez également une transcription de session lisible par machine vers `interview-prep/sessions/{company-slug}-{role-slug}-{round}-{YYYY-MM-DD}.md`. C'est un enregistrement structuré du round pour les modes d'analyse en aval ; les tours étiquetés par l'intervenant permettent à un consommateur de lire les deux côtés sans réinférer qui a parlé. Le contrat complet se trouve dans `interview-prep/sessions/README.md`.
+Après le débriefing, rédigez également une transcription de session lisible par machine vers `workspace/interviews/sessions/{company-slug}-{role-slug}-{round}-{YYYY-MM-DD}.md`. C'est un enregistrement structuré du round pour les modes d'analyse en aval ; les tours étiquetés par l'intervenant permettent à un consommateur de lire les deux côtés sans réinférer qui a parlé. Le contrat complet se trouve dans `workspace/interviews/sessions/README.md`.
 
 Format :
 
@@ -196,9 +196,9 @@ Règles pour la transcription :
 
 - **Débriefez immédiatement.** Le souvenir des détails de l'entretien se dégrade vite — en quelques heures, les questions et réactions spécifiques sont oubliées. Exécutez cette compétence le même jour.
 - **Ne minimisez pas les lacunes.** Une 🔴 lacune qui est qualifiée de 🟡 par gentillesse réapparaîtra lors du prochain round.
-- **Ne mettez jamais d'affirmations inventées dans la bouche du candidat.** Les réponses correctes/complètes peuvent s'appuyer sur des connaissances générales du domaine, mais toute affirmation personnelle ou mesure suggérée doit provenir de ce que le candidat a dit, de `cv.md`, de `article-digest.md` ou de la banque d'histoires.
-- **Les affirmations rétractées sont une barrière stricte.** Si une affirmation apparaît dans `interview-prep/retracted-claims.md`, ne suggérez jamais au candidat de l'utiliser — même s'il l'a dite lors du vrai entretien. Signalez-le : "Cette affirmation est dans votre liste rétractée — elle n'est pas défendable sous pression. Voici une version qui n'en dépend pas."
-- **Enregistrez de nouvelles rétractations.** Si le débriefing révèle une affirmation que le candidat a utilisée lors du vrai entretien et qu'il accepte maintenant de ne pas être défendable, proposez de l'ajouter à `interview-prep/retracted-claims.md` : `**"[affirmation]"** ([contexte]). Raison : [raison d'une ligne + formulation correcte si applicable].`
-- **Extrayez explicitement les lacunes de vocabulaire.** Si le candidat a utilisé un terme imprécis là où un terme précis existe, ajoutez-le à `interview-prep/interview-prep-guide.md` sous la section vocabulaire (si le candidat en maintient un).
+- **Ne mettez jamais d'affirmations inventées dans la bouche du candidat.** Les réponses correctes/complètes peuvent s'appuyer sur des connaissances générales du domaine, mais toute affirmation personnelle ou mesure suggérée doit provenir de ce que le candidat a dit, de `workspace/profile/cv.md`, de `workspace/profile/article-digest.md` ou de la banque d'histoires.
+- **Les affirmations rétractées sont une barrière stricte.** Si une affirmation apparaît dans `workspace/interviews/retracted-claims.md`, ne suggérez jamais au candidat de l'utiliser — même s'il l'a dite lors du vrai entretien. Signalez-le : "Cette affirmation est dans votre liste rétractée — elle n'est pas défendable sous pression. Voici une version qui n'en dépend pas."
+- **Enregistrez de nouvelles rétractations.** Si le débriefing révèle une affirmation que le candidat a utilisée lors du vrai entretien et qu'il accepte maintenant de ne pas être défendable, proposez de l'ajouter à `workspace/interviews/retracted-claims.md` : `**"[affirmation]"** ([contexte]). Raison : [raison d'une ligne + formulation correcte si applicable].`
+- **Extrayez explicitement les lacunes de vocabulaire.** Si le candidat a utilisé un terme imprécis là où un terme précis existe, ajoutez-le à `workspace/interviews/interview-prep-guide.md` sous la section vocabulaire (si le candidat en maintient un).
 - **Une lacune = un correctif.** Ne surchargez pas avec un plan d'étude complet pour chaque lacune. Donnez la priorité à la ou aux deux plus susceptibles d'être testées lors du prochain round.
 - **Célébrez ce qui a fonctionné.** Le débriefing ne concerne pas seulement les lacunes. Nommez ce qui était solide — cela renforce le bon comportement et donne confiance pour le prochain round.

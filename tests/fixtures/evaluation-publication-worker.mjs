@@ -11,7 +11,7 @@ if (mode === 'publish-crash') {
     slug: 'crash-co',
     date: '2026-07-29',
     report: '# crash-safe report\n',
-    tracker: '7\t2026-07-29\tCrash Co\tEngineer\tEvaluated\t4.5/5\t❌\t[007](reports/007-crash-co-2026-07-29.md)\tfixture\n',
+    tracker: '7\t2026-07-29\tCrash Co\tEngineer\tEvaluated\t4.5/5\t❌\t[007](workspace/reports/evaluations/007-crash-co-2026-07-29.md)\tfixture\n',
     mergeTracker: false,
     rootDir,
   }, {

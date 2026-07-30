@@ -9,4 +9,4 @@ stages without evaluation.
 
 Apply Ukrainian-market vocabulary and rules from `modes/ua/_shared.md` and the
 selected Ukrainian evaluation mode. Human-facing output still follows
-`config/profile.yml` → `language.output`.
+`workspace/profile/profile.yml` → `language.output`.

@@ -9,4 +9,4 @@ stages without evaluation.
 
 Apply Polish-market vocabulary and rules from `modes/pl/_shared.md` and the
 selected Polish evaluation mode. Human-facing output still follows
-`config/profile.yml` → `language.output`.
+`workspace/profile/profile.yml` → `language.output`.

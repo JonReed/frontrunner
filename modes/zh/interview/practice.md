@@ -9,12 +9,12 @@
 1. **轮次类型**（必填）— screening/recruiter、screening/HM、technical/domain-specific、design/case study、behavioral
 2. **面试官人设**（如已知）— 姓名、角色、公司；影响提问风格与深度
 3. **问题列表**（可选）— 要覆盖的具体问题；若未提供，则按轮次类型生成
-4. **简历**，位于 `cv.md` + `article-digest.md`（如存在）— 用于核验回答中的主张，并把更强版本锚定在真实经历上
-5. **画像**，位于 `config/profile.yml` + `modes/_profile.md` — 候选人叙事、底线、薪酬目标
-6. **故事库**，位于 `interview-prep/story-bank.md` — 在反馈中核验故事准确性
-7. **题库**，位于 `interview-prep/question-bank.md` — 每次作答后更新状态
+4. **简历**，位于 `workspace/profile/cv.md` + `workspace/profile/article-digest.md`（如存在）— 用于核验回答中的主张，并把更强版本锚定在真实经历上
+5. **画像**，位于 `workspace/profile/profile.yml` + `workspace/profile/targeting.md` — 候选人叙事、底线、薪酬目标
+6. **故事库**，位于 `workspace/interviews/story-bank.md` — 在反馈中核验故事准确性
+7. **题库**，位于 `workspace/interviews/question-bank.md` — 每次作答后更新状态
 8. **岗位专属准备文件** — 公司情报、有来源的题目、薪酬策略
-9. **已撤回主张**，位于 `interview-prep/retracted-claims.md`（如存在）— 候选人已明确认定站不住脚的主张；视为硬门禁
+9. **已撤回主张**，位于 `workspace/interviews/retracted-claims.md`（如存在）— 候选人已明确认定站不住脚的主张；视为硬门禁
 
 ---
 
@@ -24,10 +24,10 @@
 
 开场设景之前，确认哪些文件存在：
 
-- `interview-prep/question-bank.md`（或公司专属等价文件）
-- 岗位专属准备文件（`interview-prep/{company}-{role}.md`）
-- `cv.md`
-- `interview-prep/retracted-claims.md`
+- `workspace/interviews/question-bank.md`（或公司专属等价文件）
+- 岗位专属准备文件（`workspace/interviews/{company}-{role}.md`）
+- `workspace/profile/cv.md`
+- `workspace/interviews/retracted-claims.md`
 
 若题库与岗位专属准备文件都不存在，就直白告诉候选人：
 
@@ -97,11 +97,11 @@
 
 **两分钟规则。** 若回答超过两分钟，要注明。面试官会听不下去。修复几乎总是：先给答案，再解释——而不是砍内容。*打字场次无法计时——改做结构检查：* 标记那些把 headline 埋在后面的回答（落点前超过 4–5 句铺垫），并告诉候选人：节奏与口头禅只能靠出声诊断——自己录音，或再口头跑一遍这题。
 
-**可疑主张先核验再教练。** 当候选人说出具体指标或范围主张（管理人数、AUM、营收数字、提升百分比）而你无法从既有上下文确认时，在给反馈前对照 `cv.md`、`article-digest.md` 与 `interview-prep/retracted-claims.md`。若主张没有支撑，就标出来："我在简历里找不到这个数字——若对方追问，它站得住吗？站不住的话，这里有一个不依赖该数字的版本。" 永远不要教练候选人重复他们撑不住的主张。
+**可疑主张先核验再教练。** 当候选人说出具体指标或范围主张（管理人数、AUM、营收数字、提升百分比）而你无法从既有上下文确认时，在给反馈前对照 `workspace/profile/cv.md`、`workspace/profile/article-digest.md` 与 `workspace/interviews/retracted-claims.md`。若主张没有支撑，就标出来："我在简历里找不到这个数字——若对方追问，它站得住吗？站不住的话，这里有一个不依赖该数字的版本。" 永远不要教练候选人重复他们撑不住的主张。
 
-**绝不编造经历或指标。** 更强版本只能使用候选人实际说过的事实，或存在于 `cv.md`、`article-digest.md`、故事库中的主张。收紧表述是本职——添加成就就是编造。若某主张出现在 `interview-prep/retracted-claims.md`，即使候选人说了，也不要写进更强版本。
+**绝不编造经历或指标。** 更强版本只能使用候选人实际说过的事实，或存在于 `workspace/profile/cv.md`、`workspace/profile/article-digest.md`、故事库中的主张。收紧表述是本职——添加成就就是编造。若某主张出现在 `workspace/interviews/retracted-claims.md`，即使候选人说了，也不要写进更强版本。
 
-**主动提议记录撤回。** 当候选人在场次中承认某个主张在压力下撑不住（"你说得对，我撑不住"）时，提议追加到 `interview-prep/retracted-claims.md`："要不要我把它加进你的撤回清单，免得下次再冒出来？" 若同意，追加：`**"[claim]"** ([context]). Reason: [one-line reason + correct framing if applicable].`
+**主动提议记录撤回。** 当候选人在场次中承认某个主张在压力下撑不住（"你说得对，我撑不住"）时，提议追加到 `workspace/interviews/retracted-claims.md`："要不要我把它加进你的撤回清单，免得下次再冒出来？" 若同意，追加：`**"[claim]"** ([context]). Reason: [one-line reason + correct framing if applicable].`
 
 **场中公司情报偏薄时。** 若候选人在"为什么这家公司 / 为什么这个岗位"上明显卡壳，是因为岗位专属准备文件缺情报，不要编造，也不要装聋。跳出角色，为这一题跑 `interview-prep` 的调研步骤（与 `interview-prep.md` 拥有的同源调研路径相同），带着 2–3 个具体、有引用的角度回来，再回到角色。若调研得不到可用结果，就直说。这不是第二轮搜索循环——只是在上游流水线没先跑时，即时调用既有调研阶段。
 
@@ -133,7 +133,7 @@
 
 ### Write Session Transcript
 
-总结之后，把机器可读的场次记录写到 `interview-prep/sessions/{company-slug}-{role-slug}-{round}-{YYYY-MM-DD}.md`（若不是公司专属场次，company/role slug 用 `practice`）。这是给下游分析模式用的结构化记录；带说话人标签的回合让消费者不必再推断谁在说。完整约定见 `interview-prep/sessions/README.md`。
+总结之后，把机器可读的场次记录写到 `workspace/interviews/sessions/{company-slug}-{role-slug}-{round}-{YYYY-MM-DD}.md`（若不是公司专属场次，company/role slug 用 `practice`）。这是给下游分析模式用的结构化记录；带说话人标签的回合让消费者不必再推断谁在说。完整约定见 `workspace/interviews/sessions/README.md`。
 
 格式：
 
@@ -170,7 +170,7 @@ source: practice
 
 若未提供问题列表，按以下优先级取材：
 
-1. **来自 `interview-prep/question-bank.md` 的真题** — 该公司（或先前轮次）实际问过、由 debrief 捕获的题。价值最高：有实证依据。
+1. **来自 `workspace/interviews/question-bank.md` 的真题** — 该公司（或先前轮次）实际问过、由 debrief 捕获的题。价值最高：有实证依据。
 2. **来自岗位专属准备文件的有来源题目** — interview-prep.md 调研找到并引用的题。按原文使用；场次中不必带引用，但尊重其措辞。
 3. **下方默认集** — 尚无调研时的首次场次回退。方括号槽位用 JD 填充。
 
@@ -246,7 +246,7 @@ HM screen 探的是领导力哲学、判断力与经验深度。回答可以更�
 - **一次一题。** 绝不一次抛出多题。真实面试官一次只问一题。
 - **作答前不给提示。** 不要用"这题考的是 X"给候选人预热。冷开场。
 - **只给诚实反馈。** 虚假鼓励比沉默更糟——会把准备不足的候选人送进真实面试。
-- **建议答案里不编造主张。** 更强版本只能来自候选人说过的内容，或 `cv.md`、`article-digest.md`、故事库——绝不编造经历或指标。
-- **已撤回主张是硬门禁。** 若某主张出现在 `interview-prep/retracted-claims.md`，即使候选人在作答里说了，也绝不写进更强版本——改为标出。
-- **跟踪状态。** 场次结束后，若 `interview-prep/question-bank.md` 存在则更新它。
+- **建议答案里不编造主张。** 更强版本只能来自候选人说过的内容，或 `workspace/profile/cv.md`、`workspace/profile/article-digest.md`、故事库——绝不编造经历或指标。
+- **已撤回主张是硬门禁。** 若某主张出现在 `workspace/interviews/retracted-claims.md`，即使候选人在作答里说了，也绝不写进更强版本——改为标出。
+- **跟踪状态。** 场次结束后，若 `workspace/interviews/question-bank.md` 存在则更新它。
 - **被要求就停。** 若候选人说"let's pause"或"that's enough for today"，尊重它。不要硬推再来一题。

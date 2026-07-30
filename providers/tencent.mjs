@@ -5,7 +5,7 @@
 // Zero-token, no browser needed. Verified 2026-07: GET returns structured
 // JSON with title, location, BG, category, JD text and last-update time.
 //
-// portals.yml entry example:
+// workspace/search/portals.yml entry example:
 //   - name: 腾讯
 //     careers_url: https://careers.tencent.com/search.html   # auto-detected
 //     keywords: ["AI", "大模型"]   # each keyword is queried server-side separately, results deduped;

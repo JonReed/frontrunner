@@ -1,6 +1,6 @@
 # Mode: followup -- Follow-up Cadence Tracker
 
-> **Read `voice-dna.md` (if present) and apply it to every generated email/LinkedIn draft.** This mode is standalone — it does NOT load `_shared.md`, so read `voice-dna.md` directly. Follow-up drafts are conversational, so apply the full guardrail: banned words/phrases/patterns, no em-dashes, no negative parallelisms (§3-4) AND conversational voice — contractions, varied rhythm, direct "I"/"you" (§1-2). Never drop or soften a real metric from `cv.md` for style.
+> **Read `workspace/profile/voice-dna.md` (if present) and apply it to every generated email/LinkedIn draft.** This mode is standalone — it does NOT load `_shared.md`, so read `workspace/profile/voice-dna.md` directly. Follow-up drafts are conversational, so apply the full guardrail: banned words/phrases/patterns, no em-dashes, no negative parallelisms (§3-4) AND conversational voice — contractions, varied rhythm, direct "I"/"you" (§1-2). Never drop or soften a real metric from `workspace/profile/cv.md` for style.
 
 ## Purpose
 
@@ -13,11 +13,11 @@ elapsed-time cadence case — see `confirmed_time_noshow` in `modes/email.md`
 
 ## Inputs
 
-- `data/applications.md` — Application tracker
-- `data/follow-ups.md` — Follow-up history (created on first use)
-- `reports/` — Evaluation reports (for context in drafts)
-- `config/profile.yml` — User profile (name, identity)
-- `cv.md` — CV for proof points in drafts
+- `workspace/applications/tracker.md` — Application tracker
+- `workspace/applications/follow-ups.md` — Follow-up history (created on first use)
+- `workspace/reports/evaluations/` — Evaluation reports (for context in drafts)
+- `workspace/profile/profile.yml` — User profile (name, identity)
+- `workspace/profile/cv.md` — CV for proof points in drafts
 
 ## Step 1 — Run Cadence Script
 
@@ -62,14 +62,14 @@ Use visual indicators:
 For each **overdue** or **urgent** entry only:
 
 1. Read the linked report (`reportPath` from JSON) for company context
-2. Read `cv.md` for proof points
-3. Read `config/profile.yml` for candidate name and identity
+2. Read `workspace/profile/cv.md` for proof points
+3. Read `workspace/profile/profile.yml` for candidate name and identity
 
 **Agency-mediated applications (#1596):** when the entry's `via` field is set (the cadence JSON emits `via: null` for direct applications), the chase target is the **agency contact** (recruiter named in the notes/contacts), not the company — the recruiter owns the client relationship and has their own incentive to respond. Reference the role by the agency's framing.
 
 **When the end employer is unknown (company `?`), this branch REPLACES the framework rules below — do not fall through to them.** There is no company name to mention and nothing company-specific to reference, so instead:
 - Sentence 1 references the role by the **agency's framing** (their listing title + the recruiter's name) **plus when you applied** — the application date stays in the opening exactly as the framework requires; only the company reference is replaced, never with a placeholder company name.
-- Sentence 2's value-add draws on cv.md/report proof points that fit the role as listed — skip the "specific to THAT company" rule.
+- Sentence 2's value-add draws on workspace/profile/cv.md/report proof points that fit the role as listed — skip the "specific to THAT company" rule.
 - Add the client-name ask: request the end employer's name as a natural part of the follow-up ("so I can prepare properly, could you share which company this role is with?") — that reveal is what unlocks cross-channel dedup in the tracker.
 
 When `via` is set but the employer IS known, use the framework below unchanged except the recipient: address the recruiter, mention the client company by name.
@@ -79,7 +79,7 @@ When `via` is set but the employer IS known, use the framework below unchanged e
 Generate a 3-4 sentence email:
 
 1. **Sentence 1:** Reference the specific role + when you applied. Be specific — mention the company name and role title.
-2. **Sentence 2:** One concrete value-add from the report's Block B match or a proof point from cv.md. Quantify if possible.
+2. **Sentence 2:** One concrete value-add from the report's Block B match or a proof point from workspace/profile/cv.md. Quantify if possible.
 3. **Sentence 3:** Soft ask + availability. Offer a specific time window ("this week" or "next Tuesday").
 4. **Sentence 4 (optional):** Brief mention of a relevant recent project or achievement.
 
@@ -90,7 +90,7 @@ Generate a 3-4 sentence email:
 - Reference something specific to THAT company (from report Block A)
 - Keep under 150 words
 - Include a subject line
-- Use the candidate's name from `config/profile.yml`
+- Use the candidate's name from `workspace/profile/profile.yml`
 
 **Example tone:**
 > Subject: Re: Senior PHP/Laravel Developer — IxDF
@@ -149,7 +149,7 @@ For each draft, show:
 
 After the user reviews and says they've sent a follow-up, record it:
 
-1. If `data/follow-ups.md` doesn't exist, create it (this exact header — the
+1. If `workspace/applications/follow-ups.md` doesn't exist, create it (this exact header — the
    same one the web UI writes; `src/tracker/followup-cadence.mjs` parses these columns):
 
    ```markdown
@@ -169,13 +169,13 @@ After the user reviews and says they've sent a follow-up, record it:
    - `contact` = who it was sent to
    - `notes` = brief note (e.g., "First follow-up, referenced Barbeiro.app")
 
-3. Optionally update the Notes column in `data/applications.md` with "Follow-up {N} sent {YYYY-MM-DD}"
+3. Optionally update the Notes column in `workspace/applications/tracker.md` with "Follow-up {N} sent {YYYY-MM-DD}"
 
 **IMPORTANT:** Only record follow-ups the user confirms they actually sent. Never record a draft as sent.
 
 ### Pinned next dates & automatic seeding
 
-`data/follow-ups.md` also supports pin lines that override the computed
+`workspace/applications/follow-ups.md` also supports pin lines that override the computed
 schedule for a single application:
 
 ```text

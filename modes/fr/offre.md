@@ -22,7 +22,7 @@ Tableau avec :
 
 ## Bloc B -- Match avec le CV
 
-Lire `cv.md`. Creer un tableau ou chaque prerequis de l'offre est mappe sur des lignes exactes du CV.
+Lire `workspace/profile/cv.md`. Creer un tableau ou chaque prerequis de l'offre est mappe sur des lignes exactes du CV.
 
 **Adapte a l'archetype :**
 - FDE -> prioriser les proof points de livraison rapide et proximite client
@@ -79,7 +79,7 @@ Top 5 modifications du CV + Top 5 modifications LinkedIn pour maximiser le match
 
 La colonne **Reflection** capture ce qui a ete appris ou ce qui serait fait differemment. Cela signale la seniorite -- les juniors decrivent ce qui s'est passe, les seniors en tirent des enseignements.
 
-**Story Bank :** Si `interview-prep/story-bank.md` existe, verifier si ces stories y sont deja. Sinon, ajouter les nouvelles. Avec le temps, cela construit une banque reutilisable de 5-10 stories maitre adaptables a n'importe quelle question d'entretien.
+**Story Bank :** Si `workspace/interviews/story-bank.md` existe, verifier si ces stories y sont deja. Sinon, ajouter les nouvelles. Avec le temps, cela construit une banque reutilisable de 5-10 stories maitre adaptables a n'importe quelle question d'entretien.
 
 **Selectionnees et cadrees selon l'archetype :**
 - FDE -> mettre en avant la vitesse de livraison et la proximite client
@@ -101,7 +101,7 @@ Inclure aussi :
 
 ### 1. Sauvegarder le report .md
 
-Sauvegarder l'evaluation complete dans `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
+Sauvegarder l'evaluation complete dans `workspace/reports/evaluations/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 
 - `{###}` = prochain numero sequentiel (3 chiffres, zero-padded). Pour l'allouer de maniere atomique et eviter les conditions de concurrence, vous devez executer `node src/tracker/reserve-report-num.mjs` pour reserver le numero (stdout renvoie `{###}`), ecrire le rapport, puis executer `node src/tracker/reserve-report-num.mjs --release {###}` pour liberer le sentinel.
 - `{company-slug}` = nom d'entreprise en minuscules, sans espaces (utiliser des tirets)
@@ -149,7 +149,7 @@ Sauvegarder l'evaluation complete dans `reports/{###}-{company-slug}-{YYYY-MM-DD
 
 ### 2. Enregistrer dans le tracker
 
-**TOUJOURS** enregistrer dans `data/applications.md` :
+**TOUJOURS** enregistrer dans `workspace/applications/tracker.md` :
 - Prochain numero sequentiel
 - Date du jour
 - Entreprise
@@ -157,7 +157,7 @@ Sauvegarder l'evaluation complete dans `reports/{###}-{company-slug}-{YYYY-MM-DD
 - Score : moyenne du match (1-5)
 - Statut : `Evaluated`
 - PDF : non (ou oui si l'auto-pipeline a genere un PDF)
-- Report : lien relatif vers le fichier report (ex : `[001](reports/001-company-2026-01-01.md)`)
+- Report : lien relatif vers le fichier report (ex : `[001](workspace/reports/evaluations/001-company-2026-01-01.md)`)
 
 **Format du tracker :**
 

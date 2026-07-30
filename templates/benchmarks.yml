@@ -9,9 +9,9 @@
 #
 # Users can override this file without losing changes on system updates:
 #   1. --benchmarks <path> flag on funnel-velocity.mjs
-#   2. config/benchmarks.yml (user layer — copy this file there and edit)
+#   2. workspace/profile/benchmarks.yml (user layer — copy this file there and edit)
 #   3. this file (shipped default)
-# Non-US markets: copy to config/benchmarks.yml and localize ranges/sources.
+# Non-US markets: copy to workspace/profile/benchmarks.yml and localize ranges/sources.
 
 benchmarks:
   response_rate:

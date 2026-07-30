@@ -59,13 +59,13 @@ const NAV_LABEL_STOPWORDS = new Set([
 
 /**
  * Resolve the configured scan extractor: `cli` (this helper) or `mcp` (default).
- * Reads `scan.extractor` from config/profile.yml; anything unrecognized — or a
+ * Reads `scan.extractor` from workspace/profile/profile.yml; anything unrecognized — or a
  * missing/unreadable file — yields `mcp` so behavior never breaks. Exported so
  * doctor.mjs reports the same value.
  * @param {string} [profilePath]
  * @returns {'cli'|'mcp'}
  */
-export function resolveExtractorMode(profilePath = join(FRONTRUNNER, 'config/profile.yml')) {
+export function resolveExtractorMode(profilePath = join(FRONTRUNNER, 'workspace/profile/profile.yml')) {
   try {
     if (!existsSync(profilePath)) return 'mcp';
     const raw = yaml.load(readFileSync(profilePath, 'utf-8')) || {};

@@ -16,7 +16,7 @@
 // one random token and sends it both ways; there is no login, cookie jar, or
 // bootstrap request.
 //
-// portals.yml entry example:
+// workspace/search/portals.yml entry example:
 //   - name: 阿里巴巴
 //     careers_url: https://talent.alibaba.com/off-campus/position-list   # auto-detected
 //     keywords: ["AI", "大模型"]   # each keyword is a separate server-side query, results deduped;

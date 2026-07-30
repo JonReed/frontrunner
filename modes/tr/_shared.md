@@ -3,7 +3,7 @@
 <!-- ============================================================
      BU DOSYA OTOMATİK GÜNCELLENEBİLİR. Buraya kişisel veri ekleme.
      
-     Özelleştirmeler modes/_profile.md dosyasına gider (hiçbir zaman
+     Özelleştirmeler workspace/profile/targeting.md dosyasına gider (hiçbir zaman
      otomatik güncellenmez). Bu dosya sistem kurallarını, puanlama
      mantığını ve her sürümde gelişen araç yapılandırmasını içerir.
      ============================================================ -->
@@ -12,13 +12,13 @@
 
 | Dosya | Konum | Ne zaman |
 |-------|-------|----------|
-| cv.md | `cv.md` (proje kök dizini) | Her zaman |
-| article-digest.md | `article-digest.md` (varsa) | Her zaman — ayrıntılı kanıtlar |
-| profile.yml | `config/profile.yml` | Her zaman — kişisel bilgiler ve hedef roller |
-| _profile.md | `modes/_profile.md` | Her zaman — kullanıcı arketipleri, anlatı, müzakere |
+| workspace/profile/cv.md | `workspace/profile/cv.md` (proje kök dizini) | Her zaman |
+| workspace/profile/article-digest.md | `workspace/profile/article-digest.md` (varsa) | Her zaman — ayrıntılı kanıtlar |
+| profile.yml | `workspace/profile/profile.yml` | Her zaman — kişisel bilgiler ve hedef roller |
+| _profile.md | `workspace/profile/targeting.md` | Her zaman — kullanıcı arketipleri, anlatı, müzakere |
 
-**KURAL: Kanıt noktalarındaki ölçüm değerlerini ASLA sabit kodlama.** Değerlendirme sırasında bunları cv.md + article-digest.md dosyalarından oku.
-**KURAL: Makale/proje metrikleri için `article-digest.md`, `cv.md`'ye göre önceliklidir.**
+**KURAL: Kanıt noktalarındaki ölçüm değerlerini ASLA sabit kodlama.** Değerlendirme sırasında bunları workspace/profile/cv.md + workspace/profile/article-digest.md dosyalarından oku.
+**KURAL: Makale/proje metrikleri için `workspace/profile/article-digest.md`, `workspace/profile/cv.md`'ye göre önceliklidir.**
 **KURAL: `_profile.md`'yi bu dosyadan SONRA oku. Kullanıcının `_profile.md`'deki özelleştirmeleri buradaki varsayılanları geçersiz kılar.**
 
 ---
@@ -99,28 +99,28 @@ Her ilanı aşağıdaki türlerden birine (ya da en fazla ikisine) sınıflandı
 | AI Forward Deployed | "client-facing", "deploy", "prototype", "fast delivery", "field" |
 | AI Transformation | "change management", "adoption", "enablement", "transformation" |
 
-Arketipi tespit ettikten sonra kullanıcıya özgü çerçeveleme ve kanıt noktaları için `modes/_profile.md` dosyasını oku.
+Arketipi tespit ettikten sonra kullanıcıya özgü çerçeveleme ve kanıt noktaları için `workspace/profile/targeting.md` dosyasını oku.
 
 ### Arketipe Göre Uyarlama
 
-> **Somut rakamlar ve metrikler: değerlendirme sırasında `cv.md` ve `article-digest.md` dosyalarından okunacak. Buraya sabit yazma.**
+> **Somut rakamlar ve metrikler: değerlendirme sırasında `workspace/profile/cv.md` ve `workspace/profile/article-digest.md` dosyalarından okunacak. Buraya sabit yazma.**
 
 
 | Rol ise... | Adayda şunu öne çıkar... | Kanıt kaynakları |
 |-----------|--------------------------|-----------------|
-| Platform / LLMOps | Production deneyimi, observability, evals, closed-loop | article-digest.md + cv.md |
-| Agentic / Automation | Multi-agent orchestration, HITL, güvenilirlik, maliyet | article-digest.md + cv.md |
-| Technical AI PM | Product discovery, PRD'ler, metrikler, paydaş yönetimi | cv.md + article-digest.md |
-| Solutions Architect | Sistem tasarımı, entegrasyonlar, enterprise uyum | article-digest.md + cv.md |
-| Forward Deployed Engineer | Hızlı teslimat, müşteri yönlü, prototipten production'a | cv.md + article-digest.md |
-| AI Transformation Lead | Değişim yönetimi, ekip enablement, benimseme | cv.md + article-digest.md |
+| Platform / LLMOps | Production deneyimi, observability, evals, closed-loop | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Agentic / Automation | Multi-agent orchestration, HITL, güvenilirlik, maliyet | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Technical AI PM | Product discovery, PRD'ler, metrikler, paydaş yönetimi | workspace/profile/cv.md + workspace/profile/article-digest.md |
+| Solutions Architect | Sistem tasarımı, entegrasyonlar, enterprise uyum | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Forward Deployed Engineer | Hızlı teslimat, müşteri yönlü, prototipten production'a | workspace/profile/cv.md + workspace/profile/article-digest.md |
+| AI Transformation Lead | Değişim yönetimi, ekip enablement, benimseme | workspace/profile/cv.md + workspace/profile/article-digest.md |
 
 ### Kariyer Anlatısı (Tüm içeriklerde kullanılacak)
 
 
-`config/profile.yml` dosyasındaki kariyer hikayesini tüm içeriklere zemin olarak kullan:
+`workspace/profile/profile.yml` dosyasındaki kariyer hikayesini tüm içeriklere zemin olarak kullan:
 - **PDF özetlerinde:** Geçmişten geleceğe bir köprü kur — "Aynı [becerileri] şimdi [ilan alanına] uyguluyorum."
-- **STAR hikayelerinde:** `article-digest.md`'deki somut kanıt noktalarına başvur
+- **STAR hikayelerinde:** `workspace/profile/article-digest.md`'deki somut kanıt noktalarına başvur
 - **Form yanıtlarında:** Kariyer anlatısı ilk yanıtta yer almalı
 - **İlan "girişimci", "sorumluluk alan", "builder", "uçtan uca" diyorsa:** Bu en güçlü farklılaştırıcıdır. Eşleşme ağırlığını artır.
 
@@ -210,7 +210,7 @@ Türkçe iş ilanlarında ve sözleşme müzakerelerinde, yabancı piyasalarda k
 ### ASLA
 
 1. Deneyim veya metrik uydurma
-2. `cv.md` ya da portfolyo dosyalarını değiştirme
+2. `workspace/profile/cv.md` ya da portfolyo dosyalarını değiştirme
 3. Adayın onayı olmadan başvuru gönderme
 4. Üretilen mesajlarda telefon numarası paylaşma
 5. Piyasa fiyatının altında ücret önerme
@@ -221,7 +221,7 @@ Türkçe iş ilanlarında ve sözleşme müzakerelerinde, yabancı piyasalarda k
 ### HER ZAMAN
 
 0. **Ön yazı:** Form izin veriyorsa HER ZAMAN ön yazı ekle. CV ile aynı görsel tasarımda PDF olarak üret. İçerik: ilandan doğrudan alıntılar + kanıt noktalarıyla eşleştirme. Maksimum 1 sayfa.
-1. Herhangi bir ilanı değerlendirmeden önce `cv.md` ve `article-digest.md` dosyalarını oku (varsa)
+1. Herhangi bir ilanı değerlendirmeden önce `workspace/profile/cv.md` ve `workspace/profile/article-digest.md` dosyalarını oku (varsa)
 1b. **Her oturumun ilk değerlendirmesinde:** `node src/cv/cv-sync-check.mjs` çalıştır. Uyarı varsa adayı bilgilendirmeden devam etme
 2. Rol arketipini belirle ve çerçevelemeyi buna göre uyarla
 3. CV eşleştirmesinde dosyadan tam satır alıntıla
@@ -231,7 +231,7 @@ Türkçe iş ilanlarında ve sözleşme müzakerelerinde, yabancı piyasalarda k
 7. Doğrudan ve eyleme dönük ol — gereksiz ayrıntı yazma
 8. Türkçe metin üretirken: doğal Türkçe kullan, kelimesi kelimesine çeviriden kaçın. Kısa cümleler, aktif fiiller. Stack, pipeline, deploy, backend, frontend gibi yerleşik teknik terimler zorla Türkçeleştirilmemeli
 8b. **PDF Professional Summary'de vaka çalışması URL'leri:** Adayın demo veya proje linki varsa ilk paragrafta göster — recruiter genellikle sadece summary'i okur
-9. **Takipçi eklemeleri TSV olarak** — `applications.md`'ye doğrudan yeni satır ekleme. TSV'yi `batch/tracker-additions/` klasörüne yaz, `src/tracker/merge-tracker.mjs` halleder
+9. **Takipçi eklemeleri TSV olarak** — `applications.md`'ye doğrudan yeni satır ekleme. TSV'yi `workspace/.state/tracker-additions/` klasörüne yaz, `src/tracker/merge-tracker.mjs` halleder
 10. Her rapor başlığına `**URL:**` alanını ekle — Puan ile PDF arasına
 
 ### Araçlar
@@ -241,9 +241,9 @@ Türkçe iş ilanlarında ve sözleşme müzakerelerinde, yabancı piyasalarda k
 | WebSearch | Maaş araştırması, şirket kültürü, Kariyer.net/LinkedIn ilanları, Türk şirket haberleri |
 | WebFetch | Statik sayfalardan ilan içeriği çekme |
 | Playwright | İlan doğrulama (browser_navigate + browser_snapshot). **KRİTİK: Aynı anda 2+ ajan Playwright ile çalıştırma — tek browser instance paylaşılır** |
-| Read | cv.md, _profile.md, article-digest.md, cv-template.html |
-| Write | PDF için geçici HTML, rapor .md dosyaları, `batch/tracker-additions/*.tsv` (yeni takipçi girişleri) |
-| Edit | `data/applications.md`'de mevcut satır güncellemeleri (durum, PDF, rapor bağlantısı) |
+| Read | workspace/profile/cv.md, _profile.md, workspace/profile/article-digest.md, cv-template.html |
+| Write | PDF için geçici HTML, rapor .md dosyaları, `workspace/.state/tracker-additions/*.tsv` (yeni takipçi girişleri) |
+| Edit | `workspace/applications/tracker.md`'de mevcut satır güncellemeleri (durum, PDF, rapor bağlantısı) |
 | Canva MCP | İsteğe bağlı görsel CV üretimi. Temel tasarımı çoğalt, metni düzenle, PDF olarak dışa aktar. `profile.yml`'de `canva_resume_design_id` gerektirir. |
 | Bash | `node src/cv/generate-pdf.mjs` |
 

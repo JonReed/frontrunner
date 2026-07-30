@@ -1,10 +1,10 @@
 # Mode: latex-tex — Tailor a user-owned LaTeX CV in place
 
-Opt-in mode for candidates who already maintain a hand-tuned `.tex` CV. **Does not change the global source of truth** — `cv.md` remains the default for evaluations, apply mode, and auto-pipeline. Invoke explicitly via `/frontrunner latex-tex`.
+Opt-in mode for candidates who already maintain a hand-tuned `.tex` CV. **Does not change the global source of truth** — `workspace/profile/cv.md` remains the default for evaluations, apply mode, and auto-pipeline. Invoke explicitly via `/frontrunner latex-tex`.
 
 ## When to use
 
-- User has `resume.tex` (or `config/profile.yml → latex.source`) in a supported layout
+- User has `resume.tex` (or `workspace/profile/profile.yml → latex.source`) in a supported layout
 - User wants JD-tailored bullets/skills while keeping their preamble, macros, colors, and spacing
 
 ## Supported layouts (v1)
@@ -16,18 +16,18 @@ Opt-in mode for candidates who already maintain a hand-tuned `.tex` CV. **Does n
 
 Extraction only reads the document body (preamble macro definitions are skipped) and ignores commented-out macro calls — old bullets kept as `%` comments never become editable slots.
 
-Any other layout → stop with the script error and suggest `/frontrunner latex` (cv.md → frontrunner template).
+Any other layout → stop with the script error and suggest `/frontrunner latex` (workspace/profile/cv.md → frontrunner template).
 
 ## Source file resolution
 
-1. `config/profile.yml → latex.source` if set
+1. `workspace/profile/profile.yml → latex.source` if set
 2. Else `resume.tex` in project root
 3. Else `cv.tex` in project root
 
 If none exist, stop and ask the user to add their `.tex` file or set `latex.source`.
 
 ```yaml
-# config/profile.yml (optional, user layer)
+# workspace/profile/profile.yml (optional, user layer)
 latex:
   source: resume.tex
 ```
@@ -42,7 +42,7 @@ latex:
    - Extract 15–20 JD keywords
    - Reorder bullets by relevance (reorder patch list order if needed; patch ids stay stable)
    - Inject keywords into existing achievements — **NEVER invent skills**
-   - If `cv.md` exists, cross-check claims against it; omit anything not backed by in-scope sources
+   - If `workspace/profile/cv.md` exists, cross-check claims against it; omit anything not backed by in-scope sources
 6. Write patches file:
 
 ```json
@@ -54,8 +54,8 @@ latex:
 }
 ```
 
-7. Run: `node src/cv/patch-latex-content.mjs <source.tex> /tmp/cv-patches-{company}.json output/cv-{candidate}-{report}-{company}-{YYYY-MM-DD}.tex`
-8. Run: `node src/cv/generate-latex.mjs output/cv-{candidate}-{report}-{company}-{YYYY-MM-DD}.tex output/cv-{candidate}-{report}-{company}-{YYYY-MM-DD}.pdf --compile-only`
+7. Run: `node src/cv/patch-latex-content.mjs <source.tex> /tmp/cv-patches-{company}.json workspace/documents/cv-{candidate}-{report}-{company}-{YYYY-MM-DD}.tex`
+8. Run: `node src/cv/generate-latex.mjs workspace/documents/cv-{candidate}-{report}-{company}-{YYYY-MM-DD}.tex workspace/documents/cv-{candidate}-{report}-{company}-{YYYY-MM-DD}.pdf --compile-only`
 9. Report: family, slot count, patched count, `.tex` path, `.pdf` path (or compile error)
 
 **Requires:** `tectonic` or `pdflatex` on PATH (same as `latex` mode).
@@ -65,13 +65,13 @@ latex:
 Same as `modes/latex.md` and `modes/pdf.md`:
 
 - Keywords get **reformulated, never fabricated**
-- Never add tools, skills, or metrics the candidate does not already have in the source `.tex` or `cv.md`
+- Never add tools, skills, or metrics the candidate does not already have in the source `.tex` or `workspace/profile/cv.md`
 - Preserve inline LaTeX markup inside bullets when possible; when rewriting, output **plain text** in patch JSON (the patch script escapes special characters)
 - Do **not** rewrite preamble, macro definitions, section titles, dates, company names, or job titles unless the user explicitly asks
 
 ## What this mode does NOT do
 
-- Does not replace `cv.md` as the system source of truth
+- Does not replace `workspace/profile/cv.md` as the system source of truth
 - Does not parse arbitrary LaTeX templates
 - Does not auto-run during auto-pipeline or evaluation
 - Does not submit applications
@@ -80,5 +80,5 @@ Same as `modes/latex.md` and `modes/pdf.md`:
 
 | Mode | Input | Output |
 |------|-------|--------|
-| `latex` | `cv.md` | frontrunner `templates/cv-template.tex` → `.tex` + PDF |
+| `latex` | `workspace/profile/cv.md` | frontrunner `templates/cv-template.tex` → `.tex` + PDF |
 | `latex-tex` | user's `resume.tex` | same template shape, tailored prose only → `.tex` + PDF |

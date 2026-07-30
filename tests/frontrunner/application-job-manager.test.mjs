@@ -334,8 +334,8 @@ test('destructive concurrency: simultaneous paid CV requests launch exactly one 
     });
 
     const [first, second] = await Promise.all([
-      manager.startCvBuild(42, 'https://jobs.example.com/42', 'reports/042-example.md'),
-      manager.startCvBuild(42, 'https://jobs.example.com/42', 'reports/042-example.md'),
+      manager.startCvBuild(42, 'https://jobs.example.com/42', 'workspace/reports/evaluations/042-example.md'),
+      manager.startCvBuild(42, 'https://jobs.example.com/42', 'workspace/reports/evaluations/042-example.md'),
     ]);
 
     assert.equal(calls.length, 1);
@@ -371,7 +371,7 @@ test('destructive concurrency: simultaneous pipeline requests launch exactly one
       input: {
         engine: 'claude',
         scan: true,
-        input: 'data/pipeline.md',
+        input: 'workspace/search/pipeline.md',
       },
     };
     const [first, second] = await Promise.all([
@@ -460,7 +460,7 @@ test('destructive concurrency: scan and pipeline operations share one resource c
       manager.start({
         version: '1',
         operation: 'pipeline.prepare',
-        input: { scan: false, input: 'data/pipeline.md' },
+        input: { scan: false, input: 'workspace/search/pipeline.md' },
         idempotencyKey: 'caller-tries-to-split-the-claim',
       }),
       error => {
@@ -509,7 +509,7 @@ test('destructive concurrency: simultaneous different pipeline operations launch
       manager.start({
         version: '1',
         operation: 'pipeline.run',
-        input: { engine: 'claude', scan: true, input: 'data/pipeline.md' },
+        input: { engine: 'claude', scan: true, input: 'workspace/search/pipeline.md' },
       }),
     ]);
 
@@ -613,7 +613,7 @@ test('terminal pipeline state no longer blocks a related operation', async () =>
     const prepare = await manager.start({
       version: '1',
       operation: 'pipeline.prepare',
-      input: { scan: false, input: 'data/pipeline.md' },
+      input: { scan: false, input: 'workspace/search/pipeline.md' },
     });
     assert.equal(prepare.operation, 'pipeline.prepare');
     assert.notEqual(prepare.id, scan.id);
@@ -746,7 +746,7 @@ test('structured pipeline progress survives reload and outranks hostile log pros
     const job = await manager.start({
       version: '1',
       operation: 'pipeline.run',
-      input: { engine: 'claude', scan: true, input: 'data/pipeline.md' },
+      input: { engine: 'claude', scan: true, input: 'workspace/search/pipeline.md' },
     });
     assert.equal((await manager.readJob(job.id)).stage, 'Caching job descriptions');
 

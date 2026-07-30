@@ -29,7 +29,7 @@ Claude будет читать файлы из этого каталога. Ес
 
 ### Способ 2 — Постоянно, через профиль
 
-Добавь в `config/profile.yml`:
+Добавь в `workspace/profile/profile.yml`:
 
 ```yaml
 language:
@@ -59,12 +59,12 @@ language:
 
 Сознательно не переведено, т.к. это стандартный tech-словарь:
 
-- `cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`, `proof point`
+- `workspace/profile/cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`, `proof point`
 - Имена инструментов (`Playwright`, `WebSearch`, `WebFetch`, `Read`, `Write`, `Edit`, `Bash`)
 - Статусы в трекере (`Evaluated`, `Applied`, `Interview`, `Offer`, `Rejected`)
 - Код, пути, команды
 
-Режимы используют технический русский, как его говорят в реальных инженерных командах: русский текст, английские термины там, где они общеприняты. Никакой принудительной русификации "pipeline" → "конвейер", "cv.md" → "резюме-файл".
+Режимы используют технический русский, как его говорят в реальных инженерных командах: русский текст, английские термины там, где они общеприняты. Никакой принудительной русификации "pipeline" → "конвейер", "workspace/profile/cv.md" → "резюме-файл".
 
 ## Словарь
 

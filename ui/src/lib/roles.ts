@@ -17,11 +17,9 @@
 import { readFile, readdir, open } from 'node:fs/promises';
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { join, resolve, sep } from 'node:path';
+import { dirname, resolve, sep } from 'node:path';
 import { safeExternalUrl } from './urls';
-
-/** Repo root: the frontrunner checkout this UI lives inside. */
-export const ROOT = join(process.cwd(), '..');
+import { ROOT, WORKSPACE } from './root';
 
 // ---------------------------------------------------------------- types
 
@@ -70,7 +68,7 @@ export interface Role {
    * opinion about a job also links to the job itself.
    */
   url: string | null;
-  /** Generated CV, when one exists. Read from data/pdf-index.tsv. */
+  /** Generated CV, when one exists. Read from workspace/.state/pdf-index.tsv. */
   pdf: string | null;
   html: string | null;
   notes: string;
@@ -95,7 +93,7 @@ function parseScore(cell: string): number | null {
  * than throwing, because a single bad row must never blank the whole screen.
  */
 export async function readTracker(): Promise<Role[]> {
-  const file = join(ROOT, 'data', 'applications.md');
+  const file = WORKSPACE.tracker;
   if (!existsSync(file)) return [];
   const raw = await readFile(file, 'utf8');
 
@@ -259,9 +257,9 @@ export interface InboxRole {
   posted: string | null;
 }
 
-/** Unscored roles waiting in data/pipeline.md — the "find" phase. */
+/** Unscored roles waiting in workspace/search/pipeline.md — the "find" phase. */
 export async function readInbox(): Promise<InboxRole[]> {
-  const file = join(ROOT, 'data', 'pipeline.md');
+  const file = WORKSPACE.pipeline;
   if (!existsSync(file)) return [];
   const raw = await readFile(file, 'utf8');
 
@@ -300,7 +298,7 @@ export async function summarise() {
 }
 
 /**
- * report number -> generated documents, from data/pdf-index.tsv.
+ * report number -> generated documents, from workspace/.state/pdf-index.tsv.
  *
  * generate-pdf.mjs writes this file on every render, so it is the
  * authoritative mapping. Guessing from filenames would break the moment a
@@ -308,7 +306,7 @@ export async function summarise() {
  */
 function readPdfIndex(): Map<string, { pdf: string; html: string }> {
   const out = new Map<string, { pdf: string; html: string }>();
-  const file = join(ROOT, 'data', 'pdf-index.tsv');
+  const file = WORKSPACE.pdfIndex;
   if (!existsSync(file)) return out;
   try {
     for (const line of readFileSync(file, 'utf8').split('\n')) {
@@ -346,15 +344,18 @@ export async function readReport(reportPath: string): Promise<string | null> {
 
 function safeReportFile(reportPath: string): string | null {
   if (typeof reportPath !== 'string' || reportPath.length > 300 || !reportPath.endsWith('.md')) return null;
-  const reportsRoot = resolve(ROOT, 'reports');
+  const reportsRoot = WORKSPACE.reports;
 
   // Report links come from the tracker's markdown and are relative to the file
-  // that CONTAINS them — data/applications.md — so they look like
-  // '../reports/001-x.md'. Resolving those against ROOT lands outside the repo
+  // that CONTAINS them — workspace/applications/tracker.md — so they look like
+  // '../reports/evaluations/001-x.md'. Resolving those against ROOT lands outside the repo
   // and fails containment, which silently blanked every assessment and every
   // job-advert link. Try the tracker's own directory first, then ROOT for the
   // root-level tracker layout.
-  const candidate = [resolve(ROOT, 'data', reportPath), resolve(ROOT, reportPath)].find(
+  const candidate = [
+    resolve(dirname(WORKSPACE.tracker), reportPath),
+    resolve(ROOT, reportPath),
+  ].find(
     (p) => p.startsWith(`${reportsRoot}${sep}`) && existsSync(p),
   );
   if (!candidate) return null;
@@ -368,7 +369,7 @@ function safeReportFile(reportPath: string): string | null {
 }
 
 export async function listReports(): Promise<string[]> {
-  const dir = join(ROOT, 'reports');
+  const dir = WORKSPACE.reports;
   if (!existsSync(dir)) return [];
   return (await readdir(dir)).filter((f) => f.endsWith('.md'));
 }

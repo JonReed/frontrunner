@@ -133,7 +133,7 @@ export function companyMatchesHostname(company, hostname) {
 }
 
 /**
- * Build a trust validator function from portals.yml config.
+ * Build a trust validator function from workspace/search/portals.yml config.
  *
  * Usage mirrors buildLocationFilter / buildSalaryFilter in src/scan/scan.mjs.
  *

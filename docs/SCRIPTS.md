@@ -19,7 +19,7 @@ contains only a few compatibility entry points. Common commands are exposed via
 | `npm run sync-check` | `src/cv/cv-sync-check.mjs` | Validate CV/profile consistency |
 | `npm run patterns` | `src/analysis/analyze-patterns.mjs` | Analyze tracker outcomes and report patterns |
 | `npm run upskill` | `src/analysis/upskill.mjs` | Aggregate skill-gap map from tracked reports (or `--url-text <url\|file>` for a single-JD targeted gap analysis) |
-| `npm run add` | `src/tracker/add-entry.mjs` | Dedup + transactionally insert a confirmed `/frontrunner add` entry into cv.md / article-digest.md; interrupted two-file publication resumes from a contained journal |
+| `npm run add` | `src/tracker/add-entry.mjs` | Dedup + transactionally insert a confirmed `/frontrunner add` entry into workspace/profile/cv.md / workspace/profile/article-digest.md; interrupted two-file publication resumes from a contained journal |
 | `npm run update:check` | `update-system.mjs check` | Check for official Frontrunner updates |
 | `npm run update` | `update-system.mjs apply` | Apply an official Frontrunner update |
 | `npm run rollback` | `update-system.mjs rollback` | Rollback last update |
@@ -33,16 +33,16 @@ contains only a few compatibility entry points. Common commands are exposed via
 | `npm run benchmark:check` | `src/benchmark/pipeline-benchmark.mjs` | Fail if the benchmark artifact or README table is stale |
 | `npm run benchmark:prefilter` | `src/benchmark/prefilter-calibration.mjs` | Calibrate active deterministic rules against the scored-role corpus (`-- --check` fails on false rejects) |
 | `npm run scan:full` | `src/scan/scan-ats-full.mjs` | Reverse ATS discovery scanner |
-| `npm run validate:portals` | `src/scan/validate-portals.mjs` | Validate portals.yml shape before scanning |
+| `npm run validate:portals` | `src/scan/validate-portals.mjs` | Validate workspace/search/portals.yml shape before scanning |
 | `npm run tracker` | `src/tracker/tracker.mjs` | SQLite derived index over applications.md — sync/query/history/export |
 | `npm run find` | `find.mjs` | Resolve a report#/tracker#/company query to its full pipeline identity |
-| `npm run invite-match` | `src/tracker/invite-match.mjs` | Fuzzy-match a pasted interview-invite email against `data/applications.md` |
+| `npm run invite-match` | `src/tracker/invite-match.mjs` | Fuzzy-match a pasted interview-invite email against `workspace/applications/tracker.md` |
 | `npm run paste-reply` | `src/tracker/paste-reply.mjs` | Manual/no-Gmail input into the `src/tracker/reply-watch.mjs` classification pipeline |
 | `npm run openai:tailor` | `src/evaluate/openai-tailor.mjs` | Tailor via any OpenAI-compatible endpoint; the model returns bounded versioned JSON, then code injects trusted identity, renders, fact-checks and atomically publishes HTML |
 | `npm run or` | `src/evaluate/openrouter-runner.mjs` | OpenRouter evaluate/apply helper using fixed brokered endpoints, bounded responses, canonical scanning and a crash-safe concurrent model blacklist |
 | `npm run reconcile` | `src/tracker/reconcile-pipeline.mjs` | Remove batch-evaluated offers under the shared pipeline lock with an atomic backup/replacement |
 | `npm run cover-letter` | `src/cv/generate-cover-letter.mjs` | Render a cover-letter JSON payload to PDF |
-| `npm run verify:portals` | `src/scan/verify-portals.mjs` | Probe ATS endpoints to confirm portals.yml slugs resolve (network) |
+| `npm run verify:portals` | `src/scan/verify-portals.mjs` | Probe ATS endpoints to confirm workspace/search/portals.yml slugs resolve (network) |
 | `npm run reposts` | `src/analysis/detect-reposts.mjs` | Flag re-listed (ghost) postings from scan history |
 | `npm run gemini:eval` | `src/evaluate/gemini-eval.mjs` | Evaluate a JD with Google Gemini (free-tier alternative) |
 | `npm run ollama:eval` | `src/evaluate/ollama-eval.mjs` | Evaluate a JD with a local Ollama model |
@@ -56,7 +56,7 @@ contains only a few compatibility entry points. Common commands are exposed via
 
 ## doctor
 
-Validates that all prerequisites are in place: Node.js >= 22.5, dependencies installed, Playwright chromium, required files (`cv.md`, `config/profile.yml`, `portals.yml`), fonts directory, and auto-creates `data/`, `output/`, `reports/` if missing.
+Validates that all prerequisites are in place: Node.js >= 22.5, dependencies installed, Playwright chromium, required files (`workspace/profile/cv.md`, `workspace/profile/profile.yml`, `workspace/search/portals.yml`), fonts directory, and auto-creates the required private workspace directories if missing.
 
 ```bash
 npm run doctor
@@ -68,7 +68,7 @@ npm run doctor
 
 ## verify
 
-Health check for pipeline data integrity. Validates `data/applications.md` against nine rules: canonical statuses (per `templates/states.yml`), no duplicate company+role pairs, all report links point to existing files, scores match `X.XX/5` / `N/A` / `DUP`, rows have proper pipe-delimited format, no pending TSVs in `batch/tracker-additions/`, no markdown bold in scores, no two `reports/*.md` files covering the same company+role, and no orphan reports without a tracker row (#1425). The report checks are warning-level: duplicate reports can be legitimate (re-evaluation after a JD change), so they never fail the run.
+Health check for pipeline data integrity. Validates `workspace/applications/tracker.md` against nine rules: canonical statuses (per `templates/states.yml`), no duplicate company+role pairs, all report links point to existing files, scores match `X.XX/5` / `N/A` / `DUP`, rows have proper pipe-delimited format, no pending TSVs in `workspace/.state/tracker-additions/`, no markdown bold in scores, no two `workspace/reports/evaluations/*.md` files covering the same company+role, and no orphan reports without a tracker row (#1425). The report checks are warning-level: duplicate reports can be legitimate (re-evaluation after a JD change), so they never fail the run.
 
 ```bash
 npm run verify
@@ -110,7 +110,7 @@ Creates a `.bak` backup before writing.
 
 ## merge
 
-Merges batch tracker additions (`batch/tracker-additions/*.tsv`) into `applications.md`. Handles 9-column TSV, 8-column TSV, and pipe-delimited markdown formats. Detects duplicates by report number, entry number, and company+role fuzzy match. Higher-scored re-evaluations update existing entries in place.
+Merges batch tracker additions (`workspace/.state/tracker-additions/*.tsv`) into `applications.md`. Handles 9-column TSV, 8-column TSV, and pipe-delimited markdown formats. Detects duplicates by report number, entry number, and company+role fuzzy match. Higher-scored re-evaluations update existing entries in place.
 
 ```bash
 npm run merge                 # apply merge
@@ -118,11 +118,11 @@ npm run merge -- --dry-run    # preview without writing
 npm run merge -- --verify     # merge then run verify-pipeline
 ```
 
-Processed TSVs are moved to `batch/tracker-additions/merged/`.
+Processed TSVs are moved to `workspace/.state/tracker-additions/merged/`.
 
 All supported evaluators reach this merge through
 `src/evaluate/evaluation-publication.mjs`. A bounded
-`reports/{NNN}-PUBLISHING.json` write-ahead journal makes the report, tracker
+`workspace/reports/evaluations/{NNN}-PUBLISHING.json` write-ahead journal makes the report, tracker
 fragment, and merge one recoverable publication. Pending journals are replayed
 automatically before the next evaluation; path and content validation fail
 closed, and successful replay removes the journal.
@@ -133,7 +133,7 @@ closed, and successful replay removes the journal.
 
 ## validate:portals
 
-Validates `portals.yml` before running the scanner. The validator is offline: it reads YAML, loads local provider IDs from `providers/*.mjs`, and checks common configuration mistakes without fetching any job boards.
+Validates `workspace/search/portals.yml` before running the scanner. The validator is offline: it reads YAML, loads local provider IDs from `providers/*.mjs`, and checks common configuration mistakes without fetching any job boards.
 
 It reports errors for invalid YAML shape, unknown explicit providers, malformed URLs, empty filter keywords, and invalid local parser blocks. Duplicate enabled company names are warnings because they may be intentional during migrations, but they are worth reviewing.
 
@@ -163,7 +163,7 @@ npm run pdf -- input.html output.pdf --format=a4        # A4 (default)
 
 ## img-to-pdf
 
-Converts a single screenshot or image (PNG, JPEG, GIF, WEBP, BMP, SVG) into a single-page PDF via headless Chromium — for ATS upload fields that require a PDF specifically and reject images. Embeds the image as a base64 `data:` URI in a minimal HTML page and renders it with `page.pdf()`, sized to the image's own pixel dimensions so the page is neither cropped nor padded. Zero new dependencies — reuses the `playwright` dependency `src/cv/generate-pdf.mjs` already uses, and is a deliberately standalone script: it does not go through `src/cv/generate-pdf.mjs`, so it is never subject to that script's cv.md section-order validation.
+Converts a single screenshot or image (PNG, JPEG, GIF, WEBP, BMP, SVG) into a single-page PDF via headless Chromium — for ATS upload fields that require a PDF specifically and reject images. Embeds the image as a base64 `data:` URI in a minimal HTML page and renders it with `page.pdf()`, sized to the image's own pixel dimensions so the page is neither cropped nor padded. Zero new dependencies — reuses the `playwright` dependency `src/cv/generate-pdf.mjs` already uses, and is a deliberately standalone script: it does not go through `src/cv/generate-pdf.mjs`, so it is never subject to that script's workspace/profile/cv.md section-order validation.
 
 ```bash
 npm run img-to-pdf -- screenshot.png output.pdf
@@ -192,7 +192,7 @@ node src/cv/build-cv-latex.mjs --test
 
 ## sync-check
 
-Validates that the frontrunner setup is internally consistent: `cv.md` exists and is not too short, `config/profile.yml` exists with required fields, no hardcoded metrics in `modes/_shared.md` or `batch/batch-prompt.md`, and `article-digest.md` freshness (warns if older than 30 days).
+Validates that the frontrunner setup is internally consistent: `workspace/profile/cv.md` exists and is not too short, `workspace/profile/profile.yml` exists with required fields, no hardcoded metrics in `modes/_shared.md` or `batch/batch-prompt.md`, and `workspace/profile/article-digest.md` freshness (warns if older than 30 days).
 
 ```bash
 npm run sync-check
@@ -204,7 +204,7 @@ npm run sync-check
 
 ## patterns
 
-Analyzes application outcomes, scores, archetypes, blockers, remote policy, and company size from `data/applications.md` and linked reports. New reports should include `## Machine Summary` YAML; `src/analysis/analyze-patterns.mjs` uses it first and falls back to legacy markdown parsing for older reports.
+Analyzes application outcomes, scores, archetypes, blockers, remote policy, and company size from `workspace/applications/tracker.md` and linked reports. New reports should include `## Machine Summary` YAML; `src/analysis/analyze-patterns.mjs` uses it first and falls back to legacy markdown parsing for older reports.
 
 ```bash
 npm run patterns
@@ -219,14 +219,14 @@ node src/analysis/analyze-patterns.mjs --self-test
 
 ## upskill
 
-Aggregates skill gaps across every tracked report (#1520, phase 1). Extracts skill tokens from each report's Machine Summary `hard_stops`/`soft_gaps` and Gap table, removes skills already present in `cv.md`/`config/profile.yml` (exact-alias matching only — an umbrella term never suppresses a specific skill), and weights each gap by inverse report score (`5.0 − score`, counted once per report). Tiers (Critical/High/Medium/Low) use fixed thresholds over the share of low-fit (score < 4.0) reports naming the gap. Output carries `schema_version` so the `upskill` mode's diff-vs-previous section never compares across extraction-rule changes, plus coverage stats (`reportsWithMachineSummary` vs `reportsRead`). The script emits data only; the `upskill` mode reads the tiered `gaps` JSON and, in phase 2b (#1740), layers a **web-searched learning plan** (free-first resources per Critical/High gap — plus Medium when the map is small) onto the aggregate report. The plan is generated by the agent, not this script — no web-search logic lives in `src/analysis/upskill.mjs`.
+Aggregates skill gaps across every tracked report (#1520, phase 1). Extracts skill tokens from each report's Machine Summary `hard_stops`/`soft_gaps` and Gap table, removes skills already present in `workspace/profile/cv.md`/`workspace/profile/profile.yml` (exact-alias matching only — an umbrella term never suppresses a specific skill), and weights each gap by inverse report score (`5.0 − score`, counted once per report). Tiers (Critical/High/Medium/Low) use fixed thresholds over the share of low-fit (score < 4.0) reports naming the gap. Output carries `schema_version` so the `upskill` mode's diff-vs-previous section never compares across extraction-rule changes, plus coverage stats (`reportsWithMachineSummary` vs `reportsRead`). The script emits data only; the `upskill` mode reads the tiered `gaps` JSON and, in phase 2b (#1740), layers a **web-searched learning plan** (free-first resources per Critical/High gap — plus Medium when the map is small) onto the aggregate report. The plan is generated by the agent, not this script — no web-search logic lives in `src/analysis/upskill.mjs`.
 
 ```bash
 npm run upskill
 npm run upskill -- --summary
 npm run upskill -- --min-reports 3
 node src/analysis/upskill.mjs --url-text https://boards.greenhouse.io/acme/jobs/123   # targeted: gaps for one JD
-node src/analysis/upskill.mjs --url-text ./jds/my-job.txt                            # targeted: --url-text also takes a local file
+node src/analysis/upskill.mjs --url-text ./workspace/jobs/descriptions/my-job.txt                            # targeted: --url-text also takes a local file
 node src/analysis/upskill.mjs --self-test
 ```
 
@@ -236,7 +236,7 @@ node src/analysis/upskill.mjs --self-test
 
 ## salary-gap
 
-Folds compensation observations into per-application desired/advertised/actual values and gap aggregates. Sources: `reports/*.md` Machine Summary `advertised_comp` (advertised, source `jd` — historical reports backfill automatically), `data/salary-observations.tsv` (desired/actual/stated, append-only), and `config/profile.yml` `compensation.target_range` (desired default). Fold precedence: highest trust tier wins, then latest date (`actual`: contract > offer-letter > recruiter-verbal > user). Aggregates group by (company, role) and per currency — no FX conversion. Unparseable amounts, orphaned tracker numbers, sample sizes, and staleness are always reported.
+Folds compensation observations into per-application desired/advertised/actual values and gap aggregates. Sources: `workspace/reports/evaluations/*.md` Machine Summary `advertised_comp` (advertised, source `jd` — historical reports backfill automatically), `workspace/applications/salary-observations.tsv` (desired/actual/stated, append-only), and `workspace/profile/profile.yml` `compensation.target_range` (desired default). Fold precedence: highest trust tier wins, then latest date (`actual`: contract > offer-letter > recruiter-verbal > user). Aggregates group by (company, role) and per currency — no FX conversion. Unparseable amounts, orphaned tracker numbers, sample sizes, and staleness are always reported.
 
 ```bash
 node src/analysis/salary-gap.mjs             # JSON
@@ -261,7 +261,7 @@ Amounts: number + optional k/K suffix, ranges allowed ("80-90k"), annual gross u
 
 ## funnel-velocity
 
-Funnel calibration vs market benchmarks + stage velocity. Three payloads, decreasing availability: **calibration** — your funnel rates (canonical `ever*` definition imported from `src/analysis/stats.mjs`) vs candidate-side benchmark ranges from `templates/benchmarks.yml` (override: `config/benchmarks.yml` or `--benchmarks <path>`); **waiting** — in-flight Applied rows and elapsed days vs the typical first-response window (per-row factual reporting; applied-date priority: status-log observation > `Applied YYYY-MM-DD` in tracker notes > unknown, never guessed); **velocity** — median/p75 days per stage hop (Applied→Responded→Interview→Offer, Applied→Rejected separate) folded from `data/status-log.tsv`.
+Funnel calibration vs market benchmarks + stage velocity. Three payloads, decreasing availability: **calibration** — your funnel rates (canonical `ever*` definition imported from `src/analysis/stats.mjs`) vs candidate-side benchmark ranges from `templates/benchmarks.yml` (override: `workspace/profile/benchmarks.yml` or `--benchmarks <path>`); **waiting** — in-flight Applied rows and elapsed days vs the typical first-response window (per-row factual reporting; applied-date priority: status-log observation > `Applied YYYY-MM-DD` in tracker notes > unknown, never guessed); **velocity** — median/p75 days per stage hop (Applied→Responded→Interview→Offer, Applied→Rejected separate) folded from `workspace/.state/status-log.tsv`.
 
 Statistical honesty is enforced in code: right-censored counts printed next to every median ("n still waiting, excluded"), same-day catch-up hops excluded and counted, no comparative multiplier claims below n=20 applied, above-range output carries a selection-bias note, every benchmark mention carries its year + "directional". Coverage, orphaned tracker numbers, unparseable lines, and unknown sources are always reported.
 
@@ -292,7 +292,7 @@ reported but never reverses a successful status change.
 
 ## assessment-log
 
-Logs "received a skills assessment" as a structured per-application event (eSkill, HackerRank, Criteria, Predictive Index, ...) instead of burying it in free-text notes. Each event records platform, subject tested, pass threshold vs score achieved (both optional — vendors often hide them), and a candidate-observed staleness note (e.g. "test content references Adobe Acrobat 9, a 2008-era version"; empty = no staleness observed). Events append to `data/assessments.tsv` (user layer, created on first `add`, never rewritten). The append is locked and atomically replaced, so concurrent local clients retain every event and interruption cannot tear the TSV. Aggregates count events, pass/fail (only when both threshold and score are known), and stale-flagged events per platform; malformed lines are always reported, never dropped silently.
+Logs "received a skills assessment" as a structured per-application event (eSkill, HackerRank, Criteria, Predictive Index, ...) instead of burying it in free-text notes. Each event records platform, subject tested, pass threshold vs score achieved (both optional — vendors often hide them), and a candidate-observed staleness note (e.g. "test content references Adobe Acrobat 9, a 2008-era version"; empty = no staleness observed). Events append to `workspace/applications/assessments.tsv` (user layer, created on first `add`, never rewritten). The append is locked and atomically replaced, so concurrent local clients retain every event and interruption cannot tear the TSV. Aggregates count events, pass/fail (only when both threshold and score are known), and stale-flagged events per platform; malformed lines are always reported, never dropped silently.
 
 ```bash
 node src/analysis/assessment-log.mjs add --company Acme --report 042 --platform eSkill --subject "MS Office" --threshold 70 --score 92 --stale "references Adobe Acrobat 9 (2008-era)"
@@ -313,12 +313,12 @@ Log line format (TSV, one per line, `#`-prefixed lines are comments; for `report
 
 ## company-history
 
-Read-only per-company evidence-card aggregator. Joins `data/applications.md` (tracker), `data/follow-ups.md`, and `data/scan-history.tsv` per company (and a `src/analysis/funnel-velocity.mjs` status-log source, loaded defensively via dynamic `import()` — probed for optional applied-date/median helpers and degrading to `false` when they are absent). Companies are joined on a normalized key (`normalizeCompany`); rows whose company normalizes to an empty key (e.g. non-Latin names that strip to nothing) are never merged into another company's card — they are excluded and counted in `dataQuality.unjoinable` instead.
+Read-only per-company evidence-card aggregator. Joins `workspace/applications/tracker.md` (tracker), `workspace/applications/follow-ups.md`, and `workspace/.state/scan-history.tsv` per company (and a `src/analysis/funnel-velocity.mjs` status-log source, loaded defensively via dynamic `import()` — probed for optional applied-date/median helpers and degrading to `false` when they are absent). Companies are joined on a normalized key (`normalizeCompany`); rows whose company normalizes to an empty key (e.g. non-Latin names that strip to nothing) are never merged into another company's card — they are excluded and counted in `dataQuality.unjoinable` instead.
 
 Each card covers two independent fact axes, never combined into a single verdict:
 
 - **`responsiveness`** — has this company ever responded to you, or gone silent on an Applied row past the silence window? A rejection counts as a response (it's an answer, not silence). Labels: `responded-before`, `silent-on-you`, `mixed`, `no-history`. Rows younger than the silence window are **pending** — right-censored, never labeled silent. Facts older than 365 days are **stale** and excluded from label computation unless `--include-stale` is passed. Follow-ups sent never change the label — they only annotate a silent fact's `confidence` (`confirmed-by-followups` vs `unconfirmed`).
-- **`postingChurn`** — does this company repost the same role repeatedly (evergreen requisition / re-opened search), sourced from `src/analysis/detect-reposts.mjs` clusters over `data/scan-history.tsv`. Labels: `reposts-detected`, `none-detected`, `no-scan-data`.
+- **`postingChurn`** — does this company repost the same role repeatedly (evergreen requisition / re-opened search), sourced from `src/analysis/detect-reposts.mjs` clusters over `workspace/.state/scan-history.tsv`. Labels: `reposts-detected`, `none-detected`, `no-scan-data`.
 
 The script deliberately reports **facts, not verdicts** — output is always descriptive and past-tense ("silent 34d since 2026-05-01"), never "ghosted" or "risk". Every silent fact carries a dated `clearInstruction` (the exact `src/tracker/set-status.mjs` command to run if the company actually did respond and it just wasn't logged), and every card with a silent fact is accompanied by an innocent-explanations line: high-volume inboxes, evergreen requisitions, re-opened searches, and the candidate's own unlogged responses all produce the same raw signals as genuine silence. Before trusting the output against real data, run a dry read (`node src/scan/company-history.mjs --summary`) and sanity-check a few cards where you already know the real story.
 
@@ -367,7 +367,7 @@ refuses every other source, including the parent career-ops repository. It
 creates a timestamped backup branch
 (`backup-pre-update-<version>-<YYYYMMDDTHHMMSSZ>`), checks out only
 system-layer files, installs dependencies, and commits. User-layer files
-(`cv.md`, `config/profile.yml`, `data/`, etc.) are never touched.
+(`workspace/profile/cv.md`, `workspace/profile/profile.yml`, and everything else under `workspace/`) is never touched.
 
 ```bash
 npm run update
@@ -411,9 +411,9 @@ Each URL gets a verdict: `active`, `expired`, or `uncertain` with a reason.
 
 ## scan
 
-Zero-token portal scanner. Runs configured local parsers for SSR/static career pages and hits ATS APIs (Greenhouse, Ashby, Lever) directly — no LLM tokens consumed. Reads `portals.yml` for target companies, outputs matching listings to stdout, and optionally appends to `data/pipeline.md`.
+Zero-token portal scanner. Runs configured local parsers for SSR/static career pages and hits ATS APIs (Greenhouse, Ashby, Lever) directly — no LLM tokens consumed. Reads `workspace/search/portals.yml` for target companies, outputs matching listings to stdout, and optionally appends to `workspace/search/pipeline.md`.
 
-`scan_history.recheck_after_days` in `portals.yml` lets old `added` URLs become eligible for recheck after the configured number of days. If absent, scan-history dedup keeps the historical behavior and dedups forever. Permanent invalid statuses such as blocked host and malformed URL remain permanent.
+`scan_history.recheck_after_days` in `workspace/search/portals.yml` lets old `added` URLs become eligible for recheck after the configured number of days. If absent, scan-history dedup keeps the historical behavior and dedups forever. Permanent invalid statuses such as blocked host and malformed URL remain permanent.
 
 For custom SSR pages, configure a tracked company with `scan_method: local_parser` and a `parser` block. The parser can be written in JavaScript, Python, or any language available as a local executable. Company-specific parsers usually already know their source URL and only need to print JSON jobs to stdout:
 
@@ -426,32 +426,32 @@ parser:
 
 Use `args` only for reusable parsers that intentionally accept runtime parameters such as `{careers_url}` or `{company}`.
 
-If a parser writes full extraction artifacts for debugging or audit, store them under `data/parser-output/{company}/`. `src/scan/scan.mjs` reads stdout and does not require those JSON files after parsing. Keep generated JSON artifacts out of git; `.gitkeep` placeholders are the only exception for preserving directory structure.
+If a parser writes full extraction artifacts for debugging or audit, store them under `workspace/.state/parser-output/{company}/`. `src/scan/scan.mjs` reads stdout and does not require those JSON files after parsing. The whole private workspace is ignored and a fresh install ships no placeholder scaffolds.
 
 When the ATS provider's list API returns a description, each new offer is fingerprinted for cross-listing detection. See [Cross-listing detection](#cross-listing-detection) under `scan:full` for details.
 
-**Company blacklist (#1742):** if `data/blacklist.md` exists (user layer, opt-in — see `templates/blacklist.example.md`), postings from listed companies are skipped, matched case- and punctuation-insensitively with the same company normalization the tracker scripts share. Skips are never silent: the run summary reports `N skipped (blacklist)` and the count is persisted to `data/scan-runs.tsv` as `filtered_blacklist`. Pass `--include-blacklisted` to bypass the filter for auditing — matching postings flow through annotated (`note: blacklisted: {reason}` in `data/pipeline.md`). No blacklist file = no filtering; nothing ever adds a company to the list automatically.
+**Company blacklist (#1742):** if `workspace/search/blacklist.md` exists (user layer, opt-in — see `templates/blacklist.example.md`), postings from listed companies are skipped, matched case- and punctuation-insensitively with the same company normalization the tracker scripts share. Skips are never silent: the run summary reports `N skipped (blacklist)` and the count is persisted to `workspace/.state/scan-runs.tsv` as `filtered_blacklist`. Pass `--include-blacklisted` to bypass the filter for auditing — matching postings flow through annotated (`note: blacklisted: {reason}` in `workspace/search/pipeline.md`). No blacklist file = no filtering; nothing ever adds a company to the list automatically.
 
 ```bash
 npm run scan
 node src/scan/scan.mjs --include-blacklisted   # audit: let blacklisted companies through, annotated
 ```
 
-**Exit codes:** `0` scan completed, `1` configuration error or no portals.yml found.
+**Exit codes:** `0` scan completed, `1` configuration error or no workspace/search/portals.yml found.
 
 ---
 
 ## scan:full
 
-Reverse ATS discovery scanner. Where `src/scan/scan.mjs` scans the companies you track in `portals.yml`, this inverts the direction: it walks public directories of companies per ATS (Greenhouse, Lever, Ashby, Workday) and surfaces fresh postings matching your `portals.yml` `title_filter` / `location_filter` — no manual company curation. Company directories come from the public [job-board-aggregator](https://github.com/Feashliaa/job-board-aggregator) dataset, cached in `data/cache/` for 24 hours.
+Reverse ATS discovery scanner. Where `src/scan/scan.mjs` scans the companies you track in `workspace/search/portals.yml`, this inverts the direction: it walks public directories of companies per ATS (Greenhouse, Lever, Ashby, Workday) and surfaces fresh postings matching your `workspace/search/portals.yml` `title_filter` / `location_filter` — no manual company curation. Company directories come from the public [job-board-aggregator](https://github.com/Feashliaa/job-board-aggregator) dataset, cached in `workspace/.state/cache/` for 24 hours.
 
-Postings without a usable publish date are skipped — a reverse scan is only useful for fresh postings. New matches are appended to `data/pipeline.md` and `data/scan-history.tsv` in the same format as `src/scan/scan.mjs`.
+Postings without a usable publish date are skipped — a reverse scan is only useful for fresh postings. New matches are appended to `workspace/search/pipeline.md` and `workspace/.state/scan-history.tsv` in the same format as `src/scan/scan.mjs`.
 
-`data/blacklist.md` is respected here too: blacklisted companies are skipped by default and reported in the summary. Pass `--include-blacklisted` to audit them instead; matching postings flow through annotated (`note: blacklisted: {reason}` in `data/pipeline.md`).
+`workspace/search/blacklist.md` is respected here too: blacklisted companies are skipped by default and reported in the summary. Pass `--include-blacklisted` to audit them instead; matching postings flow through annotated (`note: blacklisted: {reason}` in `workspace/search/pipeline.md`).
 
 ### Cross-listing detection
 
-`data/scan-history.tsv` carries a **SimHash fingerprint** of the JD text in its 8th column (`jd_fingerprint`), and the original posting date in its 9th column (`postedAt`). The fingerprint column exists to catch a specific double-submission hazard: the same role posted by the direct employer **and** by a recruitment agency, often with the employer name stripped from the agency listing. URL dedup and company+role dedup both miss this pair because the URLs and company names are different — but agencies rarely rewrite the requirements text, so a near-identical JD body is a reliable signal.
+`workspace/.state/scan-history.tsv` carries a **SimHash fingerprint** of the JD text in its 8th column (`jd_fingerprint`), and the original posting date in its 9th column (`postedAt`). The fingerprint column exists to catch a specific double-submission hazard: the same role posted by the direct employer **and** by a recruitment agency, often with the employer name stripped from the agency listing. URL dedup and company+role dedup both miss this pair because the URLs and company names are different — but agencies rarely rewrite the requirements text, so a near-identical JD body is a reliable signal.
 
 The 12th column (`normalized_company`) stores the **canonical company key** — the raw company (col 5) run through the shared `normalizeCompanyName` (lowercased, punctuation/whitespace folded, trailing legal-entity suffixes stripped), so `Acme Inc.`, `Acme, Inc.` and `ACME  Inc` all resolve to `acme`. It is written at scan time so repost/name matching (`src/analysis/detect-reposts.mjs`) keys on a stable value instead of re-deriving it or routing a legitimacy signal through script execution. The column is **additive and trailing**: rows written before it existed simply omit it, and consumers normalize the raw company on the fly for those rows (backward-compatible). All columns beyond col 7 are append-only — index-based readers (including the web parser, which reads only cols 0-6) are unaffected.
 
@@ -478,7 +478,7 @@ npm run scan:seeds                             # probe VC portfolio seed compani
 npm run scan:yc                                # Y Combinator portfolio only (--seeds yc)
 ```
 
-Long reverse-ATS sweeps publish `data/cache/ats-full-checkpoint.json` through
+Long reverse-ATS sweeps publish `workspace/.state/cache/ats-full-checkpoint.json` through
 the shared fsync-backed atomic writer. `SIGINT`/`SIGTERM` therefore preserves a
 complete resume point; a failed replacement leaves the previous checkpoint
 readable, and test processes cannot overwrite or delete the live checkpoint.
@@ -488,13 +488,13 @@ and probes those companies via the ATS providers instead of (or in addition
 to) the directory walk. Other flags: `--verbose`, `--json`, `--include-undated`,
 `--shuffle`.
 
-**Exit codes:** `0` scan completed, `1` configuration error (no portals.yml, unknown `--ats` source) or fatal scan error.
+**Exit codes:** `0` scan completed, `1` configuration error (no workspace/search/portals.yml, unknown `--ats` source) or fatal scan error.
 
 ---
 
 ## tracker
 
-SQLite **derived index** for the applications tracker (RFC #918, phase 1). `data/applications.md` stays the source of truth; `data/applications.db` is built from it by `sync` and is safe to delete at any time — it regenerates on the next sync. All writes keep going to the markdown exactly as today (`src/tracker/merge-tracker.mjs`, hand edits); the index is read-only infrastructure.
+SQLite **derived index** for the applications tracker (RFC #918, phase 1). `workspace/applications/tracker.md` stays the source of truth; `workspace/.state/applications.db` is built from it by `sync` and is safe to delete at any time — it regenerates on the next sync. All writes keep going to the markdown exactly as today (`src/tracker/merge-tracker.mjs`, hand edits); the index is read-only infrastructure.
 
 Why: at hundreds of rows a markdown table degrades structurally (encoding corruption, column drift, `|` inside cells shifting columns), and agents grepping it get model-dependent results. The index normalizes on sync, so a query returns the same rows for every model on every CLI — and corruption is detected at sync time instead of propagating silently.
 
@@ -526,7 +526,7 @@ index and is not a future primary-store mode.
 
 ## find
 
-Resolves a report number, tracker number, or company/role fragment to its full pipeline identity: company, role, tracker#, report#, canonical status, PDF path (from `data/pdf-index.tsv`), and report path. "Apply to #13" is ambiguous — report numbers and tracker row numbers diverge — and answering it used to require opening three files; this does it in one read-only lookup.
+Resolves a report number, tracker number, or company/role fragment to its full pipeline identity: company, role, tracker#, report#, canonical status, PDF path (from `workspace/.state/pdf-index.tsv`), and report path. "Apply to #13" is ambiguous — report numbers and tracker row numbers diverge — and answering it used to require opening three files; this does it in one read-only lookup.
 
 Zero dependencies, strictly read-only. Numeric queries match **both** the tracker # column and the report number from the Report link (`012` and `12` are the same number), so collisions between the two numbering schemes surface as multiple rows instead of a silent wrong pick. Text queries match company/role by case-insensitive substring, with the shared fuzzy matcher (`src/tracker/role-matcher.mjs`) as fallback for multi-word phrases.
 
@@ -551,7 +551,7 @@ subject/from/body into the exact bounded candidate shape
 `src/tracker/reply-watch.mjs` expects and appends it under a shared lock.
 Concurrent writers cannot overwrite one another, and interrupted replacements
 preserve the prior JSON. It does not classify the reply itself and never runs
-`src/tracker/reply-watch.mjs` or touches `data/applications.md`.
+`src/tracker/reply-watch.mjs` or touches `workspace/applications/tracker.md`.
 
 ```bash
 npm run paste-reply                    # interactive: prompts for subject, from, body
@@ -589,7 +589,7 @@ npm run or:apply                # application assistance
 
 ## reconcile
 
-Syncs the `data/pipeline.md` "Pendientes" section with `batch/batch-state.tsv`.
+Syncs the `workspace/search/pipeline.md` "Pendientes" section with `workspace/.state/batch-state.tsv`.
 `batch-runner.sh` records evaluated offers in the state file but never writes
 back to `pipeline.md`, so batch-processed offers would otherwise be
 re-surfaced by every later scan or pipeline run.
@@ -608,7 +608,7 @@ same Playwright pipeline as CVs.
 
 ```bash
 npm run cover-letter -- payload.json
-node src/cv/generate-cover-letter.mjs --payload payload.json --out output/slug-cover.pdf
+node src/cv/generate-cover-letter.mjs --payload payload.json --out workspace/documents/slug-cover.pdf
 ```
 
 ---
@@ -628,7 +628,7 @@ npm run verify:portals
 
 ## reposts
 
-Repost detector. Reads `data/scan-history.tsv`, fuzzy-matches role titles per
+Repost detector. Reads `workspace/.state/scan-history.tsv`, fuzzy-matches role titles per
 company, and flags any company+role listed 2+ times with different URLs
 within a 90-day window — a strong ghost-job / re-listing signal.
 
@@ -642,7 +642,7 @@ node src/analysis/detect-reposts.mjs --summary
 ## gemini:eval / ollama:eval / openai:eval
 
 Standalone evaluators — run the same evaluation logic
-(`modes/oferta.md` + `modes/_shared.md` + `cv.md`) without an interactive AI
+(`modes/oferta.md` + `modes/_shared.md` + `workspace/profile/cv.md`) without an interactive AI
 CLI:
 
 - `gemini:eval` — Google Gemini free tier (`GEMINI_API_KEY` in `.env`)
@@ -652,7 +652,7 @@ CLI:
 
 ```bash
 npm run gemini:eval -- "We are looking for a Senior AI Engineer..."
-node src/evaluate/gemini-eval.mjs --file ./jds/my-job.txt
+node src/evaluate/gemini-eval.mjs --file ./workspace/jobs/descriptions/my-job.txt
 npm run ollama:eval -- "JD text"
 npm run openai:eval -- "JD text"
 ```
@@ -662,7 +662,7 @@ npm run openai:eval -- "JD text"
 ## star
 
 Zero-LLM, zero-browser behavioural question matcher. Parses
-`interview-prep/story-bank.md`, scores each STAR story against the question
+`workspace/interviews/story-bank.md`, scores each STAR story against the question
 text (optionally plus a JD file), and returns the top matches formatted to
 ATS paste length (250-500 words).
 
@@ -687,7 +687,7 @@ npm run archive -- https://example.com/job/123
 ## prepare:application
 
 ATS auto-fill helper for Greenhouse, Ashby, and Lever. Detects the ATS from
-the apply URL, reads candidate data from `config/profile.yml`, and prints a
+the apply URL, reads candidate data from `workspace/profile/profile.yml`, and prints a
 prefill summary to stdout. **Never POSTs anything** — you review the output,
 open the apply URL, and submit yourself. See
 [APPLY_AUTOFILL.md](APPLY_AUTOFILL.md).
@@ -707,12 +707,12 @@ These have no `npm run` binding — modes and agents call them with
 |------------|---------|
 | `node src/tracker/set-status.mjs <report#\|company> <State> [--note]` | Canonical tracker write path: strict states.yml validation, shared lock, fsync-backed atomic publication and test user-data protection. Modes call this instead of hand-editing `applications.md` |
 | `node src/tracker/followup-cadence.mjs [--summary]` | Follow-up cadence per active application; flags overdue entries |
-| `node src/tracker/followup-seed.mjs [--backfill]` | Seed `data/follow-ups.md` with a pinned first follow-up date when a row turns Applied; shared owner-verified locking and atomic publication preserve concurrent pins and prior bytes after interruption |
-| `node src/tracker/reply-watch.mjs` | Classify employer replies from `data/reply-candidates.json`, match to tracker rows, print a review digest |
-| `node src/analysis/process-quality.mjs [--summary]` | Aggregate `[process-friction]` tags from `data/active-interviews.md` per company |
+| `node src/tracker/followup-seed.mjs [--backfill]` | Seed `workspace/applications/follow-ups.md` with a pinned first follow-up date when a row turns Applied; shared owner-verified locking and atomic publication preserve concurrent pins and prior bytes after interruption |
+| `node src/tracker/reply-watch.mjs` | Classify employer replies from `workspace/applications/reply-candidates.json`, match to tracker rows, print a review digest |
+| `node src/analysis/process-quality.mjs [--summary]` | Aggregate `[process-friction]` tags from `workspace/applications/active-interviews.md` per company |
 | `node src/tracker/reserve-report-num.mjs [--count N]` | Atomically reserve report numbers for parallel workers (fixes the #749 race) |
 | `node src/tracker/agent-inbox.mjs add "..."` | Atomically append a request to the queue the agent drains at the next session start; concurrent local clients are serialized |
-| `node src/scan/discover-ats.mjs --in companies.yml [--write]` | Resolve companies to supported public ATS boards; preview by default, or validate and transactionally append unique boards to `portals.yml` with `--write` |
+| `node src/scan/discover-ats.mjs --in companies.yml [--write]` | Resolve companies to supported public ATS boards; preview by default, or validate and transactionally append unique boards to `workspace/search/portals.yml` with `--write` |
 | `node src/cv/generate-latex.mjs <input.tex> [output.pdf]` | Validate and compile a generated `.tex` CV via tectonic or pdflatex |
 | `node src/analysis/classify-tier.mjs` | Classify a job title into intern / entry / mid / senior |
 
@@ -720,7 +720,7 @@ These have no `npm run` binding — modes and agents call them with
 
 ## src/analysis/stats.mjs
 
-Aggregates lifetime pipeline stats into one JSON report. Stats include tracker, scanner, portals, follow-ups and runs. Reads from data/applications.md, data/scan-history.tsv, portals.yml, data/follow-ups.md and data/scan-runs.tsv. If a file doesn't exist yet, the section turns into null.
+Aggregates lifetime pipeline stats into one JSON report. Stats include tracker, scanner, portals, follow-ups and runs. Reads from workspace/applications/tracker.md, workspace/.state/scan-history.tsv, workspace/search/portals.yml, workspace/applications/follow-ups.md and workspace/.state/scan-runs.tsv. If a file doesn't exist yet, the section turns into null.
 
 ```bash
 node src/analysis/stats.mjs --summary             # returns human-readable table
@@ -755,16 +755,16 @@ With --summary it returns:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Pipeline Stats — 2026-07-07
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Tracker:    — no data (data/applications.md missing)
-Scanner:    — no data (data/scan-history.tsv missing)
-Portals:    — no data (portals.yml missing)
-Follow-ups: — no data (data/follow-ups.md missing)
-Runs:       — no data (data/scan-runs.tsv missing; created by the next scan)
+Tracker:    — no data (workspace/applications/tracker.md missing)
+Scanner:    — no data (workspace/.state/scan-history.tsv missing)
+Portals:    — no data (workspace/search/portals.yml missing)
+Follow-ups: — no data (workspace/applications/follow-ups.md missing)
+Runs:       — no data (workspace/.state/scan-runs.tsv missing; created by the next scan)
 ```
 
 ---
 
-## data/scan-runs.tsv
+## workspace/.state/scan-runs.tsv
 
 `src/scan/scan.mjs` appends one row to this file after each non-dry scan run, recording how many companies/boards it checked, how many postings it found vs. filtered out vs. flagged as duplicates vs. added, and how many errors occurred. `--dry-run` scans never write to this file. Stats appended include:
 
@@ -782,6 +782,6 @@ Runs:       — no data (data/scan-runs.tsv missing; created by the next scan)
 * `dupes` — duplicate postings skipped
 * `new_added` — new postings actually added to the pipeline
 * `errors` — number of errors during the run
-* `filtered_blacklist` — skipped because the company is on your `data/blacklist.md` do-not-apply list (#1742)
+* `filtered_blacklist` — skipped because the company is on your `workspace/search/blacklist.md` do-not-apply list (#1742)
 
 As the project is in continuous development, to parse for a stat we recommend doing it by column header instead of position.

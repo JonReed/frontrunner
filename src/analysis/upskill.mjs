@@ -4,7 +4,7 @@
  *
  * Reads the tracker + every linked evaluation report, extracts skill tokens
  * from each report's gaps (Machine Summary hard_stops/soft_gaps + Gap table),
- * removes anything already present in cv.md / config/profile.yml, and emits a
+ * removes anything already present in workspace/profile/cv.md / workspace/profile/profile.yml, and emits a
  * weighted, tiered gap map as JSON for the `upskill` mode to narrate.
  *
  * Weighting: each report contributes (5.0 − score) per skill it names — a
@@ -35,11 +35,11 @@ import {
 import { LIVENESS_CONTEXT_OPTIONS } from '../scan/liveness-browser.mjs';
 
 import { ROOT as FRONTRUNNER } from '#paths';
-const APPS_FILE = existsSync(join(FRONTRUNNER, 'data/applications.md'))
-  ? join(FRONTRUNNER, 'data/applications.md')
+const APPS_FILE = existsSync(join(FRONTRUNNER, 'workspace/applications/tracker.md'))
+  ? join(FRONTRUNNER, 'workspace/applications/tracker.md')
   : join(FRONTRUNNER, 'applications.md');
-const CV_FILE = join(FRONTRUNNER, 'cv.md');
-const PROFILE_FILE = join(FRONTRUNNER, 'config/profile.yml');
+const CV_FILE = join(FRONTRUNNER, 'workspace/profile/cv.md');
+const PROFILE_FILE = join(FRONTRUNNER, 'workspace/profile/profile.yml');
 
 // Bump when extraction rules change in a way that would make gap lists from
 // older runs non-comparable. The upskill mode's diff-vs-previous section only
@@ -287,7 +287,7 @@ function printSummary(result) {
   }
   if (result.excludedAsKnown.length > 0) {
     console.log('');
-    console.log(`Excluded (already in cv.md/profile): ${result.excludedAsKnown.map(e => e.skill).join(', ')}`);
+    console.log(`Excluded (already in workspace/profile/cv.md/profile): ${result.excludedAsKnown.map(e => e.skill).join(', ')}`);
   }
 }
 
@@ -493,7 +493,7 @@ if (urlTextIdx !== -1 || directUrl) {
     }
 
     // Assemble the known-skills text (cv + profile), matching aggregate mode.
-    // Targeted mode additionally falls back to cv-example.md when cv.md is absent
+    // Targeted mode additionally falls back to cv-example.md when workspace/profile/cv.md is absent
     // so a fresh checkout still produces a meaningful comparison.
     const knownTextChunks = [];
     if (existsSync(PROFILE_FILE)) {

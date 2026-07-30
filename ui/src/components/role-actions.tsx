@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   moveRole,
@@ -90,6 +90,8 @@ export function RoleActions({
   onSaved?: (message: string, undo: WorkflowHandle) => void;
 }) {
   const router = useRouter();
+  const menuRef = useRef<HTMLDetailsElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [confirming, setConfirming] = useState<'withdraw' | 'rejected' | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [undoHandle, setUndoHandle] = useState<WorkflowHandle | null>(null);
@@ -109,6 +111,30 @@ export function RoleActions({
     const timer = window.setTimeout(() => router.refresh(), 7_000);
     return () => window.clearTimeout(timer);
   }, [notice, onSaved, router]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const closeMenu = () => {
+      setMenuOpen(false);
+      setConfirming(null);
+    };
+    const dismissOnOutsidePress = (event: PointerEvent) => {
+      if (event.target instanceof Node && !menuRef.current?.contains(event.target)) {
+        closeMenu();
+      }
+    };
+    const dismissOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeMenu();
+    };
+
+    document.addEventListener('pointerdown', dismissOnOutsidePress);
+    document.addEventListener('keydown', dismissOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', dismissOnOutsidePress);
+      document.removeEventListener('keydown', dismissOnEscape);
+    };
+  }, [menuOpen]);
 
   const runMove = (move: Move) => {
     setError(null);
@@ -199,7 +225,12 @@ export function RoleActions({
         ) : null}
 
         {stage !== 'closed' && (
-          <details className="relative">
+          <details
+            ref={menuRef}
+            open={menuOpen}
+            onToggle={(event) => setMenuOpen(event.currentTarget.open)}
+            className="relative"
+          >
             <summary className="flex min-h-[40px] cursor-pointer list-none items-center gap-1 rounded-lg px-2.5 text-sm font-medium text-[var(--color-ink-faint)] hover:bg-[var(--color-paper)] hover:text-[var(--color-ink)] sm:min-h-0 sm:py-2">
               More
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">

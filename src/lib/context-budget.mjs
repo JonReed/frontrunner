@@ -221,7 +221,7 @@ export function compressSharedContext(sharedContent, targetReduction) {
 /**
  * Build a token-budgeted context body for job offer evaluation.
  *
- * Assembles the context sections from _shared.md, oferta.md, cv.md, and
+ * Assembles the context sections from _shared.md, oferta.md, workspace/profile/cv.md, and
  * optional profile files. If the total estimated tokens exceed the available
  * budget, lower-priority sections of _shared.md are compressed.
  *
@@ -232,7 +232,7 @@ export function compressSharedContext(sharedContent, targetReduction) {
  * @param {object} opts
  * @param {string} opts.sharedContent   - Raw _shared.md content.
  * @param {string} opts.ofertaContent   - Raw oferta.md content (evaluation mode).
- * @param {string} opts.cvContent       - Raw cv.md content (candidate resume).
+ * @param {string} opts.cvContent       - Raw workspace/profile/cv.md content (candidate resume).
  * @param {string} [opts.profileYml]    - Raw profile.yml content (optional).
  * @param {string} [opts.profileContent] - Raw _profile.md content (optional).
  * @param {string} opts.jdText          - The job description text to evaluate.
@@ -267,7 +267,7 @@ export function buildBudgetedPrompt(opts) {
   const sectionDefs = [
     { name: '_shared.md', content: sharedContent, compressible: true },
     { name: 'oferta.md', content: ofertaContent, compressible: false },
-    { name: 'cv.md', content: cvContent, compressible: false },
+    { name: 'workspace/profile/cv.md', content: cvContent, compressible: false },
   ];
 
   if (profileYml) {
@@ -356,8 +356,8 @@ function assembleContext(sections) {
   const labels = {
     '_shared.md':   'SYSTEM CONTEXT (_shared.md)',
     'oferta.md':    'EVALUATION MODE (oferta.md)',
-    'cv.md':        'CANDIDATE RESUME (cv.md)',
-    'profile.yml':  'CANDIDATE PROFILE & TARGETS (config/profile.yml)',
+    'workspace/profile/cv.md':        'CANDIDATE RESUME (workspace/profile/cv.md)',
+    'profile.yml':  'CANDIDATE PROFILE & TARGETS (workspace/profile/profile.yml)',
     '_profile.md':  'USER ARCHETYPES & NARRATIVE (_profile.md)',
     'JD':           'JOB DESCRIPTION',
   };

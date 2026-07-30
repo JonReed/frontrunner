@@ -9,7 +9,7 @@
 
 import { spawn } from 'node:child_process';
 import { join } from 'node:path';
-import { ROOT } from './roles';
+import { ROOT } from './root';
 
 const FOLLOWUP_CADENCE = join(ROOT, 'src', 'tracker', 'followup-cadence.mjs');
 const OUTPUT_LIMIT = 512 * 1024;

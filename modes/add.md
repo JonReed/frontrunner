@@ -2,12 +2,12 @@
 
 Fetch a finished project / paper / internship from a link (or plain text), turn
 it into ATS-style CV content **grounded only in what the source actually says**,
-preview it, and — after you confirm — append it to `cv.md` and (for projects)
-`article-digest.md`. Deterministic dedup and insertion are handled by
+preview it, and — after you confirm — append it to `workspace/profile/cv.md` and (for projects)
+`workspace/profile/article-digest.md`. Deterministic dedup and insertion are handled by
 `src/tracker/add-entry.mjs`, so re-adding the same thing is a safe no-op.
 
 > **Non-negotiables (from the project's source-of-truth rules in `_shared.md`):**
-> - **Confirm before write.** Never touch `cv.md` / `article-digest.md` until the
+> - **Confirm before write.** Never touch `workspace/profile/cv.md` / `workspace/profile/article-digest.md` until the
 >   user approves the preview.
 > - **Never fabricate.** Every bullet, metric, and date must be backed by the
 >   fetched page or the user's own words. If the source doesn't state it, it does
@@ -27,8 +27,8 @@ If no source was given, ask the user for one.
 
 ## Pipeline
 
-1. **Load context.** Read `cv.md` (its existing section names and formatting are
-   the template to match) and `article-digest.md` if present.
+1. **Load context.** Read `workspace/profile/cv.md` (its existing section names and formatting are
+   the template to match) and `workspace/profile/article-digest.md` if present.
 2. **Fetch the source (zero-key):**
    - **GitHub repo** → the public REST API (`https://api.github.com/repos/<owner>/<repo>`
      for name/description/topics/language/stars/timestamps) **plus** the README
@@ -43,12 +43,12 @@ If no source was given, ask the user for one.
    inferred, but shown in the preview; only ask the user when it's genuinely
    ambiguous.
 5. **Write ATS bullets from the extracted facts** — 2–4 concise, quantified-where-the-
-   source-supports-it bullets, matching the bullet style already used in `cv.md`.
-   For a **project**, also compose an `article-digest.md` block (`## <Name> — <tagline>`
+   source-supports-it bullets, matching the bullet style already used in `workspace/profile/cv.md`.
+   For a **project**, also compose an `workspace/profile/article-digest.md` block (`## <Name> — <tagline>`
    with `**Hero metrics:**`, `**Architecture:**`, `**Key decisions:**`,
    `**Proof points:**`), filling only what the source supports.
 6. **Preview.** Show, as a diff-style preview: the inferred CV section, the exact
-   markdown to be inserted into `cv.md`, and (for projects) the `article-digest.md`
+   markdown to be inserted into `workspace/profile/cv.md`, and (for projects) the `workspace/profile/article-digest.md`
    block. Flag anything you could not source.
 7. **Confirm gate.** Ask the user to approve, edit, or cancel. Do **not** proceed
    without an explicit yes.
@@ -99,7 +99,7 @@ that's already there, so the command is idempotent.
 
 ## Rules
 
-- Match the existing `cv.md` formatting exactly (heading levels, bullet style,
+- Match the existing `workspace/profile/cv.md` formatting exactly (heading levels, bullet style,
   date format) — the file is the template.
 - One entry per run. To add several, run `add` per item.
 - If the fetch fails or the page has no usable content, say so and stop — never

@@ -6,7 +6,7 @@ Take a list of companies and resolve each to a scannable ATS board by probing
 the public JSON APIs frontrunner already supports — Greenhouse, Ashby, Lever, and
 Workday — via the existing `providers/` layer. Zero LLM tokens, zero auth. A
 company "resolves" when a vendor's board exists AND currently lists ≥1 job.
-Confirmed entries are appended to `portals.yml` `tracked_companies` (deduped,
+Confirmed entries are appended to `workspace/search/portals.yml` `tracked_companies` (deduped,
 idempotent, comment-preserving). Companies that don't resolve — JS-rendered
 portals or non-standard slugs — are flagged for manual follow-up instead of
 being silently dropped.
@@ -40,7 +40,7 @@ reusable tool that feeds the scanner.
       workday: { tenant: salesforce, site: External_Career_Site }  # instance auto-probed
   ```
 
-- `portals.yml` — dedupe target and write destination (user layer). Honors the
+- `workspace/search/portals.yml` — dedupe target and write destination (user layer). Honors the
   `FRONTRUNNER_PORTALS` env override for scratch/testing.
 
 ## Step 1 — Run the script
@@ -51,7 +51,7 @@ Preview (the default — writes nothing, prints the entries it would add):
 node src/scan/discover-ats.mjs --in companies.yml
 ```
 
-Write — the user must explicitly opt in with `--write` to modify `portals.yml`
+Write — the user must explicitly opt in with `--write` to modify `workspace/search/portals.yml`
 (a user-layer file; it is never auto-touched). This updates the file on disk;
 it does not create a Git commit:
 
@@ -95,13 +95,13 @@ careers_url) and the unresolved list with reasons. Call out:
   "add a hint" reason, grab its careers URL (one click from the company's jobs
   page → the `<tenant>.wd<N>.myworkdayjobs.com/<site>` address bar) and add it as
   a `workday:` hint, then re-run. discover-ats confirms it live and adds it — no
-  manual portals.yml editing. If you have the tenant + site but not the instance,
+  manual workspace/search/portals.yml editing. If you have the tenant + site but not the instance,
   give `workday: {tenant, site}` and the instance is auto-probed.
 - **camelCase Ashby slugs** (e.g. `DeepL`, `AlephAlpha`): if a company you know
   is on Ashby came back unresolved, its slug is likely mixed-case — re-run with
   an explicit `slug:` in the input file (derived slugs are lowercased).
 - **Genuinely unknown**: for a JS-only portal with no ATS API, paste a specific
-  JD into `data/pipeline.md` and run `/frontrunner pipeline`.
+  JD into `workspace/search/pipeline.md` and run `/frontrunner pipeline`.
 
 ## Step 3 — Handoff
 
@@ -115,7 +115,7 @@ like `eu-fintech`) to pull matching roles from the newly tracked boards.
 - **Workday needs a hint, never a guess:** resolve Workday only from a
   user-supplied URL or `{tenant, site}` — never brute-force site names. The
   instance (and only the instance) may be auto-probed from a bounded list.
-- **portals.yml is user-layer — never auto-written:** the run is preview-only by
+- **workspace/search/portals.yml is user-layer — never auto-written:** the run is preview-only by
   default and touches nothing; only an explicit `--write` appends entries (via a
   comment-preserving, atomic text splice). Show the user the preview and let them
   confirm before you ever pass `--write`.

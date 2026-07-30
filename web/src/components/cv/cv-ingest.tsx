@@ -308,7 +308,7 @@ export function CvIngest({ onSaved }: { onSaved?: () => void }) {
           <RotateCcw className="size-3.5" /> Start over
         </button>
         <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-faint">
-          <Lock className="size-3" /> Saved locally to cv.md
+          <Lock className="size-3" /> Saved locally to workspace/profile/cv.md
         </span>
       </div>
     </div>

@@ -23,7 +23,7 @@ Codex may not expose a native `/frontrunner` slash command. When it does not, as
 ```text
 Evaluate this JD with frontrunner auto-pipeline: https://company.com/jobs/123
 Run the frontrunner scan mode and summarize new matches.
-Run the frontrunner pipeline mode for data/pipeline.md.
+Run the frontrunner pipeline mode for workspace/search/pipeline.md.
 Run the frontrunner pdf mode for the latest evaluated role.
 Run the frontrunner email mode for the latest evaluated role. Draft only; never sends, submits, or clicks.
 Run the frontrunner tracker mode and summarize the current statuses.
@@ -36,7 +36,7 @@ For single commands or batch workers, use `codex exec`:
 ```bash
 codex exec "Evaluate this JD with frontrunner auto-pipeline: https://company.com/jobs/123"
 codex exec "Run frontrunner scan mode in this repo and summarize new matches."
-codex exec "Run frontrunner pipeline mode for data/pipeline.md."
+codex exec "Run frontrunner pipeline mode for workspace/search/pipeline.md."
 codex exec "Run frontrunner pdf mode for the latest evaluated role."
 codex exec "Run frontrunner email mode for the latest evaluated role. Draft only; do not send, submit, or click anything."
 codex exec "Run frontrunner tracker mode and summarize the current statuses."

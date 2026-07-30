@@ -7,7 +7,7 @@
  *
  * Usage:
  *   node src/evaluate/gemini-eval.mjs "Paste full JD text here"
- *   node src/evaluate/gemini-eval.mjs --file ./jds/my-job.txt
+ *   node src/evaluate/gemini-eval.mjs --file ./workspace/jobs/descriptions/my-job.txt
  *
  * Requires:
  *   GEMINI_API_KEY in .env (or environment variable)
@@ -65,11 +65,11 @@ try {
 // ---------------------------------------------------------------------------
 import { ROOT } from '#paths';
 const PATHS = {
-  cv:          join(ROOT, 'cv.md'),
-  profile:     join(ROOT, 'modes', '_profile.md'),
-  profileYml:  join(ROOT, 'config', 'profile.yml'),
-  articleDigest: join(ROOT, 'article-digest.md'),
-  customRules: join(ROOT, 'modes', '_custom.md'),
+  cv:          join(ROOT, 'workspace/profile/cv.md'),
+  profile:     join(ROOT, 'workspace', 'profile', 'targeting.md'),
+  profileYml:  join(ROOT, 'workspace', 'profile', 'profile.yml'),
+  articleDigest: join(ROOT, 'workspace/profile/article-digest.md'),
+  customRules: join(ROOT, 'workspace', 'profile', 'preferences.md'),
 };
 
 // ---------------------------------------------------------------------------
@@ -87,13 +87,13 @@ if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
 
   USAGE
     node src/evaluate/gemini-eval.mjs "<JD text>"
-    node src/evaluate/gemini-eval.mjs --file ./jds/my-job.txt
+    node src/evaluate/gemini-eval.mjs --file ./workspace/jobs/descriptions/my-job.txt
     node src/evaluate/gemini-eval.mjs --model gemini-3.6-flash "<JD text>"
 
   OPTIONS
     --file <path>    Read JD from a file instead of inline text
     --model <name>   Gemini model to use (default: gemini-3.6-flash)
-    --no-save        Do not save report to reports/ directory
+    --no-save        Do not save report to workspace/reports/evaluations/ directory
     --help           Show this help
 
   SETUP
@@ -103,7 +103,7 @@ if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
 
   EXAMPLES
     node src/evaluate/gemini-eval.mjs "We are looking for a Senior AI Engineer..."
-    node src/evaluate/gemini-eval.mjs --file ./jds/openai-swe.txt
+    node src/evaluate/gemini-eval.mjs --file ./workspace/jobs/descriptions/openai-swe.txt
 `);
   process.exit(0);
 }
@@ -171,9 +171,9 @@ function readFile(path, label) {
 // ---------------------------------------------------------------------------
 console.log('\n📂  Loading context files...');
 
-const cvContent      = readFile(PATHS.cv,          'cv.md');
-const profileContent = readFile(PATHS.profile,     'modes/_profile.md');
-const profileYml     = readFile(PATHS.profileYml,  'config/profile.yml');
+const cvContent      = readFile(PATHS.cv,          'workspace/profile/cv.md');
+const profileContent = readFile(PATHS.profile,     'workspace/profile/targeting.md');
+const profileYml     = readFile(PATHS.profileYml,  'workspace/profile/profile.yml');
 const articleDigest  = existsSync(PATHS.articleDigest) ? readFileSync(PATHS.articleDigest, 'utf8').trim() : '';
 const customRules    = existsSync(PATHS.customRules) ? readFileSync(PATHS.customRules, 'utf8').trim() : '';
 const languageInstruction = outputLanguageInstruction(parseOutputLanguage(profileYml));
@@ -290,8 +290,8 @@ if (saveReport) {
       tool: `Gemini (${modelName})`,
       rootDir: ROOT,
     });
-    console.log(`\n✅  Report saved: reports/${artifact.filename}`);
-    console.log('📊  Tracker merged into data/applications.md.');
+    console.log(`\n✅  Report saved: workspace/reports/evaluations/${artifact.filename}`);
+    console.log('📊  Tracker merged into workspace/applications/tracker.md.');
   } catch (err) {
     console.warn(`⚠️   Could not publish evaluation: ${err.message}`);
     console.warn('⚠️   Any pending publication journal will be recovered on the next evaluation.');

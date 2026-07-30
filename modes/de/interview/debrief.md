@@ -18,10 +18,10 @@ Erfasse nach einem echten Interview, was gefragt wurde, bewerte, was gesessen ha
 2. **Name und Rolle des Interviewers** — informiert die Prognose der nächsten Runde
 3. **Ausgang der Runde** (falls bekannt) — weiter / abgelehnt / offen
 4. **Details zur nächsten Runde** (falls bekannt) — Format, Interviewer, Zeitplan
-5. **Question Bank** unter `interview-prep/question-bank.md` — mit echten Daten aktualisieren
-6. **Story Bank** unter `interview-prep/story-bank.md` — neue Stories ergänzen, falls welche auftauchen
-7. **Lebenslauf** unter `cv.md` + `article-digest.md` (falls vorhanden) — um vorgeschlagene Antworten in echter Erfahrung zu verankern
-8. **Retracted Claims** unter `interview-prep/retracted-claims.md` (falls vorhanden) — hartes Gate; verwende eine zurückgezogene Aussage nie in einer vorgeschlagenen Antwort, selbst wenn der Kandidat sie im Interview gesagt hat
+5. **Question Bank** unter `workspace/interviews/question-bank.md` — mit echten Daten aktualisieren
+6. **Story Bank** unter `workspace/interviews/story-bank.md` — neue Stories ergänzen, falls welche auftauchen
+7. **Lebenslauf** unter `workspace/profile/cv.md` + `workspace/profile/article-digest.md` (falls vorhanden) — um vorgeschlagene Antworten in echter Erfahrung zu verankern
+8. **Retracted Claims** unter `workspace/interviews/retracted-claims.md` (falls vorhanden) — hartes Gate; verwende eine zurückgezogene Aussage nie in einer vorgeschlagenen Antwort, selbst wenn der Kandidat sie im Interview gesagt hat
 9. **Rollenspezifische Prep-Datei** — Debrief-Notizen anhängen
 
 ---
@@ -61,7 +61,7 @@ Sei direkt. Wenn sie das Kernkonzept verfehlt haben, das die Frage geprüft hat,
 
 ## Step 3 — Update Question Bank
 
-Aktualisiere für jede besprochene Frage `interview-prep/question-bank.md`:
+Aktualisiere für jede besprochene Frage `workspace/interviews/question-bank.md`:
 - Ändere den Status auf ✅ / 🟡 / 🔴 basierend auf der realen Performance
 - Ergänze Lückennotizen aus dem Debrief
 - Ergänze alle neuen Fragen, die auftauchten und noch nicht in der Bank waren
@@ -77,7 +77,7 @@ Für jede identifizierte 🔴-Lücke:
 1. **Erkläre die korrekte Antwort** — klar, prägnant, mit einem durchgearbeiteten Beispiel (Code, Berechnung, Diagramm), wo es hilft
 2. **Verknüpfe mit einer echten Story**, falls möglich — "du hast das tatsächlich in deiner [vorhandenen Story aus der Story Bank] — so verwendest du sie"
 3. **Ergänze in der rollenspezifischen Prep-Datei** unter einem Abschnitt "Gaps to Close Before Round N"
-4. **Ergänze in `interview-prep/interview-prep-guide.md`** (falls der Kandidat eine pflegt), wenn es ein wiederverwendbares Prinzip ist, das über diese Rolle hinaus gilt
+4. **Ergänze in `workspace/interviews/interview-prep-guide.md`** (falls der Kandidat eine pflegt), wenn es ein wiederverwendbares Prinzip ist, das über diese Rolle hinaus gilt
 
 ---
 
@@ -87,7 +87,7 @@ Manchmal fördert ein echtes Interview eine Story zutage, die der Kandidat nicht
 
 > "Du hast [X] in deiner Antwort erwähnt — das klingt, als könnte daraus eine richtige STAR+R-Story werden. Willst du sie jetzt ausarbeiten, solange sie frisch ist?"
 
-Falls ja, arbeite sie als STAR+R-Story aus (Situation, Task, Action, Result, Reflection) und hänge sie an `interview-prep/story-bank.md` an.
+Falls ja, arbeite sie als STAR+R-Story aus (Situation, Task, Action, Result, Reflection) und hänge sie an `workspace/interviews/story-bank.md` an.
 
 ---
 
@@ -124,7 +124,7 @@ Sei ehrlich. Eine Wahrscheinlichkeitsspanne mit klarer Begründung ist nützlich
 
 ## Step 8 — Save Debrief
 
-Hänge an `interview-prep/{company-slug}-{role-slug}.md` an:
+Hänge an `workspace/interviews/{company-slug}-{role-slug}.md` an:
 
 ```markdown
 ## Round [N] Debrief — [YYYY-MM-DD]
@@ -155,7 +155,7 @@ Hänge an `interview-prep/{company-slug}-{role-slug}.md` an:
 
 ## Step 9 — Write Session Transcript
 
-Schreibe nach dem Debrief außerdem ein maschinenlesbares Session-Transkript nach `interview-prep/sessions/{company-slug}-{role-slug}-{round}-{YYYY-MM-DD}.md`. Dies ist eine strukturierte Aufzeichnung der Runde für nachgelagerte Analysemodi; die mit Sprecher gekennzeichneten Turns lassen einen Konsumenten jede Seite lesen, ohne neu ableiten zu müssen, wer gesprochen hat. Der vollständige Contract liegt in `interview-prep/sessions/README.md`.
+Schreibe nach dem Debrief außerdem ein maschinenlesbares Session-Transkript nach `workspace/interviews/sessions/{company-slug}-{role-slug}-{round}-{YYYY-MM-DD}.md`. Dies ist eine strukturierte Aufzeichnung der Runde für nachgelagerte Analysemodi; die mit Sprecher gekennzeichneten Turns lassen einen Konsumenten jede Seite lesen, ohne neu ableiten zu müssen, wer gesprochen hat. Der vollständige Contract liegt in `workspace/interviews/sessions/README.md`.
 
 Format:
 
@@ -192,9 +192,9 @@ Regeln für das Transkript:
 
 - **Debriefe sofort.** Die Erinnerung an Interviewdetails verblasst schnell — innerhalb von Stunden sind konkrete Fragen und Reaktionen vergessen. Führe dieses Skill am selben Tag aus.
 - **Beschönige Lücken nicht.** Eine 🔴-Lücke, die aus Freundlichkeit 🟡 genannt wird, taucht in der nächsten Runde wieder auf.
-- **Leg dem Kandidaten nie erfundene Aussagen in den Mund.** Korrekte/vollständige Antworten dürfen auf allgemeinem Fachwissen beruhen, aber jede vorgeschlagene persönliche Aussage oder Kennzahl muss aus dem stammen, was der Kandidat gesagt hat, aus `cv.md`, `article-digest.md` oder der Story Bank.
-- **Retracted Claims sind ein hartes Gate.** Wenn eine Aussage in `interview-prep/retracted-claims.md` steht, schlage dem Kandidaten nie vor, sie zu verwenden — selbst wenn er sie im echten Interview gesagt hat. Kennzeichne sie: "Diese Aussage steht auf deiner Retracted-Liste — sie ist unter Druck nicht vertretbar. Hier eine Version, die nicht davon abhängt."
-- **Halte neue Retractions fest.** Fördert der Debrief eine Aussage zutage, die der Kandidat im echten Interview verwendet hat und die er nun als nicht vertretbar einräumt, biete an, sie an `interview-prep/retracted-claims.md` anzuhängen: `**"[claim]"** ([context]). Reason: [einzeiliger Grund + korrektes Framing, falls zutreffend].`
-- **Extrahiere Vokabellücken ausdrücklich.** Hat der Kandidat einen unpräzisen Begriff verwendet, wo ein präziser existiert, ergänze ihn in `interview-prep/interview-prep-guide.md` im Vokabular-Abschnitt (falls der Kandidat einen pflegt).
+- **Leg dem Kandidaten nie erfundene Aussagen in den Mund.** Korrekte/vollständige Antworten dürfen auf allgemeinem Fachwissen beruhen, aber jede vorgeschlagene persönliche Aussage oder Kennzahl muss aus dem stammen, was der Kandidat gesagt hat, aus `workspace/profile/cv.md`, `workspace/profile/article-digest.md` oder der Story Bank.
+- **Retracted Claims sind ein hartes Gate.** Wenn eine Aussage in `workspace/interviews/retracted-claims.md` steht, schlage dem Kandidaten nie vor, sie zu verwenden — selbst wenn er sie im echten Interview gesagt hat. Kennzeichne sie: "Diese Aussage steht auf deiner Retracted-Liste — sie ist unter Druck nicht vertretbar. Hier eine Version, die nicht davon abhängt."
+- **Halte neue Retractions fest.** Fördert der Debrief eine Aussage zutage, die der Kandidat im echten Interview verwendet hat und die er nun als nicht vertretbar einräumt, biete an, sie an `workspace/interviews/retracted-claims.md` anzuhängen: `**"[claim]"** ([context]). Reason: [einzeiliger Grund + korrektes Framing, falls zutreffend].`
+- **Extrahiere Vokabellücken ausdrücklich.** Hat der Kandidat einen unpräzisen Begriff verwendet, wo ein präziser existiert, ergänze ihn in `workspace/interviews/interview-prep-guide.md` im Vokabular-Abschnitt (falls der Kandidat einen pflegt).
 - **Eine Lücke = ein Fix.** Überfordere nicht mit einem vollständigen Lernplan für jede Lücke. Priorisiere die 1–2, die in der nächsten Runde am wahrscheinlichsten geprüft werden.
 - **Feiere, was funktioniert hat.** Beim Debrief geht es nicht nur um Lücken. Benenne, was stark war — das verstärkt das richtige Verhalten und baut Selbstvertrauen für die nächste Runde auf.

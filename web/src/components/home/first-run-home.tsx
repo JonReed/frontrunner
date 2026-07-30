@@ -4,7 +4,7 @@ import { instrumentSerif } from "@/lib/fonts";
 import { HeroGlow } from "@/components/hero-glow";
 import { CvIngest } from "@/components/cv/cv-ingest";
 
-// The first-run takeover: when cv.md is missing, the CV-upload hero IS the home.
+// The first-run takeover: when workspace/profile/cv.md is missing, the CV-upload hero IS the home.
 // One input, value-coming framing (not a form), the same product chrome (HeroGlow
 // + dot-bg) so it feels like the app, not a gate. The whole aha (CV → free matches
 // → first score) flows from here.

@@ -19,7 +19,7 @@
  * can be added later from My details. Blocking someone on their phone number
  * before they have seen a single job would be absurd.
  *
- * NOTHING IS SENT ANYWHERE. Said once, plainly, on the step where they paste
+ * NOTHING IS SENT ANYWHERE. Said once, plainly, on the step where they add
  * their CV — the moment the worry actually occurs — and not repeated. Constant
  * reassurance reads as a product with something to hide.
  *
@@ -54,7 +54,7 @@ const REMOTE_LABEL: Record<string, string> = {
  * tailoring, because they are the user's own words about their own work,
  * already vetted by them. Far better than anything scraped from a profile.
  *
- * But exactly one is canonical. `cv.md` is what roles are scored against, and
+ * But exactly one is canonical. `workspace/profile/cv.md` is what roles are scored against, and
  * the project's source-of-truth rules depend on there being a single answer to
  * "what does this person claim". The others are a corpus: material to draw a
  * suggestion from, never a fact that enters a CV on its own.
@@ -74,7 +74,7 @@ export interface CvEntry {
 }
 
 export interface SetupDraft {
-  /** Canonical. Becomes cv.md. */
+  /** Canonical. Becomes workspace/profile/cv.md. */
   cv: string;
   /** Additional versions, kept as reference material. */
   otherCvs: CvEntry[];
@@ -120,13 +120,12 @@ function readTextFile(file: File): Promise<string> {
  * interleaves the columns, and someone's career history is the wrong place to
  * discover that.
  *
- * mammoth is loaded on demand so its ~2MB and ten transitive dependencies stay
- * out of the bundle for the majority who paste. It runs entirely client-side,
- * which keeps "nothing is uploaded" literally true and keeps the parsing of an
- * untrusted zip archive inside the browser sandbox rather than in the server
- * process.
+ * mammoth is loaded on demand only after a Word file is chosen. It runs
+ * entirely client-side, which keeps "nothing is uploaded" literally true and
+ * keeps the parsing of an untrusted zip archive inside the browser sandbox
+ * rather than in the server process.
  *
- * Markdown rather than raw text because cv.md is markdown and the user edits
+ * Markdown rather than raw text because workspace/profile/cv.md is markdown and the user edits
  * it later — keeping their headings and bullets is the difference between a
  * file they recognise and a wall of prose.
  */
@@ -226,7 +225,8 @@ function Progress({ step }: { step: number }) {
 }
 
 /**
- * Choose a file, for the people who would rather not paste.
+ * Choose a file. This is the primary onboarding path and a quieter secondary
+ * convenience for additional CV versions.
  *
  * Text formats only, read in the browser and dropped straight into the box the
  * user can still edit. Nothing is uploaded — the file never leaves the machine,
@@ -235,9 +235,11 @@ function Progress({ step }: { step: number }) {
 function FilePicker({
   onText,
   onError,
+  primary = false,
 }: {
   onText: (text: string) => void;
   onError: (message: string | null) => void;
+  primary?: boolean;
 }) {
   // Reading a Word file means fetching the parser first. On a slow connection
   // that is a visible pause, and an unlabelled pause after choosing a file
@@ -250,8 +252,35 @@ function FilePicker({
   // tabbing here would see nothing at all. focus-within puts the ring on the
   // thing that is actually on screen.
   return (
-    <label className="inline-flex min-h-[40px] cursor-pointer items-center rounded text-sm font-medium text-[var(--color-ink-soft)] underline decoration-[var(--color-line-strong)] underline-offset-2 transition-[color] hover:text-[var(--color-act)] focus-ring-within sm:min-h-0">
-      {busy ? 'Reading…' : 'or choose a Word file'}
+    <label
+      className={
+        primary
+          ? 'flex min-h-36 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[var(--color-line-strong)] bg-[var(--color-card)] px-6 py-7 text-center transition hover:border-[var(--color-act)] hover:bg-[var(--color-paper)] focus-ring-within'
+          : 'inline-flex min-h-[40px] cursor-pointer items-center rounded text-sm font-medium text-[var(--color-ink-soft)] underline decoration-[var(--color-line-strong)] underline-offset-2 transition-[color] hover:text-[var(--color-act)] focus-ring-within sm:min-h-0'
+      }
+    >
+      {primary ? (
+        <>
+          <svg
+            width="28"
+            height="28"
+            viewBox="0 0 28 28"
+            fill="none"
+            aria-hidden="true"
+            className="mb-3 text-[var(--color-act)]"
+          >
+            <path d="M14 19V5m0 0-5 5m5-5 5 5M6 17v5h16v-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span className="font-semibold text-[var(--color-ink)]">
+            {busy ? 'Reading your Word CV…' : 'Choose your Word CV'}
+          </span>
+          <span className="mt-1 text-sm text-[var(--color-ink-faint)]">
+            .docx works best · Markdown and text also accepted
+          </span>
+        </>
+      ) : (
+        busy ? 'Reading…' : 'or choose a Word file'
+      )}
       <input
         type="file"
         className="sr-only"
@@ -290,6 +319,7 @@ let nextCvId = 0;
 export function SetupFlow() {
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<SetupDraft>(EMPTY);
+  const [pasteOpen, setPasteOpen] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -388,8 +418,8 @@ export function SetupFlow() {
             Start with your CV
           </h2>
           <p className="mt-1.5 text-[15px] text-[var(--color-ink-soft)]">
-            Paste it in — formatting does not matter. Every job found is scored against this, so
-            it is the one thing that has to be here.
+            Choose the Word document you already use. We will turn it into editable text for you
+            to check before continuing.
           </p>
           <p className="mt-3 text-sm text-[var(--color-ink-faint)]">
             It is saved as a file on this computer and never uploaded. Parts of it are sent to
@@ -397,23 +427,46 @@ export function SetupFlow() {
           </p>
 
           <div className="mt-6">
-            <Field label="Your main CV">
-              <textarea
-                value={draft.cv}
-                onChange={(e) => set('cv', e.target.value)}
-                rows={12}
-                placeholder="Paste the whole thing here…"
-                className={`${FIELD} resize-y leading-relaxed`}
-              />
-            </Field>
-            <div className="-mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-              <span className="text-sm text-[var(--color-ink-faint)]">
-                {draft.cv.trim() ? `${wordCount(draft.cv)} words` : 'Nothing yet'}
-              </span>
-              <FilePicker onText={(t) => set('cv', t)} onError={setFileError} />
-            </div>
+            <FilePicker
+              primary
+              onText={(text) => {
+                set('cv', text);
+                setPasteOpen(false);
+              }}
+              onError={setFileError}
+            />
             {fileError && (
               <p className="mt-2 text-sm text-[var(--color-attention)]">{fileError}</p>
+            )}
+
+            {!draft.cv.trim() && !pasteOpen && (
+              <button
+                type="button"
+                onClick={() => setPasteOpen(true)}
+                className="mt-4 min-h-10 cursor-pointer text-sm font-medium text-[var(--color-ink-soft)] underline decoration-[var(--color-line-strong)] underline-offset-2 transition hover:text-[var(--color-act)]"
+              >
+                Paste CV text instead
+              </button>
+            )}
+
+            {(draft.cv.trim() || pasteOpen) && (
+              <div className="mt-5">
+                <Field
+                  label={draft.cv.trim() ? 'Review your CV text' : 'Paste your CV text'}
+                  hint={draft.cv.trim() ? 'Check names, dates and headings before continuing.' : undefined}
+                >
+                  <textarea
+                    value={draft.cv}
+                    onChange={(e) => set('cv', e.target.value)}
+                    rows={12}
+                    placeholder="Paste the whole thing here…"
+                    className={`${FIELD} resize-y leading-relaxed`}
+                  />
+                </Field>
+                <p className="-mt-3 text-sm text-[var(--color-ink-faint)]">
+                  {draft.cv.trim() ? `${wordCount(draft.cv)} words` : 'Nothing yet'}
+                </p>
+              </div>
             )}
           </div>
 
@@ -429,7 +482,7 @@ export function SetupFlow() {
           */}
           <details className="mt-8 rounded-xl border border-[var(--color-line)] bg-[var(--color-card)] px-5 py-4">
             <summary className="cursor-pointer text-[15px] font-semibold">
-              Have other versions of your CV?
+              Have tailored versions of your CV?
               <span className="ml-2 font-normal text-[var(--color-ink-faint)]">optional</span>
             </summary>
             <p className="mt-3 text-sm text-[var(--color-ink-soft)]">
@@ -604,7 +657,7 @@ export function SetupFlow() {
             {[
               ['Your main CV', draft.cv.trim() ? `${wordCount(draft.cv)} words` : '—'],
               [
-                'Other versions',
+                'Tailored versions',
                 draft.otherCvs.filter((c) => c.text.trim()).length
                   ? draft.otherCvs
                       .filter((c) => c.text.trim())
@@ -674,7 +727,7 @@ export function SetupFlow() {
             disabled={!canAdvance}
             className="cursor-pointer rounded-lg bg-[var(--color-act)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-act-hover)] disabled:cursor-not-allowed disabled:bg-[var(--color-line-strong)]"
           >
-            {step === 0 && !canAdvance ? 'Paste your CV to continue' : 'Continue'}
+            {step === 0 && !canAdvance ? 'Add your CV to continue' : 'Continue'}
           </button>
         )}
       </div>

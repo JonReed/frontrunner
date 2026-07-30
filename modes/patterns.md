@@ -8,16 +8,16 @@ When interview sessions are available, it also reads *what the candidate actuall
 
 ## Inputs
 
-- `data/applications.md` — Application tracker
-- `reports/` — Individual evaluation reports
-- `config/profile.yml` — User profile (for recommendation context)
-- `modes/_profile.md` — User archetypes and framing
-- `portals.yml` — Portal config (for filter update recommendations)
-- `interview-prep/sessions/*.md` — Interview sessions (optional; drives Step 1b). Drop real-interview transcripts and mock-session files here.
+- `workspace/applications/tracker.md` — Application tracker
+- `workspace/reports/evaluations/` — Individual evaluation reports
+- `workspace/profile/profile.yml` — User profile (for recommendation context)
+- `workspace/profile/targeting.md` — User archetypes and framing
+- `workspace/search/portals.yml` — Portal config (for filter update recommendations)
+- `workspace/interviews/sessions/*.md` — Interview sessions (optional; drives Step 1b). Drop real-interview transcripts and mock-session files here.
 
 ## Minimum Threshold
 
-Before running analysis, check: does `data/applications.md` have at least 5 entries with status beyond "Evaluated" (i.e., Applied, Responded, Interview, Offer, Rejected, Discarded, SKIP)?
+Before running analysis, check: does `workspace/applications/tracker.md` have at least 5 entries with status beyond "Evaluated" (i.e., Applied, Responded, Interview, Offer, Rejected, Discarded, SKIP)?
 
 If not, tell the user:
 > "Not enough data yet -- {N}/5 applications have progressed beyond evaluation. Keep applying and come back when you have more outcomes to analyze."
@@ -98,7 +98,7 @@ via X — it converts"*, a weak one is an observation, not an accusation.
 
 ### Salary lens (optional)
 
-If compensation observations exist (report `advertised_comp` keys or `data/salary-observations.tsv` lines), run `node src/analysis/salary-gap.mjs --summary` as an additional lens: advertised→actual haircut per (company, role) and per currency, plus desired-attainment. Zero tokens — never recompute these numbers manually. Respect its data-quality section the same way as `sufficientSample`: low sample sizes are observations, not recommendations.
+If compensation observations exist (report `advertised_comp` keys or `workspace/applications/salary-observations.tsv` lines), run `node src/analysis/salary-gap.mjs --summary` as an additional lens: advertised→actual haircut per (company, role) and per currency, plus desired-attainment. Zero tokens — never recompute these numbers manually. Respect its data-quality section the same way as `sufficientSample`: low sample sizes are observations, not recommendations.
 
 ### Company History lens (optional)
 
@@ -112,7 +112,7 @@ Then present the cards, sorted silent-first (the script already orders them this
 
 ### Funnel Calibration lens (optional)
 
-If the tracker has Applied-or-beyond rows, run `node src/analysis/funnel-velocity.mjs --summary` as an additional lens: the candidate's funnel rates vs candidate-side market benchmark ranges, in-flight applications past the typical first-response window, and (once `data/status-log.tsv` has accrued transitions) median days per stage hop. Zero tokens — never recompute these numbers manually. Presentation rules (these are hard MUSTs, not style suggestions):
+If the tracker has Applied-or-beyond rows, run `node src/analysis/funnel-velocity.mjs --summary` as an additional lens: the candidate's funnel rates vs candidate-side market benchmark ranges, in-flight applications past the typical first-response window, and (once `workspace/.state/status-log.tsv` has accrued transitions) median days per stage hop. Zero tokens — never recompute these numbers manually. Presentation rules (these are hard MUSTs, not style suggestions):
 
 - **Above-range rates**: encouragement is wanted — this lens exists to counter silence-anxiety — but MUST keep the script's selection-bias note (targeted applications are expected to beat mass-platform averages). Confirmed filter quality, not market ease.
 - **Below-range rates**: calibration plus exactly one concrete action (follow-up compliance via followup mode, or score-threshold review via patterns Step 2). Never verdicts about the candidate.
@@ -124,20 +124,20 @@ If the tracker has Applied-or-beyond rows, run `node src/analysis/funnel-velocit
 
 Outcome data (Step 1) tells you *whether* you're winning. Interview sessions tell you *what role you're actually selling* in the room — a higher-resolution, lower-noise signal of role-fit than win/loss, which is confounded by comp, timing, headcount, and a dozen reasons unrelated to fit.
 
-**Run this step only if session data exists.** Check: `interview-prep/sessions/*.md` (excluding `README.md` and `.gitkeep`).
+**Run this step only if session data exists.** Check: `workspace/interviews/sessions/*.md` (excluding `README.md` and `.gitkeep`).
 
 If no sessions are present, **skip this step silently** and proceed with outcome-only analysis. This step is purely additive — the mode works fully without it, and gains resolution once sessions accumulate.
 
 If sessions exist, for each one:
 1. Separate the candidate's answers from the interviewer's questions. If speaker labels are missing, infer them (turns tagged `**Interviewer:**` / `**Candidate:**` per the session format).
-2. Determine the competency / role-signal each substantive answer demonstrates (e.g. *instructional-design*, *systems-architecture*, *data-analysis*, *stakeholder-management*, *people-leadership*). **Tags first, inference as fallback:** if the answer already carries an explicit competency tag — `<!-- competency: ... -->` per the convention in `interview-prep/sessions/README.md`, whether written by hand or emitted by a debrief tool (e.g. `interview/debrief`) — use it directly. Only infer the competency yourself when no tag is present.
+2. Determine the competency / role-signal each substantive answer demonstrates (e.g. *instructional-design*, *systems-architecture*, *data-analysis*, *stakeholder-management*, *people-leadership*). **Tags first, inference as fallback:** if the answer already carries an explicit competency tag — `<!-- competency: ... -->` per the convention in `workspace/interviews/sessions/README.md`, whether written by hand or emitted by a debrief tool (e.g. `interview/debrief`) — use it directly. Only infer the competency yourself when no tag is present.
 3. Mark whether the answer is **fluent and specific** (concrete metrics, named tools, real decisions) or **flat and generic** (hedged, vague, textbook).
 
 Then aggregate across all sessions:
 - **Where do the fluent/specific answers cluster?** That competency cluster is the role-type the candidate is *actually* strongest at — regardless of the title on their résumé.
-- Compare that cluster against (a) the archetypes in `modes/_profile.md` and (b) the distribution of roles actually applied to in `data/applications.md`.
+- Compare that cluster against (a) the archetypes in `workspace/profile/targeting.md` and (b) the distribution of roles actually applied to in `workspace/applications/tracker.md`.
 - **Surface the misfit:** if the strongest cluster (X) is under-represented in the roles applied to (Y), that is a targeting-correction signal:
-  > "Your answers consistently light up around **X**, but you're mostly applying to **Y**. Consider adding archetype X and reweighting `portals.yml` `title_filter.positive` toward it."
+  > "Your answers consistently light up around **X**, but you're mostly applying to **Y**. Consider adding archetype X and reweighting `workspace/search/portals.yml` `title_filter.positive` toward it."
 
 This is the difference between *"you're losing"* (Step 1, outcomes) and *"you're aiming at the wrong target"* (Step 1b, content). Feed the result into the Step 2 report and Step 4 recommendations.
 
@@ -145,7 +145,7 @@ This is the difference between *"you're losing"* (Step 1, outcomes) and *"you're
 
 ## Step 2 — Generate Report
 
-Write the report to `reports/pattern-analysis-{YYYY-MM-DD}.md`.
+Write the report to `workspace/reports/evaluations/pattern-analysis-{YYYY-MM-DD}.md`.
 
 ### Report Structure
 
@@ -204,7 +204,7 @@ State the data-driven minimum score and reasoning.
 *Include this section only if Step 1b ran.* Summarize, in competency terms only (no real names/companies):
 - Which competency cluster the candidate's answers are strongest at (X)
 - Which role-types they're actually applying to (Y)
-- The misfit gap and the suggested realignment (add archetype X / reweight `portals.yml`)
+- The misfit gap and the suggested realignment (add archetype X / reweight `workspace/search/portals.yml`)
 
 ## Recommendations
 
@@ -228,24 +228,24 @@ Example:
 > - Regional/global remote roles convert at 57-67% -- these are your sweet spot
 > - No positive outcomes below 4.2/5 -- consider this your score floor
 >
-> Full report: `reports/pattern-analysis-2026-04-08.md`
+> Full report: `workspace/reports/evaluations/pattern-analysis-2026-04-08.md`
 
 ## Step 4 — Offer to Apply Recommendations
 
 Ask the user if they want to act on any recommendations:
 
 > "Want me to apply any of these recommendations? I can:
-> - Update `portals.yml` to filter out geo-restricted roles
+> - Update `workspace/search/portals.yml` to filter out geo-restricted roles
 > - Set a score threshold in `_profile.md` for PDF generation
 > - Adjust archetype targeting based on what's converting
-> - Realign targeting from the session signal — add the under-targeted archetype X to `modes/_profile.md` and reweight `portals.yml` `title_filter.positive` (if Step 1b ran)
+> - Realign targeting from the session signal — add the under-targeted archetype X to `workspace/profile/targeting.md` and reweight `workspace/search/portals.yml` `title_filter.positive` (if Step 1b ran)
 >
 > Just say which ones, or 'all' to apply everything."
 
 If the user agrees:
-- For portal filter changes: edit `portals.yml`
-- For profile/archetype changes: edit `modes/_profile.md` (NEVER `_shared.md`)
-- For score threshold: add to `config/profile.yml` under a `patterns` key
+- For portal filter changes: edit `workspace/search/portals.yml`
+- For profile/archetype changes: edit `workspace/profile/targeting.md` (NEVER `_shared.md`)
+- For score threshold: add to `workspace/profile/profile.yml` under a `patterns` key
 
 ## Outcome Classification
 

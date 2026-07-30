@@ -12,11 +12,11 @@
 ```text
 1. 擷取 (DETECT)    → 讀取當前 Chrome 作用中分頁（截圖／URL／網頁標題）
 2. 辨識 (IDENTIFY)  → 從頁面中擷取公司名稱與職缺名稱
-3. 搜尋 (SEARCH)    → 比對 reports/ 目錄下已儲存的評估報告
+3. 搜尋 (SEARCH)    → 比對 workspace/reports/evaluations/ 目錄下已儲存的評估報告
 4. 載入 (LOAD)      → 讀取對應的評估報告及 H 區的擬答草稿（若存在）
 5. 校準 (COMPARE)   → 比對畫面上的職缺是否與先前評估的完全一致。若有變動，提出提示
 6. 解析 (ANALYZE)   → 辨識頁面上所有可見的表單問題輸入框
-7. 產生 (GENERATE)  → 結合報告脈絡與履歷 cv.md，為每個問題產生客製草稿
+7. 產生 (GENERATE)  → 結合報告脈絡與履歷 workspace/profile/cv.md，為每個問題產生客製草稿
 8. 呈現 (PRESENT)   → 輸出可直接複製貼上的格式化文字
 ```
 
@@ -36,7 +36,7 @@
 ## 步驟 2 — 搜尋歷史報告
 
 1. 從畫面或輸入的資訊中擷取公司名稱與職缺名稱。
-2. 在 `reports/` 目錄下搜尋對應的評估報告檔案（執行不分大小寫的模糊搜尋）。
+2. 在 `workspace/reports/evaluations/` 目錄下搜尋對應的評估報告檔案（執行不分大小寫的模糊搜尋）。
 3. 若比對成功，載入完整的評估報告內容。
 4. 檢查報告中是否有「維度 H（開放式問題擬答草稿）」，若有，以它作為回答的基礎模板。
 5. 若找不到任何歷史報告，告知求職者，並詢問是否要針對這個連結快速執行一次 `auto-pipeline` 自動評估流程。
@@ -64,7 +64,7 @@
 
 對每個問題進行歸類：
 - **維度 H 中已有擬答** → 取出並依當前表單的細部要求潤飾。
-- **新問題** → 依報告脈絡分析、STAR 故事及 `cv.md` 的量化指標現場撰寫。
+- **新問題** → 依報告脈絡分析、STAR 故事及 `workspace/profile/cv.md` 的量化指標現場撰寫。
 
 ---
 
@@ -106,7 +106,7 @@
 ## 步驟 6 — 投遞後動作
 
 當求職者確認已經成功按下「送出應徵／投遞」後，執行以下收尾與建檔工作：
-1. 使用規範的 CLI 將該職缺狀態更新為 `Applied`：`node src/tracker/set-status.mjs <report#> Applied`（不要手動編輯 `data/applications.md` 表格）。
+1. 使用規範的 CLI 將該職缺狀態更新為 `Applied`：`node src/tracker/set-status.mjs <report#> Applied`（不要手動編輯 `workspace/applications/tracker.md` 表格）。
 2. 將最終實際送出的表單回答歸檔，並更新到該報告的維度 H 區塊中，方便後續面試對照。
 3. 建議下一步行動：引導求職者使用 `/frontrunner contacto` 指令，產生直達 LinkedIn 招募負責人的開發話術。
 

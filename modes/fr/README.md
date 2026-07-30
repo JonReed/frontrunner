@@ -25,7 +25,7 @@ Claude lira alors les fichiers de ce dossier au lieu de `modes/`.
 
 ### Option 2 -- En permanence
 
-Ajoute dans `config/profile.yml` :
+Ajoute dans `workspace/profile/profile.yml` :
 
 ```yaml
 language:
@@ -52,7 +52,7 @@ Les autres modes (`scan`, `batch`, `pdf`, `tracker`, `auto-pipeline`, `deep`, `c
 
 Volontairement non traduit car vocabulaire tech standard :
 
-- `cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`, `proof point`
+- `workspace/profile/cv.md`, `pipeline`, `tracker`, `report`, `score`, `archetype`, `proof point`
 - Noms d'outils (`Playwright`, `WebSearch`, `WebFetch`, `Read`, `Write`, `Edit`, `Bash`)
 - Valeurs de statut dans le tracker (`Evaluated`, `Applied`, `Interview`, `Offer`, `Rejected`)
 - Extraits de code, chemins, commandes

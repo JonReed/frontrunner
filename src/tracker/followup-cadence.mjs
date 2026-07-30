@@ -18,11 +18,11 @@ import yaml from 'js-yaml';
 import { resolveColumns, parseTrackerRow } from './tracker-parse.mjs';
 
 import { ROOT as FRONTRUNNER } from '#paths';
-const APPS_FILE = existsSync(join(FRONTRUNNER, 'data/applications.md'))
-  ? join(FRONTRUNNER, 'data/applications.md')
+const APPS_FILE = existsSync(join(FRONTRUNNER, 'workspace/applications/tracker.md'))
+  ? join(FRONTRUNNER, 'workspace/applications/tracker.md')
   : join(FRONTRUNNER, 'applications.md');
-const FOLLOWUPS_FILE = join(FRONTRUNNER, 'data/follow-ups.md');
-const PROFILE_FILE = process.env.FRONTRUNNER_PROFILE || join(FRONTRUNNER, 'config/profile.yml');
+const FOLLOWUPS_FILE = join(FRONTRUNNER, 'workspace/applications/follow-ups.md');
+const PROFILE_FILE = process.env.FRONTRUNNER_PROFILE || join(FRONTRUNNER, 'workspace/profile/profile.yml');
 
 
 // --- CLI args ---
@@ -203,7 +203,7 @@ function readFollowups() {
 // A user can PIN an application's next follow-up date, taking precedence over
 // the computed cadence (a pin even revives a cold application) until a
 // follow-up logged on/after the pin's set-date resumes the normal schedule.
-// Stored in data/follow-ups.md as directive lines:
+// Stored in workspace/applications/follow-ups.md as directive lines:
 //   - next #42 2026-07-10 (set 2026-07-02)
 // The `(set …)` part records when the pin was made; if omitted (hand-written)
 // it defaults to the pinned date itself. The LAST pin line per application wins.
@@ -259,10 +259,10 @@ export function resolveReportPath(reportField, appsFile = APPS_FILE, repoRoot = 
   // Report links in the tracker are normalized relative to the tracker file's
   // own directory (see PR #760 — `merge-tracker.mjs --migrate`). Resolve against
   // dirname(APPS_FILE), not the project root, otherwise relative paths like
-  // `../reports/...` (the data/applications.md layout) escape above the project.
+  // `../reports/evaluations/...` (the workspace/applications/tracker.md layout) escape above the project.
   const fullPath = join(dirname(appsFile), match[1]);
   const repoRelative = relative(repoRoot, fullPath).split(sep).join('/');
-  if (repoRelative.startsWith('../') || repoRelative === '..' || !repoRelative.startsWith('reports/')) return null;
+  if (repoRelative.startsWith('../') || repoRelative === '..' || !repoRelative.startsWith('workspace/reports/evaluations/')) return null;
   return existsSync(fullPath) ? repoRelative : null;
 }
 

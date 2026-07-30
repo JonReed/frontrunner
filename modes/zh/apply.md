@@ -12,11 +12,11 @@
 ```text
 1. 捕获 (DETECT)    → 读取当前 Chrome 活动标签页 (截图/URL/网页标题)
 2. 识别 (IDENTIFY)  → 从页面中提取公司名称与职位名称
-3. 检索 (SEARCH)    → 匹配 reports/ 目录下已保存的评估报告
+3. 检索 (SEARCH)    → 匹配 workspace/reports/evaluations/ 目录下已保存的评估报告
 4. 载入 (LOAD)      → 读取对应的评估报告及 H 部分的拟答草稿 (若存在)
 5. 校准 (COMPARE)   → 比对当前屏幕上的职位是否与之前评估的职位完全一致。若有变动，进行提示
 6. 解析 (ANALYZE)   → 识别出页面上所有可见的表单提问输入框
-7. 生成 (GENERATE)  → 结合报告背景与简历 cv.md，为每个问题生成定制草稿
+7. 生成 (GENERATE)  → 结合报告背景与简历 workspace/profile/cv.md，为每个问题生成定制草稿
 8. 呈现 (PRESENT)   → 输出可供直接复制粘贴的格式化文本
 ```
 
@@ -36,7 +36,7 @@
 ## 步骤 2 — 检索历史报告
 
 1. 提取屏幕或输入信息中的公司名称与职位名称。
-2. 在 `reports/` 目录下搜索对应的评估报告文件（执行大小写不敏感的模糊检索）。
+2. 在 `workspace/reports/evaluations/` 目录下搜索对应的评估报告文件（执行大小写不敏感的模糊检索）。
 3. 如果匹配成功，载入完整的评估报告内容。
 4. 检查报告中是否有“维度 H (开放性问题拟答草稿)”，如果有，将其作为回答的基础模板。
 5. 如果未匹配到任何历史报告，告知候选人，并询问是否需要针对此链接快速运行一次 `auto-pipeline` 自动评估流程。
@@ -64,7 +64,7 @@
 
 对每个问题进行归类：
 - **已在维度 H 中有拟答** → 提取并根据当前表单的精细要求进行润色。
-- **新提问** → 根据报告背景分析、STAR故事及 `cv.md` 的量化指标现场撰写。
+- **新提问** → 根据报告背景分析、STAR故事及 `workspace/profile/cv.md` 的量化指标现场撰写。
 
 ---
 
@@ -106,7 +106,7 @@
 ## 步骤 6 — 投递后动作
 
 当候选人确认已经成功点击“提交申请/投递”后，执行以下清理与建档工作：
-1. 使用规范 CLI 将该职位状态更新为 `Applied`：`node src/tracker/set-status.mjs <report#> Applied`（不要手动编辑 `data/applications.md` 表格）。
+1. 使用规范 CLI 将该职位状态更新为 `Applied`：`node src/tracker/set-status.mjs <report#> Applied`（不要手动编辑 `workspace/applications/tracker.md` 表格）。
 2. 将最终实际提交的表单回答归档并更新至该报告的维度 H 模块中，以便后续面试对照。
 3. 推荐下一步行动：引导候选人使用 `/frontrunner contacto` 指令生成 LinkedIn 招聘负责人直达勾兑话术。
 

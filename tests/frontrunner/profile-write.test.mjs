@@ -1,7 +1,7 @@
 /**
  * profile-write.test.mjs
  *
- * This module writes cv.md and config/profile.yml — the two files whose loss
+ * This module writes workspace/profile/cv.md and workspace/profile/profile.yml — the two files whose loss
  * costs a user the most. Every test below runs against a temporary checkout via
  * FRONTRUNNER_PROFILE_BASE; none of them may touch the real one.
  */
@@ -29,6 +29,7 @@ const REAL_TEMPLATE = fileURLToPath(new URL('../../config/profile.example.yml', 
 function sandbox() {
   const dir = mkdtempSync(join(tmpdir(), 'profile-write-'));
   mkdirSync(join(dir, 'config'), { recursive: true });
+  mkdirSync(join(dir, 'workspace', 'profile'), { recursive: true });
   writeFileSync(join(dir, 'config', 'profile.example.yml'), readFileSync(REAL_TEMPLATE, 'utf8'));
   process.env.FRONTRUNNER_PROFILE_BASE = dir;
   return dir;
@@ -178,7 +179,7 @@ test('round-trips lists', async () => {
   }
 });
 
-test('writes cv.md and rejects empty or oversized input', async () => {
+test('writes workspace/profile/cv.md and rejects empty or oversized input', async () => {
   const dir = sandbox();
   try {
     await writeCv('# Jane Smith\n\nOperations Director.');

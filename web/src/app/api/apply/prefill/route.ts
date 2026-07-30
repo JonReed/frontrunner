@@ -68,7 +68,7 @@ function extractJsonObject(text: string): { obj: Record<string, unknown> | null;
 }
 
 // AI pre-fill (STREAMING NDJSON). The user's BYO CLI (read-only PLANNER — no
-// browser access) drafts an answer per field from cv.md / profile / the job's
+// browser access) drafts an answer per field from workspace/profile/cv.md / profile / the job's
 // report. We stream a live diagnostic log of every step (spawn, heartbeats,
 // exit code/signal, parse outcome) so a stuck/empty prefill is observable on the
 // page AND written to <root>/.frontrunner-web/apply-prefill.log for debugging.
@@ -128,7 +128,7 @@ export async function POST(req: Request) {
         .map((f) => `${f.id}\t${f.type}${f.required ? "*" : ""}\t${f.label}${f.options ? `\t[options: ${f.options.join(" | ")}]` : ""}`)
         .join("\n");
       const mem = readMemory().trim();
-      const prompt = `You are pre-filling a job application for the user (company/role: ${s.title}). Read cv.md and config/profile.yml; if a matching report for this company exists in reports/, read it too. Ground EVERY answer in the REAL candidate — never invent facts.${mem ? `\n\nDurable notes about the user:\n${mem}` : ""}
+      const prompt = `You are pre-filling a job application for the user (company/role: ${s.title}). Read workspace/profile/cv.md and workspace/profile/profile.yml; if a matching report for this company exists in workspace/reports/evaluations/, read it too. Ground EVERY answer in the REAL candidate — never invent facts.${mem ? `\n\nDurable notes about the user:\n${mem}` : ""}
 
 FIELDS (id ⇥ type ⇥ label ⇥ options):
 ${fieldsList}

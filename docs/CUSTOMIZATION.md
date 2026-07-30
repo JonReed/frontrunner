@@ -1,6 +1,6 @@
 # Customization Guide
 
-## Profile (config/profile.yml)
+## Profile (workspace/profile/profile.yml)
 
 This is the single source of truth for your identity. All modes read from here.
 
@@ -12,7 +12,7 @@ Key sections:
 - **location**: Country, timezone, visa status, on-site availability, and structured work authorization (`authorized_in`, `needs_sponsorship`) that drives the Work-Auth signal in job evaluation (flags an explicit no-sponsorship JD as a hard blocker)
 - **culture_screen**: Structural criteria for team culture (the `deprioritize_if_absent` strict flag caps the culture score at 2/5 if evidence is entirely missing)
 
-## Target Roles (modes/_profile.md)
+## Target Roles (workspace/profile/targeting.md)
 
 The archetype table in `_profile.md` determines how offers are scored and CVs are framed. Edit the table to match YOUR career targets:
 
@@ -25,7 +25,7 @@ The archetype table in `_profile.md` determines how offers are scored and CVs ar
 
 Also update the "Adaptive Framing" table to map YOUR specific projects to each archetype.
 
-## Portals (portals.yml)
+## Portals (workspace/search/portals.yml)
 
 Copy from `templates/portals.example.yml` and customize:
 

@@ -24,11 +24,11 @@
  *      matched text, so the output is auditable and tunable.
  *   2. Bias toward keeping. An unclear role passes through to the LLM. A false
  *      reject costs an opportunity; a false keep costs a few cents.
- *   3. Read config from the user layer (config/profile.yml), never hardcode.
+ *   3. Read config from the user layer (workspace/profile/profile.yml), never hardcode.
  *
  * USAGE
  *   node src/scan/prefilter.mjs --summary
- *   node src/scan/prefilter.mjs --input batch/batch-input.tsv --out batch/batch-input.filtered.tsv
+ *   node src/scan/prefilter.mjs --input workspace/.state/batch-input.tsv --out workspace/.state/batch-input.filtered.tsv
  *   node src/scan/prefilter.mjs --json
  *   node src/scan/prefilter.mjs --explain "Staff Product Engineer, AI"
  */
@@ -69,7 +69,7 @@ const argVal = (f, d) => {
 
 /** Minimal YAML scalar reader — avoids a dependency for three lookups. */
 function readProfile() {
-  const f = join(ROOT, 'config/profile.yml');
+  const f = join(ROOT, 'workspace/profile/profile.yml');
   const out = { minComp: 0, currency: 'GBP', clearances: [] };
   if (!existsSync(f)) return out;
   const raw = readFileSync(f, 'utf8');
@@ -410,11 +410,11 @@ Usage:
   node src/scan/prefilter.mjs [--input <file>] [--out <file>] [--jds <dir>] [--summary|--json]
   node src/scan/prefilter.mjs --explain "<job title>"
 
-  --input <file>   Default: data/pipeline.md. Also accepts a TSV (col 2 = url).
+  --input <file>   Default: workspace/search/pipeline.md. Also accepts a TSV (col 2 = url).
   --out <file>     Write surviving roles as a batch-input TSV.
   --jds <dir>      JD text dir from fetch-jds.mjs. Default: jds
-  --rejects <file> Write rejected roles + reasons as TSV. Default: batch/prefilter-rejects.tsv
-  --config <file>  Explicit prefilter YAML. Default: config/prefilter.yml, then example
+  --rejects <file> Write rejected roles + reasons as TSV. Default: workspace/.state/prefilter-rejects.tsv
+  --config <file>  Explicit prefilter YAML. Default: workspace/search/prefilter.yml, then example
   --explain <t>    Show how one title classifies, then exit.
 `);
     return;
@@ -430,11 +430,11 @@ Usage:
     return;
   }
 
-  const input = resolve(ROOT, argVal('--input', 'data/pipeline.md'));
-  const jdsDir = resolve(ROOT, argVal('--jds', 'jds'));
+  const input = resolve(ROOT, argVal('--input', 'workspace/search/pipeline.md'));
+  const jdsDir = resolve(ROOT, argVal('--jds', 'workspace/jobs/descriptions'));
   const outArg = argVal('--out', '');
   const out = outArg ? resolve(ROOT, outArg) : '';
-  const rejects = resolve(ROOT, argVal('--rejects', 'batch/prefilter-rejects.tsv'));
+  const rejects = resolve(ROOT, argVal('--rejects', 'workspace/.state/prefilter-rejects.tsv'));
   const summary = hasFlag('--summary');
   const { result, kept, rejected } = runPrefilter({
     input,

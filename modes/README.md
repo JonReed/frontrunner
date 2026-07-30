@@ -17,7 +17,7 @@ table in `AGENTS.md` (mirrored in `CLAUDE.md`).
 | `oferta.md` | `job` | Full A-G evaluation of a single offer |
 | `ofertas.md` | `jobs` | Multi-job comparison |
 | `auto-pipeline.md` | auto | Full automatic pipeline (evaluate + PDF + tracker) on a pasted JD/URL |
-| `pipeline.md` | `pipeline` | Process the URL inbox (`data/pipeline.md`) |
+| `pipeline.md` | `pipeline` | Process the URL inbox (`workspace/search/pipeline.md`) |
 | `scan.md` | `scan` | Portal scanner (job discovery) |
 | `batch.md` | `batch` | Mass processing with headless workers |
 | `apply.md` | `apply` | Live application assistant (form filling; never submits) |
@@ -47,8 +47,8 @@ table in `AGENTS.md` (mirrored in `CLAUDE.md`).
 | File | Role |
 |---|---|
 | `_shared.md` | System context shared across modes: scoring system, global rules, source-of-truth boundary. System-owned — never put personal data here |
-| `_profile.template.md` | Seed for your `modes/_profile.md` (archetypes, narrative, negotiation scripts) |
-| `_custom.template.md` | Seed for your `modes/_custom.md` (house rules, procedural preferences) |
+| `_profile.template.md` | Seed for your `workspace/profile/targeting.md` (archetypes, narrative, negotiation scripts) |
+| `_custom.template.md` | Seed for your `workspace/profile/preferences.md` (house rules, procedural preferences) |
 
 Your copies (`_profile.md`, `_custom.md`) are user-layer files: gitignored
 and never touched by `update-system.mjs` (see
@@ -68,6 +68,6 @@ and never touched by `update-system.mjs` (see
 - One file = one mode; the h1 is `# Mode: <name> — <purpose>`.
 - Underscore prefix = shared context or template, not a routable mode.
 - Language selection: explicit user request or `language.modes_dir` in
-  `config/profile.yml` wins over JD-language detection (see `AGENTS.md`).
+  `workspace/profile/profile.yml` wins over JD-language detection (see `AGENTS.md`).
 - Mode files are system-layer: edits belong upstream. User personalization
   goes in `_profile.md` / `_custom.md`, never in the mode files themselves.

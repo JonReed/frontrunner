@@ -8,7 +8,7 @@
 
      This is for PROCEDURAL rules ("HOW I want things done").
      For WHO you are (archetypes, narrative, comp, negotiation),
-     use modes/_profile.md instead. Keeping the two separate keeps
+     use workspace/profile/targeting.md instead. Keeping the two separate keeps
      each one readable.
 
      The agent reads this file alongside the system instructions;
@@ -38,7 +38,7 @@
      - "weekly review": scan my saved portals, evaluate the new roles,
        then give me a one-paragraph summary of the top 3.
      - "prep <company>": pull the JD, generate STAR stories from
-       article-digest.md, and draft 5 likely interview questions. -->
+       workspace/profile/article-digest.md, and draft 5 likely interview questions. -->
 
 (none yet -- add yours above)
 

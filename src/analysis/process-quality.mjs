@@ -2,14 +2,14 @@
 /**
  * process-quality.mjs — Recruiting-Process Friction Aggregator for frontrunner
  *
- * Parses data/active-interviews.md, extracts inline `[process-friction]` tags
+ * Parses workspace/applications/active-interviews.md, extracts inline `[process-friction]` tags
  * from the Notes column, and aggregates them per company into a friction
  * signal — independent of company/role fit (#960) and interviewer red-flag
  * behavior (#1232). This tracks a third, distinct axis: is the *recruiting
  * process itself* (scheduling, communication clarity, tooling) well-run?
  *
  * Tagging convention (candidate-authored, in the Notes column of
- * data/active-interviews.md):
+ * workspace/applications/active-interviews.md):
  *   [process-friction]                          — friction occurred, no detail
  *   [process-friction: <short reason>]           — friction occurred, with detail
  *
@@ -30,8 +30,8 @@ import { join, dirname } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 
 import { ROOT as FRONTRUNNER } from '#paths';
-const DEFAULT_ACTIVE_INTERVIEWS_PATH = existsSync(join(FRONTRUNNER, 'data/active-interviews.md'))
-  ? join(FRONTRUNNER, 'data/active-interviews.md')
+const DEFAULT_ACTIVE_INTERVIEWS_PATH = existsSync(join(FRONTRUNNER, 'workspace/applications/active-interviews.md'))
+  ? join(FRONTRUNNER, 'workspace/applications/active-interviews.md')
   : join(FRONTRUNNER, 'active-interviews.md');
 
 const FRICTION_TAG = /\[process-friction(?::\s*([^\]]+))?\]/i;
@@ -42,7 +42,7 @@ const summaryMode = args.includes('--summary');
 const selfTestMode = args.includes('--self-test');
 // --file overrides the data path — mirrors src/scan/validate-portals.mjs / src/scan/verify-portals.mjs's
 // --file convention. Primarily for test isolation: it lets tests point at a
-// controlled temp path instead of depending on whatever data/active-interviews.md
+// controlled temp path instead of depending on whatever workspace/applications/active-interviews.md
 // happens to exist (or not) in the caller's real workspace.
 const fileIdx = args.indexOf('--file');
 const ACTIVE_INTERVIEWS_PATH = fileIdx !== -1 && args[fileIdx + 1] !== undefined
@@ -65,7 +65,7 @@ function findColumn(row, name) {
   return key ? String(row[key] ?? '') : '';
 }
 
-// --- Parse data/active-interviews.md ---
+// --- Parse workspace/applications/active-interviews.md ---
 //
 // Table format: `| Company | Role | Round | Date/Time | Interviewer | Status | Notes |`
 // A separator row (all dashes/colons/pipes) follows the header and is skipped.

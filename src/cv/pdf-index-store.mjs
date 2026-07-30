@@ -1,5 +1,5 @@
 /**
- * Locked, atomic publisher for data/pdf-index.tsv.
+ * Locked, atomic publisher for workspace/.state/pdf-index.tsv.
  */
 
 import { mutateFileLocked } from '../lib/locked-file.mjs';

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Bounded UI adapter for removing one pending URL from data/pipeline.md.
+ * Bounded UI adapter for removing one pending URL from workspace/search/pipeline.md.
  *
  * The request can select only an exact, uncredentialed web URL. The file
  * path and mutation primitive are fixed here, outside the browser process.
@@ -16,7 +16,7 @@ import { APPLICATION_API_VERSION } from './contract.mjs';
 import { readBoundedRequest } from './run.mjs';
 
 const CONTROL_KEYS = new Set(['version', 'action', 'url']);
-const PIPELINE = join(ROOT, 'data', 'pipeline.md');
+const PIPELINE = join(ROOT, 'workspace', 'search', 'pipeline.md');
 
 function controlError(message, code = 'INVALID_INBOX_REQUEST') {
   const error = new Error(message);

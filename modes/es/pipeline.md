@@ -9,4 +9,4 @@ stages without evaluation.
 
 Apply Spanish-market vocabulary and rules from `modes/es/_shared.md` and the
 selected Spanish evaluation mode. Human-facing output still follows
-`config/profile.yml` → `language.output`.
+`workspace/profile/profile.yml` → `language.output`.

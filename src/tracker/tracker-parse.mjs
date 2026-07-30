@@ -1,5 +1,5 @@
 /**
- * tracker-parse.mjs — shared header-aware column mapping for `data/applications.md`.
+ * tracker-parse.mjs — shared header-aware column mapping for `workspace/applications/tracker.md`.
  *
  * The tracker is a markdown table that several scripts read. #946/#954 made the
  * column layout customizable (e.g. an inserted Location column) by mapping
@@ -224,7 +224,7 @@ export function parseTrackerRow(line, colmap = LEGACY_COLMAP) {
  * Both the numeric markdown label and the local report filename are returned.
  * Keeping both makes tracker drift visible instead of silently trusting one
  * side of a malformed link. External URLs are ignored even when their path
- * happens to contain a reports/ segment.
+ * happens to contain a workspace/reports/evaluations/ segment.
  *
  * @param {string} reportCell - Raw Report cell value.
  * @returns {number[]} Unique positive report IDs in encounter order.

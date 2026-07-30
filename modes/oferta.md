@@ -8,12 +8,12 @@ When the candidate pastes a **URL** (not JD text), confirm the posting is still 
 
 1. Resolve the URL through the provider API first
    (`src/scan/liveness-service.mjs`); reuse a clean cached description from
-   `jds/index.tsv` where available. Only when the structured endpoint is
+   `workspace/jobs/descriptions/index.tsv` where available. Only when the structured endpoint is
    unsupported or inconclusive may Playwright navigate and snapshot the page.
 2. Classify the posting:
    - **active posting evidence:** title/role + a real job description or an application/apply path
    - **closed posting evidence:** expired/closed/"no longer accepting applications", missing JD with only nav/footer, hard redirect to a generic careers/search page, or 404/410
-3. If the posting appears closed, **stop before Block A**: tell the candidate the link is dead, and if the entry came from `data/pipeline.md`, mark it `- [x] ~~Company | Role~~ — oferta nieaktywna`. Do not generate an evaluation, report, or CV.
+3. If the posting appears closed, **stop before Block A**: tell the candidate the link is dead, and if the entry came from `workspace/search/pipeline.md`, mark it `- [x] ~~Company | Role~~ — oferta nieaktywna`. Do not generate an evaluation, report, or CV.
 4. If the candidate pasted JD text (no URL), liveness cannot be verified — note that and proceed; there is no link to check.
 
 Do not continue to Block A until this gate is resolved. Reuse whichever API or
@@ -29,12 +29,12 @@ role is kept. Script evaluators return the versioned JSON contract from
 
 ## Blacklist gate (#1742)
 
-If `data/blacklist.md` exists, check the posting's company against it before Block A. The file is the candidate's own do-not-apply list (user layer, opt-in): absent file = no gate, and nothing ever adds a company to it automatically. Match case- and punctuation-insensitively — "Acme Corp." on the list catches a JD that says "acme corp".
+If `workspace/search/blacklist.md` exists, check the posting's company against it before Block A. The file is the candidate's own do-not-apply list (user layer, opt-in): absent file = no gate, and nothing ever adds a company to it automatically. Match case- and punctuation-insensitively — "Acme Corp." on the list catches a JD that says "acme corp".
 
 1. On a hit, **stop before Block A** and surface the candidate's own recorded decision:
    > "{Company} is on your blacklist (since {Since}): *{Reason}*. Do you still want me to evaluate this posting?"
 2. Wait for an explicit answer — never silently refuse, never silently proceed. The candidate's call always wins (same HITL spirit as the score < 4.0 rule): an explicit yes runs the full A-G evaluation as normal (note the override in the report notes); anything else stops here with no evaluation, report, or CV.
-3. No match, or no `data/blacklist.md` → proceed. A blacklist entry never changes any score anywhere — it is a gate, not a signal.
+3. No match, or no `workspace/search/blacklist.md` → proceed. A blacklist entry never changes any score anywhere — it is a gate, not a signal.
 
 ## Bounded Research Budget
 
@@ -85,7 +85,7 @@ The flag is an additive line only — Block B's existing content stays unchanged
 
 ### Work-authorization check
 
-After the Role Summary table, compare the candidate's work authorization against what the JD says about sponsorship and work eligibility. Read the candidate's work rights from `config/profile.yml` → `location.authorized_in` (list of countries/regions where they already hold authorization) and `location.needs_sponsorship`, falling back to the free-text `location.visa_status` when those structured keys are absent. Classify into exactly one tier:
+After the Role Summary table, compare the candidate's work authorization against what the JD says about sponsorship and work eligibility. Read the candidate's work rights from `workspace/profile/profile.yml` → `location.authorized_in` (list of countries/regions where they already hold authorization) and `location.needs_sponsorship`, falling back to the free-text `location.visa_status` when those structured keys are absent. Classify into exactly one tier:
 
 - ✅ **Sponsors** — the JD explicitly offers visa sponsorship or relocation, and the role is in a country **not** in `authorized_in`.
 - ➖ **Not needed** — the role is in a country listed in `authorized_in` (or is genuinely location-agnostic remote the candidate can work from an authorized country), **or** `needs_sponsorship` is false.
@@ -96,7 +96,7 @@ Rules (mirror the Geo-mismatch discipline):
 - Quote the JD **verbatim** — never paraphrase the sponsorship language.
 - A generic "must be authorized to work in {country}" where {country} **is** in `authorized_in` is ➖ Not needed, not ⛔.
 - If the profile has no `authorized_in`/`needs_sponsorship` keys and only the free-text `visa_status`, infer conservatively and default to ⚠️ Unstated rather than guessing a blocker.
-- **Scoring (aligns with `modes/_profile.md` "Your Location Policy"):** ✅ / ➖ / ⚠️ are score-neutral — do **not** apply a location or relocation penalty. Only ⛔ **No sponsorship** for a role the candidate cannot take from an authorized country is a genuine hard blocker: score location low and record it as a `hard_stop`.
+- **Scoring (aligns with `workspace/profile/targeting.md` "Your Location Policy"):** ✅ / ➖ / ⚠️ are score-neutral — do **not** apply a location or relocation penalty. Only ⛔ **No sponsorship** for a role the candidate cannot take from an authorized country is a genuine hard blocker: score location low and record it as a `hard_stop`.
 
 On a ⛔ determination, add exactly one flag line at the top of Block B in the report, quoting the evidence **verbatim**:
 
@@ -106,7 +106,7 @@ The flag is additive only; ✅ / ➖ / ⚠️ emit no flag line.
 
 ## Block B — Match with CV
 
-Read `cv.md`. Create a table with each JD requirement mapped to exact lines in the CV.
+Read `workspace/profile/cv.md`. Create a table with each JD requirement mapped to exact lines in the CV.
 
 **Adapted to the archetype:**
 - If FDE → prioritize delivery speed and client-facing proof points
@@ -225,7 +225,7 @@ Top 5 changes to CV + Top 5 changes to LinkedIn to maximize match.
 
 The **Reflection** column captures what was learned or what would be done differently. This signals seniority — junior candidates describe what happened, senior candidates extract lessons.
 
-**Story Bank:** If `interview-prep/story-bank.md` exists, check if any of these stories are already there. If not, append new ones. Over time this builds a reusable bank of 5-10 master stories that can be adapted to any interview question.
+**Story Bank:** If `workspace/interviews/story-bank.md` exists, check if any of these stories are already there. If not, append new ones. Over time this builds a reusable bank of 5-10 master stories that can be adapted to any interview question.
 
 **Selected and framed according to the archetype:**
 - FDE → emphasize delivery speed and client-facing
@@ -275,7 +275,7 @@ Analyze the job posting for signals that indicate whether this is a real, active
 - Does the role make sense for this company's business?
 - Is the seniority level one that legitimately takes longer to fill?
 
-**6. Employment Classification Risk** (from JD text; jurisdiction from `config/profile.yml` → `location.country`):
+**6. Employment Classification Risk** (from JD text; jurisdiction from `workspace/profile/profile.yml` → `location.country`):
 
 Every jurisdiction splits work into two buckets under different names: an "employment contract" carrying statutory protections and benefits, vs. a "service/labour/consulting contract" that doesn't — even when the day-to-day work looks identical from the outside. Candidates routinely can't tell which one a JD is offering until tax time or until a benefit they assumed they had turns out not to exist. Check the JD text against the jurisdiction-specific term list below (add a new row to extend to another country — this table is a data reference, not instruction logic, so extending it never requires touching the rule text):
 
@@ -388,7 +388,7 @@ Three states per row: `✅ {clear verdict}` / `⚠️ {finding}` / `— not eval
 | Posting legitimacy | Block G assessment tier | `✅ High Confidence`, or `⚠️ {tier} — {one-line reason}` for Proceed with Caution / Suspicious |
 | Employment classification | Employment classification signal inside Block G | `✅ clear` when the check ran and found nothing; `⚠️ contractor-style language: "{quoted phrase}"` when the flag fired; `— not evaluated` when the check could not run |
 | Culture screen | Culture screen field in Block A | `✅ pass`, or `⚠️ caution — {evidence}` / `⚠️ fail — {evidence}`; `— not evaluated` when no screen was run |
-| Interview red flags | `interview-prep/{company-slug}-redflags.md` (from `interview-redflag` mode) | **Cross-reference, not a copy:** if the file exists, surface its current warning level plus a relative link — `[{level}](../interview-prep/{company-slug}-redflags.md)` (relative to `reports/`); otherwise `— no interview sessions yet` |
+| Interview red flags | `workspace/interviews/{company-slug}-redflags.md` (from `interview-redflag` mode) | **Cross-reference, not a copy:** if the file exists, surface its current warning level plus a relative link — `[{level}](../workspace/interviews/{company-slug}-redflags.md)` (relative to `workspace/reports/evaluations/`); otherwise `— no interview sessions yet` |
 | AI claims vs. infrastructure | AI/infrastructure mismatch check in Block G, when present | If this report contains that check, mirror its verdict (`✅ consistent` / `⚠️ {finding}`); otherwise `— not evaluated`. The row activates automatically once the check exists — no ordering dependency |
 
 Block format:
@@ -415,10 +415,10 @@ After saving the report and recording in the tracker, append a cover letter draf
 
 **How to generate the draft:**
 
-1. Read `cv.md` — select 4 achievement bullets most relevant to the JD's top requirements (exact wording, real metrics only)
-2. Read `config/profile.yml` — extract candidate name, current role, years of experience
+1. Read `workspace/profile/cv.md` — select 4 achievement bullets most relevant to the JD's top requirements (exact wording, real metrics only)
+2. Read `workspace/profile/profile.yml` — extract candidate name, current role, years of experience
 3. Write a 2-sentence opening based on the role title and JD mission language
-4. Write a 1-paragraph profile intro from the cv.md summary, adapted to the JD domain
+4. Write a 1-paragraph profile intro from the workspace/profile/cv.md summary, adapted to the JD domain
 5. Leave the "Problems / Why this company / Approach" section as a placeholder — this requires user input
 6. Detect and flag any gaps (domain mismatch, language requirement, start date urgency) so the user sees them immediately
 
@@ -436,13 +436,13 @@ After saving the report and recording in the tracker, append a cover letter draf
 {2-sentence opening based on JD role title and mission language}
 
 **Profile introduction**
-{1 paragraph from cv.md summary, adapted to JD domain and required competencies}
+{1 paragraph from workspace/profile/cv.md summary, adapted to JD domain and required competencies}
 
-**Key achievements** *(selected from cv.md — exact wording preserved)*
-- **{lead from cv.md},** {impact sentence with metric}.
-- **{lead from cv.md},** {impact sentence with metric}.
-- **{lead from cv.md},** {impact sentence with metric}.
-- **{lead from cv.md},** {impact sentence with metric}.
+**Key achievements** *(selected from workspace/profile/cv.md — exact wording preserved)*
+- **{lead from workspace/profile/cv.md},** {impact sentence with metric}.
+- **{lead from workspace/profile/cv.md},** {impact sentence with metric}.
+- **{lead from workspace/profile/cv.md},** {impact sentence with metric}.
+- **{lead from workspace/profile/cv.md},** {impact sentence with metric}.
 
 **Problems I will solve** *(placeholder — requires company research + your input)*
 > To be completed: what challenges does {company} face that you'd address? How would you approach them?
@@ -472,7 +472,7 @@ Apply all language rules from `_shared.md` Professional Writing section to the d
 
 ### 1. Save report .md
 
-Save full evaluation in `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
+Save full evaluation in `workspace/reports/evaluations/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 
 - `{###}` = next sequential number (3 digits, zero-padded). To allocate it atomically and prevent race conditions, you MUST run `node src/tracker/reserve-report-num.mjs` to claim the number (stdout returns `{###}`), write the report, and then run `node src/tracker/reserve-report-num.mjs --release {###}` to release the sentinel.
 - `{company-slug}` = company name in lowercase, without spaces (use hyphens)
@@ -535,16 +535,16 @@ Save full evaluation in `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 
 ### 2. Record in tracker
 
-**ALWAYS** record in `data/applications.md`:
+**ALWAYS** record in `workspace/applications/tracker.md`:
 - Next sequential number
 - Current date
 - Company — the END employer. If the JD is agency-mediated ("our client", agency domain, no employer named), ASK the user which agency it came through, use `?` as Company, and put a distinguishing descriptor in Notes (e.g. `fintech, Leeds`). Never write "Confidential" — the `?` marker is locale-invariant and can't collide with a real firm.
 - Via (when the tracker has the column) — the agency/recruiter firm, `—` for direct. In the tracker-addition TSV, append it as a tagged extra field: `via={Agency}` (see the TSV format spec).
 - Role
-- Score: match average (1-5) — Read `modes/_custom.md` → Scoring Rules, if it exists, and apply its override here. Default (if absent or silent): average of block scores.
+- Score: match average (1-5) — Read `workspace/profile/preferences.md` → Scoring Rules, if it exists, and apply its override here. Default (if absent or silent): average of block scores.
 - Status: `Evaluated`
 - PDF: ❌ (or ✅ if auto-pipeline generated PDF)
-- Report: root-relative link `[001](reports/001-company-2026-01-01.md)` (when merged via `src/tracker/merge-tracker.mjs` it is normalized to be relative to the tracker's own dir, e.g. `../reports/...`; see #760)
+- Report: root-relative link `[001](workspace/reports/evaluations/001-company-2026-01-01.md)` (when merged via `src/tracker/merge-tracker.mjs` it is normalized to be relative to the tracker's own dir, e.g. `../reports/evaluations/...`; see #760)
 
 **Tracker format:**
 
@@ -560,10 +560,10 @@ With the optional Via column (intermediary channel, #1596) after Company:
 
 ### 3. Salary observations (desired ask only)
 
-If — and only if — the user **explicitly stated a role-specific desired number for THIS application** in the conversation ("I'd ask 95k here"), append one `desired` line (source `user`) to `data/salary-observations.tsv` (create the file if missing; format per `docs/SCRIPTS.md` → salary-gap):
+If — and only if — the user **explicitly stated a role-specific desired number for THIS application** in the conversation ("I'd ask 95k here"), append one `desired` line (source `user`) to `workspace/applications/salary-observations.tsv` (create the file if missing; format per `docs/SCRIPTS.md` → salary-gap):
 
 ```text
 {tracker#}\t{YYYY-MM-DD}\tdesired\t{amount}\t{currency}\tuser\t{short context note}
 ```
 
-Never infer a desired number from the JD, the score, or past conversations. The profile default (`config/profile.yml` → `compensation.target_range`) needs no line — `src/analysis/salary-gap.mjs` reads it as the fallback. The advertised figure also needs no line: the report's `advertised_comp` **is** the advertised observation.
+Never infer a desired number from the JD, the score, or past conversations. The profile default (`workspace/profile/profile.yml` → `compensation.target_range`) needs no line — `src/analysis/salary-gap.mjs` reads it as the fallback. The advertised figure also needs no line: the report's `advertised_comp` **is** the advertised observation.

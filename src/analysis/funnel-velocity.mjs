@@ -8,7 +8,7 @@
  *   2. waiting — in-flight Applied rows and elapsed days vs the typical
  *      first-response window. Per-row factual reporting, not an aggregate claim.
  *   3. velocity — median/p75 days per stage hop, folded from the append-only
- *      transition ledger data/status-log.tsv. Accrues value as the log grows.
+ *      transition ledger workspace/.state/status-log.tsv. Accrues value as the log grows.
  *
  * Transition ledger (written by src/tracker/set-status.mjs, never edited in place):
  *   {tracker#}\t{YYYY-MM-DD}\t{from}\t{to}\t{source}\t{note}
@@ -25,7 +25,7 @@
  *   - above-range calibration always carries the selection-bias note
  *   - every benchmark mention carries its year and "directional"
  *
- * Benchmarks lookup order: --benchmarks <path> > config/benchmarks.yml (user
+ * Benchmarks lookup order: --benchmarks <path> > workspace/profile/benchmarks.yml (user
  * layer, survives updates) > templates/benchmarks.yml (shipped default).
  *
  * Run: node src/analysis/funnel-velocity.mjs             (JSON)
@@ -220,7 +220,7 @@ export function computeVelocity(timelines, todayStr) {
 // --- Benchmarks ---
 export function loadBenchmarks(explicitPath) {
   const path = explicitPath
-    || (existsSync(join(FRONTRUNNER, 'config/benchmarks.yml')) ? join(FRONTRUNNER, 'config/benchmarks.yml') : join(FRONTRUNNER, 'templates/benchmarks.yml'));
+    || (existsSync(join(FRONTRUNNER, 'workspace/profile/benchmarks.yml')) ? join(FRONTRUNNER, 'workspace/profile/benchmarks.yml') : join(FRONTRUNNER, 'templates/benchmarks.yml'));
   let doc;
   try {
     doc = yaml.load(readFileSync(path, 'utf-8'));

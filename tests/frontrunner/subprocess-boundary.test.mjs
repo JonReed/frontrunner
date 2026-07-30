@@ -158,6 +158,7 @@ test('production subprocess capabilities cannot grow outside reviewed boundaries
     'src/application/process-tree.mjs', // platform tree signalling primitive
     'src/application/service.mjs', // versioned application operation supervisor
     'src/application/status-control.mjs', // fixed tracker-decision protocol
+    'src/application/ui-launch.mjs', // fixed local UI launcher and root injection
     'src/lib/root-paths.mjs', // maintainer-only repository migration utility
     'src/security/subprocess.mjs', // canonical general backend boundary
   ]);

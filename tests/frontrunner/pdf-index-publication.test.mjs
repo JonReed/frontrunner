@@ -62,8 +62,8 @@ test('interrupted PDF index replacement preserves prior bytes and cleans debris'
   await assert.rejects(
     recordPdfIndex(file, {
       reportNum: '2',
-      pdf: 'output/two.pdf',
-      html: 'output/two.html',
+      pdf: 'workspace/documents/two.pdf',
+      html: 'workspace/documents/two.html',
       format: 'a4',
       date: '2026-07-29',
     }, {
@@ -113,8 +113,8 @@ test('PDF index bounds validate the option and the complete merged artifact', as
   const file = join(dir, 'pdf-index.tsv');
   const entry = {
     reportNum: '1',
-    pdf: 'output/one.pdf',
-    html: 'output/one.html',
+    pdf: 'workspace/documents/one.pdf',
+    html: 'workspace/documents/one.html',
     format: 'a4',
     date: '2026-07-29',
   };

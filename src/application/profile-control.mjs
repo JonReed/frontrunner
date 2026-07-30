@@ -30,6 +30,11 @@ import {
 const CONTROL_KEYS = new Set(['version', 'action', 'fields', 'cv', 'versions']);
 const ACTIONS = new Set(['read', 'save']);
 const MAX_VERSIONS = 20;
+// The generic application protocol stays deliberately tiny. Profile saves are
+// the one exception because the UI explicitly accepts a 512 KiB canonical CV
+// plus reference versions. Bound the aggregate request rather than silently
+// contradicting the per-document contract.
+export const MAX_PROFILE_REQUEST_BYTES = 1536 * 1024;
 
 function controlError(message, code = 'INVALID_PROFILE_CONTROL_REQUEST') {
   const error = new Error(message);
@@ -107,7 +112,9 @@ export function validateProfileControlRequest(value) {
 
 export async function main({ input = process.stdin, output = process.stdout, errorOutput = process.stderr } = {}) {
   try {
-    const control = validateProfileControlRequest(await readBoundedRequest(input));
+    const control = validateProfileControlRequest(await readBoundedRequest(input, {
+      maxBytes: MAX_PROFILE_REQUEST_BYTES,
+    }));
 
     if (control.action === 'read') {
       await recoverProfileSave();
@@ -118,8 +125,8 @@ export async function main({ input = process.stdin, output = process.stdout, err
 
     await publishProfileSave(control);
     const written = [
-      ...(typeof control.cv === 'string' ? ['cv.md'] : []),
-      ...control.versions.map((_version, index) => `cv-versions/${index + 1}`),
+      ...(typeof control.cv === 'string' ? ['workspace/profile/cv.md'] : []),
+      ...control.versions.map((_version, index) => `workspace/profile/cv-versions/${index + 1}`),
       ...Object.keys(control.fields),
     ];
 

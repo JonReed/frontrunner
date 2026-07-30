@@ -7,7 +7,7 @@ The default frontrunner examples assume one north-star archetype. Hybrid careers
 This folder shows how to:
 
 1. Configure `archetypes:` in `profile.yml` with two `fit: primary` entries instead of one.
-2. Write a `cv.md` that puts measurable wins on both sides in front of the recruiter without diluting either.
+2. Write a `workspace/profile/cv.md` that puts measurable wins on both sides in front of the recruiter without diluting either.
 3. Set two compensation ranges. Engineering and teaching pay differently, often by 20-40%, and the evaluator needs to know which range applies to a given offer.
 4. At evaluation time, decide which track to lead with for the specific JD on the desk.
 
@@ -17,7 +17,7 @@ This folder shows how to:
 
 | File | Purpose |
 |------|---------|
-| `cv.md` | Fictional dual-track CV (Sam Rivera). Use as structural reference for your own. |
+| `workspace/profile/cv.md` | Fictional dual-track CV (Sam Rivera). Use as structural reference for your own. |
 | `profile.yml` | Profile config with two primary archetypes and two comp ranges. |
 | `README.md` | This file. |
 
@@ -47,10 +47,10 @@ Use single-track instead if:
 ### `modes/_shared.md`
 List both archetypes in the "North Star -- Target Roles" table with `fit: primary`. The skill applies equal rigor to all primary archetypes, which is what you need here.
 
-### `cv.md`
+### `workspace/profile/cv.md`
 Two ways to structure it:
 
-- Layered (what I recommend): one Professional Summary that names both tracks in the first sentence, then experience entries that include both engineering and teaching bullets per role. Use this when the roles actually combined both. See the `cv.md` in this folder.
+- Layered (what I recommend): one Professional Summary that names both tracks in the first sentence, then experience entries that include both engineering and teaching bullets per role. Use this when the roles actually combined both. See the `workspace/profile/cv.md` in this folder.
 - Sectioned: separate "Engineering Experience" and "Teaching Experience" headings. Use this when the two tracks happened at different employers and don't need to be told as one story.
 
 Lead the Professional Summary with the combination itself -- "senior AI engineer who runs the curriculum", or whatever the equivalent is for your stack. The combination is the thing that's hard to hire. Either side alone is not.

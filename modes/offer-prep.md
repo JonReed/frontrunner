@@ -50,7 +50,7 @@ It is NOT:
 
 1. `/frontrunner offer-prep {pasted contract text}`
 2. `/frontrunner offer-prep {path to PDF or file}` — e.g. a contract dropped
-   into `data/offers/{company-slug}/`
+   into `workspace/applications/offers/{company-slug}/`
 3. `/frontrunner offer-prep` — ask for the document
 4. Proactively: when a tracker row is being set to `Offer`, suggest this mode.
 5. `/frontrunner offer-prep reply {company-slug}` — Step 8 on demand: draft
@@ -65,8 +65,8 @@ preparation for answering it, not the answer.
 ## Step 0 — Intake and gates
 
 - Identify company + role; match to the tracker row and evaluation report if
-  they exist (`data/applications.md`, `reports/`).
-- Store or keep the contract in `data/offers/{company-slug}/` (gitignored —
+  they exist (`workspace/applications/tracker.md`, `workspace/reports/evaluations/`).
+- Store or keep the contract in `workspace/applications/offers/{company-slug}/` (gitignored —
   contracts are PII and never leave the machine).
 
 **Extraction gate:** before any analysis, quote back the document's
@@ -86,7 +86,7 @@ or by email that should be in this contract? (salary, bonus, equity, remote
 terms, start date, title)". Record **source, medium, and date** for each
 promise — an email promise and a verbal one generate different lawyer
 questions and different employer asks. Write the answers to
-`data/offers/{company-slug}/notes.md` and confirm them back. The consistency
+`workspace/applications/offers/{company-slug}/notes.md` and confirm them back. The consistency
 check reads promises only from that file and from what the candidate states
 in this conversation.
 
@@ -99,7 +99,7 @@ unseen controlling document cannot be fully described.
 ## Step 1 — Jurisdiction framing (no research)
 
 Where will the candidate actually work? Remote = home location from
-`config/profile.yml`; a named work location in the contract wins if it
+`workspace/profile/profile.yml`; a named work location in the contract wins if it
 contradicts. A designation clause ("at such location as the Company may
 designate") is neither a named location nor silence: default to the
 candidate's residence and tag the designation clause itself
@@ -192,7 +192,7 @@ facts about statutes, and it never judges the candidate's clause.
 **Lookup:** when the Step 2 walk reaches a restrictive-covenant clause
 (taxonomy category 4), check `templates/restrictive-covenants.yml` for a row
 matching (a) the jurisdiction derived in Step 1 (candidate's location from
-`config/profile.yml`; a named work location in the contract wins if it
+`workspace/profile/profile.yml`; a named work location in the contract wins if it
 contradicts) and (b) the clause's **covenant type**. The table is a data
 reference, not instruction logic — adding a jurisdiction or covenant-type row
 there never requires touching this rule text; every row carries a legal
@@ -251,13 +251,13 @@ are context, not legal advice.
 Compare contract terms against:
 - the evaluation report for this company/role (comp block, remote
   designation, seniority) — found via the tracker row;
-- `config/profile.yml` targets and location policy;
-- `data/offers/{company-slug}/notes.md`.
+- `workspace/profile/profile.yml` targets and location policy;
+- `workspace/applications/offers/{company-slug}/notes.md`.
 
 List every delta: what was recorded/targeted vs what the contract says, both
 quoted.
 
-Then append one `actual` observation line to `data/salary-observations.tsv`
+Then append one `actual` observation line to `workspace/applications/salary-observations.tsv`
 (create the file if missing; format per `docs/SCRIPTS.md` → salary-gap): the
 document's base compensation amount, source `contract` — or `offer-letter`
 when the document is an offer letter — with a total-comp note in the note
@@ -279,12 +279,12 @@ paid hour efficient.
 told]` deltas and `[commonly negotiated]` tags. Phrased exclusively as
 questions or topics ("Can we discuss the exercise window?"), never as
 instructions or demands. Note that terms are generally easier to discuss
-before signing than after. Tone material from `modes/_profile.md` may inform
+before signing than after. Tone material from `workspace/profile/targeting.md` may inform
 phrasing if present.
 
 ## Step 5 — Output
 
-Write `data/offers/{company-slug}/prep-{YYYY-MM-DD}.md`:
+Write `workspace/applications/offers/{company-slug}/prep-{YYYY-MM-DD}.md`:
 
 ```markdown
 # Offer Prep — {Company} — {Role}
@@ -337,7 +337,7 @@ email that raises these items with the employer?" Also runs on demand later
 (invocation 5, or the candidate asking in conversation). Never auto-generate
 — the candidate must ask or accept the offer.
 
-**Input gate (hard):** an existing `data/offers/{company-slug}/prep-{date}.md`
+**Input gate (hard):** an existing `workspace/applications/offers/{company-slug}/prep-{date}.md`
 is required — no prep report, no reply draft; run the prep first. Use the
 most recent prep file for the company unless the candidate points at another.
 
@@ -357,13 +357,13 @@ report, add it to that section first, then draft.
   the lawyer list; the employer email never argues law.
 - No verdict or severity language — the draft raises items; it does not
   characterize the contract.
-- `voice-dna.md` may inform tone if present (style only — it never
+- `workspace/profile/voice-dna.md` may inform tone if present (style only — it never
   introduces factual claims).
 - Source-of-truth boundary (tighter for this step): content comes
   exclusively from the prep report and the current conversation — no other
-  files. `voice-dna.md` above is a style channel, never a content source.
+  files. `workspace/profile/voice-dna.md` above is a style channel, never a content source.
 
-Write `data/offers/{company-slug}/reply-draft-{YYYY-MM-DD}.md`:
+Write `workspace/applications/offers/{company-slug}/reply-draft-{YYYY-MM-DD}.md`:
 
 ```markdown
 # Reply Draft — {Company} — {Role}

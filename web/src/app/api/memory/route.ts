@@ -9,7 +9,7 @@ export async function GET() {
 }
 
 // Append a durable fact the assistant learned about the user. Written to the
-// CANONICAL modes/_profile.md (single source of truth) so the CLI/TUI see it too
+// CANONICAL workspace/profile/targeting.md (single source of truth) so the CLI/TUI see it too
 // — never a web-only memory store.
 export async function POST(req: Request) {
   let b: { fact?: string };

@@ -7,7 +7,7 @@ import { atomicWriteWithBackup } from "@/lib/core/safe-write";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Merge-safe writer for config/profile.yml (a USER-LAYER file — DATA_CONTRACT:
+// Merge-safe writer for workspace/profile/profile.yml (a USER-LAYER file — DATA_CONTRACT:
 // never clobber the user's archetypes/narrative/proof-points). On first create we
 // seed from config/profile.example.yml; on an existing file we deep-merge ONLY the
 // proposed keys, write atomically (temp + rename), and only ever via the confirm-
@@ -51,7 +51,7 @@ function patchToProfile(p: ProfilePatch): Record<string, unknown> {
   if (p.remote) comp.location_flexibility = p.remote;
   if (Object.keys(comp).length) out.compensation = comp;
   // seniority intentionally not written (no canonical home in profile.yml);
-  // archetypes/narrative live in modes/_profile.md — this writer never touches them.
+  // archetypes/narrative live in workspace/profile/targeting.md — this writer never touches them.
   return out;
 }
 
@@ -84,7 +84,7 @@ export async function POST(req: Request) {
     try {
       parsed = yaml.load(fs.readFileSync(file, "utf8"));
     } catch {
-      return Response.json({ error: "config/profile.yml exists but is not valid YAML — refusing to overwrite it." }, { status: 409 });
+      return Response.json({ error: "workspace/profile/profile.yml exists but is not valid YAML — refusing to overwrite it." }, { status: 409 });
     }
     base = isObj(parsed) ? (parsed as Record<string, unknown>) : {};
   }

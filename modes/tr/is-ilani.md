@@ -22,7 +22,7 @@ Aday bir ilan yapıştırdığında (metin veya URL) HER ZAMAN 7 bloğun tamamı
 
 ## Blok B — CV Eşleştirmesi
 
-`cv.md` dosyasını oku. İlandaki her gereksinimi CV'deki tam satırlarla karşılaştıran bir tablo oluştur.
+`workspace/profile/cv.md` dosyasını oku. İlandaki her gereksinimi CV'deki tam satırlarla karşılaştıran bir tablo oluştur.
 
 **Arketipe göre öne çıkarılacaklar:**
 - FDE → hızlı teslimat ve müşteri yönlü kanıt noktaları
@@ -77,7 +77,7 @@ CV için en etkili 5 değişiklik + LinkedIn profili için en etkili 5 değişik
 
 **Yansıma** sütunu: öğrenilen dersi veya bugün farklı yapılacak şeyi yakalar. Bu kıdemi gösterir — junior adaylar ne olduğunu anlatır, kıdemli adaylar ders çıkarır.
 
-**Story Bank:** `interview-prep/story-bank.md` varsa bu hikayelerin orada olup olmadığını kontrol et. Yoksa ekle. Zamanla her mülakat sorusuna uyarlanabilecek 5-10 ana hikayeden oluşan yeniden kullanılabilir bir banka oluşur.
+**Story Bank:** `workspace/interviews/story-bank.md` varsa bu hikayelerin orada olup olmadığını kontrol et. Yoksa ekle. Zamanla her mülakat sorusuna uyarlanabilecek 5-10 ana hikayeden oluşan yeniden kullanılabilir bir banka oluşur.
 
 **Arketipe göre seçim ve çerçeveleme:**
 - FDE → teslimat hızı ve müşteri yönlü yaklaşım ön planda
@@ -99,7 +99,7 @@ Bloklar A-F tamamlandıktan sonra **HER ZAMAN** şunları yap:
 
 ### 1. Rapor .md Kaydet
 
-Değerlendirmenin tamamını `reports/{###}-{sirket-slug}-{YYYY-MM-DD}.md` olarak kaydet.
+Değerlendirmenin tamamını `workspace/reports/evaluations/{###}-{sirket-slug}-{YYYY-MM-DD}.md` olarak kaydet.
 
 - `{###}` = sıradaki numara (3 haneli, sıfır dolgulu). Bu numarayı atomik olarak atamak ve yarış durumlarını (race condition) önlemek için, numarayı rezerve etmek üzere `node src/tracker/reserve-report-num.mjs` komutunu çalıştırmalısınız (standart çıktı `{###}` değerini döndürür), raporu yazmalı ve ardından sentineli serbest bırakmak için `node src/tracker/reserve-report-num.mjs --release {###}` komutunu çalıştırmalısınız.
 - `{sirket-slug}` = şirket adı küçük harfle, boşluksuz (tire kullan)
@@ -154,13 +154,13 @@ Değerlendirmenin tamamını `reports/{###}-{sirket-slug}-{YYYY-MM-DD}.md` olara
 
 ### 2. Takipçiye Kaydet
 
-**Yeni** kayıt için `data/applications.md`'yi doğrudan düzenleme. Bunun yerine `batch/tracker-additions/{num}-{sirket-slug}.tsv` dosyasına tek satır TSV yaz (8 veya 9 sekme ile ayrılmış sütun):
+**Yeni** kayıt için `workspace/applications/tracker.md`'yi doğrudan düzenleme. Bunun yerine `workspace/.state/tracker-additions/{num}-{sirket-slug}.tsv` dosyasına tek satır TSV yaz (8 veya 9 sekme ile ayrılmış sütun):
 
 ```tsv
-{num}\t{date}\t{company}\t{role}\t{status}\t{score}\t{pdf_emoji}\t[{num}](reports/{num}-{slug}-{date}.md)\t{note}
+{num}\t{date}\t{company}\t{role}\t{status}\t{score}\t{pdf_emoji}\t[{num}](workspace/reports/evaluations/{num}-{slug}-{date}.md)\t{note}
 ```
 
-- `{num}` = sıradaki numara (tam sayı, `reports/` klasöründen hesapla)
+- `{num}` = sıradaki numara (tam sayı, `workspace/reports/evaluations/` klasöründen hesapla)
 - `{status}` = `Evaluated`
 - `{score}` = `X.X/5` formatı (örn. `4.2/5`)
 - `{pdf_emoji}` = `✅` veya `❌`
@@ -168,7 +168,7 @@ Değerlendirmenin tamamını `reports/{###}-{sirket-slug}-{YYYY-MM-DD}.md` olara
 
 Ardından `node src/tracker/merge-tracker.mjs` çalıştır.
 
-**Mevcut** kayıt için `data/applications.md`'de ilgili satırı doğrudan güncelle (durum, PDF, rapor bağlantısı).
+**Mevcut** kayıt için `workspace/applications/tracker.md`'de ilgili satırı doğrudan güncelle (durum, PDF, rapor bağlantısı).
 
 ---
 
@@ -250,7 +250,7 @@ Satır etiketleri, `| Signal | Status |` başlıkları ve durum sözcükleri sab
 | Posting legitimacy | Blok G değerlendirme kademesi | `✅ High Confidence`; Proceed with Caution / Suspicious için `⚠️ {tier} — {tek cümlelik gerekçe}` |
 | Employment classification | Blok G içindeki çalışma biçimi sinyali | Kontrol çalıştı ve bir şey bulunmadıysa `✅ clear`; bayrak tetiklendiyse `⚠️ contractor-style language: "{alıntı ifade}"`; kontrol çalışamadıysa `— not evaluated` |
 | Culture screen | Blok A'daki kültür taraması alanı | `✅ pass` veya `⚠️ caution — {kanıt}` / `⚠️ fail — {kanıt}`; tarama yapılmadıysa `— not evaluated` |
-| Interview red flags | `interview-prep/{company-slug}-redflags.md` (`interview-redflag` modundan) | **Kopya değil, çapraz referans:** dosya varsa mevcut uyarı düzeyini ve göreli bağlantısını yazın — `[{level}](../interview-prep/{company-slug}-redflags.md)` (`reports/` klasörüne göre); yoksa `— no interview sessions yet` |
+| Interview red flags | `workspace/interviews/{company-slug}-redflags.md` (`interview-redflag` modundan) | **Kopya değil, çapraz referans:** dosya varsa mevcut uyarı düzeyini ve göreli bağlantısını yazın — `[{level}](../workspace/interviews/{company-slug}-redflags.md)` (`workspace/reports/evaluations/` klasörüne göre); yoksa `— no interview sessions yet` |
 | AI claims vs. infrastructure | Blok G'deki AI/altyapı tutarlılık kontrolü (varsa) | Bu rapor kontrolü içeriyorsa kararını yansıtın (`✅ consistent` / `⚠️ {bulgu}`); aksi halde `— not evaluated`. Kontrol var olduğunda satır kendiliğinden etkinleşir, sıralama bağımlılığı yoktur |
 
 Blok biçimi:

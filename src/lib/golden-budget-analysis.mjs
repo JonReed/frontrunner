@@ -47,7 +47,7 @@ const p0Keys = Object.entries(SECTION_PRIORITY)
   .map(([k]) => k);
 
 // ---------------------------------------------------------------------------
-// Synthetic CVs — a real cv.md is 500-3000 lines of markdown.
+// Synthetic CVs — a real workspace/profile/cv.md is 500-3000 lines of markdown.
 // ---------------------------------------------------------------------------
 const CV_BLURB = [
   '',

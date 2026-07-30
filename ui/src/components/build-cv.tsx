@@ -106,7 +106,7 @@ export function BuildCv({
         <div className="flex items-center gap-2">
           {pdf && (
             <a
-              href={`/api/file?path=${encodeURIComponent(pdf)}`}
+              href={`/api/file?role=${encodeURIComponent(roleNum)}&format=pdf`}
               target="_blank"
               rel="noreferrer"
               className="cursor-pointer rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-card)] px-3.5 py-2.5 text-sm font-medium text-[var(--color-ink-soft)] transition hover:border-[var(--color-act)] hover:text-[var(--color-act)]"

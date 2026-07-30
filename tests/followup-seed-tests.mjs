@@ -3,7 +3,7 @@
 /**
  * tests/followup-seed-tests.mjs — regression tests for src/tracker/followup-seed.mjs (#1430).
  *
- * Marking a tracker row Applied used to leave data/follow-ups.md untouched
+ * Marking a tracker row Applied used to leave workspace/applications/follow-ups.md untouched
  * until the user ran the `followup` mode by hand — the seed step never ran on
  * its own. These tests drive src/tracker/followup-seed.mjs's CLI (via execFileSync, like
  * tests/tracker-columns-tests.mjs) end-to-end against sandboxed fixtures, plus a few

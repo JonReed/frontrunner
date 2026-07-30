@@ -11,17 +11,18 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 BATCH_DIR="$SCRIPT_DIR"
-INPUT_FILE="$BATCH_DIR/batch-input.tsv"
-STATE_FILE="$BATCH_DIR/batch-state.tsv"
-PROFILE_FILE="$PROJECT_DIR/config/profile.yml"
-LOGS_DIR="$BATCH_DIR/logs"
+STATE_DIR="$PROJECT_DIR/workspace/.state"
+INPUT_FILE="$STATE_DIR/batch-input.tsv"
+STATE_FILE="$STATE_DIR/batch-state.tsv"
+PROFILE_FILE="$PROJECT_DIR/workspace/profile/profile.yml"
+LOGS_DIR="$STATE_DIR/logs"
 DISCARD_LOG="$LOGS_DIR/discard.log"
-TRACKER_DIR="$BATCH_DIR/tracker-additions"
-REPORTS_DIR="$PROJECT_DIR/reports"
-APPLICATIONS_FILE="$PROJECT_DIR/data/applications.md"
-LOCK_FILE="$BATCH_DIR/batch-runner.pid"
-PAUSE_FILE="$BATCH_DIR/batch-runner.paused"
-STATE_LOCK_DIR="$BATCH_DIR/.batch-state.lock"
+TRACKER_DIR="$STATE_DIR/tracker-additions"
+REPORTS_DIR="$PROJECT_DIR/workspace/reports/evaluations"
+APPLICATIONS_FILE="$PROJECT_DIR/workspace/applications/tracker.md"
+LOCK_FILE="$STATE_DIR/batch-runner.pid"
+PAUSE_FILE="$STATE_DIR/batch-runner.paused"
+STATE_LOCK_DIR="$STATE_DIR/.batch-state.lock"
 STATE_LOCK_PID_FILE="$STATE_LOCK_DIR/pid"
 STATE_LOCK_TIMEOUT_SECONDS=30
 MAIN_PID="${BASHPID:-$$}"
@@ -35,7 +36,7 @@ START_FROM=0
 MAX_RETRIES=2
 MIN_SCORE=0
 SKIP_PDF=false
-MODEL=""  # explicit override; otherwise resolved from config/profile.yml spend_tier
+MODEL=""  # explicit override; otherwise resolved from workspace/profile/profile.yml spend_tier
 RESOLVED_MODEL=""
 RESOLVED_SPEND_TIER=""
 RATE_LIMIT_SLEEP=300
@@ -52,7 +53,7 @@ is_decimal_number() {
 usage() {
   cat <<'USAGE'
 Frontrunner legacy batch runner — process cached JDs via tool-less Claude
-Uses spend_tier from config/profile.yml unless --model overrides it.
+Uses spend_tier from workspace/profile/profile.yml unless --model overrides it.
 
 Usage: batch-runner.sh [OPTIONS]
 
@@ -69,7 +70,7 @@ Options:
   --rate-limit-sleep N Seconds to wait before retrying a rate-limited worker
                        (default: 300)
   --model NAME         Override the tier-resolved Claude model passed to the
-                       tool-less evaluator (otherwise uses config/profile.yml
+                       tool-less evaluator (otherwise uses workspace/profile/profile.yml
                        spend_tier: economy/standard/premium; default standard)
   --status             Show batch progress and a per-job table, then exit
   --watch              Live-refresh progress until the run completes
@@ -182,16 +183,16 @@ check_prerequisites() {
 # deterministic boundary as every standalone evaluator. Keep the user's source
 # TSV intact and run workers only from the filtered derivative.
 apply_mandatory_prefilter() {
-  local filtered_input="$BATCH_DIR/batch-input.filtered.tsv"
+  local filtered_input="$STATE_DIR/batch-input.filtered.tsv"
   [[ -f "$PROJECT_DIR/src/scan/prefilter.mjs" ]] || {
     echo "ERROR: mandatory prefilter module missing: $PROJECT_DIR/src/scan/prefilter.mjs" >&2
     exit 1
   }
   node "$PROJECT_DIR/src/scan/prefilter.mjs" \
     --input "$INPUT_FILE" \
-    --jds "$PROJECT_DIR/jds" \
+    --jds "$PROJECT_DIR/workspace/jobs/descriptions" \
     --out "$filtered_input" \
-    --rejects "$BATCH_DIR/prefilter-rejects.tsv" >/dev/null
+    --rejects "$STATE_DIR/prefilter-rejects.tsv" >/dev/null
   INPUT_FILE="$filtered_input"
 }
 
@@ -311,7 +312,7 @@ get_retries() {
   echo "${retries:-0}"
 }
 
-# Read spend_tier from config/profile.yml. Defaults to "standard" if the key
+# Read spend_tier from workspace/profile/profile.yml. Defaults to "standard" if the key
 # is absent or invalid.
 read_spend_tier() {
   local raw=""
@@ -373,7 +374,7 @@ resolve_worker_model() {
 }
 
 # Append a one-line, auditable record of a pre-screen-gate discard to
-# batch/logs/discard.log (see modes/batch.md — Pre-screen gate). Format:
+# workspace/.state/logs/discard.log (see modes/batch.md — Pre-screen gate). Format:
 # {ISO8601 timestamp}\t{job id}\t{url}\t{reason}
 log_discard() {
   local id="$1" url="$2" reason="$3"
@@ -508,7 +509,7 @@ process_offer() {
   # Without this the file stays EMPTY and the runner fails closed. The inherited
   # worker fetched a rendered HTML page (~18k tokens measured) to obtain a
   # ~1.8k-token description; that unsafe, expensive fallback no longer exists.
-  local jd_index="$PROJECT_DIR/jds/index.tsv"
+  local jd_index="$PROJECT_DIR/workspace/jobs/descriptions/index.tsv"
   if [[ -f "$jd_index" ]]; then
     local cached_jd
     cached_jd="$(awk -F'\t' -v u="$url" '$1==u{print $2; exit}' "$jd_index")"

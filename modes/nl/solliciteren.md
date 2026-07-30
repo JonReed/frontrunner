@@ -12,7 +12,7 @@ Interactieve modus voor wanneer de kandidaat een sollicitatieformulier in Chrome
 ```text
 1. DETECTEREN     -> Lees het actieve Chrome-tabblad (screenshot/URL/titel)
 2. IDENTIFICEREN  -> Haal bedrijf en functie uit de pagina
-3. ZOEKEN         -> Zoek een match in de bestaande rapporten in reports/
+3. ZOEKEN         -> Zoek een match in de bestaande rapporten in workspace/reports/evaluations/
 4. LADEN          -> Lees het volledige rapport en blok G (indien aanwezig)
 5. VERGELIJKEN    -> Komt de functie overeen met de evaluatie? Waarschuw bij wijzigingen
 6. ANALYSEREN     -> Identificeer ALLE zichtbare vragen in het formulier
@@ -32,7 +32,7 @@ Interactieve modus voor wanneer de kandidaat een sollicitatieformulier in Chrome
 ## Stap 2 -- Identificeer en laad de context
 
 1. Haal de bedrijfsnaam en functietitel uit de pagina
-2. Zoek in `reports/` met een genormaliseerde combinatie van bedrijfsnaam en functietitel (zonder onderscheid tussen hoofdletters en kleine letters of leestekens)
+2. Zoek in `workspace/reports/evaluations/` met een genormaliseerde combinatie van bedrijfsnaam en functietitel (zonder onderscheid tussen hoofdletters en kleine letters of leestekens)
 3. Bevestig de match aan de hand van de vacature-URL wanneer die beschikbaar is. Als er daarna meerdere rapporten mogelijk blijven, vraag de kandidaat welk rapport bij het formulier hoort voordat je iets laadt
 4. Indien precies één gevalideerde match -> laad het volledige rapport
 5. Als Blok G aanwezig is -> laad eerdere conceptantwoorden als basis
@@ -43,7 +43,7 @@ Interactieve modus voor wanneer de kandidaat een sollicitatieformulier in Chrome
 Als de rol op het scherm afwijkt van de geëvalueerde rol:
 - **Waarschuw de kandidaat**: "De rol is veranderd van [X] in [Y]. Wil je dat ik de antwoorden opnieuw evalueer of aanpas aan de nieuwe titel?"
 - **Indien aangepast**: Pas de antwoorden eenmalig aan de zichtbare rol aan zonder opnieuw te evalueren. Laat de oorspronkelijke roltitel in de tracker, de rapportmetadata en blok G ongewijzigd en sla de aangepaste antwoorden niet in het oude rapport op
-- **Indien opnieuw geëvalueerd**: Start de volledige A-F-evaluatie voor de zichtbare rol, werk de rapportmetadata bij en genereer blok G opnieuw. Schrijf de gewijzigde roltitel als TSV-toevoeging in `batch/tracker-additions/`; bewerk `applications.md` niet rechtstreeks
+- **Indien opnieuw geëvalueerd**: Start de volledige A-F-evaluatie voor de zichtbare rol, werk de rapportmetadata bij en genereer blok G opnieuw. Schrijf de gewijzigde roltitel als TSV-toevoeging in `workspace/.state/tracker-additions/`; bewerk `applications.md` niet rechtstreeks
 - **Na herbeoordeling**: Voer in deze volgorde `node src/tracker/merge-tracker.mjs`, `node src/tracker/verify-pipeline.mjs`, `node src/tracker/normalize-statuses.mjs` en `node src/tracker/dedup-tracker.mjs` uit
 
 ## Stap 4 -- Analyseer de formuliervragen
@@ -57,7 +57,7 @@ Identificeer ALLE zichtbare vragen:
 
 Classificeer elke vraag:
 - **Al beantwoord in Blok G** -> herhaal het bestaande antwoord
-- **Nieuwe vraag** -> genereer het antwoord uit het rapport + `cv.md`
+- **Nieuwe vraag** -> genereer het antwoord uit het rapport + `workspace/profile/cv.md`
 
 ## Stap 5 -- Genereer de antwoorden
 
@@ -69,14 +69,14 @@ Construeer voor elke vraag het antwoord volgens dit diagram:
 2. **Vorig blok G**: Als er een concept bestaat, neem dit dan als basis en verfijn het
 3. **“Ik kies jou”-toon**: hetzelfde raamwerk als in de automatische pipeline: zelfverzekerd, niet smekend
 4. **Specificiteit**: citeer iets concreets uit de zichtbare vacaturetekst of uit het gevalideerde rapport. Als geen van beide de benodigde informatie bevat, vraag dan eerst om de vacaturetekst; verzin nooit details
-5. **frontrunner proof point**: vermeld dit in 'Aanvullende informatie' als dat veld bestaat, maar alleen wanneer het afkomstig is uit het gevalideerde rapport, `cv.md`, `config/profile.yml` of de huidige conversatie. Laat de kandidaat het bevestigen voordat je het presenteert en gebruik geen onbewezen claims of metrics
+5. **frontrunner proof point**: vermeld dit in 'Aanvullende informatie' als dat veld bestaat, maar alleen wanneer het afkomstig is uit het gevalideerde rapport, `workspace/profile/cv.md`, `workspace/profile/profile.yml` of de huidige conversatie. Laat de kandidaat het bevestigen voordat je het presenteert en gebruik geen onbewezen claims of metrics
 
 **Velden die vaak voorkomen in Nederlandse en Belgische formulieren:**
-- **Salarisverwachtingen (jaarlijks bruto)** -> Bereik uit `config/profile.yml` of de huidige conversatie, in EUR, met vermelding "bespreekbaar volgens het totaalpakket". Laat de kandidaat het bedrag bevestigen voordat je het gebruikt
-- **Beschikbaarheidsdatum** -> Baseer op de werkelijke opzegtermijn en beschikbaarheid uit `config/profile.yml` of een verklaring van de kandidaat in het huidige gesprek. Verzin geen datum en laat de kandidaat de berekende datum bevestigen voordat je die gebruikt
-- **Werkvergunning / Nationaliteit** -> Baseer het antwoord uitsluitend op `config/profile.yml` of een verklaring van de kandidaat in het huidige gesprek. Houd werkvergunning, visumsponsoring, nationaliteit en verblijfsstatus als afzonderlijke feiten; neem niets aan. Laat de kandidaat het antwoord bevestigen voordat je het presenteert
-- **Talen** -> Baseer taalniveaus uitsluitend op `config/profile.yml` of een verklaring van de kandidaat in het huidige gesprek, gebruik waar beschikbaar ERK-niveaus (A1-C2) en laat de kandidaat de gegevens bevestigen voordat je ze gebruikt
-- **Mobiliteit** -> Baseer geografisch gebied en reisfrequentie uitsluitend op `config/profile.yml` of een verklaring van de kandidaat in het huidige gesprek en laat de kandidaat de gegevens bevestigen voordat je ze gebruikt
+- **Salarisverwachtingen (jaarlijks bruto)** -> Bereik uit `workspace/profile/profile.yml` of de huidige conversatie, in EUR, met vermelding "bespreekbaar volgens het totaalpakket". Laat de kandidaat het bedrag bevestigen voordat je het gebruikt
+- **Beschikbaarheidsdatum** -> Baseer op de werkelijke opzegtermijn en beschikbaarheid uit `workspace/profile/profile.yml` of een verklaring van de kandidaat in het huidige gesprek. Verzin geen datum en laat de kandidaat de berekende datum bevestigen voordat je die gebruikt
+- **Werkvergunning / Nationaliteit** -> Baseer het antwoord uitsluitend op `workspace/profile/profile.yml` of een verklaring van de kandidaat in het huidige gesprek. Houd werkvergunning, visumsponsoring, nationaliteit en verblijfsstatus als afzonderlijke feiten; neem niets aan. Laat de kandidaat het antwoord bevestigen voordat je het presenteert
+- **Talen** -> Baseer taalniveaus uitsluitend op `workspace/profile/profile.yml` of een verklaring van de kandidaat in het huidige gesprek, gebruik waar beschikbaar ERK-niveaus (A1-C2) en laat de kandidaat de gegevens bevestigen voordat je ze gebruikt
+- **Mobiliteit** -> Baseer geografisch gebied en reisfrequentie uitsluitend op `workspace/profile/profile.yml` of een verklaring van de kandidaat in het huidige gesprek en laat de kandidaat de gegevens bevestigen voordat je ze gebruikt
 
 **Uitvoerformaat:**
 

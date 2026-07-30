@@ -2,7 +2,7 @@
  * "My details" — what the tool knows about you, and therefore what every
  * assessment is judged against.
  *
- * Read first, edit on request. config/profile.yml is a hand-edited file full
+ * Read first, edit on request. workspace/profile/profile.yml is a hand-edited file full
  * of comments and structure, and for a long time that made a form too risky to
  * offer: a naive write would have destroyed it. It now goes through
  * src/application/profile-write.mjs, which patches the document in place and

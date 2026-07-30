@@ -3,7 +3,7 @@ import path from "node:path";
 import { frontrunnerRoot } from "@/lib/frontrunner";
 
 /**
- * Locate the tailored CV PDF the real `pdf` mode wrote to output/ for a given
+ * Locate the tailored CV PDF the real `pdf` mode wrote to workspace/documents/ for a given
  * company (newest match wins). STRICT company match — never returns a CV tailored
  * for a different company (we'd rather attach nothing than the wrong CV). Mirrors
  * the matching in /api/cv-pdf so the "View tailored CV" link and the apply

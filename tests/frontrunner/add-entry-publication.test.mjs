@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
@@ -38,11 +39,13 @@ function fixture() {
   const dir = mkdtempSync(join(tmpdir(), 'frontrunner-add-publication-'));
   const paths = {
     dir,
-    cvPath: join(dir, 'cv.md'),
-    articlePath: join(dir, 'article-digest.md'),
-    journalPath: join(dir, 'data', '.add-entry-PUBLISHING.json'),
+    cvPath: join(dir, 'workspace/profile/cv.md'),
+    articlePath: join(dir, 'workspace/profile/article-digest.md'),
+    journalPath: join(dir, 'workspace', '.state', '.add-entry-PUBLISHING.json'),
     payloadPath: join(dir, 'payload.json'),
   };
+  mkdirSync(join(dir, 'workspace', 'profile'), { recursive: true });
+  mkdirSync(join(dir, 'workspace', '.state'), { recursive: true });
   writeFileSync(paths.cvPath, CV_START);
   writeFileSync(paths.payloadPath, JSON.stringify(PAYLOAD));
   return paths;

@@ -47,7 +47,7 @@ try {
   // "Hired" is canonical (states.yml) — the merge must keep it, not downgrade
   // it to "Evaluated" the way an unrecognized status would be.
   const hired = runMerge({
-    '1-acme.tsv': '1\t2026-01-01\tAcme\tML Eng\tHired\t4.5/5\t✅\t[1](reports/1-acme-2026-01-01.md)\tlanded the job\n',
+    '1-acme.tsv': '1\t2026-01-01\tAcme\tML Eng\tHired\t4.5/5\t✅\t[1](workspace/reports/evaluations/1-acme-2026-01-01.md)\tlanded the job\n',
   });
   const hiredRow = hired.split('\n').find(l => /\bAcme\b/.test(l)) || '';
   if (/\|\s*Hired\s*\|/.test(hiredRow) && !/\|\s*Evaluated\s*\|/.test(hiredRow)) {
@@ -58,7 +58,7 @@ try {
 
   // "accepted" is a states.yml alias of Hired — it must resolve to Hired.
   const accepted = runMerge({
-    '2-globex.tsv': '2\t2026-01-02\tGlobex\tData Eng\taccepted\t4.0/5\t✅\t[2](reports/2-globex-2026-01-02.md)\toffer accepted\n',
+    '2-globex.tsv': '2\t2026-01-02\tGlobex\tData Eng\taccepted\t4.0/5\t✅\t[2](workspace/reports/evaluations/2-globex-2026-01-02.md)\toffer accepted\n',
   });
   const acceptedRow = accepted.split('\n').find(l => /\bGlobex\b/.test(l)) || '';
   if (/\|\s*Hired\s*\|/.test(acceptedRow)) {

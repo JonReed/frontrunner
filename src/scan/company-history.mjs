@@ -2,8 +2,8 @@
 /**
  * company-history.mjs — Per-Company Evidence-Card Aggregator for frontrunner
  *
- * READ-ONLY. Never writes a file. Joins the tracker (data/applications.md),
- * follow-ups (data/follow-ups.md), and scan-history (data/scan-history.tsv)
+ * READ-ONLY. Never writes a file. Joins the tracker (workspace/applications/tracker.md),
+ * follow-ups (workspace/applications/follow-ups.md), and scan-history (workspace/.state/scan-history.tsv)
  * per company, and renders an evidence card per company covering two
  * independent axes:
  *
@@ -20,9 +20,9 @@
  * card lists evidence and lets the human judge it.
  *
  * Sources (each optional; a missing file degrades gracefully, never crashes):
- *   - tracker:       resolveTrackerPath() -> data/applications.md
- *   - follow-ups:    data/follow-ups.md
- *   - scan-history:  data/scan-history.tsv (-> detectReposts clusters)
+ *   - tracker:       resolveTrackerPath() -> workspace/applications/tracker.md
+ *   - follow-ups:    workspace/applications/follow-ups.md
+ *   - scan-history:  workspace/.state/scan-history.tsv (-> detectReposts clusters)
  *   - status-log:    ./funnel-velocity.mjs, loaded ONLY via a dynamic
  *                     `await import(...)` in try/catch. The module ships on
  *                     main, but the optional applied-date/median helpers this
@@ -213,13 +213,13 @@ export function loadTrackerRows(rootDir = FRONTRUNNER) {
 }
 
 export function loadFollowupRows(rootDir = FRONTRUNNER, overridePath) {
-  const path = overridePath || join(rootDir, 'data/follow-ups.md');
+  const path = overridePath || join(rootDir, 'workspace/applications/follow-ups.md');
   if (!existsSync(path)) return { rows: [], loaded: false };
   return { rows: parseFollowups(readFileSync(path, 'utf-8')), loaded: true };
 }
 
 export function loadRepostClusters(rootDir = FRONTRUNNER, overridePath) {
-  const path = overridePath || join(rootDir, 'data/scan-history.tsv');
+  const path = overridePath || join(rootDir, 'workspace/.state/scan-history.tsv');
   if (!existsSync(path)) return { clusters: [], loaded: false };
   const rows = parseScanHistory(readFileSync(path, 'utf-8'));
   return { clusters: detectReposts(rows), loaded: true };
@@ -576,7 +576,7 @@ async function runSelfTest() {
   };
 
   const NOW = new Date('2026-07-09T00:00:00Z');
-  const row = (num, company, status, date, notes = '') => ({ num, date, company, role: 'Engineer', score: '4/5', status, pdf: '✅', report: `reports/${num}.md`, notes });
+  const row = (num, company, status, date, notes = '') => ({ num, date, company, role: 'Engineer', score: '4/5', status, pdf: '✅', report: `workspace/reports/evaluations/${num}.md`, notes });
 
   // --- join fixtures: case/punct variants meet under one key; "" excluded -> unjoinable ---
   {

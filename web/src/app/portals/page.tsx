@@ -15,7 +15,7 @@ export default function PortalsPage() {
         broken — a broken link means that company silently disappears from every future scan.
       </p>
       <p className="mt-1.5 text-xs text-faint">
-        Backed by <code className="text-muted">portals.yml</code> — edit it directly or ask the assistant.
+        Backed by <code className="text-muted">workspace/search/portals.yml</code> — edit it directly or ask the assistant.
       </p>
       <div className="mt-6">
         <PortalsView />

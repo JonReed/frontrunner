@@ -5,9 +5,9 @@
      ============================================================
      इस फ़ाइल में frontrunner के सभी हिन्दी मोड्स के लिए
      साझा संदर्भ है। frontrunner उपयोग करने से पहले आपको:
-     1. config/profile.yml में अपनी व्यक्तिगत जानकारी भरें
-     2. प्रोजेक्ट की रूट में cv.md बनाएं (Markdown में CV)
-     3. (वैकल्पिक) article-digest.md में अपने proof points बनाएं
+     1. workspace/profile/profile.yml में अपनी व्यक्तिगत जानकारी भरें
+     2. प्रोजेक्ट की रूट में workspace/profile/cv.md बनाएं (Markdown में CV)
+     3. (वैकल्पिक) workspace/profile/article-digest.md में अपने proof points बनाएं
      4. नीचे [कस्टमाइज़ करें] चिह्नित अनुभाग अनुकूलित करें
      ============================================================ -->
 
@@ -15,12 +15,12 @@
 
 | फ़ाइल | पथ | कब |
 |-------|----|----|
-| cv.md | `cv.md` (प्रोजेक्ट की रूट) | हमेशा |
-| article-digest.md | `article-digest.md` (यदि मौजूद हो) | हमेशा (विस्तृत proof points के लिए) |
-| profile.yml | `config/profile.yml` | हमेशा (पहचान और लक्षित भूमिकाओं के लिए) |
+| workspace/profile/cv.md | `workspace/profile/cv.md` (प्रोजेक्ट की रूट) | हमेशा |
+| workspace/profile/article-digest.md | `workspace/profile/article-digest.md` (यदि मौजूद हो) | हमेशा (विस्तृत proof points के लिए) |
+| profile.yml | `workspace/profile/profile.yml` | हमेशा (पहचान और लक्षित भूमिकाओं के लिए) |
 
-**नियम: proof points की metrics को कभी hardcode न करें।** इन्हें मूल्यांकन के समय `cv.md` और `article-digest.md` से पढ़ें।
-**नियम: article/project metrics के लिए, `article-digest.md` को `cv.md` से प्राथमिकता दें** (`cv.md` में पुराने आंकड़े हो सकते हैं)।
+**नियम: proof points की metrics को कभी hardcode न करें।** इन्हें मूल्यांकन के समय `workspace/profile/cv.md` और `workspace/profile/article-digest.md` से पढ़ें।
+**नियम: article/project metrics के लिए, `workspace/profile/article-digest.md` को `workspace/profile/cv.md` से प्राथमिकता दें** (`workspace/profile/cv.md` में पुराने आंकड़े हो सकते हैं)।
 
 ---
 
@@ -46,16 +46,16 @@
 
 ### Archetype के अनुसार अनुकूली framing
 
-> **ठोस metrics: इन्हें मूल्यांकन के समय `cv.md` और `article-digest.md` से पढ़ें। यहाँ कभी hardcode न करें।**
+> **ठोस metrics: इन्हें मूल्यांकन के समय `workspace/profile/cv.md` और `workspace/profile/article-digest.md` से पढ़ें। यहाँ कभी hardcode न करें।**
 
 | यदि भूमिका है... | उम्मीदवार में highlight करें... | Proof points के स्रोत |
 |-----------------|--------------------------------|----------------------|
-| Platform / LLMOps | Production experience, observability, evals, closed-loop | article-digest.md + cv.md |
-| Agentic / Automation | Multi-agent orchestration, HITL, reliability, costs | article-digest.md + cv.md |
-| Technical AI PM | Product discovery, PRDs, metrics, stakeholder management | cv.md + article-digest.md |
-| Solutions Architect | System design, integrations, enterprise-ready | article-digest.md + cv.md |
-| Forward Deployed Engineer | Rapid delivery, client proximity, prototype to production | cv.md + article-digest.md |
-| AI Transformation Lead | Change management, team enablement, adoption | cv.md + article-digest.md |
+| Platform / LLMOps | Production experience, observability, evals, closed-loop | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Agentic / Automation | Multi-agent orchestration, HITL, reliability, costs | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Technical AI PM | Product discovery, PRDs, metrics, stakeholder management | workspace/profile/cv.md + workspace/profile/article-digest.md |
+| Solutions Architect | System design, integrations, enterprise-ready | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Forward Deployed Engineer | Rapid delivery, client proximity, prototype to production | workspace/profile/cv.md + workspace/profile/article-digest.md |
+| AI Transformation Lead | Change management, team enablement, adoption | workspace/profile/cv.md + workspace/profile/article-digest.md |
 
 <!-- [कस्टमाइज़ करें] ऊपर के archetypes को अपने concrete projects/articles से map करें -->
 
@@ -64,11 +64,11 @@
 <!-- [कस्टमाइज़ करें] अपना narrative यहाँ डालें। उदाहरण:
      - "5 साल बाद SaaS बनाई और बेची। अब 100% focus applied AI पर।"
      - "Series-B में 10x growth के दौरान engineering lead। अगली challenge की तलाश।"
-     config/profile.yml -> narrative.exit_story से पढ़ें -->
+     workspace/profile/profile.yml -> narrative.exit_story से पढ़ें -->
 
-सभी content को frame करने के लिए `config/profile.yml` से transition narrative उपयोग करें:
+सभी content को frame करने के लिए `workspace/profile/profile.yml` से transition narrative उपयोग करें:
 - **PDF summaries में:** पास्ट और future के बीच bridge बनाएं — "अब उन्हीं [skills] को [offer के domain] में apply कर रहे हैं।"
-- **STAR stories में:** `article-digest.md` के proof points का संदर्भ लें।
+- **STAR stories में:** `workspace/profile/article-digest.md` के proof points का संदर्भ लें।
 - **Draft responses (Block G) में:** पहले response में transition narrative डालें।
 - **जब offer "entrepreneurial", "autonomy", "builder", "end-to-end" mention करे:** यह differentiator #1 है। Match weight बढ़ाएं।
 
@@ -90,7 +90,7 @@ Profile को **"Demonstrable practice वाले Technical Builder"** के
        url: "https://yourwebsite.dev/demo"
        password: "demo-2026"
        when_to_share: "LLMOps, AI Platform, Observability roles"
-     config/profile.yml -> narrative.proof_points और narrative.dashboard से पढ़ें -->
+     workspace/profile/profile.yml -> narrative.proof_points और narrative.dashboard से पढ़ें -->
 
 यदि candidate के पास live demo / dashboard है (profile.yml जाँचें), तो relevant applications में access offer करें।
 
@@ -148,7 +148,7 @@ Profile को **"Demonstrable practice वाले Technical Builder"** के
 
 ### Location Policy
 
-<!-- [कस्टमाइज़ करें] अपनी स्थिति के अनुसार adapt करें। config/profile.yml -> location से पढ़ें -->
+<!-- [कस्टमाइज़ करें] अपनी स्थिति के अनुसार adapt करें। workspace/profile/profile.yml -> location से पढ़ें -->
 
 **Forms में:**
 - Binary "क्या आप on-site हो सकते हैं?" questions: profile.yml में वास्तविक availability के अनुसार जवाब दें
@@ -171,7 +171,7 @@ Profile को **"Demonstrable practice वाले Technical Builder"** के
 ### कभी नहीं
 
 1. Experience या metrics fabricate करना
-2. `cv.md` या portfolio files modify करना
+2. `workspace/profile/cv.md` या portfolio files modify करना
 3. Candidate की तरफ से applications submit करना
 4. Generated messages में phone number share करना
 5. Market से नीचे compensation recommend करना
@@ -182,7 +182,7 @@ Profile को **"Demonstrable practice वाले Technical Builder"** के
 ### हमेशा
 
 0. **Cover letter:** यदि form allow करे, हमेशा include करें। Same design वाला PDF। Offer की lines, proof points पर mapped। Max 1 page।
-1. Offer evaluate करने से पहले `cv.md` और `article-digest.md` (यदि मौजूद हो) पढ़ें
+1. Offer evaluate करने से पहले `workspace/profile/cv.md` और `workspace/profile/article-digest.md` (यदि मौजूद हो) पढ़ें
 1b. **हर session का पहला evaluation:** `node src/cv/cv-sync-check.mjs` via Bash run करें। Alerts पर candidate को सूचित करें
 2. Role का archetype detect करें और framing adapt करें
 3. Matching करते समय CV की exact lines quote करें
@@ -192,7 +192,7 @@ Profile को **"Demonstrable practice वाले Technical Builder"** के
 7. Direct और concrete रहें — बकवास नहीं
 8. Natural Hindi tech language use करें। Short sentences, action verbs, passive avoid करें। Technical terms force-translate न करें (stack, pipeline, deployment, embedding)
 8b. **PDF में case study URLs:** यदि PDF में case studies या demos mention हों, URLs Professional Summary के पहले paragraph में होने चाहिए। Recruiters अक्सर सिर्फ summary पढ़ते हैं। सभी URLs HTML में `white-space: nowrap` के साथ
-9. **Tracker entries TSV में** — applications.md सीधे edit कभी नहीं करें (नई entries के लिए)। TSV `batch/tracker-additions/` में लिखें, `src/tracker/merge-tracker.mjs` merge करेगा
+9. **Tracker entries TSV में** — applications.md सीधे edit कभी नहीं करें (नई entries के लिए)। TSV `workspace/.state/tracker-additions/` में लिखें, `src/tracker/merge-tracker.mjs` merge करेगा
 10. **हर report header में `**URL:**`** — Score और PDF के बीच
 
 ### Tools
@@ -202,7 +202,7 @@ Profile को **"Demonstrable practice वाले Technical Builder"** के
 | WebSearch | Compensation research, trends, company culture, LinkedIn contacts, offer fallback |
 | WebFetch | Static pages से offers extract करने के लिए fallback |
 | Playwright | Verify if offers are active (browser_navigate + browser_snapshot), SPAs से offers extract करें। **Critical: कभी 2+ agents Playwright के साथ parallel में नहीं — वे same browser instance share करते हैं** |
-| Read | cv.md, article-digest.md, cv-template.html |
+| Read | workspace/profile/cv.md, workspace/profile/article-digest.md, cv-template.html |
 | Write | PDF के लिए temporary HTML, applications.md, reports .md |
 | Edit | Tracker update करें |
 | Bash | `node src/cv/generate-pdf.mjs` |

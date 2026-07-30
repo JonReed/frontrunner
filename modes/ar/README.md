@@ -25,7 +25,7 @@
 
 ### الخيار 2 -- بشكل دائم عبر الإعدادات
 
-أضف السطور التالية إلى ملف الإعدادات `config/profile.yml`:
+أضف السطور التالية إلى ملف الإعدادات `workspace/profile/profile.yml`:
 
 ```yaml
 language:
@@ -56,7 +56,7 @@ language:
 
 تم الإبقاء على بعض المصطلحات التقنية الشائعة باللغة الإنجليزية عمداً لضمان التوافق مع الأنظمة التقنية وثقافة العمل في الشركات الحديثة:
 
-- `cv.md` و `pipeline` و `tracker` و `report` و `score` و `archetype` و `proof point`.
+- `workspace/profile/cv.md` و `pipeline` و `tracker` و `report` و `score` و `archetype` و `proof point`.
 - أسماء الأدوات البرمجية (`Playwright` و `WebSearch` و `WebFetch` و `Read` و `Write` و `Edit` و `Bash`).
 - حالات الطلبات في جدول التتبع (`Evaluated` و `Applied` و `Interview` و `Offer` و `Rejected` و `Discarded`).
 - مسارات الملفات، الأوامر البرمجية، وقطع الشفرة المصدرية.

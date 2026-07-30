@@ -14,7 +14,7 @@ calls, deterministic writers/renderers, and a loopback-only UI. The detailed
 threat tables below preserve the pre-hardening baseline so future upstream
 merges cannot quietly reintroduce it.
 
-## Implementation status (2026-07-29)
+## Implementation status (2026-07-30)
 
 | Boundary | Status | Enforcement |
 |---|---|---|
@@ -25,7 +25,7 @@ merges cannot quietly reintroduce it.
 | Prompt-injection authority | Fixed | hostile-data framing plus zero-tool models; detection remains telemetry only |
 | Report XSS/unsafe links | Fixed in new UI | escaped React rendering, HTTP(S) URL allowlist, CSP, no `dangerouslySetInnerHTML` |
 | UI exposure/action boundary | Fixed for intended local deployment | listener pinned to `127.0.0.1`; non-local Host/Origin rejected |
-| UI filesystem traversal | Fixed | strict job IDs plus canonical report/output containment |
+| UI filesystem and process authority | Fixed | canonical launcher supplies the repository root and fixed shell-free Next.js process; artifact requests use tracker role IDs plus closed formats before canonical report/output containment |
 | Generated HTML active content | Fixed | escaped deterministic builder plus sandbox CSP on previews |
 | Provider supply-chain capability audit | Fixed for core adapters; residual reviewed-code trust | regression tests forbid direct fetch and child-process imports; the operator-configured `local-parser` keeps its restricted in-repository interpreter/script contract but now executes through the canonical supervisor |
 | Job-source result integrity | Fixed | `providers/_contract.mjs` enforces one closed, bounded Job schema after every provider fetch; every scanner and probe path is inventory-tested against bypass |
@@ -54,13 +54,13 @@ retry orphan recovery, and bound hostile metadata while enforcing containment.
 Evaluation-publication tests inject tracker failure, terminate a process after
 its report write, race concurrent recovery, and prove a corrupted journal
 cannot redirect writes outside fixed report/tracker paths.
-Candidate-source publication tests terminate a process between `cv.md` and
-`article-digest.md`, race independent writers, replay the journal
+Candidate-source publication tests terminate a process between `workspace/profile/cv.md` and
+`workspace/profile/article-digest.md`, race independent writers, replay the journal
 idempotently, and prove recovery preserves a newer human edit instead of
 overwriting it.
 Secondary-state tests race independent reply and assessment writers, inject
 replacement failures, reject oversized reply content, and prove application
-answers cannot mutate a file outside `reports/` through either a direct path or
+answers cannot mutate a file outside `workspace/reports/evaluations/` through either a direct path or
 a symlink.
 Portal-discovery tests race independent writers with duplicate boards, inject a
 replacement failure, preserve comments and unrelated configuration, and reject
@@ -288,7 +288,7 @@ above is authoritative for current behavior.
 | TM-005 | Malicious public source | Source is fetched by scanner | Return oversized, deeply nested, slow or highly repetitive content | Memory/CPU exhaustion, stuck scans, token-cost inflation | Availability, compute, model allowance | Request timeout; browser JD caps (`providers/_http.mjs`, `src/scan/browser-extract.mjs`) | Shared HTTP consumes full bodies; provider API JD text is not uniformly capped; object/list cardinality loosely bounded | Stream with hard byte limits before parsing; cap nesting/cardinality and every normalized field; cap one JD centrally; limit roles/pages per source and total run budget | Metrics for bytes, parse time, roles, truncation and per-source error rates | High: trivial for public sources | Medium: local DoS/cost, generally recoverable | high |
 | TM-006 | Malicious JD | JD reaches a tool-less evaluator | Semantically manipulate otherwise valid structured output | Misranking, false legitimacy, poisoned analysis and user decisions | Evaluation/report integrity | Versioned JSON contract, numeric/enumeration validation, deterministic rendering (`src/evaluate/scoring-contract.mjs`) | JD is not explicitly framed as hostile data; semantic claims cannot be fully schema-validated; strings/counts have weak bounds | Add a central untrusted-content envelope with provenance/hash and explicit instruction hierarchy; bound arrays/strings; independently derive company/title/URL; never allow model output to choose actions | Record contract violations, suspicious instruction patterns and source hashes; expose provenance in reports | High for attempted injection; variable model compliance | Medium: no direct tools, but decisions are consequential | high |
 | TM-007 | New or compromised provider code | A provider is added/updated and passes review incompletely | Bypass central transport, return malformed jobs, or execute arbitrary module code at import | Reintroduced SSRF, local code execution, integrity loss | Repository, local host, scanner | Registry shape checks; provider tests and conventions (`providers/_registry.mjs`, `providers/README.md`) | Dynamic import executes provider code; security properties are convention/test-specific | Require declarative provider capabilities and central transport; prohibit global `fetch` and child processes in core providers via audit; schema-validate all returned jobs; review upstream provider changes as code execution | CI provider audit, dependency/code-owner review, inventory of requested hosts | Low for remote advertiser, medium for supply chain | High | medium |
-| TM-008 | Corrupted local/model-influenced data | Tracker/report/job ID contains traversal-like path | Read a file outside the intended report/job directory | Local data disclosure in UI, confusing rendered content | Local files, UI integrity | Expected paths are normally code-generated and user-local | `join` is used without realpath/containment validation in UI readers | Resolve canonical paths and require containment under `reports/`, `data/` or `ui/.jobs`; validate job IDs against a strict pattern | Log rejected paths and malformed tracker links | Low under single-user assumptions | Medium | low |
+| TM-008 | Corrupted local/model-influenced data | Tracker/report/job ID contains traversal-like path | Read a file outside the intended report/job directory | Local data disclosure in UI, confusing rendered content | Local files, UI integrity | Expected paths are normally code-generated and user-local | `join` is used without realpath/containment validation in UI readers | Resolve canonical paths and require containment under `workspace/reports/evaluations/`, `data/` or `ui/.jobs`; validate job IDs against a strict pattern | Log rejected paths and malformed tracker links | Low under single-user assumptions | Medium | low |
 
 ## Criticality calibration
 
@@ -353,7 +353,7 @@ above is authoritative for current behavior.
    “sanitize away” prompt injection and then trust the remainder.
 5. **Implemented:** replace both Claude CLI workers with tool-less scoring and CV-tailoring
    contracts. Model output proposes bounded content; code chooses filenames,
-   writes reports/tracker data, renders HTML/PDF and performs state transitions.
+   writes workspace/reports/evaluations/tracker data, renders HTML/PDF and performs state transitions.
 6. **Implemented:** pin the UI to loopback, add Host/Origin checks, use
    safe React rendering, validate every URL and filesystem path at use, and
    route its paid CV action through the fixed application-service job manager.

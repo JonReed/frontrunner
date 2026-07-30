@@ -10,10 +10,10 @@
 2. **面试日期与时间**（必填）— 用于计算可用小时数
 3. **面试官姓名与角色**（如已知）— 影响准备的深度与语气。后续轮次（panel / onsite loop）常会一次点名多位面试官——来自用户直接告知、粘贴的日历邀请，或粘贴的排期邮件。当点名超过一位小组成员时，见 Step 2 中的 Panel Intel 说明。
 4. **轮次类型**（如已知）— screening、technical/domain-specific、design/case study、behavioral panel
-5. **简历**，位于 `cv.md` + `article-digest.md`（如存在）— 读取经验、技能与证明点
-6. **画像**，位于 `config/profile.yml` + `modes/_profile.md` — 读取叙事、原型与目标
-7. **故事库**，位于 `interview-prep/story-bank.md` — 已有的 STAR+R 故事
-8. **题库**，位于 `interview-prep/question-bank.md` — 已有短板（如文件存在）
+5. **简历**，位于 `workspace/profile/cv.md` + `workspace/profile/article-digest.md`（如存在）— 读取经验、技能与证明点
+6. **画像**，位于 `workspace/profile/profile.yml` + `workspace/profile/targeting.md` — 读取叙事、原型与目标
+7. **故事库**，位于 `workspace/interviews/story-bank.md` — 已有的 STAR+R 故事
+8. **题库**，位于 `workspace/interviews/question-bank.md` — 已有短板（如文件存在）
 9. **此前已表态的薪酬** — 若已知 tracker#，运行 `node src/analysis/salary-gap.mjs --stated-for <tracker#>`（零 token）。任何先前的 `stated` 观察值，都是候选人在更早一轮、对某位具体面试官已经承诺过的数字——把它写入 Step 4 的速查页，让候选人保持口径一致，避免无意中重新谈价。
 
 ---
@@ -70,7 +70,7 @@
 
 从现在到面试时间计算可用小时数，并划分成时间块：
 
-在确定块大小之前，先检查 `interview-prep/question-bank.md`（如存在）。任何来自先前轮次、标为 🔴 的题都是已被证实的短板——无论 CV-vs-JD 分析如何排序，都要给它单独一块。真实表现数据优先于推断风险。
+在确定块大小之前，先检查 `workspace/interviews/question-bank.md`（如存在）。任何来自先前轮次、标为 🔴 的题都是已被证实的短板——无论 CV-vs-JD 分析如何排序，都要给它单独一块。真实表现数据优先于推断风险。
 
 **模板（先预留休息，再按剩余可学习时长调整各块大小）：**
 
@@ -145,7 +145,7 @@ Block 7 — 缓冲 + 休息
 
 ## Step 5 — Save Output
 
-若文件不存在，将计划保存到 `interview-prep/{company-slug}-{role-slug}.md`；若已存在，则追加一个 `## Prep Plan` 小节。
+若文件不存在，将计划保存到 `workspace/interviews/{company-slug}-{role-slug}.md`；若已存在，则追加一个 `## Prep Plan` 小节。
 
 ---
 
@@ -157,4 +157,4 @@ Block 7 — 缓冲 + 休息
 - **一块一个主题。** 单块混多个主题会降低记忆留存。
 - **始终留出休息时间。** 先固定预留面试前 60–90 分钟休息，再用剩余时间分配学习块。休息好的候选人比临时抱佛脚的表现更好。
 - **绝不编造公司情报。** 若没有调研，就直说——不要捏造公司文化或技术细节。
-- **绝不替候选人编造主张。** 速查页（Step 4）中的锚定句与面试前话术，必须基于候选人实际拥有的材料——`cv.md`、`article-digest.md` 或故事库。不要起草依赖候选人没有的经验或指标的主张。若某主张出现在 `interview-prep/retracted-claims.md` 中，永远不要纳入。
+- **绝不替候选人编造主张。** 速查页（Step 4）中的锚定句与面试前话术，必须基于候选人实际拥有的材料——`workspace/profile/cv.md`、`workspace/profile/article-digest.md` 或故事库。不要起草依赖候选人没有的经验或指标的主张。若某主张出现在 `workspace/interviews/retracted-claims.md` 中，永远不要纳入。

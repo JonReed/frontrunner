@@ -19,7 +19,7 @@ import {
 import { createHash, randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 
-import { ROOT } from '#paths';
+import { ROOT, STATE_DIR } from '#paths';
 import { withFileLock } from '../lib/file-lock.mjs';
 import { replaceFileAtomic } from '../lib/locked-file.mjs';
 import { withPipelineLock } from '../tracker/pipeline-lock.mjs';
@@ -47,7 +47,7 @@ import {
   PIPELINE_STAGE_LABELS,
 } from './progress.mjs';
 
-const DEFAULT_JOBS_DIR = join(ROOT, 'ui', '.jobs');
+const DEFAULT_JOBS_DIR = join(STATE_DIR, 'application-jobs');
 const LEGACY_CV_STALE_MS = 5 * 60_000 + 10_000;
 const LOG_LIMIT = 64 * 1024;
 const RESULT_TAIL_LIMIT = 16 * 1024;

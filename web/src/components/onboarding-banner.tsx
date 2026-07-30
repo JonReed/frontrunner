@@ -15,10 +15,10 @@ function hasCli(): boolean {
 }
 
 const LABELS: Record<string, string> = {
-  "cv.md": "your CV",
-  "config/profile.yml": "your profile — target roles, comp, location",
-  "modes/_profile.md": "your personalization",
-  "portals.yml": "the companies to scan",
+  "workspace/profile/cv.md": "your CV",
+  "workspace/profile/profile.yml": "your profile — target roles, comp, location",
+  "workspace/profile/targeting.md": "your personalization",
+  "workspace/search/portals.yml": "the companies to scan",
 };
 
 // Detect (via the core's doctor.mjs) whether setup is incomplete, and offer to

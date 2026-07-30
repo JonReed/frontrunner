@@ -12,7 +12,7 @@ Interactive mode जब candidate Chrome में application form भर र�
 ```
 1. DETECT     -> Active Chrome tab पढ़ें (capture/URL/title)
 2. IDENTIFY   -> Page से company + role extract करें
-3. SEARCH     -> reports/ में existing reports से match करें
+3. SEARCH     -> workspace/reports/evaluations/ में existing reports से match करें
 4. LOAD       -> पूरा report + Block G (यदि मौजूद हो) पढ़ें
 5. COMPARE    -> Screen का role evaluated role से match करता है? Change हो तो alert करें
 6. ANALYZE    -> Form के सभी visible questions identify करें
@@ -32,7 +32,7 @@ Interactive mode जब candidate Chrome में application form भर र�
 ## Step 2 -- Context Identify और Load करें
 
 1. Page से company name और job title extract करें
-2. Company name से `reports/` में search करें (Grep case-insensitive)
+2. Company name से `workspace/reports/evaluations/` में search करें (Grep case-insensitive)
 3. Match मिले → पूरा report load करें
 4. Block G मौजूद हो → previous draft responses को base के रूप में load करें
 5. Match नहीं मिला → candidate को alert करें और quick auto-pipeline का सुझाव दें
@@ -56,7 +56,7 @@ Interactive mode जब candidate Chrome में application form भर र�
 
 हर question classify करें:
 - **Block G में already answered** → existing response reuse करें
-- **नया question** → report + `cv.md` से response generate करें
+- **नया question** → report + `workspace/profile/cv.md` से response generate करें
 
 ## Step 5 -- Responses Generate करें
 

@@ -10,10 +10,10 @@ Given a job description and interview date/time, build a structured, time-blocke
 2. **Interview date and time** (required) — to calculate hours available
 3. **Interviewer name and role** (if known) — shapes depth and tone of prep. Later rounds (panel / onsite loop) often name several interviewers at once — from the user directly, a pasted calendar invite, or a pasted scheduling email. When more than one panelist is named, see the Panel Intel note in Step 2.
 4. **Round type** (if known) — screening, technical/domain-specific, design/case study, behavioral panel
-5. **CV** at `cv.md` + `article-digest.md` (if present) — read for experience, skills, proof points
-6. **Profile** at `config/profile.yml` + `modes/_profile.md` — read for narrative, archetypes, and targets
-7. **Story bank** at `interview-prep/story-bank.md` — existing STAR+R stories
-8. **Question bank** at `interview-prep/question-bank.md` — existing gaps (if file exists)
+5. **CV** at `workspace/profile/cv.md` + `workspace/profile/article-digest.md` (if present) — read for experience, skills, proof points
+6. **Profile** at `workspace/profile/profile.yml` + `workspace/profile/targeting.md` — read for narrative, archetypes, and targets
+7. **Story bank** at `workspace/interviews/story-bank.md` — existing STAR+R stories
+8. **Question bank** at `workspace/interviews/question-bank.md` — existing gaps (if file exists)
 9. **Prior stated compensation** — if the tracker# is known, run `node src/analysis/salary-gap.mjs --stated-for <tracker#>` (zero tokens). Any prior `stated` observation is a number the candidate already committed to, in an earlier round, to a specific interviewer — feed it into Step 4's quick-reference so the candidate stays consistent instead of accidentally renegotiating.
 
 ---
@@ -70,7 +70,7 @@ Calibrate the plan to the round. Over-preparing depth for a screening wastes tim
 
 Calculate hours available from now until interview time. Divide into blocks:
 
-Before sizing the blocks, check `interview-prep/question-bank.md` (if it exists). Any question marked 🔴 from a prior round is a proven gap — it gets a dedicated block regardless of how the CV-vs-JD analysis ranks it. Real performance data outranks inferred risk.
+Before sizing the blocks, check `workspace/interviews/question-bank.md` (if it exists). Any question marked 🔴 from a prior round is a proven gap — it gets a dedicated block regardless of how the CV-vs-JD analysis ranks it. Real performance data outranks inferred risk.
 
 **Template (adjust block sizes based on total hours available):**
 
@@ -142,7 +142,7 @@ At the end of the plan, produce a one-page quick-reference the candidate can ski
 
 ## Step 5 — Save Output
 
-Save the plan to `interview-prep/{company-slug}-{role-slug}.md` if a file doesn't exist, or append a `## Prep Plan` section if it does.
+Save the plan to `workspace/interviews/{company-slug}-{role-slug}.md` if a file doesn't exist, or append a `## Prep Plan` section if it does.
 
 ---
 
@@ -154,4 +154,4 @@ Save the plan to `interview-prep/{company-slug}-{role-slug}.md` if a file doesn'
 - **One topic per block.** Mixing topics in a single block reduces retention.
 - **Always include rest time.** A rested candidate outperforms a cramming one.
 - **Never generate fake company intel.** If you don't have research, say so — don't invent culture claims or technical details about the company.
-- **Never invent claims for the candidate.** The anchor sentence and pre-interview talking points in the quick-reference (Step 4) must be grounded in what the candidate actually has — `cv.md`, `article-digest.md`, or the story bank. Don't draft claims that depend on experience or metrics the candidate doesn't have. If a claim appears in `interview-prep/retracted-claims.md`, never include it.
+- **Never invent claims for the candidate.** The anchor sentence and pre-interview talking points in the quick-reference (Step 4) must be grounded in what the candidate actually has — `workspace/profile/cv.md`, `workspace/profile/article-digest.md`, or the story bank. Don't draft claims that depend on experience or metrics the candidate doesn't have. If a claim appears in `workspace/interviews/retracted-claims.md`, never include it.

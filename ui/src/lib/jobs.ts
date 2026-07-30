@@ -10,7 +10,7 @@
 
 import { spawn } from 'node:child_process';
 import { join } from 'node:path';
-import { ROOT } from './roles';
+import { ROOT } from './root';
 import { runningCvJobForRole } from './job-selection.mjs';
 
 const JOB_CONTROL = join(ROOT, 'src', 'application', 'job-control.mjs');
@@ -320,6 +320,6 @@ export function startPipelineRun(scan: boolean): Promise<Job> {
   return startFixedPipelineOperation('pipeline.run', {
     engine: 'claude',
     scan,
-    input: 'data/pipeline.md',
+    input: 'workspace/search/pipeline.md',
   });
 }

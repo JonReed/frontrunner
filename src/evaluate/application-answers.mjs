@@ -202,7 +202,7 @@ export function resolveApplicationAnswersReportPath(value, reportsDir = ALLOWED_
   const file = realpathSync(requested);
   const rel = relative(root, file);
   if (!rel || rel.startsWith('..') || isAbsolute(rel) || !file.endsWith('.md')) {
-    throw new Error('Application answers report must be an existing Markdown file under reports/');
+    throw new Error('Application answers report must be an existing Markdown file under workspace/reports/evaluations/');
   }
   if (!statSync(file).isFile()) {
     throw new Error('Application answers report must be a regular file');

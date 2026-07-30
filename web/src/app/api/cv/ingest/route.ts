@@ -5,10 +5,10 @@ import path from "node:path";
 import { resolveCli } from "@/lib/clis";
 import { frontrunnerRoot } from "@/lib/frontrunner";
 
-// Parse a CV (pasted text or an uploaded PDF) into clean cv.md markdown by running
+// Parse a CV (pasted text or an uploaded PDF) into clean workspace/profile/cv.md markdown by running
 // the USER'S OWN CLI headless — the web never ships a heavyweight parser, and the
 // real CV NEVER leaves the machine (local-first, PII-safe). This route is a
-// PROPOSER: it produces candidate markdown only; the actual write to cv.md happens
+// PROPOSER: it produces candidate markdown only; the actual write to workspace/profile/cv.md happens
 // via the existing POST /api/cv after the user confirms (propose-then-confirm).
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,7 +32,7 @@ function ingestPrompt(source: string): string {
   }
   // Fallback mirrors the canonical docs/examples/cv-example.md format (the SSOT the
   // project ships) so a web-parsed CV is the same shape as a hand-written one.
-  return `You convert a person's CV into clean cv.md markdown that EXACTLY mirrors frontrunner's reference format.
+  return `You convert a person's CV into clean workspace/profile/cv.md markdown that EXACTLY mirrors frontrunner's reference format.
 
 FORMAT (match exactly; omit a section if the source lacks it; INVENT NOTHING):
 \`# CV -- {Full Name}\`

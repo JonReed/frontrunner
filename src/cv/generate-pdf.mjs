@@ -7,7 +7,7 @@
  *   node frontrunner/generate-pdf.mjs <input.html> <output.pdf> [--format=letter|a4] [--report=NNN] [--allow-reorder] [--max-pages=N] [--strict-pages]
  *
  * --report links the generated PDF to its tracker/report number and records
- * the linkage in data/pdf-index.tsv so downstream tools (e.g. the TUI
+ * the linkage in workspace/.state/pdf-index.tsv so downstream tools (e.g. the TUI
  * dashboard's `d`/`D` hotkeys) can locate the exact PDF for an application.
  * Without --report a manifest row is still written, just unkeyed.
  *
@@ -15,7 +15,7 @@
  * to a console warning, for JDs where the section order was deliberately
  * tailored (e.g. Projects moved ahead of Education for a technical-heavy
  * role) rather than accidentally scrambled by an agent. Without this flag,
- * any divergence from cv.md's section order still fails generation.
+ * any divergence from workspace/profile/cv.md's section order still fails generation.
  *
  * --max-pages=N sets the preferred rendered CV length (default: 2 pages).
  * The actual page count is checked after Chromium writes the PDF; overflow
@@ -27,7 +27,7 @@
  */
 
 import { chromium } from 'playwright';
-import { resolve, dirname, relative, sep, isAbsolute } from 'path';
+import { resolve, dirname, relative, sep, isAbsolute, join } from 'path';
 import { readFile } from 'fs/promises';
 import { mkdirSync, readFileSync, existsSync } from 'fs';
 import { fileURLToPath, pathToFileURL } from 'url';
@@ -39,16 +39,16 @@ import { removeFileProtected, replaceFileAtomic } from '../lib/locked-file.mjs';
 
 import { ROOT } from '#paths';
 
-// Resolution base for output/ and data/. Defaults to the repo root; an
+// Resolution base for workspace/documents/ and data/. Defaults to the repo root; an
 // override exists so the module can be exercised in an isolated sandbox
-// without writing into the user's real output/ and data/pdf-index.tsv.
+// without writing into the user's real workspace/documents/ and workspace/.state/pdf-index.tsv.
 // Before src/ existed this file sat in the root and resolved its own
 // dirname, which gave isolation for free — moving it removed that.
 const __dirname = process.env.FRONTRUNNER_PDF_BASE || ROOT;
 const PDF_PAGE_MARGIN = '0.6in';
 
 // Ensure output directory exists (fresh setup)
-mkdirSync(resolve(__dirname, 'output'), { recursive: true });
+mkdirSync(resolve(__dirname, 'workspace', 'documents'), { recursive: true });
 
 /**
  * Normalize text for ATS compatibility by converting problematic Unicode.
@@ -143,14 +143,14 @@ function foldDiacritics(text) {
  * Heading spelling -> canonical section key.
  *
  * Polish (modes/pl) is here because without these aliases the rendered Polish
- * titles match nothing derived from the English cv.md: validateCvSectionOrder()
+ * titles match nothing derived from the English workspace/profile/cv.md: validateCvSectionOrder()
  * finds fewer than two comparable sections and silently returns, leaving the
  * section-order guard disabled on every CV rendered in that mode.
  *
  * Keys are folded on construction so authored diacritics match stripped input.
  */
 const SECTION_ALIASES = new Map([
-  // English — cv.md is the source of truth and is written in English.
+  // English — workspace/profile/cv.md is the source of truth and is written in English.
   ['summary', 'summary'],
   ['professional summary', 'summary'],
   ['competencies', 'competencies'],
@@ -261,7 +261,7 @@ export function validateCvSectionOrder(html, cvMarkdown, { allowReorder = false 
         .filter(section => renderedComparable.some(renderedSection => renderedSection.key === section.key))
         .map(section => section.title)
         .join(' -> ');
-      const message = `CV section order diverges from cv.md: rendered ${renderedOrder}; cv.md ${sourceOrder}`;
+      const message = `CV section order diverges from workspace/profile/cv.md: rendered ${renderedOrder}; workspace/profile/cv.md ${sourceOrder}`;
       if (allowReorder) {
         console.warn(`⚠️  ${message} (proceeding — --allow-reorder set)`);
         return;
@@ -375,17 +375,17 @@ export function injectPrintPageCss(html, format = 'a4') {
 }
 
 /**
- * Record a generated PDF in data/pdf-index.tsv so tools can map a tracker
+ * Record a generated PDF in workspace/.state/pdf-index.tsv so tools can map a tracker
  * report number to the exact PDF (and its source HTML for regeneration).
  *
  * Columns: report \t pdf \t html \t format \t date — paths relative to the
  * frontrunner root with forward slashes. One row per PDF path; when a report
  * number is given, older rows for that report are dropped too (regenerated
  * CVs supersede stale entries). The file is gitignored: it references
- * gitignored output/ artifacts and is meaningless on another machine.
+ * gitignored workspace/documents/ artifacts and is meaningless on another machine.
  */
 async function updatePDFManifest(reportNum, pdfPath, htmlPath, format) {
-  const manifestPath = resolve(__dirname, 'data', 'pdf-index.tsv');
+  const manifestPath = join(__dirname, 'workspace', '.state', 'pdf-index.tsv');
   const relPDF = repoRelativeManifestPath(pdfPath);
   const relHTML = repoRelativeManifestPath(htmlPath);
   const date = new Date().toISOString().slice(0, 10);
@@ -481,7 +481,7 @@ async function generatePDF() {
   let html = await readFile(inputPath, 'utf-8');
   let cvMarkdown = '';
   try {
-    cvMarkdown = await readFile(resolve(__dirname, 'cv.md'), 'utf-8');
+    cvMarkdown = await readFile(resolve(__dirname, 'workspace/profile/cv.md'), 'utf-8');
   } catch (err) {
     if (err?.code !== 'ENOENT') throw err;
   }
@@ -585,7 +585,7 @@ export async function renderHtmlToPdf(html, outputPath, opts = {}) {
   const reportNum = opts.reportNum || '';
   const inputPath = opts.inputPath || '';
 
-  // Inject the user's theme tokens (config/profile.yml `style:`) as CSS custom
+  // Inject the user's theme tokens (workspace/profile/profile.yml `style:`) as CSS custom
   // properties so the templates' var(--x, <default>) reads pick them up (#1837).
   // No `style:` block → no tokens → byte-identical output. Both the CV path and
   // the cover-letter path flow through here, so both are themed from one place.
@@ -657,7 +657,7 @@ export async function renderHtmlToPdf(html, outputPath, opts = {}) {
 
     try {
       await updatePDFManifest(reportNum, outputPath, inputPath, format);
-      console.log(`🔗 Manifest: data/pdf-index.tsv updated${reportNum ? ` (report ${reportNum})` : ' (no --report given)'}`);
+      console.log(`🔗 Manifest: workspace/.state/pdf-index.tsv updated${reportNum ? ` (report ${reportNum})` : ' (no --report given)'}`);
     } catch (err) {
       // The PDF itself succeeded — never fail the run over manifest bookkeeping.
       console.error(`⚠️  Manifest update failed: ${err.message}`);

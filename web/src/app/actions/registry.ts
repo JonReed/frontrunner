@@ -43,8 +43,8 @@ export type ActionCtx = {
   setApplyField: (idOrLabel: string, value: string) => void; // edit an apply-proxy answer
   startApply: (url: string) => void; // open the apply form-proxy for a posting URL
   applyExplore?: (patch: Record<string, unknown>, opts?: { merge?: boolean; run?: boolean }) => void; // build a FREE discovery search
-  writeProfile?: (patch: Record<string, unknown>) => void; // merge-safe config/profile.yml write
-  writePortals?: (roles: string[], location?: string[]) => void; // merge-safe portals.yml title_filter write
+  writeProfile?: (patch: Record<string, unknown>) => void; // merge-safe workspace/profile/profile.yml write
+  writePortals?: (roles: string[], location?: string[]) => void; // merge-safe workspace/search/portals.yml title_filter write
 };
 
 export type ProfilePatch = {
@@ -302,8 +302,8 @@ const ACTIONS: Record<string, ActionDef> = {
     },
   },
 
-  // Propose the user's profile → on confirm, merge-safe write to config/profile.yml
-  // AND seed the scanner (portals.yml title_filter) so the very first scan has roles.
+  // Propose the user's profile → on confirm, merge-safe write to workspace/profile/profile.yml
+  // AND seed the scanner (workspace/search/portals.yml title_filter) so the very first scan has roles.
   // DATA_CONTRACT: deep-merge only proposed keys; never clobber archetypes/narrative.
   setProfile: {
     sideEffect: "write",

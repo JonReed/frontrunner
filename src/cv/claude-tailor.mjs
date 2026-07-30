@@ -34,7 +34,7 @@ function containedFile(base, candidate) {
 }
 
 function cachedJdFor(url) {
-  const jdsDir = join(ROOT, 'jds');
+  const jdsDir = join(ROOT, 'workspace', 'jobs', 'descriptions');
   const index = join(jdsDir, 'index.tsv');
   if (!url || !existsSync(index)) return null;
   for (const line of readFileSync(index, 'utf8').split(/\r?\n/).slice(1)) {
@@ -105,10 +105,10 @@ export async function tailorCv({
   if (!jd) {
     throw new Error('No cached job description is available. Run the pipeline first; Frontrunner will not give an agent browser or filesystem access as a fallback.');
   }
-  const cv = readFileSync(join(ROOT, 'cv.md'), 'utf8');
-  const profile = readFileSync(join(ROOT, 'config', 'profile.yml'), 'utf8');
-  const proof = existsSync(join(ROOT, 'article-digest.md'))
-    ? readFileSync(join(ROOT, 'article-digest.md'), 'utf8')
+  const cv = readFileSync(join(ROOT, 'workspace/profile/cv.md'), 'utf8');
+  const profile = readFileSync(join(ROOT, 'workspace', 'profile', 'profile.yml'), 'utf8');
+  const proof = existsSync(join(ROOT, 'workspace/profile/article-digest.md'))
+    ? readFileSync(join(ROOT, 'workspace/profile/article-digest.md'), 'utf8')
     : '[none supplied]';
   const document = frameUntrustedJobText(jd);
   const systemPrompt = buildTailoringSystemPrompt({ cv, profile, proof });
@@ -134,7 +134,7 @@ export async function tailorCv({
   const reportNum = String(report ?? tracker ?? '').match(/\d+/)?.[0]?.padStart(3, '0');
   if (!reportNum) throw new Error('a report or tracker number is required');
   const base = `${reportNum}-${targetSlug(report)}`;
-  const outputDir = join(ROOT, 'output');
+  const outputDir = join(ROOT, 'workspace', 'documents');
   mkdirSync(outputDir, { recursive: true });
   const html = join(outputDir, `cv-${base}.html`);
   const pdf = join(outputDir, `cv-${base}-${new Date().toISOString().slice(0, 10)}.pdf`);

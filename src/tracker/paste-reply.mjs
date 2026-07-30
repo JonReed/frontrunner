@@ -6,8 +6,8 @@
  *
  * reply-watch.mjs already classifies employer replies (Interview / Responded /
  * Need Action / Rejected / Offer / Auto-confirmation / Noise / Unknown), matches
- * them to tracker rows, and prompts before touching data/applications.md — but
- * its only input is data/reply-candidates.json, and the only planned way to
+ * them to tracker rows, and prompts before touching workspace/applications/tracker.md — but
+ * its only input is workspace/applications/reply-candidates.json, and the only planned way to
  * populate that file is a Gmail scanner (#1583, unbuilt, requires OAuth
  * inbox-read access). This script is the alternative for anyone who doesn't
  * want to grant any tool mailbox access but is willing to paste an email's
@@ -15,12 +15,12 @@
  *
  * This script does ONE job: normalize raw pasted (or file-provided) email text
  * into the exact candidate object shape reply-watch.mjs expects, and append it
- * to data/reply-candidates.json. It does NOT classify the reply — classification
+ * to workspace/applications/reply-candidates.json. It does NOT classify the reply — classification
  * stays reply-watch.mjs's job. reply-matcher.mjs's classifyReply() derives its
  * verdict from `subject` + `body_snippet` text directly; `signal` is only ever
  * used as a supplementary confidence boost (`cand.signal || ''`), never a hard
  * dependency — so leaving `signal: null` here is safe. This script never runs
- * reply-watch.mjs itself and never touches data/applications.md.
+ * reply-watch.mjs itself and never touches workspace/applications/tracker.md.
  *
  * Usage:
  *   node src/tracker/paste-reply.mjs                  # interactive: prompts for subject, from, body
@@ -38,7 +38,7 @@
  *
  * Env:
  *   FRONTRUNNER_REPLY_CANDIDATES  override the output JSON path (used by tests;
- *                                 defaults to data/reply-candidates.json next to
+ *                                 defaults to workspace/applications/reply-candidates.json next to
  *                                 this script, matching reply-watch.mjs's default)
  */
 
@@ -50,7 +50,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { ROOT as __dirname } from '#paths';
 import { mutateFileLocked } from '../lib/locked-file.mjs';
 const CANDIDATES_PATH = process.env.FRONTRUNNER_REPLY_CANDIDATES
-  || path.join(__dirname, 'data', 'reply-candidates.json');
+  || path.join(__dirname, 'workspace', 'applications', 'reply-candidates.json');
 const MAX_CANDIDATES_BYTES = 10_000_000;
 const MAX_CANDIDATES = 10_000;
 const MAX_REPLY_BODY_CHARS = 100_000;
@@ -231,10 +231,10 @@ Usage:
 
 If no Subject:/From: header lines are found, the whole file is treated as the body.
 
-Appends one normalized candidate to data/reply-candidates.json (creates it if
+Appends one normalized candidate to workspace/applications/reply-candidates.json (creates it if
 missing; never overwrites or removes existing entries). Run
 \`node src/tracker/reply-watch.mjs\` afterward to classify it and review tracker updates —
-this script never runs reply-watch.mjs or touches data/applications.md itself.`);
+this script never runs reply-watch.mjs or touches workspace/applications/tracker.md itself.`);
 }
 
 async function main() {
@@ -280,7 +280,7 @@ async function main() {
   console.log(`  from:         ${candidate.from || '(none)'}`);
   console.log(`  subject:      ${candidate.subject || '(none)'}`);
   console.log(`  body_snippet: ${preview || '(none)'}`);
-  console.log(`\ndata/reply-candidates.json now has ${total} candidate(s).`);
+  console.log(`\nworkspace/applications/reply-candidates.json now has ${total} candidate(s).`);
   console.log('Next: run `node src/tracker/reply-watch.mjs` to classify and review this reply.');
 }
 

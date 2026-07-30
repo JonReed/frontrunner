@@ -9,12 +9,12 @@ Run a realistic practice interview — one question at a time — and give struc
 1. **Round type** (required) — screening/recruiter, screening/HM, technical/domain-specific, design/case study, behavioral
 2. **Interviewer persona** (if known) — name, role, company; shapes question style and depth
 3. **Question list** (optional) — specific questions to cover; if not provided, generate from round type
-4. **CV** at `cv.md` + `article-digest.md` (if present) — to verify claims in answers and ground stronger versions in real experience
-5. **Profile** at `config/profile.yml` + `modes/_profile.md` — candidate narrative, deal-breakers, comp targets
-6. **Story bank** at `interview-prep/story-bank.md` — to verify story accuracy in feedback
-7. **Question bank** at `interview-prep/question-bank.md` — to update status after each answer
+4. **CV** at `workspace/profile/cv.md` + `workspace/profile/article-digest.md` (if present) — to verify claims in answers and ground stronger versions in real experience
+5. **Profile** at `workspace/profile/profile.yml` + `workspace/profile/targeting.md` — candidate narrative, deal-breakers, comp targets
+6. **Story bank** at `workspace/interviews/story-bank.md` — to verify story accuracy in feedback
+7. **Question bank** at `workspace/interviews/question-bank.md` — to update status after each answer
 8. **Role-specific prep file** — for company intel, sourced questions, comp strategy
-9. **Retracted claims** at `interview-prep/retracted-claims.md` (if present) — claims the candidate has explicitly rejected as indefensible; treat as a hard gate
+9. **Retracted claims** at `workspace/interviews/retracted-claims.md` (if present) — claims the candidate has explicitly rejected as indefensible; treat as a hard gate
 
 ---
 
@@ -24,10 +24,10 @@ Run a realistic practice interview — one question at a time — and give struc
 
 Before setting the scene, confirm which files exist:
 
-- `interview-prep/question-bank.md` (or a company-specific equivalent)
-- The role-specific prep file (`interview-prep/{company}-{role}.md`)
-- `cv.md`
-- `interview-prep/retracted-claims.md`
+- `workspace/interviews/question-bank.md` (or a company-specific equivalent)
+- The role-specific prep file (`workspace/interviews/{company}-{role}.md`)
+- `workspace/profile/cv.md`
+- `workspace/interviews/retracted-claims.md`
 
 If the question bank and role-specific prep file are both absent, tell the candidate plainly:
 
@@ -97,11 +97,11 @@ Keep feedback tight. One or two things to sharpen per answer — not a full rewr
 
 **Two-minute rule.** If an answer runs past two minutes, note it. Interviewers stop listening. The fix is almost always to state the answer first, then explain — not to cut content. *In a typed session you cannot time delivery — substitute a structure check instead:* flag answers that bury the headline (more than 4–5 sentences of setup before the point lands) and tell the candidate: pacing and filler words can only be diagnosed out loud — record yourself or run this question again verbally.
 
-**Verify suspicious claims before coaching them.** When the candidate states a specific metric or scope claim (headcount managed, AUM, revenue figure, percentage improvement) that you cannot confirm from prior context, check it against `cv.md`, `article-digest.md`, and `interview-prep/retracted-claims.md` before giving feedback. If the claim isn't supported, flag it: "I can't find that number in your CV — is it defensible if they push? If not, here's a version that doesn't depend on it." Never coach a candidate to repeat a claim they can't back up.
+**Verify suspicious claims before coaching them.** When the candidate states a specific metric or scope claim (headcount managed, AUM, revenue figure, percentage improvement) that you cannot confirm from prior context, check it against `workspace/profile/cv.md`, `workspace/profile/article-digest.md`, and `workspace/interviews/retracted-claims.md` before giving feedback. If the claim isn't supported, flag it: "I can't find that number in your CV — is it defensible if they push? If not, here's a version that doesn't depend on it." Never coach a candidate to repeat a claim they can't back up.
 
-**Never invent experience or metrics.** The stronger version may only use facts the candidate actually stated, or claims that exist in `cv.md`, `article-digest.md`, or the story bank. Tightening framing is the job — adding accomplishments is fabrication. If a claim appears in `interview-prep/retracted-claims.md`, do not use it in a stronger version even if the candidate said it.
+**Never invent experience or metrics.** The stronger version may only use facts the candidate actually stated, or claims that exist in `workspace/profile/cv.md`, `workspace/profile/article-digest.md`, or the story bank. Tightening framing is the job — adding accomplishments is fabrication. If a claim appears in `workspace/interviews/retracted-claims.md`, do not use it in a stronger version even if the candidate said it.
 
-**Offer to record retractions.** When a candidate concedes mid-session that a claim isn't defensible under pressure ("you're right, I can't back that up"), offer to append it to `interview-prep/retracted-claims.md`: "Want me to add that to your retracted list so it doesn't surface again?" If yes, append: `**"[claim]"** ([context]). Reason: [one-line reason + correct framing if applicable].`
+**Offer to record retractions.** When a candidate concedes mid-session that a claim isn't defensible under pressure ("you're right, I can't back that up"), offer to append it to `workspace/interviews/retracted-claims.md`: "Want me to add that to your retracted list so it doesn't surface again?" If yes, append: `**"[claim]"** ([context]). Reason: [one-line reason + correct framing if applicable].`
 
 **When company-intel is thin mid-session.** If the candidate visibly struggles on a "why this company / why this role" question because the role-specific prep file lacks the intel, don't fabricate and don't stay silent. Step out of character, run the `interview-prep` research step for that one question (the same sourced-research path `interview-prep.md` owns), and return with 2–3 concrete, cited angles. Then resume in character. If research yields nothing usable, say so plainly. This is not a second search loop — it is invoking the existing research stage just-in-time when the upstream pipeline wasn't run first.
 
@@ -133,7 +133,7 @@ Keep feedback tight. One or two things to sharpen per answer — not a full rewr
 
 ### Write Session Transcript
 
-After the summary, write a machine-readable session transcript to `interview-prep/sessions/{company-slug}-{role-slug}-{round}-{YYYY-MM-DD}.md` (use `practice` for the company/role slug if this wasn't a company-specific session). This is a structured record of the round for downstream analysis modes; the speaker-labelled turns let a consumer read either side without re-inferring who spoke. The full contract lives in `interview-prep/sessions/README.md`.
+After the summary, write a machine-readable session transcript to `workspace/interviews/sessions/{company-slug}-{role-slug}-{round}-{YYYY-MM-DD}.md` (use `practice` for the company/role slug if this wasn't a company-specific session). This is a structured record of the round for downstream analysis modes; the speaker-labelled turns let a consumer read either side without re-inferring who spoke. The full contract lives in `workspace/interviews/sessions/README.md`.
 
 Format:
 
@@ -170,7 +170,7 @@ Rules for the transcript:
 
 If no question list is provided, source questions in this order of precedence:
 
-1. **Real questions from `interview-prep/question-bank.md`** — questions this company (or a prior round) actually asked, captured by debriefs. Highest value: empirically grounded.
+1. **Real questions from `workspace/interviews/question-bank.md`** — questions this company (or a prior round) actually asked, captured by debriefs. Highest value: empirically grounded.
 2. **Sourced questions from the role-specific prep file** — questions interview-prep.md research found and cited. Use them as written; keep their citations out of the session but respect their wording.
 3. **The default sets below** — generated fallback for a first session with no research yet. Fill bracketed slots from the JD.
 
@@ -243,7 +243,7 @@ Mix in at least 2 situational / forward-looking questions from the set below —
 - **One question at a time.** Never front-load multiple questions. Real interviewers ask one at a time.
 - **No hints before the answer.** Don't prime the candidate with "this is about X." Ask cold.
 - **Honest feedback only.** False encouragement is worse than silence — it sends a candidate into a real interview underprepared.
-- **No fabricated claims in suggested answers.** Stronger versions draw only on what the candidate said or what's in `cv.md`, `article-digest.md`, or the story bank — never invented experience or metrics.
-- **Retracted claims are a hard gate.** If a claim appears in `interview-prep/retracted-claims.md`, never use it in a stronger version — even if the candidate said it in their answer. Flag it instead.
-- **Track status.** Update `interview-prep/question-bank.md` after the session if it exists.
+- **No fabricated claims in suggested answers.** Stronger versions draw only on what the candidate said or what's in `workspace/profile/cv.md`, `workspace/profile/article-digest.md`, or the story bank — never invented experience or metrics.
+- **Retracted claims are a hard gate.** If a claim appears in `workspace/interviews/retracted-claims.md`, never use it in a stronger version — even if the candidate said it in their answer. Flag it instead.
+- **Track status.** Update `workspace/interviews/question-bank.md` after the session if it exists.
 - **Stop when asked.** If the candidate says "let's pause" or "that's enough for today," respect it. Don't push for one more question.

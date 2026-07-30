@@ -9,7 +9,7 @@ import { runCheckedSubprocess } from '../src/security/subprocess.mjs';
 const LOCAL_PARSER_TIMEOUT_MS = 20_000;
 const LOCAL_PARSER_MAX_BUFFER_BYTES = 2_000_000;
 
-// `parser.command` / `parser.script` come from portals.yml, which on a shared or
+// `parser.command` / `parser.script` come from workspace/search/portals.yml, which on a shared or
 // template config is not fully trusted. The command must be a known interpreter
 // or a file inside this project — never an arbitrary binary like `rm` or `curl`.
 const PROJECT_ROOT = realpathSync(resolve(fileURLToPath(new URL('..', import.meta.url))));

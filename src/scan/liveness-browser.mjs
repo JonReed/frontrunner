@@ -46,7 +46,7 @@ export function jitteredDelayMs(baseMs) {
 }
 
 // Defensive guards: URLs come from ATS feeds (mostly trusted) but a misconfigured
-// portals.yml entry or a hijacked feed shouldn't be able to point Playwright at
+// workspace/search/portals.yml entry or a hijacked feed shouldn't be able to point Playwright at
 // internal infrastructure. Only allow http(s) and reject loopback/private/link-local.
 //
 // The hostname coming out of `new URL(...)` needs normalization before the regex

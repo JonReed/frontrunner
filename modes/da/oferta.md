@@ -22,7 +22,7 @@ Tabel med:
 
 ## Blok B -- Match med CV'et
 
-Læs `cv.md`. Lav en tabel, hvor hvert krav i opslaget mappes til eksakte linjer i CV'et.
+Læs `workspace/profile/cv.md`. Lav en tabel, hvor hvert krav i opslaget mappes til eksakte linjer i CV'et.
 
 **Tilpasset arketypen:**
 - FDE -> prioritér proof points om hurtig levering og kundenærhed
@@ -79,7 +79,7 @@ Top 5 ændringer i CV'et + Top 5 ændringer på LinkedIn for at maksimere matche
 
 Kolonnen **Reflection** indfanger, hvad der blev lært, eller hvad der ville blive gjort anderledes. Det signalerer senioritet -- juniorer beskriver, hvad der skete, seniorer drager læring af det.
 
-**Story Bank:** Hvis `interview-prep/story-bank.md` findes, så tjek om disse stories allerede er der. Hvis ikke, så tilføj de nye. Med tiden opbygger det en genbrugelig bank på 5-10 master-stories, der kan tilpasses ethvert samtalespørgsmål.
+**Story Bank:** Hvis `workspace/interviews/story-bank.md` findes, så tjek om disse stories allerede er der. Hvis ikke, så tilføj de nye. Med tiden opbygger det en genbrugelig bank på 5-10 master-stories, der kan tilpasses ethvert samtalespørgsmål.
 
 **Udvalgt og rammesat efter arketypen:**
 - FDE -> fremhæv leveringstempo og kundenærhed
@@ -101,7 +101,7 @@ Inkludér også:
 
 ### 1. Gem report .md
 
-Gem den fulde evaluering i `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
+Gem den fulde evaluering i `workspace/reports/evaluations/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 
 - `{###}` = næste fortløbende nummer (3 cifre, nul-paddet). For at allokere det atomisk og undgå race conditions skal du køre `node src/tracker/reserve-report-num.mjs` for at reservere nummeret (stdout returnerer `{###}`), skrive rapporten og derefter køre `node src/tracker/reserve-report-num.mjs --release {###}` for at frigive sentinel'en.
 - `{company-slug}` = virksomhedsnavn i små bogstaver, uden mellemrum (brug bindestreger)
@@ -149,7 +149,7 @@ Gem den fulde evaluering i `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 
 ### 2. Registrér i trackeren
 
-**ALTID** registrér i `data/applications.md`:
+**ALTID** registrér i `workspace/applications/tracker.md`:
 - Næste fortløbende nummer
 - Dagens dato
 - Virksomhed
@@ -157,7 +157,7 @@ Gem den fulde evaluering i `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 - Score: gennemsnit af matchet (1-5)
 - Status: `Evaluated`
 - PDF: nej (eller ja, hvis auto-pipeline har genereret en PDF)
-- Report: relativt link til report-filen (fx `[001](reports/001-company-2026-01-01.md)`)
+- Report: relativt link til report-filen (fx `[001](workspace/reports/evaluations/001-company-2026-01-01.md)`)
 
 **Tracker-format:**
 

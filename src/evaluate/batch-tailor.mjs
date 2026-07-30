@@ -5,8 +5,8 @@ import { resolve, join } from 'path';
 
 import { ROOT } from '#paths';
 import { runBoundedSubprocess } from '../security/subprocess.mjs';
-const batchStateFile = join(ROOT, 'batch', 'batch-state.tsv');
-const reportsDir = join(ROOT, 'reports');
+const batchStateFile = join(ROOT, 'workspace', '.state', 'batch-state.tsv');
+const reportsDir = join(ROOT, 'workspace', 'reports', 'evaluations');
 
 function usage() {
   console.log(`frontrunner batch tailor — bulk generate tailored CVs for high-scoring batch jobs

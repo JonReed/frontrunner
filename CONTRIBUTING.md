@@ -66,7 +66,7 @@ Rule of thumb before you build: **provider modules, languages, CLI support, mode
   market directory.
 - Scripts should handle missing files gracefully (check `existsSync` before `readFileSync`)
 - Interface changes must pass the `ui` package's typecheck and build, and should be tested with representative fictional data
-- Don't commit personal data (cv.md, profile.yml, applications.md, reports/)
+- Don't commit personal data (workspace/profile/cv.md, profile.yml, applications.md, workspace/reports/evaluations/)
 
 ### Dependency policy
 

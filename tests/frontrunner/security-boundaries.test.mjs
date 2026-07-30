@@ -173,12 +173,17 @@ test('repository regression: executable paths contain no permission bypass or ra
   const jobs = readFileSync(join(ROOT, 'ui', 'src', 'lib', 'jobs.ts'), 'utf8');
   const rolePage = readFileSync(join(ROOT, 'ui', 'src', 'app', 'role', '[num]', 'page.tsx'), 'utf8');
   const fileRoute = readFileSync(join(ROOT, 'ui', 'src', 'app', 'api', 'file', 'route.ts'), 'utf8');
+  const uiLauncher = readFileSync(join(ROOT, 'src', 'application', 'ui-launch.mjs'), 'utf8');
   const packageJson = JSON.parse(readFileSync(join(ROOT, 'ui', 'package.json'), 'utf8'));
   assert.doesNotMatch(`${batch}\n${batchTailor}\n${jobs}`, /dangerously-skip-permissions/);
   assert.doesNotMatch(rolePage, /dangerouslySetInnerHTML/);
-  assert.match(packageJson.scripts.dev, /--hostname 127\.0\.0\.1/);
-  assert.match(packageJson.scripts.start, /--hostname 127\.0\.0\.1/);
+  assert.match(packageJson.scripts.dev, /ui-launch\.mjs dev/);
+  assert.match(packageJson.scripts.start, /ui-launch\.mjs start/);
+  assert.match(uiLauncher, /'--hostname', '127\.0\.0\.1'/);
+  assert.match(uiLauncher, /shell:\s*false/);
   assert.match(fileRoute, /realpathSync\(abs\)/);
+  assert.doesNotMatch(fileRoute, /searchParams\.get\(['"]path['"]\)/);
+  assert.match(fileRoute, /readTracker\(\)/);
 });
 
 test('core providers cannot bypass the central HTTP broker or spawn commands', () => {

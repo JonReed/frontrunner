@@ -30,8 +30,8 @@ export async function saveEvaluation(result, {
   rootDir = ROOT,
   mergeTracker = true,
 } = {}) {
-  const reportsDir = join(rootDir, 'reports');
-  const additionsDir = join(rootDir, 'batch', 'tracker-additions');
+  const reportsDir = join(rootDir, 'workspace', 'reports', 'evaluations');
+  const additionsDir = join(rootDir, 'workspace', '.state', 'tracker-additions');
   mkdirSync(reportsDir, { recursive: true });
   mkdirSync(additionsDir, { recursive: true });
   await recoverEvaluationPublications({ rootDir });
@@ -50,7 +50,7 @@ export async function saveEvaluation(result, {
     const slug = slugify(result.company);
     const filename = `${num}-${slug}-${today}.md`;
     const reportPath = join(reportsDir, filename);
-    if (existsSync(reportPath)) throw new Error(`report already exists: reports/${filename}`);
+    if (existsSync(reportPath)) throw new Error(`report already exists: workspace/reports/evaluations/${filename}`);
 
     const sourceLine = sourceUrl ? `**URL:** ${safeField(sourceUrl)}\n` : '';
     const report = renderEvaluationReport(result);
@@ -77,7 +77,7 @@ ${report.replace(/---SCORE_SUMMARY---[\s\S]*?---END_SUMMARY---/, '').trim()}
       'Evaluated',
       `${result.overallScore.toFixed(1)}/5`,
       '❌',
-      `[${num}](reports/${filename})`,
+      `[${num}](workspace/reports/evaluations/${filename})`,
       `${safeField(tool)}; hostile-content boundary enforced`,
     ].join('\t') + '\n';
     pendingJournalPath = join(reportsDir, `${num}-PUBLISHING.json`);

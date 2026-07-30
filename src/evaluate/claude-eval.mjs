@@ -4,7 +4,7 @@
  *
  * Claude receives only bounded text and must return the scoring JSON schema.
  * It has no Read, Write, Bash, browser, MCP, extension, hook, or session tools.
- * Deterministic code validates the response and writes reports/tracker rows.
+ * Deterministic code validates the response and writes workspace/reports/evaluations/tracker rows.
  */
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -85,13 +85,13 @@ export async function runClaudeEvaluation({
   const gate = evaluateDeterministicGate({ jdText: document.text });
   if (!gate.allowed) return { skipped: true, gate };
 
-  const profileYml = readOptional(join(ROOT, 'config', 'profile.yml'), '[profile not found]');
+  const profileYml = readOptional(join(ROOT, 'workspace', 'profile', 'profile.yml'), '[profile not found]');
   const systemPrompt = buildScoringPrompt({
-    cv: readOptional(join(ROOT, 'cv.md'), '[CV not found]'),
+    cv: readOptional(join(ROOT, 'workspace/profile/cv.md'), '[CV not found]'),
     profile: profileYml,
-    profileMode: readOptional(join(ROOT, 'modes', '_profile.md'), '[targeting rules not found]'),
-    articleDigest: readOptional(join(ROOT, 'article-digest.md'), '[none supplied]'),
-    customRules: readOptional(join(ROOT, 'modes', '_custom.md'), '[none]'),
+    profileMode: readOptional(join(ROOT, 'workspace', 'profile', 'targeting.md'), '[targeting rules not found]'),
+    articleDigest: readOptional(join(ROOT, 'workspace/profile/article-digest.md'), '[none supplied]'),
+    customRules: readOptional(join(ROOT, 'workspace', 'profile', 'preferences.md'), '[none]'),
     languageInstruction: outputLanguageInstruction(parseOutputLanguage(profileYml)),
   });
 

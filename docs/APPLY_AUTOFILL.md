@@ -34,7 +34,7 @@ We have field-tested the auto-fill flow across several major ATS platforms (Ashb
 
 Before it drafts a single answer, the agent scans the form for **knock-out questions**. These are questions designed to immediately disqualify you if your answers don't match the employer's hard requirements.
 
-The agent checks your `config/profile.yml` against questions regarding:
+The agent checks your `workspace/profile/profile.yml` against questions regarding:
 - Minimum years of experience
 - Degree or education requirements
 - Work authorization or visa sponsorship needs
@@ -53,4 +53,4 @@ This saves you from spending time tailoring responses for a job that the ATS wil
 
 - **Agent hangs or crashes mid-form:** This usually happens when an ATS updates its React DOM unexpectedly or pops a hidden captcha. When this happens, look at the agent's output—it always prints a complete list of generated answers. You can easily copy and paste the remaining answers manually.
 - **Form changes:** If you notice the form on screen is for a different role than the one evaluated in your report, the agent will detect it and ask if you want to adapt the responses to the new title or stop and re-evaluate.
-- **Multiple roles in one session:** Running batch applies? Always run a **Liveness sweep** (`node src/scan/check-liveness.mjs --file data/pipeline.md`) first to drop dead postings from your pipeline so you never waste time opening an expired role tab.
+- **Multiple roles in one session:** Running batch applies? Always run a **Liveness sweep** (`node src/scan/check-liveness.mjs --file workspace/search/pipeline.md`) first to drop dead postings from your pipeline so you never waste time opening an expired role tab.

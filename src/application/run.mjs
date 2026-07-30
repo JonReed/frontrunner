@@ -18,14 +18,20 @@ import {
   writeRunHistorySafely,
 } from './run-history.mjs';
 
-const MAX_REQUEST_BYTES = 64 * 1024;
+export const MAX_APPLICATION_REQUEST_BYTES = 64 * 1024;
 
-export async function readBoundedRequest(stream = process.stdin) {
+export async function readBoundedRequest(
+  stream = process.stdin,
+  { maxBytes = MAX_APPLICATION_REQUEST_BYTES } = {},
+) {
+  if (!Number.isSafeInteger(maxBytes) || maxBytes < 1) {
+    throw new TypeError('maxBytes must be a positive safe integer');
+  }
   let body = '';
   for await (const chunk of stream) {
     body += String(chunk);
-    if (Buffer.byteLength(body) > MAX_REQUEST_BYTES) {
-      const error = new Error(`application request exceeds ${MAX_REQUEST_BYTES} bytes`);
+    if (Buffer.byteLength(body) > maxBytes) {
+      const error = new Error(`application request exceeds ${maxBytes} bytes`);
       error.code = 'APPLICATION_REQUEST_TOO_LARGE';
       throw error;
     }

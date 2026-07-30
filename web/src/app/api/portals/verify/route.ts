@@ -24,7 +24,7 @@ export async function GET() {
   if (!fs.existsSync(verifyPortals)) {
     return Response.json({ available: false, configured: false, companies: [] });
   }
-  if (!fs.existsSync(path.join(root, "portals.yml"))) {
+  if (!fs.existsSync(path.join(root, "workspace/search/portals.yml"))) {
     return Response.json({ available: true, configured: false, companies: [] });
   }
 

@@ -26,7 +26,7 @@
 
 ## 維度 B — 履歷匹配分析 (Match with CV)
 
-讀取 `cv.md`。建立一個對照表格，把 JD 中的各項硬性／軟性條件一一對應到履歷中的具體行號與量化敘述上。
+讀取 `workspace/profile/cv.md`。建立一個對照表格，把 JD 中的各項硬性／軟性條件一一對應到履歷中的具體行號與量化敘述上。
 
 **針對不同職缺原型的分析側重點：**
 - **AI 前線交付 (FDE)** → 側重交付速度、全端開發及直接面對客戶的成果。
@@ -144,7 +144,7 @@
 
 在**反思**欄中，務必提煉出學到的核心教訓，或如果重來一次會怎麼改進。這對展現資深度至關重要——資淺的候選人只描述過程，資深的候選人能提煉方法論。
 
-**故事庫同步：** 若存在 `interview-prep/story-bank.md`，檢查這些故事是否已在故事庫中。若不存在，將其附加進去，以便隨著評估逐步建立一個隨時可調用的「黃金面試故事庫」。
+**故事庫同步：** 若存在 `workspace/interviews/story-bank.md`，檢查這些故事是否已在故事庫中。若不存在，將其附加進去，以便隨著評估逐步建立一個隨時可調用的「黃金面試故事庫」。
 
 **依原型包裝故事：**
 - **FDE** → 強調極限交付時程、應對客戶緊急多變的需求。
@@ -204,7 +204,7 @@
 | Posting legitimacy | Block G 的評級 | `✅ High Confidence`；Proceed with Caution / Suspicious 渲染為 `⚠️ {tier} — {一句話原因}` |
 | Employment classification | Block G 內的僱用性質訊號 | 檢查已執行且無異常時 `✅ clear`；標記觸發時 `⚠️ contractor-style language: "{引用原文}"`；無法執行時 `— not evaluated` |
 | Culture screen | Block A 的文化篩查欄位 | `✅ pass`，或 `⚠️ caution — {證據}` / `⚠️ fail — {證據}`；未做篩查時 `— not evaluated` |
-| Interview red flags | `interview-prep/{company-slug}-redflags.md`（來自 `interview-redflag` 模式） | **交叉參照，不是複製：** 檔案存在時寫出其目前警告等級並附相對連結 —— `[{level}](../interview-prep/{company-slug}-redflags.md)`（相對於 `reports/`）；否則 `— no interview sessions yet` |
+| Interview red flags | `workspace/interviews/{company-slug}-redflags.md`（來自 `interview-redflag` 模式） | **交叉參照，不是複製：** 檔案存在時寫出其目前警告等級並附相對連結 —— `[{level}](../workspace/interviews/{company-slug}-redflags.md)`（相對於 `workspace/reports/evaluations/`）；否則 `— no interview sessions yet` |
 | AI claims vs. infrastructure | Block G 中的 AI／基礎設施一致性檢查（若存在） | 本報告包含該檢查時鏡射其結論（`✅ consistent` / `⚠️ {發現}`）；否則 `— not evaluated`。該檢查一旦存在此列自動啟用，無順序相依 |
 
 區塊格式：
@@ -227,7 +227,7 @@
 
 ### 1. 儲存報告 markdown 檔案
 
-將完整的評估內容儲存到本機路徑 `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`。
+將完整的評估內容儲存到本機路徑 `workspace/reports/evaluations/{###}-{company-slug}-{YYYY-MM-DD}.md`。
 
 - `{###}` = 依序遞增的 3 位數字（如 001, 002）
 - `{company-slug}` = 公司英文名或拼音縮寫，全小寫，空格用連字號 `-` 取代
@@ -282,7 +282,7 @@
 
 ### 2. 登錄到 Tracker 紀錄簿
 
-在 `data/applications.md` 的末尾追加這筆紀錄：
+在 `workspace/applications/tracker.md` 的末尾追加這筆紀錄：
 - 依序遞增的 ID 編號
 - 日期
 - 公司名稱
@@ -290,4 +290,4 @@
 - 評分（如 4.2/5）
 - 狀態（一律填寫為 `Evaluated`）
 - PDF 狀態（預設為 ❌）
-- 報告連結：根目錄相對路徑 `[###](reports/###-company-YYYY-MM-DD.md)`（注意：合併腳本會自動格式化）
+- 報告連結：根目錄相對路徑 `[###](workspace/reports/evaluations/###-company-YYYY-MM-DD.md)`（注意：合併腳本會自動格式化）

@@ -6,9 +6,9 @@
  *   { tracker#, date, type: desired|advertised|actual|stated, amount, currency, source, note, round, interviewer }
  *
  * Sources folded on read (one write path per fact):
- *   1. reports/{###}-*.md Machine Summary `advertised_comp`  -> advertised (source: jd)
- *   2. data/salary-observations.tsv (user-layer, append-only) -> desired/actual/stated (+ corrections)
- *   3. config/profile.yml compensation.target_range           -> desired default (source: profile)
+ *   1. workspace/reports/evaluations/{###}-*.md Machine Summary `advertised_comp`  -> advertised (source: jd)
+ *   2. workspace/applications/salary-observations.tsv (user-layer, append-only) -> desired/actual/stated (+ corrections)
+ *   3. workspace/profile/profile.yml compensation.target_range           -> desired default (source: profile)
  *
  * Fold: per (tracker#, type), highest trust tier wins, then latest date.
  *   actual:     contract > offer-letter > recruiter-verbal > user
@@ -33,8 +33,8 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import yaml from 'js-yaml';
 
 import { ROOT as FRONTRUNNER } from '#paths';
-const OBS_PATH = join(FRONTRUNNER, 'data/salary-observations.tsv');
-const REPORTS_DIR = join(FRONTRUNNER, 'reports');
+const OBS_PATH = join(FRONTRUNNER, 'workspace/applications/salary-observations.tsv');
+const REPORTS_DIR = join(FRONTRUNNER, 'workspace', 'reports', 'evaluations');
 
 const args = process.argv.slice(2);
 const summaryMode = args.includes('--summary');
@@ -570,7 +570,7 @@ function collectSources() {
 }
 
 function loadProfileDesired() {
-  const profilePath = join(FRONTRUNNER, 'config/profile.yml');
+  const profilePath = join(FRONTRUNNER, 'workspace/profile/profile.yml');
   if (!existsSync(profilePath)) return null;
   try {
     const profile = yaml.load(readFileSync(profilePath, 'utf-8'));
@@ -595,8 +595,8 @@ function printSummary(result) {
 
   if (!applications.length) {
     console.log('  No compensation observations yet.');
-    console.log('  Sources: reports/*.md Machine Summary `advertised_comp`,');
-    console.log('  data/salary-observations.tsv, config/profile.yml compensation.target_range.');
+    console.log('  Sources: workspace/reports/evaluations/*.md Machine Summary `advertised_comp`,');
+    console.log('  workspace/applications/salary-observations.tsv, workspace/profile/profile.yml compensation.target_range.');
   } else {
     console.log('  Per application:');
     for (const a of applications) {

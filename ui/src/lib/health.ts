@@ -11,7 +11,7 @@
 
 import { spawn } from 'node:child_process';
 import { join } from 'node:path';
-import { ROOT } from './roles';
+import { ROOT } from './root';
 
 const HEALTH_CONTROL = join(ROOT, 'src', 'application', 'health-control.mjs');
 const RESPONSE_LIMIT = 64 * 1024;

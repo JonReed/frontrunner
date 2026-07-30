@@ -22,7 +22,7 @@ Tabelle mit:
 
 ## Block B — Match mit dem Lebenslauf
 
-`cv.md` lesen. Tabelle erstellen, in der jede Anforderung aus der Stellenanzeige auf exakte Zeilen aus dem Lebenslauf gemappt wird.
+`workspace/profile/cv.md` lesen. Tabelle erstellen, in der jede Anforderung aus der Stellenanzeige auf exakte Zeilen aus dem Lebenslauf gemappt wird.
 
 **Angepasst an den Archetyp:**
 - FDE → Proof Points zu schneller Lieferung und Kundennähe priorisieren
@@ -78,7 +78,7 @@ Top 5 Änderungen am Lebenslauf + Top 5 Änderungen am LinkedIn-Profil, um den M
 
 Die Spalte **Reflection** erfasst, was gelernt wurde oder was man heute anders machen würde. Das signalisiert Seniorität — Junior-Kandidaten beschreiben, was passiert ist; Senior-Kandidaten ziehen Lehren daraus.
 
-**Story Bank:** Wenn `interview-prep/story-bank.md` existiert, prüfen, ob die Stories schon dort stehen. Falls nicht, neue ergänzen. Mit der Zeit entsteht so eine wiederverwendbare Bank von 5-10 Master-Stories, die sich an jede Frage im Vorstellungsgespräch anpassen lassen.
+**Story Bank:** Wenn `workspace/interviews/story-bank.md` existiert, prüfen, ob die Stories schon dort stehen. Falls nicht, neue ergänzen. Mit der Zeit entsteht so eine wiederverwendbare Bank von 5-10 Master-Stories, die sich an jede Frage im Vorstellungsgespräch anpassen lassen.
 
 **Ausgewählt und an den Archetyp angepasst:**
 - FDE → Lieferungs-Tempo und Kundennähe betonen
@@ -100,7 +100,7 @@ Außerdem aufnehmen:
 
 ### 1. Report .md speichern
 
-Die vollständige Bewertung in `reports/{###}-{company-slug}-{YYYY-MM-DD}.md` ablegen.
+Die vollständige Bewertung in `workspace/reports/evaluations/{###}-{company-slug}-{YYYY-MM-DD}.md` ablegen.
 
 - `{###}` = nächste fortlaufende Nummer (3-stellig, mit führenden Nullen). Um diese Nummer atomar zuzuweisen und Race-Conditions zu vermeiden, MÜSSEN Sie `node src/tracker/reserve-report-num.mjs` ausführen, um die Nummer zu reservieren (die Ausgabe gibt `{###}` zurück), den Report schreiben und dann `node src/tracker/reserve-report-num.mjs --release {###}` ausführen, um den Sentinel freizugeben.
 - `{company-slug}` = Firmenname in Kleinbuchstaben, ohne Leerzeichen (Bindestriche verwenden)
@@ -148,7 +148,7 @@ Die vollständige Bewertung in `reports/{###}-{company-slug}-{YYYY-MM-DD}.md` ab
 
 ### 2. Im Tracker eintragen
 
-**IMMER** in `data/applications.md` eintragen:
+**IMMER** in `workspace/applications/tracker.md` eintragen:
 - Nächste fortlaufende Nummer
 - Aktuelles Datum
 - Firma
@@ -156,7 +156,7 @@ Die vollständige Bewertung in `reports/{###}-{company-slug}-{YYYY-MM-DD}.md` ab
 - Score: Match-Durchschnitt (1-5)
 - Status: `Evaluated`
 - PDF: ❌ (oder ✅, wenn Auto-Pipeline ein PDF erzeugt hat)
-- Report: relativer Link zur Report-Datei (z. B. `[001](reports/001-company-2026-01-01.md)`)
+- Report: relativer Link zur Report-Datei (z. B. `[001](workspace/reports/evaluations/001-company-2026-01-01.md)`)
 
 **Tracker-Format:**
 

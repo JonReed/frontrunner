@@ -5,8 +5,8 @@ import type { DiscoveredOffer } from "@/lib/explore";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Free + reversible: append chosen discovered offers to data/pipeline.md AND
-// record them in data/scan-history.tsv, via the core's CANONICAL exported writers
+// Free + reversible: append chosen discovered offers to workspace/search/pipeline.md AND
+// record them in workspace/.state/scan-history.tsv, via the core's CANONICAL exported writers
 // (no parallel writer). No tokens spent.
 export async function POST(req: NextRequest) {
   let offers: DiscoveredOffer[] = [];

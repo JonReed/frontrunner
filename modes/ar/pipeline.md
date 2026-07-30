@@ -9,4 +9,4 @@ stages without evaluation.
 
 Apply Arabic-market vocabulary and rules from `modes/ar/_shared.md` and the
 selected Arabic evaluation mode. Human-facing output still follows
-`config/profile.yml` → `language.output`.
+`workspace/profile/profile.yml` → `language.output`.

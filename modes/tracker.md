@@ -1,6 +1,6 @@
 # Mode: tracker — Applications Tracker
 
-Read and display `data/applications.md`.
+Read and display `workspace/applications/tracker.md`.
 
 **Tracker Format:**
 
@@ -29,9 +29,9 @@ Possible states: `Evaluated` → `Applied` → `Responded` → `Interview` → `
 - `Discarded` = discarded by candidate or offer closed
 - `SKIP` = doesn't fit, don't apply
 
-If the user asks to update a state, use the canonical CLI — `node src/tracker/set-status.mjs <report#|company> <state>` — rather than hand-editing the row: it validates the state, holds the tracker lock, and appends the transition to `data/status-log.tsv` (the ledger `src/analysis/funnel-velocity.mjs` reads). When the user states the real event date ("they replied on Tuesday", "rejected me last week"), pass `--on YYYY-MM-DD` so the ledger records when it actually happened, not when it was typed in. Hand-edit only what set-status can't express (non-status cells).
+If the user asks to update a state, use the canonical CLI — `node src/tracker/set-status.mjs <report#|company> <state>` — rather than hand-editing the row: it validates the state, holds the tracker lock, and appends the transition to `workspace/.state/status-log.tsv` (the ledger `src/analysis/funnel-velocity.mjs` reads). When the user states the real event date ("they replied on Tuesday", "rejected me last week"), pass `--on YYYY-MM-DD` so the ledger records when it actually happened, not when it was typed in. Hand-edit only what set-status can't express (non-status cells).
 
-**Salary observations:** when the user reports a confirmed compensation figure for a row ("recruiter said 84k", "offer letter says 92k", "signed at 90k"), append one `actual` observation line to `data/salary-observations.tsv` (create the file if missing; format per `docs/SCRIPTS.md` → salary-gap) with the source tier matching how the figure arrived: `recruiter-verbal` for a spoken figure, `offer-letter` for a written offer, `contract` for a signed contract. The log is append-only — a new figure is a new line, never an edit of a prior one. Then echo that application's gap in one line (advertised vs actual vs desired); `node src/analysis/salary-gap.mjs --summary` shows the full picture.
+**Salary observations:** when the user reports a confirmed compensation figure for a row ("recruiter said 84k", "offer letter says 92k", "signed at 90k"), append one `actual` observation line to `workspace/applications/salary-observations.tsv` (create the file if missing; format per `docs/SCRIPTS.md` → salary-gap) with the source tier matching how the figure arrived: `recruiter-verbal` for a spoken figure, `offer-letter` for a written offer, `contract` for a signed contract. The log is append-only — a new figure is a new line, never an edit of a prior one. Then echo that application's gap in one line (advertised vs actual vs desired); `node src/analysis/salary-gap.mjs --summary` shows the full picture.
 
 **Reveal workflow (#1596):** when the user learns the end employer of a `?` row ("the Hays role is Barclays"):
 
@@ -47,8 +47,8 @@ Also show statistics:
 - Average score
 - % with PDF generated
 - % with report generated
-- If `data/salary-observations.tsv` has confirmed `actual` observations, include the output of `node src/analysis/salary-gap.mjs --summary` (advertised→actual gaps, desired attainment)
-- If the tracker has Applied-or-beyond rows, include the output of `node src/analysis/funnel-velocity.mjs --summary` (funnel rates vs market benchmarks, in-flight waits, stage velocity once `data/status-log.tsv` has data). Keep its honesty framing intact: the selection-bias note on above-range rates, censored counts next to medians, and no multiplier claims the script itself didn't print
+- If `workspace/applications/salary-observations.tsv` has confirmed `actual` observations, include the output of `node src/analysis/salary-gap.mjs --summary` (advertised→actual gaps, desired attainment)
+- If the tracker has Applied-or-beyond rows, include the output of `node src/analysis/funnel-velocity.mjs --summary` (funnel rates vs market benchmarks, in-flight waits, stage velocity once `workspace/.state/status-log.tsv` has data). Keep its honesty framing intact: the selection-bias note on above-range rates, censored counts next to medians, and no multiplier claims the script itself didn't print
 
 For the full lifetime stats view (cumulative funnel, scanner totals, portal
 coverage, follow-up compliance), run `node src/analysis/stats.mjs --summary` and present its

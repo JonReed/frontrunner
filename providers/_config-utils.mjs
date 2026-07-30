@@ -4,7 +4,7 @@
 
 /**
  * Clamp a runtime integer into [min, max], falling back to `def` for NaN, so
- * a stray portals.yml value can't produce an empty (e.g. size=0) or
+ * a stray workspace/search/portals.yml value can't produce an empty (e.g. size=0) or
  * pathological query.
  * @param {unknown} val
  * @param {number} def

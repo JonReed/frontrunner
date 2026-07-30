@@ -12,7 +12,7 @@ Modo interativo para quando o candidato está preenchendo um formulário de cand
 ```
 1. DETECTAR    → Ler aba ativa do Chrome (screenshot/URL/título)
 2. IDENTIFICAR → Extrair empresa + vaga da página
-3. BUSCAR      → Match contra reports existentes em reports/
+3. BUSCAR      → Match contra reports existentes em workspace/reports/evaluations/
 4. CARREGAR    → Ler report completo + Bloco G (se existir)
 5. COMPARAR    → A vaga na tela coincide com a avaliada? Se mudou → avisar
 6. ANALISAR    → Identificar TODAS as perguntas visíveis do formulário
@@ -32,7 +32,7 @@ Modo interativo para quando o candidato está preenchendo um formulário de cand
 ## Passo 2 -- Identificar e buscar contexto
 
 1. Extrair nome da empresa e título da vaga da página
-2. Buscar em `reports/` pelo nome da empresa (Grep case-insensitive)
+2. Buscar em `workspace/reports/evaluations/` pelo nome da empresa (Grep case-insensitive)
 3. Se houver match → carregar o report completo
 4. Se houver Bloco G → carregar os rascunhos de respostas anteriores como base
 5. Se NÃO houver match → avisar e oferecer executar auto-pipeline rápida
@@ -56,7 +56,7 @@ Identificar TODAS as perguntas visíveis:
 
 Classificar cada pergunta:
 - **Já respondida no Bloco G** → adaptar a resposta existente
-- **Pergunta nova** → gerar resposta a partir do report + `cv.md`
+- **Pergunta nova** → gerar resposta a partir do report + `workspace/profile/cv.md`
 
 ## Passo 5 -- Gerar respostas
 

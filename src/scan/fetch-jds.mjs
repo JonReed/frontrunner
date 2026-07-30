@@ -23,14 +23,14 @@
  * model receives clean text instead of a rendered page.
  *
  * USAGE
- *   node src/scan/fetch-jds.mjs                      # read data/pipeline.md pending URLs
- *   node src/scan/fetch-jds.mjs --input batch/batch-input.tsv
+ *   node src/scan/fetch-jds.mjs                      # read workspace/search/pipeline.md pending URLs
+ *   node src/scan/fetch-jds.mjs --input workspace/.state/batch-input.tsv
  *   node src/scan/fetch-jds.mjs --out jds --summary
  *   node src/scan/fetch-jds.mjs --json
  *
  * OUTPUT
- *   jds/{provider}-{slug}-{jobid}.md   one plain-text JD per role
- *   jds/index.tsv                      url -> file manifest (tab separated)
+ *   workspace/jobs/descriptions/{provider}-{slug}-{jobid}.md   one plain-text JD per role
+ *   workspace/jobs/descriptions/index.tsv                      url -> file manifest (tab separated)
  *
  * Workday is deliberately NOT bulk-fetched: its per-tenant CXS endpoint needs
  * one request per job anyway, so there is no bulk win. Those URLs are reported
@@ -338,10 +338,10 @@ async function main() {
 Usage:
   node src/scan/fetch-jds.mjs [--input <file>] [--out <dir>] [--summary|--json] [--force]
 
-  --input <file>  Source of URLs. Default: data/pipeline.md
+  --input <file>  Source of URLs. Default: workspace/search/pipeline.md
                   Accepts pipeline.md ("- [ ] <url> | ...") or a TSV whose
-                  second column is the URL (e.g. batch/batch-input.tsv).
-  --out <dir>     Output directory. Default: jds
+                  second column is the URL (e.g. workspace/.state/batch-input.tsv).
+  --out <dir>     Output directory. Default: workspace/jobs/descriptions
   --force         Re-fetch even if the JD file already exists.
   --summary       Human-readable table.
   --json          Machine-readable result (default).
@@ -349,8 +349,8 @@ Usage:
     return;
   }
 
-  const input = resolve(ROOT, argVal('--input', 'data/pipeline.md'));
-  const outDir = resolve(ROOT, argVal('--out', 'jds'));
+  const input = resolve(ROOT, argVal('--input', 'workspace/search/pipeline.md'));
+  const outDir = resolve(ROOT, argVal('--out', 'workspace/jobs/descriptions'));
   const force = hasFlag('--force');
   const summary = hasFlag('--summary');
   const result = await runFetchJds({ input, outDir, force });

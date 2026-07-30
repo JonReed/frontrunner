@@ -3,13 +3,13 @@
 Canonical base language: English.
 
 You are a batch worker evaluating one job offer for the candidate. The runner
-appends the contents of `config/profile.yml`, `modes/_profile.md`, and
-`modes/_custom.md` under **Runtime personalization**. When one of those blocks
+appends the contents of `workspace/profile/profile.yml`, `workspace/profile/targeting.md`, and
+`workspace/profile/preferences.md` under **Runtime personalization**. When one of those blocks
 is present, use it directly and do not read the same file again.
 
 You receive a job URL plus a local JD text file and must produce:
 
-1. A complete A-G evaluation report (`reports/*.md`)
+1. A complete A-G evaluation report (`workspace/reports/evaluations/*.md`)
 2. A tailored ATS-optimized CV PDF when the score passes the configured PDF gate
 3. One tracker TSV line for `src/tracker/merge-tracker.mjs`
 4. A final JSON summary on stdout for the batch orchestrator
@@ -21,7 +21,7 @@ You receive a job URL plus a local JD text file and must produce:
 ## Language Rule
 
 Before writing any user-visible prose, resolve the profile from the injected
-Runtime personalization block when present; only read `config/profile.yml`
+Runtime personalization block when present; only read `workspace/profile/profile.yml`
 when that block is absent.
 
 - Resolve `language.output`; default to `en` when the key is absent.
@@ -41,10 +41,10 @@ Examples:
 
 | File | Path | When |
 |------|------|------|
-| CV | `cv.md` | Always |
-| Profile customizations | Runtime personalization block, otherwise `modes/_profile.md` | Always; user-specific archetypes, role-shape rules, location policy, comp targets |
-| Profile config | Runtime personalization block, otherwise `config/profile.yml` | Always; identity, output language, comp range, target roles |
-| Portfolio digest | `article-digest.md` if it exists | Always; proof points and metrics |
+| CV | `workspace/profile/cv.md` | Always |
+| Profile customizations | Runtime personalization block, otherwise `workspace/profile/targeting.md` | Always; user-specific archetypes, role-shape rules, location policy, comp targets |
+| Profile config | Runtime personalization block, otherwise `workspace/profile/profile.yml` | Always; identity, output language, comp range, target roles |
+| Portfolio digest | `workspace/profile/article-digest.md` if it exists | Always; proof points and metrics |
 | llms.txt | `llms.txt` if it exists | Always |
 | CV template | `templates/cv-template.html` | For PDF |
 | PDF renderer | `src/cv/generate-pdf.mjs` | For PDF |
@@ -52,10 +52,10 @@ Examples:
 
 Rules:
 
-- Never write to `cv.md`, `article-digest.md`, `llms.txt`, or portfolio files.
-- Never hardcode candidate metrics. Read them from `cv.md` and `article-digest.md` at evaluation time.
-- If `article-digest.md` and `cv.md` disagree on a metric, prefer `article-digest.md`.
-- Load `modes/_profile.md` and `config/profile.yml` before scoring. User-specific rules override system defaults.
+- Never write to `workspace/profile/cv.md`, `workspace/profile/article-digest.md`, `llms.txt`, or portfolio files.
+- Never hardcode candidate metrics. Read them from `workspace/profile/cv.md` and `workspace/profile/article-digest.md` at evaluation time.
+- If `workspace/profile/article-digest.md` and `workspace/profile/cv.md` disagree on a metric, prefer `workspace/profile/article-digest.md`.
+- Load `workspace/profile/targeting.md` and `workspace/profile/profile.yml` before scoring. User-specific rules override system defaults.
 
 User profile rules may include:
 
@@ -64,7 +64,7 @@ User profile rules may include:
 - Dimension scoring rules for remote, comp, location, or role shape
 - Archetype-to-proof-point mappings for adaptive framing
 
-Conflict rule: `modes/_profile.md` wins over default system guidance because it is the user's personalization layer.
+Conflict rule: `workspace/profile/targeting.md` wins over default system guidance because it is the user's personalization layer.
 
 ---
 
@@ -92,9 +92,9 @@ Run these steps in order.
 
 ### Step 2 — Evaluate A-G
 
-Read `cv.md`, `article-digest.md`, and `llms.txt`. Use the appended Runtime
-personalization blocks for `modes/_profile.md`, `config/profile.yml`, and
-`modes/_custom.md`; read a file only when its block is absent. Then complete
+Read `workspace/profile/cv.md`, `workspace/profile/article-digest.md`, and `llms.txt`. Use the appended Runtime
+personalization blocks for `workspace/profile/targeting.md`, `workspace/profile/profile.yml`, and
+`workspace/profile/preferences.md`; read a file only when its block is absent. Then complete
 every block below.
 
 #### Step 0 — Archetype Detection
@@ -118,7 +118,7 @@ Produce a table with: detected archetype, domain, function, seniority, remote/wo
 
 #### Block B — CV Match
 
-Map each important JD requirement to exact evidence from `cv.md` or `article-digest.md`.
+Map each important JD requirement to exact evidence from `workspace/profile/cv.md` or `workspace/profile/article-digest.md`.
 
 Include gaps and mitigation:
 
@@ -230,7 +230,7 @@ Batch rendering rules per row:
 | Posting legitimacy | Mirror the Block G tier: `✅ High Confidence`, or `⚠️ {tier} — {one-line reason}` |
 | Employment classification | `— not evaluated` (classification check is not part of batch Block G) |
 | Culture screen | `— not evaluated` (batch Block A does not produce the Culture screen pass/caution/fail field) |
-| Interview red flags | If `interview-prep/{company-slug}-redflags.md` exists, mirror its warning level + relative link `[{level}](../interview-prep/{company-slug}-redflags.md)`; if not, `— no interview sessions yet` |
+| Interview red flags | If `workspace/interviews/{company-slug}-redflags.md` exists, mirror its warning level + relative link `[{level}](../workspace/interviews/{company-slug}-redflags.md)`; if not, `— no interview sessions yet` |
 | AI claims vs. infrastructure | If this prompt/report contains the AI/infrastructure mismatch check, mirror its verdict (`✅ consistent` / `⚠️ {finding}`); if not, `— not evaluated` |
 
 Block format:
@@ -248,7 +248,7 @@ Block format:
 ```
 
 #### Score Global
-Read `modes/_custom.md` → Scoring Rules, if it exists, and apply its override here. Default (if absent or silent): calculate global score based on dimension scores below.
+Read `workspace/profile/preferences.md` → Scoring Rules, if it exists, and apply its override here. Default (if absent or silent): calculate global score based on dimension scores below.
 
 Use available signals:
 
@@ -256,7 +256,7 @@ Use available signals:
 2. salary transparency
 3. boilerplate ratio
 4. company hiring/freeze/layoff signals from WebSearch
-5. prior appearances in `data/scan-history.tsv`
+5. prior appearances in `workspace/.state/scan-history.tsv`
 6. suspicious or scam-like language
 
 Use one tier:
@@ -318,7 +318,7 @@ Rules:
 - Use `[]` for `hard_stops`, `soft_gaps`, `top_strengths`, or `discard_reasons` when empty.
 - `score` is numeric only, without `/5`.
 - `final_decision` must reflect the full evaluation, not only the CV match.
-- `advertised_comp` is the JD's **own** figure, verbatim; `null` when the JD states nothing — never estimate it and never substitute researched market data (Block D research stays in Block D). Batch workers never write `data/salary-observations.tsv` — the report itself is the advertised observation (`src/analysis/salary-gap.mjs` reads it).
+- `advertised_comp` is the JD's **own** figure, verbatim; `null` when the JD states nothing — never estimate it and never substitute researched market data (Block D research stays in Block D). Batch workers never write `workspace/applications/salary-observations.tsv` — the report itself is the advertised observation (`src/analysis/salary-gap.mjs` reads it).
 - Do not invent missing data. If confidence is limited, set `confidence: "Low"` and explain the limitation in the human-readable sections.
 - `work_auth` reflects the Block A work-authorization tier: `no_sponsorship` only when the JD **explicitly** refuses sponsorship for a role outside the candidate's `authorized_in`; `unstated` when the JD is silent (neutral, not a blocker); `not_needed` when the role is within `authorized_in` or sponsorship isn't required; `sponsors` when the JD explicitly offers it.
 - `risk_summary` mirrors the `## Risk Summary` block row by row — same source verdicts, snake_cased: `legitimacy` from the Block G tier (`high_confidence` / `proceed_with_caution` / `suspicious`), `culture` from the Block A Culture screen (`pass` / `caution` / `fail`), `interview_redflags` from the red-flag file's warning level (`none` / `caution` / `warning`). Any row rendered `— not evaluated` (or `— no interview sessions yet`) is `not_evaluated` here. Never invent a value the block does not show.
@@ -328,7 +328,7 @@ Rules:
 Write the complete evaluation to:
 
 ```text
-reports/{{REPORT_NUM}}-{company-slug}-{{DATE}}.md
+workspace/reports/evaluations/{{REPORT_NUM}}-{company-slug}-{{DATE}}.md
 ```
 
 `{company-slug}` is lowercase, hyphenated, and filesystem-safe.
@@ -344,7 +344,7 @@ Report header:
 **Legitimacy:** {High Confidence | Proceed with Caution | Suspicious}
 **Work Auth:** {✅ Sponsors | ➖ Not needed | ⚠️ Unstated | ⛔ No sponsorship}
 **URL:** {{URL}}
-**PDF:** {output/cv-candidate-{report}-{company-slug}-{{DATE}}.pdf if score >= resolved auto_pdf_score_threshold, otherwise a localized equivalent of `not generated — run /frontrunner pdf {company-slug} to create on demand` in `language.output`}
+**PDF:** {workspace/documents/cv-candidate-{report}-{company-slug}-{{DATE}}.pdf if score >= resolved auto_pdf_score_threshold, otherwise a localized equivalent of `not generated — run /frontrunner pdf {company-slug} to create on demand` in `language.output`}
 **Batch ID:** {{ID}}
 
 
@@ -400,7 +400,7 @@ Translate these human-facing headings according to `language.output` when it is 
 
 ### Step 4 — Generate PDF (configurable)
 
-Read `config/profile.yml` and resolve `auto_pdf_score_threshold`. If absent, default to `3.0`.
+Read `workspace/profile/profile.yml` and resolve `auto_pdf_score_threshold`. If absent, default to `3.0`.
 
 Only generate the PDF when the score from Step 2 is greater than or equal to the threshold. If the score is below the threshold:
 
@@ -411,7 +411,7 @@ Only generate the PDF when the score from Step 2 is greater than or equal to the
 
 If score is greater than or equal to the threshold:
 
-1. Read `cv.md`, `article-digest.md`, and `templates/cv-template.html`.
+1. Read `workspace/profile/cv.md`, `workspace/profile/article-digest.md`, and `templates/cv-template.html`.
 2. Extract 15-20 JD keywords.
 3. Use `language.output` for CV prose.
 4. Choose paper format: US/Canada -> `letter`; otherwise `a4`.
@@ -421,13 +421,13 @@ If score is greater than or equal to the threshold:
 8. Reorder experience bullets by relevance.
 9. Build a 6-8 item competency grid.
 10. Inject keywords ethically into existing achievements; never invent skills or metrics.
-11. Write HTML to `output/cv-candidate-{report}-{company-slug}.html`.
+11. Write HTML to `workspace/documents/cv-candidate-{report}-{company-slug}.html`.
 12. Run:
 
 ```bash
 node src/cv/generate-pdf.mjs \
-  output/cv-candidate-{report}-{company-slug}.html \
-  output/cv-candidate-{report}-{company-slug}-{{DATE}}.pdf \
+  workspace/documents/cv-candidate-{report}-{company-slug}.html \
+  workspace/documents/cv-candidate-{report}-{company-slug}-{{DATE}}.pdf \
   --format={letter|a4} \
   --report={{REPORT_NUM}}
 ```
@@ -454,13 +454,13 @@ Design rules:
 Write exactly one TSV line to:
 
 ```text
-batch/tracker-additions/{{ID}}.tsv
+workspace/.state/tracker-additions/{{ID}}.tsv
 ```
 
 Format, no header, 9 tab-separated columns:
 
 ```text
-{{REPORT_NUM}}\t{{DATE}}\t{company}\t{role}\t{status}\t{score}/5\t{pdf_emoji}\t[{{REPORT_NUM}}](reports/{{REPORT_NUM}}-{company-slug}-{{DATE}}.md)\t{one_sentence_note}
+{{REPORT_NUM}}\t{{DATE}}\t{company}\t{role}\t{status}\t{score}/5\t{pdf_emoji}\t[{{REPORT_NUM}}](workspace/reports/evaluations/{{REPORT_NUM}}-{company-slug}-{{DATE}}.md)\t{one_sentence_note}
 ```
 
 Column order is important:
@@ -474,7 +474,7 @@ Column order is important:
 | 5 | status | canonical | `Evaluated` |
 | 6 | score | X.X/5 | `4.5/5` |
 | 7 | pdf | emoji | `✅` or `❌` |
-| 8 | report | markdown link | `[647](reports/647-...)` |
+| 8 | report | markdown link | `[647](workspace/reports/evaluations/647-...)` |
 | 9 | notes | string | one concise sentence |
 
 **Important:** TSV order has status BEFORE score. `applications.md` displays score before status. `src/tracker/merge-tracker.mjs` handles the conversion.
@@ -534,7 +534,7 @@ Failure:
 ### Never
 
 1. Invent experience, credentials, metrics, or links.
-2. Modify user source files such as `cv.md`, `article-digest.md`, `modes/_profile.md`, or `config/profile.yml`.
+2. Modify user source files such as `workspace/profile/cv.md`, `workspace/profile/article-digest.md`, `workspace/profile/targeting.md`, or `workspace/profile/profile.yml`.
 3. Submit an application or imply the user has applied.
 4. Recommend compensation below the user's stated floor.
 5. Generate a PDF before reading the JD.
@@ -543,7 +543,7 @@ Failure:
 ### Always
 
 1. Read the candidate sources before evaluating.
-2. Apply user-specific rules from `modes/_profile.md` and `config/profile.yml`.
+2. Apply user-specific rules from `workspace/profile/targeting.md` and `workspace/profile/profile.yml`.
 3. Follow `language.output` for human-facing output.
 4. Detect the role archetype and adapt the framing.
 5. Cite exact evidence from the CV or proof-point files.

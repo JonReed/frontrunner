@@ -5,14 +5,14 @@
  *
  * Providers live in providers/*.mjs and are loaded at startup. Each provider
  * exports a default object with:
- *   - id: string — matched against `provider:` in portals.yml
+ *   - id: string — matched against `provider:` in workspace/search/portals.yml
  *   - detect(entry): {url}|null — optional auto-detection from careers_url
  *   - fetch(entry, ctx): [{title,url,company,location}] — required
  *
  * Files prefixed with _ are shared helpers (e.g. _http.mjs) and are never
  * loaded as providers. Adding a new HTTP/API source = drop a *.mjs into
  * providers/. Local executable parsers use `providers/local-parser.mjs` when
- * `parser.command` + `parser.script` are set in portals.yml.
+ * `parser.command` + `parser.script` are set in workspace/search/portals.yml.
  *
  * A tracked_companies entry can set `provider:` explicitly to bypass
  * URL-based auto-detection. The `transport:` field is reserved for future
@@ -28,7 +28,7 @@
  *   node src/scan/scan.mjs --verify --headed-fallback  # retry anti-bot-blocked URLs in a headed browser (needs a display)
  *   node src/scan/scan.mjs --verify --throttle          # jittered ~5-10s gap between checks (stay under rate limits)
  *   node src/scan/scan.mjs --verify --throttle=8000     # custom base gap in ms (waits base..2*base)
- *   node src/scan/scan.mjs --include-blacklisted        # let data/blacklist.md matches through (annotated)
+ *   node src/scan/scan.mjs --include-blacklisted        # let workspace/search/blacklist.md matches through (annotated)
  */
 
 import { readFileSync, existsSync, mkdirSync } from 'fs';
@@ -66,15 +66,17 @@ const parseYaml = yaml.load;
 
 // ── Config ──────────────────────────────────────────────────────────
 
-const PORTALS_PATH = process.env.FRONTRUNNER_PORTALS || 'portals.yml';
-const PROFILE_PATH = process.env.FRONTRUNNER_PROFILE || 'config/profile.yml';
-const SCAN_HISTORY_PATH = 'data/scan-history.tsv';
-const PIPELINE_PATH = 'data/pipeline.md';
-const APPLICATIONS_PATH = 'data/applications.md';
+const PORTALS_PATH = process.env.FRONTRUNNER_PORTALS || 'workspace/search/portals.yml';
+const PROFILE_PATH = process.env.FRONTRUNNER_PROFILE || 'workspace/profile/profile.yml';
+const SCAN_HISTORY_PATH = 'workspace/.state/scan-history.tsv';
+const PIPELINE_PATH = 'workspace/search/pipeline.md';
+const APPLICATIONS_PATH = 'workspace/applications/tracker.md';
 import { PROVIDERS_DIR, DATA_DIR } from '#paths';
 
 // Ensure required directories exist (fresh setup)
-mkdirSync('data', { recursive: true });
+mkdirSync('workspace/search', { recursive: true });
+mkdirSync('workspace/applications', { recursive: true });
+mkdirSync('workspace/.state', { recursive: true });
 
 const CONCURRENCY = 10;
 
@@ -131,7 +133,7 @@ function compiledPositiveMatchers(positiveList) {
   return compiled;
 }
 
-// Returns the raw (as-written in portals.yml) `title_filter.positive` keywords
+// Returns the raw (as-written in workspace/search/portals.yml) `title_filter.positive` keywords
 // that matched a given title — used to scope `content_filter.by_title_keyword`
 // overrides to only the categories that opted into a stricter content check.
 export function matchedTitleKeywords(title, titleFilter) {
@@ -143,7 +145,7 @@ export function matchedTitleKeywords(title, titleFilter) {
 }
 
 // ── Location filter ─────────────────────────────────────────────────
-// Optional. If `location_filter` is absent from portals.yml, all locations pass.
+// Optional. If `location_filter` is absent from workspace/search/portals.yml, all locations pass.
 // Semantics (case-insensitive substring, in this order):
 //   - Empty / whitespace-only / non-string location → pass (don't penalize
 //     missing or malformed provider data)
@@ -154,7 +156,7 @@ export function matchedTitleKeywords(title, titleFilter) {
 //   - `allow` empty → pass (already cleared block)
 //   - `allow` non-empty → must match at least one keyword
 
-// Normalize a keyword list from portals.yml: tolerates a bare string
+// Normalize a keyword list from workspace/search/portals.yml: tolerates a bare string
 // (wrapped to a 1-item array), null/undefined (→ []), and non-string
 // entries (filtered out). Survivors are lowercased, trimmed, and any
 // resulting empty strings are dropped — an empty keyword would otherwise
@@ -257,7 +259,7 @@ export function buildLocationFilter(locationFilter) {
 
 // ── Posting-age filter ──────────────────────────────────────────────
 // Optional opt-in. If `max_posting_age_days` is absent (or not a positive
-// integer) in portals.yml, every offer passes. An offer is skipped only when
+// integer) in workspace/search/portals.yml, every offer passes. An offer is skipped only when
 // the provider supplied a postedAt (epoch ms) AND it is older than N days.
 // Offers with no date always pass — same "don't penalize missing data"
 // convention as the location filter. `now` is injectable for deterministic tests.
@@ -291,7 +293,7 @@ export function buildPostedDateFilter(afterIso, beforeIso) {
 }
 
 // ── Content filter ──────────────────────────────────────────────────
-// Optional. If `content_filter` is absent from portals.yml, all jobs pass.
+// Optional. If `content_filter` is absent from workspace/search/portals.yml, all jobs pass.
 // Filters on the job DESCRIPTION text to separate same-titled roles with
 // different stacks (a "Software Engineer" listing that mentions "PHP" vs one
 // that mentions "Rust"). Semantics (case-insensitive substring, in order):
@@ -358,7 +360,7 @@ export function buildContentFilter(contentFilter) {
 
 // ── Country-eligibility filter (#2093) ──────────────────────────────
 // Optional, opt-in. If `country_eligibility_filter` is absent from
-// portals.yml, all jobs pass — byte-identical to pre-#2093 behavior.
+// workspace/search/portals.yml, all jobs pass — byte-identical to pre-#2093 behavior.
 //
 // Problem it solves: `location_filter` only reads the ATS provider's
 // STRUCTURED location field (e.g. "Remote"), which many US companies use
@@ -369,7 +371,7 @@ export function buildContentFilter(contentFilter) {
 //
 // Semantics (case-insensitive substring), mirroring location_filter's
 // "don't penalize missing data" discipline exactly:
-//   - Candidate's own `location.country` (config/profile.yml) is "United
+//   - Candidate's own `location.country` (workspace/profile/profile.yml) is "United
 //     States" → always pass, unconditionally. An exclusionary "US only"
 //     phrase can never legitimately block a US-based candidate, so the
 //     filter no-ops entirely rather than special-casing every keyword check.
@@ -386,14 +388,14 @@ export function buildContentFilter(contentFilter) {
 //   - `exclusionary` phrase matched, no `inclusive` phrase, and the
 //     candidate's own country isn't named → reject.
 //
-// Config shape (portals.yml):
+// Config shape (workspace/search/portals.yml):
 //   country_eligibility_filter:
 //     exclusionary: ["must be located in the united states", ...]
 //     inclusive: ["united states or canada", "north america", ...]
 //
 // Kept as a sibling block to `content_filter` rather than folded into its
 // positive/negative shape: this filter cross-references
-// `config/profile.yml`'s `location.country` and has its own three-way
+// `workspace/profile/profile.yml`'s `location.country` and has its own three-way
 // exclusionary/inclusive/candidate-country-named semantics, which doesn't
 // fit content_filter's simpler two-list reject/require shape.
 
@@ -504,7 +506,7 @@ export function buildVisaFilter(visaFilter) {
 }
 
 // ── Salary filter ───────────────────────────────────────────────────
-// Optional. If `salary_filter` is absent from portals.yml, all salaries pass.
+// Optional. If `salary_filter` is absent from workspace/search/portals.yml, all salaries pass.
 // Semantics:
 //   - min/max are annual compensation filters (use annualized values)
 //   - max: 0 means "no upper limit"
@@ -586,7 +588,7 @@ export function addDays(dateStr, days) {
   return date.toISOString().slice(0, 10);
 }
 
-// Reads config/profile.yml's `location.country` (already a documented
+// Reads workspace/profile/profile.yml's `location.country` (already a documented
 // profile field — see config/profile.example.yml) for the country-
 // eligibility filter (#2093). Missing file, missing field, or a malformed
 // profile all resolve to '' — buildCountryEligibilityFilter treats an empty
@@ -838,7 +840,7 @@ const DEDUP_STRIP_PARAMS = new Set([
  * The path is lowercased because scan.mjs and scan-ats-full.mjs run as
  * separate processes and can independently produce different casing for the
  * identical posting — a Workday tenant/site path segment reached via the
- * curated portals.yml entry vs. the reverse-ATS dataset, for instance. A
+ * curated workspace/search/portals.yml entry vs. the reverse-ATS dataset, for instance. A
  * case-sensitive key silently treats those as two distinct URLs, so the same
  * role lands in pipeline.md twice. Path casing is not meaningfully distinct
  * for any provider these scanners target.
@@ -1535,10 +1537,10 @@ export async function appendToScanHistory(
 
 // ── Company blacklist (#1742) ───────────────────────────────────────
 
-const BLACKLIST_PATH = 'data/blacklist.md';
+const BLACKLIST_PATH = 'workspace/search/blacklist.md';
 
 /**
- * Parse the user's do-not-apply list (data/blacklist.md, user layer, opt-in).
+ * Parse the user's do-not-apply list (workspace/search/blacklist.md, user layer, opt-in).
  *
  * The file is a small markdown table the user owns:
  * `| Company | Since | Scope | Reason |`. Nothing here ever creates or writes
@@ -1546,7 +1548,7 @@ const BLACKLIST_PATH = 'data/blacklist.md';
  * normalization every tracker writer shares (normalizeCompany, #1460), so a
  * blacklist row "Acme Corp." still catches an ATS feed that says "acme corp".
  *
- * @param {string} text - Raw data/blacklist.md content.
+ * @param {string} text - Raw workspace/search/blacklist.md content.
  * @returns {Map<string, {company: string, since: string, scope: string, reason: string}>}
  *          Normalized company key → entry. First row wins on duplicate keys.
  */
@@ -1571,7 +1573,7 @@ export function parseBlacklist(text) {
 }
 
 /**
- * Load data/blacklist.md if the user opted in. Absent file = empty Map = no
+ * Load workspace/search/blacklist.md if the user opted in. Absent file = empty Map = no
  * filtering anywhere — the scan stays byte-identical to a pre-#1742 run.
  *
  * @param {string} [filePath] - Override for tests.
@@ -1584,7 +1586,7 @@ export function loadBlacklist(filePath = BLACKLIST_PATH) {
 
 // ── Scan-run persistence (#1604) ────────────────────────────────────
 
-const SCAN_RUNS_PATH = 'data/scan-runs.tsv';
+const SCAN_RUNS_PATH = 'workspace/.state/scan-runs.tsv';
 
 // One row of run counters per non-dry scan — today these numbers are printed
 // once in the summary and lost when the terminal scrolls. Full ISO timestamp
@@ -1814,7 +1816,7 @@ async function main() {
   // --rediscover-404: when a tracked company's URL 404/410s, search for the
   // moved role and re-verify before marking it expired. Opt-in; rides on --verify.
   const rediscover = args.includes('--rediscover-404');
-  // --include-blacklisted: bypass the data/blacklist.md filter for auditing.
+  // --include-blacklisted: bypass the workspace/search/blacklist.md filter for auditing.
   // Matching postings flow through annotated instead of being counted out.
   const includeBlacklisted = args.includes('--include-blacklisted');
   const companyFlag = args.indexOf('--company');
@@ -1847,9 +1849,9 @@ async function main() {
     process.exit(1);
   }
 
-  // 2. Read portals.yml
+  // 2. Read workspace/search/portals.yml
   if (!existsSync(PORTALS_PATH)) {
-    console.error('Error: portals.yml not found. Run onboarding first.');
+    console.error('Error: workspace/search/portals.yml not found. Run onboarding first.');
     process.exit(1);
   }
 
@@ -2295,7 +2297,7 @@ async function main() {
       console.log(`  • ${item.company} (${item.method})${hint}`);
     }
     if (agentHandoff.length > 25) {
-      console.log(`  … ${agentHandoff.length - 25} more omitted; narrow with --company or inspect portals.yml`);
+      console.log(`  … ${agentHandoff.length - 25} more omitted; narrow with --company or inspect workspace/search/portals.yml`);
     }
   }
 

@@ -18,11 +18,11 @@ Agent(
 )
 ```
 
-The spawned subagent is a **single-pass worker**: it runs the scan with the parsers/APIs/Playwright/WebSearch named below, directly. It must **not** spawn further subagents or invoke other skills (see `modes/_shared.md` → Subagent delegation). Scanning is bounded by `portals.yml`; it is never an open-ended research task.
+The spawned subagent is a **single-pass worker**: it runs the scan with the parsers/APIs/Playwright/WebSearch named below, directly. It must **not** spawn further subagents or invoke other skills (see `modes/_shared.md` → Subagent delegation). Scanning is bounded by `workspace/search/portals.yml`; it is never an open-ended research task.
 
 ## Configuration
 
-Read `portals.yml` which contains:
+Read `workspace/search/portals.yml` which contains:
 - `search_queries`: List of WebSearch queries with `site:` filters per portal (broad discovery)
 - `tracked_companies`: Specific companies with `careers_url` for direct navigation
 - `tracked_companies[].parser`: Optional local parser for SSR pages or stable HTML
@@ -32,7 +32,7 @@ Read `portals.yml` which contains:
 
 ### Level 0 — Local Parser (CHEAPEST)
 
-**For each company in `tracked_companies` with a configured `parser`:** execute the local parser defined in `portals.yml`. This level is ideal when the careers page uses SSR or stable HTML and there is already a local JavaScript, Python, or other runtime script that extracts jobs without agent assistance.
+**For each company in `tracked_companies` with a configured `parser`:** execute the local parser defined in `workspace/search/portals.yml`. This level is ideal when the careers page uses SSR or stable HTML and there is already a local JavaScript, Python, or other runtime script that extracts jobs without agent assistance.
 
 Recommended Contract:
 
@@ -81,7 +81,7 @@ Object format with `results`:
 
 `company` is optional; if not provided, `src/scan/scan.mjs` uses the name from `tracked_companies`.
 
-The scanner does not need to persist the full JSON after reading stdout. If a parser also generates an artifact for auditing or debugging, save it under `data/parser-output/{company}/` and keep it out of git (JSON files in `.gitignore`; `.gitkeep` files are kept in git to preserve the directory structure).
+The scanner does not need to persist the full JSON after reading stdout. If a parser also generates an artifact for auditing or debugging, save it under `workspace/.state/parser-output/{company}/` and keep it out of git (JSON files in `.gitignore`; `.gitkeep` files are kept in git to preserve the directory structure).
 
 ### Rule: Successful Local Parser — No Expensive Scraping Repetition
 
@@ -115,9 +115,9 @@ During the agent's scan, keep the **`local_parser_ok`** set in memory. This set 
 - It detects new offers instantly
 - It does not depend on Google indexing
 
-**Every company MUST have a `careers_url` in portals.yml.** If it does not, search for it once, save it, and use it in future scans.
+**Every company MUST have a `careers_url` in workspace/search/portals.yml.** If it does not, search for it once, save it, and use it in future scans.
 
-> **Opt-in — CLI extractor (`scan.extractor: cli`).** When `config/profile.yml` sets `scan.extractor: cli`, run `node src/scan/browser-extract.mjs <careers_url> --mode listing` for each company instead of `browser_navigate` + `browser_snapshot`. It renders the page headlessly and returns compact JSON — `{ "url": ..., "jobs": [{ "title", "url" }] }` — so the listing enters context at a fraction of a full snapshot's tokens (~2–3× smaller here). Read the `jobs` array directly; then apply `title_filter` as usual. **Fall back silently** to `browser_navigate` + `browser_snapshot` if the command errors (it prints `{ "error", "code" }` and exits non-zero) or isn't present — never let the flag break a scan. Default (`scan.extractor` absent or `mcp`): the `browser_navigate` + `browser_snapshot` flow above.
+> **Opt-in — CLI extractor (`scan.extractor: cli`).** When `workspace/profile/profile.yml` sets `scan.extractor: cli`, run `node src/scan/browser-extract.mjs <careers_url> --mode listing` for each company instead of `browser_navigate` + `browser_snapshot`. It renders the page headlessly and returns compact JSON — `{ "url": ..., "jobs": [{ "title", "url" }] }` — so the listing enters context at a fraction of a full snapshot's tokens (~2–3× smaller here). Read the `jobs` array directly; then apply `title_filter` as usual. **Fall back silently** to `browser_navigate` + `browser_snapshot` if the command errors (it prints `{ "error", "code" }` and exits non-zero) or isn't present — never let the flag break a scan. Default (`scan.extractor` absent or `mcp`): the `browser_navigate` + `browser_snapshot` flow above.
 
 ### Level 2 — ATS APIs / Feeds (COMPLEMENTARY)
 
@@ -149,7 +149,7 @@ For companies with a public API or structured feed **that are not in `local_pars
 
 The `search_queries` with `site:` filters cover portals transversally (all Ashby, all Greenhouse, etc.). Useful for discovering NEW companies that are not yet in `tracked_companies`, but results might be outdated. After filtering out hits from companies in `local_parser_ok`, the remaining results are deduplicated with Levels 0–2.
 
-> **Caution — Level-3 hits can be weeks stale.** WebSearch is fed by a search index that lags the live board, so a result can describe a posting that has already closed. Treat every Level-3 hit as unverified: before adding it to `data/pipeline.md` or evaluating it, confirm liveness against the real posting (`node src/scan/check-liveness.mjs <url>` for ATS-hosted pages, or Playwright for non-ATS pages). Unlike the real-time ATS responses in Level 2, a Level-3 snippet is never proof a role is still open.
+> **Caution — Level-3 hits can be weeks stale.** WebSearch is fed by a search index that lags the live board, so a result can describe a posting that has already closed. Treat every Level-3 hit as unverified: before adding it to `workspace/search/pipeline.md` or evaluating it, confirm liveness against the real posting (`node src/scan/check-liveness.mjs <url>` for ATS-hosted pages, or Playwright for non-ATS pages). Unlike the real-time ATS responses in Level 2, a Level-3 snippet is never proof a role is still open.
 
 **Execution Priority:**
 1. Level 0: Local Parser → companies with a configured `parser:` and existing script; build `local_parser_ok`
@@ -161,9 +161,9 @@ Levels are additive — they are executed in order, and results are merged and d
 
 ## Workflow
 
-1. **Read Configuration**: `portals.yml`
-2. **Read History**: `data/scan-history.tsv` → already seen URLs
-3. **Read Dedup Sources**: `data/applications.md` + `data/pipeline.md`
+1. **Read Configuration**: `workspace/search/portals.yml`
+2. **Read History**: `workspace/.state/scan-history.tsv` → already seen URLs
+3. **Read Dedup Sources**: `workspace/applications/tracker.md` + `workspace/search/pipeline.md`
 
 3.5. **Level 0 — Local Parser** (`src/scan/scan.mjs`, zero-token):
    Initialize `local_parser_ok = []`.
@@ -207,12 +207,12 @@ Levels are additive — they are executed in order, and results are merged and d
    c. **Skip** the result if the normalized `company` matches any name in `local_parser_ok`.
    d. Accumulate the rest in the candidates list (deduplicated against Levels 0+1+2).
 
-6. **Filter by Title** using `title_filter` from `portals.yml`:
+6. **Filter by Title** using `title_filter` from `workspace/search/portals.yml`:
    - At least 1 keyword from `positive` must appear in the title (case-insensitive).
    - 0 keywords from `negative` must appear.
    - `seniority_boost` keywords give priority but are not mandatory.
 
-6b. **Filter by Location (Optional)** using `location_filter` from `portals.yml`:
+6b. **Filter by Location (Optional)** using `location_filter` from `workspace/search/portals.yml`:
    - If the `location_filter` block is absent, all locations pass (default behavior).
    - Empty location on a posting → passes (do not penalize missing data).
    - Any keyword from `block` present → reject (precedes allow).
@@ -221,7 +221,7 @@ Levels are additive — they are executed in order, and results are merged and d
    - All matches are case-insensitive substring matches.
    - The location is persisted as the 7th column in `scan-history.tsv` for later auditing.
 
-6c. **Filter by Posting Age (Optional)** using `max_posting_age_days` from `portals.yml`:
+6c. **Filter by Posting Age (Optional)** using `max_posting_age_days` from `workspace/search/portals.yml`:
    - Opt-in. If the key is absent, 0, or non-positive, all ages pass (default behavior).
    - An offer is skipped only when the provider supplied a posting date (`postedAt`) AND it is older than N days.
    - Offers from providers that expose no date always pass (do not penalize missing data).
@@ -277,18 +277,18 @@ Generic regex: `(.+?)(?:\s*[@|—–-]\s*|\s+at\s+)(.+?)$`
 ## Private URLs
 
 If a non-publicly accessible URL is found:
-1. Save the JD in `jds/{company}-{role-slug}.md`.
-2. Add to `pipeline.md` as: `- [ ] local:jds/{company}-{role-slug}.md | {company} | {title}`
+1. Save the JD in `workspace/jobs/descriptions/{company}-{role-slug}.md`.
+2. Add to `pipeline.md` as: `- [ ] local:workspace/jobs/descriptions/{company}-{role-slug}.md | {company} | {title}`
 
 ## Scan History
 
-`data/scan-history.tsv` tracks ALL seen URLs. Each row has nine tab-separated columns:
+`workspace/.state/scan-history.tsv` tracks ALL seen URLs. Each row has nine tab-separated columns:
 
 | # | Column | Example | Notes |
 |---|--------|---------|-------|
 | 1 | `url` | `https://jobs.lever.co/acme/123` | Canonical posting URL |
 | 2 | `first_seen` | `2026-02-10` | ISO date the URL was first encountered |
-| 3 | `portal` | `Ashby — AI PM` | Query name from `portals.yml` |
+| 3 | `portal` | `Ashby — AI PM` | Query name from `workspace/search/portals.yml` |
 | 4 | `title` | `PM AI` | Job title as returned by the ATS |
 | 5 | `company` | `Acme` | Company name |
 | 6 | `status` | `added` | `added`, `skipped_dup`, `skipped_title`, `skipped_expired` |
@@ -316,7 +316,7 @@ node src/scan/scan.mjs --posted-after 2026-07-17 --posted-before 2026-07-20
 Jobs whose provider exposes no `postedAt` always pass (same "don't penalize
 missing data" rule as every other date/location filter here) — this bounds
 what's filterable, not what's returned. For a relative "N days old" cutoff
-instead of an absolute window, use `max_posting_age_days` in `portals.yml`.
+instead of an absolute window, use `max_posting_age_days` in `workspace/search/portals.yml`.
 
 ### Cross-listing detection
 
@@ -384,14 +384,14 @@ Fallback: if you only have the direct ATS URL, navigate first to the company's w
 1. Attempt the pattern of its known platform.
 2. If it fails, do a quick WebSearch: `"{company}" careers jobs`.
 3. Navigate with Playwright to confirm it works.
-4. **Save the found URL in portals.yml** for future scans.
+4. **Save the found URL in workspace/search/portals.yml** for future scans.
 
 **If `careers_url` returns 404 or redirect:**
 1. Note it in the output summary.
 2. Attempt `scan_query` as a fallback.
 3. Mark it for manual update.
 
-## Maintenance of portals.yml
+## Maintenance of workspace/search/portals.yml
 
 - **ALWAYS save `careers_url`** when adding a new company.
 - Add new queries as interesting portals or roles are discovered.

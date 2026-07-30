@@ -4,8 +4,8 @@ Export a tailored, ATS-optimized CV as a `.tex` file and compile it to PDF via `
 
 ## Pipeline
 
-1. Read `cv.md` as source of truth
-2. Read `config/profile.yml` for candidate identity and contact info
+1. Read `workspace/profile/cv.md` as source of truth
+2. Read `workspace/profile/profile.yml` for candidate identity and contact info
 3. Ask the user for the JD if not already in context (text or URL)
 4. Extract 15-20 keywords from the JD
 5. Detect JD language → CV language (EN default)
@@ -15,8 +15,8 @@ Export a tailored, ATS-optimized CV as a `.tex` file and compile it to PDF via `
 9. Reorder experience bullets by JD relevance
 10. Inject keywords naturally into existing achievements
 11. Build a JSON payload (see schema below) and write to `/tmp/cv-{candidate}-{report}-{company}.json`
-12. Run: `node src/cv/build-cv-latex.mjs /tmp/cv-{candidate}-{report}-{company}.json output/cv-{candidate}-{report}-{company}-{YYYY-MM-DD}.tex`
-13. Run: `node src/cv/generate-latex.mjs output/cv-{candidate}-{report}-{company}-{YYYY-MM-DD}.tex output/cv-{candidate}-{report}-{company}-{YYYY-MM-DD}.pdf`
+12. Run: `node src/cv/build-cv-latex.mjs /tmp/cv-{candidate}-{report}-{company}.json workspace/documents/cv-{candidate}-{report}-{company}-{YYYY-MM-DD}.tex`
+13. Run: `node src/cv/generate-latex.mjs workspace/documents/cv-{candidate}-{report}-{company}-{YYYY-MM-DD}.tex workspace/documents/cv-{candidate}-{report}-{company}-{YYYY-MM-DD}.pdf`
     *(Replace `{candidate}`, `{company}`, `{YYYY-MM-DD}` with actual values.)*
 14. Report: .tex path, .pdf path, file sizes, section count, keyword coverage %
 
@@ -88,17 +88,17 @@ Write a JSON file with this structure. `src/cv/build-cv-latex.mjs` handles templ
 | `linkedin.display` | string | Display text only (no scheme) |
 | `github.url` | string | Full URL with scheme for `\href{}` (sanitized via sanitizeUrl, not LaTeX-escaped) |
 | `github.display` | string | Display text only (no scheme) |
-| `education[].institution` | string | From cv.md Education |
+| `education[].institution` | string | From workspace/profile/cv.md Education |
 | `education[].location` | string | Institution location |
 | `education[].degree` | string | Degree name |
 | `education[].dates` | string | Date range |
 | `education[].coursework` | string[] | Optional — generates a coursework line if present |
-| `experience[].company` | string | From cv.md Experience |
+| `experience[].company` | string | From workspace/profile/cv.md Experience |
 | `experience[].role` | string | Job title |
 | `experience[].location` | string | Work location |
 | `experience[].dates` | string | Date range |
 | `experience[].bullets` | string[] | Reordered and keyword-injected achievement bullets |
-| `projects[].name` | string | From cv.md Projects |
+| `projects[].name` | string | From workspace/profile/cv.md Projects |
 | `projects[].context` | string | Tech stack — appears next to project name |
 | `projects[].dates` | string | Date range (or empty) |
 | `projects[].bullets` | string[] | Selected project achievements |

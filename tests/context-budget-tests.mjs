@@ -61,7 +61,7 @@ const SHARED_STUB = makeSharedContent([
   { name: 'Sources of Truth (EXCLUSIVE)', body: 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5' },
   { name: 'Scoring System', body: 'Score from 1-5 with weighted dimensions.' },
   { name: 'Archetype Detection', body: 'Classify into AI Platform, Agentic, etc.' },
-  { name: 'Global Rules', body: 'NEVER: invent experience. ALWAYS: read cv.md.' },
+  { name: 'Global Rules', body: 'NEVER: invent experience. ALWAYS: read workspace/profile/cv.md.' },
   { name: 'Voice DNA (writing guardrail)', body: 'Anti-AI-slop guardrail. Tier 1 and Tier 2 rules. Longer body to add tokens for testing compression triggers.\n'.repeat(20) },
   { name: 'Writing Style Calibration', body: 'Extract tone, structure, vocabulary. Also fairly long to ensure token counts are high.\n'.repeat(20) },
 ]);
@@ -160,7 +160,7 @@ ok('under budget: not compressed', !underBudget.budgetReport.compressed);
 eq('under budget: removed empty', underBudget.budgetReport.removed, []);
 ok('under budget: overBudget is false', !underBudget.budgetReport.overBudget);
 ok('under budget: contextBody contains _shared.md', underBudget.contextBody.includes('SYSTEM CONTEXT'));
-ok('under budget: contextBody contains cv.md', underBudget.contextBody.includes('CANDIDATE RESUME'));
+ok('under budget: contextBody contains workspace/profile/cv.md', underBudget.contextBody.includes('CANDIDATE RESUME'));
 ok('under budget: contextBody contains JD', underBudget.contextBody.includes('JOB DESCRIPTION'));
 
 // ============================================================================
@@ -229,7 +229,7 @@ const withProfile = buildBudgetedPrompt({
   profileContent: '## My Archetypes\nAI Platform expert.',
   jdText: 'We are hiring.',
 });
-ok('with profile: includes profile.yml', withProfile.contextBody.includes('config/profile.yml'));
+ok('with profile: includes profile.yml', withProfile.contextBody.includes('workspace/profile/profile.yml'));
 ok('with profile: includes _profile.md', withProfile.contextBody.includes('_profile.md'));
 
 // ============================================================================
@@ -252,8 +252,8 @@ const cvIdx = body.indexOf('CANDIDATE RESUME');
 const jdIdx = body.indexOf('JOB DESCRIPTION');
 
 ok('order: _shared.md before oferta.md', sharedIdx < ofertaIdx);
-ok('order: oferta.md before cv.md', ofertaIdx < cvIdx);
-ok('order: cv.md before JD', cvIdx < jdIdx);
+ok('order: oferta.md before workspace/profile/cv.md', ofertaIdx < cvIdx);
+ok('order: workspace/profile/cv.md before JD', cvIdx < jdIdx);
 
 const splitMessageResult = buildBudgetedPrompt({
   sharedContent: 'Shared rules.',

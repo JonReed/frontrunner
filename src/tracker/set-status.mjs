@@ -3,7 +3,7 @@
 /**
  * set-status.mjs — canonical CLI to update a tracker row's status/note (#1428).
  *
- * data/applications.md is a shared surface with multiple readers and writers.
+ * workspace/applications/tracker.md is a shared surface with multiple readers and writers.
  * One canonical write path is safer than N agents hand-editing markdown, so
  * modes (apply Step 9, followup, batch) call this instead of editing the table.
  *
@@ -38,7 +38,7 @@
  *
  * When the new status is Applied, the JSON output carries
  * `"followupSeedCandidate": true` — the UI workflow controller consumes this
- * transition deterministically by seeding data/follow-ups.md with the default
+ * transition deterministically by seeding workspace/applications/follow-ups.md with the default
  * cadence. Direct CLI callers may still invoke followup-seed.mjs explicitly.
  *
  * Every real status change also appends one line to the transition ledger
@@ -476,7 +476,7 @@ if (flags.json) {
   const verb = flags.dryRun ? 'would set' : changed ? 'set' : 'already';
   console.log(`✅ #${target.num} ${target.company} — ${target.role}: ${verb} ${oldStatus} → ${newStatus}${note ? ` (note: ${note})` : ''}`);
   if (statusChanged && !flags.dryRun && newStatus === 'Applied') {
-    console.error('ℹ️  Status is Applied — consider seeding follow-ups in data/follow-ups.md (#1430: node src/tracker/followup-cadence.mjs)');
+    console.error('ℹ️  Status is Applied — consider seeding follow-ups in workspace/applications/follow-ups.md (#1430: node src/tracker/followup-cadence.mjs)');
   }
 }
 process.exit(EXIT_OK);

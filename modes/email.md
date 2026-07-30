@@ -22,9 +22,9 @@ must review and send manually.
 Supported inputs:
 
 1. `/frontrunner email {report-number-or-slug}`
-   - Load the matching `reports/{NNN}-*.md`.
+   - Load the matching `workspace/reports/evaluations/{NNN}-*.md`.
    - Use the report header, score, archetype, PDF status, and evaluation content.
-   - If `data/pdf-index.tsv` contains a PDF for that report, mention it as the CV
+   - If `workspace/.state/pdf-index.tsv` contains a PDF for that report, mention it as the CV
      attachment candidate. If no PDF is indexed, say that the CV should be
      generated first via `/frontrunner pdf {slug}` or attached manually.
 
@@ -40,7 +40,7 @@ Supported inputs:
    - If no usable context exists, ask for a report number, slug, or JD.
 
 4. `/frontrunner email stuck {report-number-or-slug}`
-   - Load the matching `reports/{NNN}-*.md` for company and role context.
+   - Load the matching `workspace/reports/evaluations/{NNN}-*.md` for company and role context.
    - Draft a process-stuck recovery email (see the dedicated section below).
    - Also trigger this variant conversationally when the user describes a
      broken application step, e.g. "the ATS scheduling page is broken", "I
@@ -48,7 +48,7 @@ Supported inputs:
      won't let me back in". Confirm the variant before drafting if ambiguous.
 
 5. `/frontrunner email noshow {report-number-or-slug}`
-   - Load the matching `reports/{NNN}-*.md` for company and role context.
+   - Load the matching `workspace/reports/evaluations/{NNN}-*.md` for company and role context.
    - Draft a confirmed-time no-show follow-up (see the dedicated section
      below).
    - Also trigger this variant conversationally when the user describes a
@@ -63,21 +63,21 @@ Supported inputs:
 ## Step 1 — Load Context
 
 Read:
-- `config/profile.yml`
-- `cv.md`
-- `article-digest.md` if it exists
-- `modes/_profile.md` if it exists
-- `modes/_custom.md` if it exists
-- `voice-dna.md` if it exists, for writing style only
+- `workspace/profile/profile.yml`
+- `workspace/profile/cv.md`
+- `workspace/profile/article-digest.md` if it exists
+- `workspace/profile/targeting.md` if it exists
+- `workspace/profile/preferences.md` if it exists
+- `workspace/profile/voice-dna.md` if it exists, for writing style only
 - The selected report if invoked by report number or slug
-- `data/pdf-index.tsv` if present, to find generated PDF attachments
+- `workspace/.state/pdf-index.tsv` if present, to find generated PDF attachments
 
-Use `modes/_custom.md` only for procedural output preferences such as whether to
+Use `workspace/profile/preferences.md` only for procedural output preferences such as whether to
 include a contact block, whether to show an attachment checklist, or how concise
 the email should be. It must never introduce contact details, work experience,
 or other factual claims.
 
-Use `voice-dna.md` only as a writing guardrail. It must never introduce factual
+Use `workspace/profile/voice-dna.md` only as a writing guardrail. It must never introduce factual
 claims.
 
 ### Profile fields
@@ -444,7 +444,7 @@ Contact:
 {if candidate.email or application_email.default_sender_note}Email: {candidate.email or application_email.default_sender_note}{/if}
 ```
 
-If `application_email.default_sender_note` is set in `config/profile.yml` to a
+If `application_email.default_sender_note` is set in `workspace/profile/profile.yml` to a
 phrase such as "the email used to send this message", use that phrase instead of
 a concrete email address.
 
@@ -453,7 +453,7 @@ only.
 
 **Contact channel preference:** If `application_email.include_contact_block` is
 `true` (or absent/default), check `contact_preferences.preferred_channel` in
-`config/profile.yml`. If it is absent or set to `"either"`, the contact block
+`workspace/profile/profile.yml`. If it is absent or set to `"either"`, the contact block
 stays exactly as above — no change. If it is set to `"email"` or `"phone"`, add
 one short line directly under the contact block naming that preference, e.g.:
 

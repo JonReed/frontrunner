@@ -22,7 +22,7 @@ Tabela z:
 
 ## Blok B -- Dopasowanie do CV
 
-Przeczytaj `cv.md`. Stwórz tabelę, w której każde wymaganie z oferty jest zmapowane na dokładne wiersze z CV.
+Przeczytaj `workspace/profile/cv.md`. Stwórz tabelę, w której każde wymaganie z oferty jest zmapowane na dokładne wiersze z CV.
 
 **Dostosowane do archetypu:**
 - FDE -> priorytetyzuj proof points szybkiego dostarczania i bliskości klienta
@@ -79,7 +79,7 @@ Top 5 zmian w CV + Top 5 zmian na LinkedIn, aby zmaksymalizować dopasowanie.
 
 Kolumna **Reflection** ujmuje, czego się nauczono lub co zrobiono by inaczej. To sygnalizuje seniority -- juniorzy opisują, co się wydarzyło, seniorzy wyciągają z tego wnioski.
 
-**Story Bank:** Jeśli `interview-prep/story-bank.md` istnieje, sprawdź, czy te historie już tam są. Jeśli nie, dodaj nowe. Z czasem buduje to wielokrotnego użytku bank 5-10 historii master, które można dopasować do każdego pytania na rozmowie.
+**Story Bank:** Jeśli `workspace/interviews/story-bank.md` istnieje, sprawdź, czy te historie już tam są. Jeśli nie, dodaj nowe. Z czasem buduje to wielokrotnego użytku bank 5-10 historii master, które można dopasować do każdego pytania na rozmowie.
 
 **Wyselekcjonowane i sformowane według archetypu:**
 - FDE -> podkreśl szybkość dostarczania i bliskość klienta
@@ -101,7 +101,7 @@ Dołącz także:
 
 ### 1. Zapisz report .md
 
-Zapisz pełną ocenę w `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
+Zapisz pełną ocenę w `workspace/reports/evaluations/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 
 - `{###}` = następny kolejny numer (3 cyfry, dopełnione zerami). Aby przydzielić go atomowo i uniknąć race conditions, musisz uruchomić `node src/tracker/reserve-report-num.mjs`, by zarezerwować numer (stdout zwraca `{###}`), zapisać report, a następnie uruchomić `node src/tracker/reserve-report-num.mjs --release {###}`, by zwolnić sentinel.
 - `{company-slug}` = nazwa firmy małymi literami, bez spacji (użyj myślników)
@@ -149,7 +149,7 @@ Zapisz pełną ocenę w `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 
 ### 2. Zapisz w trackerze
 
-**ZAWSZE** zapisz w `data/applications.md`:
+**ZAWSZE** zapisz w `workspace/applications/tracker.md`:
 - Następny kolejny numer
 - Dzisiejsza data
 - Firma
@@ -157,7 +157,7 @@ Zapisz pełną ocenę w `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 - Score: średnia dopasowania (1-5)
 - Status: `Evaluated`
 - PDF: nie (lub tak, jeśli auto-pipeline wygenerował PDF)
-- Report: względny link do pliku reportu (np. `[001](reports/001-company-2026-01-01.md)`)
+- Report: względny link do pliku reportu (np. `[001](workspace/reports/evaluations/001-company-2026-01-01.md)`)
 
 **Format trackera:**
 

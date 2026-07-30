@@ -16,7 +16,7 @@
  *   7. parseFileInput / normalizeCandidate work correctly as direct unit imports.
  *
  * Provisions a throwaway candidates file via FRONTRUNNER_REPLY_CANDIDATES and a
- * temp dir; never touches the repo's real data/reply-candidates.json.
+ * temp dir; never touches the repo's real workspace/applications/reply-candidates.json.
  */
 
 import { execFileSync } from 'child_process';

@@ -7,7 +7,7 @@ import { atomicWriteWithBackup } from "@/lib/core/safe-write";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Merge-safe writer for portals.yml's title_filter (a USER-LAYER file). Replaces
+// Merge-safe writer for workspace/search/portals.yml's title_filter (a USER-LAYER file). Replaces
 // ONLY title_filter.positive (the role keywords the free scanner matches), seeding
 // from templates/portals.example.yml on first create, and PRESERVING tracked_companies
 // + every other block. Atomic write, confirm-gated (setProfile/setPortals). This is
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   if (roles.length === 0) return Response.json({ error: "no roles" }, { status: 400 });
 
   const root = frontrunnerRoot();
-  const file = path.join(root, "portals.yml");
+  const file = path.join(root, "workspace/search/portals.yml");
   let doc: Record<string, unknown> = {};
   try {
     doc = (yaml.load(fs.readFileSync(file, "utf8")) as Record<string, unknown>) || {};

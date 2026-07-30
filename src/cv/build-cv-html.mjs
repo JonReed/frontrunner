@@ -2,7 +2,7 @@
 
 // Deterministic HTML CV renderer (#557 — the HTML twin of build-cv-latex.mjs).
 //
-// The agent reads cv.md + config/profile.yml, tailors the content, and writes a
+// The agent reads workspace/profile/cv.md + workspace/profile/profile.yml, tailors the content, and writes a
 // compact JSON payload. This script merges that payload into the resolved CV
 // template (default templates/cv-template.html; pass a path resolved by
 // cv-templates.mjs to honor config-selectable templates, #1691) — it owns every
@@ -11,7 +11,7 @@
 // output tokens from full HTML markup down to the structured JSON payload while
 // producing byte-for-byte the same ATS-safe template the agent fills today.
 //
-// The script does NOT parse cv.md / YAML: the authoritative read of the source
+// The script does NOT parse workspace/profile/cv.md / YAML: the authoritative read of the source
 // files stays in the agent (same contract as build-cv-latex.mjs / modes/latex.md).
 // generate-pdf.mjs remains the single PDF renderer and is unchanged.
 //
@@ -34,6 +34,7 @@ import { tmpdir } from 'os';
 import { stripEmptySections } from './cv-sections-core.mjs';
 
 import { ROOT as __dirname } from '#paths';
+const OUTPUT_ROOT = process.env.FRONTRUNNER_CV_OUTPUT_BASE || __dirname;
 const TEMPLATE_PATH = resolve(__dirname, 'templates', 'cv-template.html');
 const PLACEHOLDER_RE = /\{\{[A-Z_]+\}\}/g;
 const CONTACT_ROW_RE = /<div class="contact-row">[\s\S]*?<\/div>/;
@@ -639,7 +640,7 @@ async function main() {
 
   const preview = args[0] === '--preview';
   const [inputPath, outputPath, templateArg] = preview
-    ? [args[1], resolve(__dirname, 'output', 'cv-preview.html'), args[2]]
+    ? [args[1], resolve(OUTPUT_ROOT, 'workspace', 'documents', 'cv-preview.html'), args[2]]
     : args;
   if (!inputPath || !outputPath) {
     console.error('Usage: node src/cv/build-cv-html.mjs <input.json> <output.html> [template.html]');

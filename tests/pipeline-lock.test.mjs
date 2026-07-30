@@ -2,7 +2,7 @@
  * tests/pipeline-lock.test.mjs — regression tests for src/tracker/pipeline-lock.mjs.
  *
  * The lock exists to serialize appendToPipeline()'s read-modify-write on
- * data/pipeline.md (#2188). These tests pin the three properties that make
+ * workspace/search/pipeline.md (#2188). These tests pin the three properties that make
  * that guarantee actually hold under contention and on fresh installs:
  *
  *   1. Mutual exclusion — a second acquirer cannot take a lock a live holder

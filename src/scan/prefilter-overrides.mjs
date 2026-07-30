@@ -12,7 +12,7 @@ import { join } from 'node:path';
 
 import { ROOT } from '#paths';
 
-export const PREFILTER_OVERRIDES_PATH = join(ROOT, 'data', 'prefilter-overrides.tsv');
+export const PREFILTER_OVERRIDES_PATH = join(ROOT, 'workspace', 'search', 'prefilter-overrides.tsv');
 export const PREFILTER_OVERRIDE_URL_ENV = 'FRONTRUNNER_PREFILTER_OVERRIDE_URL';
 export const PREFILTER_OVERRIDE_HEADER = 'recorded_at\turl\tcompany\ttitle\trule\tevidence\n';
 

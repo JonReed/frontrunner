@@ -5,7 +5,7 @@ import { frontrunnerRoot } from "@/lib/frontrunner";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Append-only follow-up log → data/follow-ups.md (NEVER clobber; the cadence
+// Append-only follow-up log → workspace/applications/follow-ups.md (NEVER clobber; the cadence
 // calculator reads this to advance the schedule). Mirrors how the CLI records a
 // follow-up. One dated line per logged follow-up.
 export async function POST(req: Request) {

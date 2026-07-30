@@ -5,9 +5,9 @@
      ============================================================
      Este archivo contiene el contexto compartido para todos los modos
      frontrunner en versión española. Antes de usar frontrunner, DEBES:
-     1. Rellenar config/profile.yml con tus datos personales
-     2. Crear cv.md en la raíz del proyecto (CV en Markdown)
-     3. (Opcional) Crear article-digest.md con tus proof points
+     1. Rellenar workspace/profile/profile.yml con tus datos personales
+     2. Crear workspace/profile/cv.md en la raíz del proyecto (CV en Markdown)
+     3. (Opcional) Crear workspace/profile/article-digest.md con tus proof points
      4. Adaptar las secciones marcadas como [PERSONALIZAR] más abajo
      ============================================================ -->
 
@@ -15,12 +15,12 @@
 
 | Archivo | Ruta | Cuándo |
 |---------|------|--------|
-| cv.md | `cv.md` (raíz del proyecto) | SIEMPRE |
-| article-digest.md | `article-digest.md` (si existe) | SIEMPRE (proof points detallados) |
-| profile.yml | `config/profile.yml` | SIEMPRE (identidad y roles objetivo) |
+| workspace/profile/cv.md | `workspace/profile/cv.md` (raíz del proyecto) | SIEMPRE |
+| workspace/profile/article-digest.md | `workspace/profile/article-digest.md` (si existe) | SIEMPRE (proof points detallados) |
+| profile.yml | `workspace/profile/profile.yml` | SIEMPRE (identidad y roles objetivo) |
 
-**REGLA: NUNCA codificar métricas de los proof points en duro.** Leerlas desde `cv.md` y `article-digest.md` en el momento de la evaluación.
-**REGLA: Para métricas de artículos/proyectos, `article-digest.md` tiene prioridad sobre `cv.md`** (`cv.md` puede contener cifras más antiguas).
+**REGLA: NUNCA codificar métricas de los proof points en duro.** Leerlas desde `workspace/profile/cv.md` y `workspace/profile/article-digest.md` en el momento de la evaluación.
+**REGLA: Para métricas de artículos/proyectos, `workspace/profile/article-digest.md` tiene prioridad sobre `workspace/profile/cv.md`** (`workspace/profile/cv.md` puede contener cifras más antiguas).
 
 ---
 
@@ -46,16 +46,16 @@ El skill trata TODOS los roles objetivo con el mismo cuidado. Ninguno es primari
 
 ### Framing adaptativo por arquetipo
 
-> **Métricas concretas: leerlas desde `cv.md` y `article-digest.md` en el momento de la evaluación. NUNCA codificarlas en duro aquí.**
+> **Métricas concretas: leerlas desde `workspace/profile/cv.md` y `workspace/profile/article-digest.md` en el momento de la evaluación. NUNCA codificarlas en duro aquí.**
 
 | Si el rol es... | Destacar del candidato... | Fuentes de proof points |
 |-----------------|---------------------------|-------------------------|
-| Platform / LLMOps | Experiencia en producción, observabilidad, evals, closed-loop | article-digest.md + cv.md |
-| Agentic / Automation | Orquestación multi-agente, HITL, fiabilidad, costes | article-digest.md + cv.md |
-| Technical AI PM | Product discovery, PRDs, métricas, gestión de stakeholders | cv.md + article-digest.md |
-| Solutions Architect | Diseño de sistemas, integraciones, enterprise-ready | article-digest.md + cv.md |
-| Forward Deployed Engineer | Entrega rápida, cercanía al cliente, prototipo a producción | cv.md + article-digest.md |
-| AI Transformation Lead | Gestión del cambio, enablement de equipo, adopción | cv.md + article-digest.md |
+| Platform / LLMOps | Experiencia en producción, observabilidad, evals, closed-loop | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Agentic / Automation | Orquestación multi-agente, HITL, fiabilidad, costes | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Technical AI PM | Product discovery, PRDs, métricas, gestión de stakeholders | workspace/profile/cv.md + workspace/profile/article-digest.md |
+| Solutions Architect | Diseño de sistemas, integraciones, enterprise-ready | workspace/profile/article-digest.md + workspace/profile/cv.md |
+| Forward Deployed Engineer | Entrega rápida, cercanía al cliente, prototipo a producción | workspace/profile/cv.md + workspace/profile/article-digest.md |
+| AI Transformation Lead | Gestión del cambio, enablement de equipo, adopción | workspace/profile/cv.md + workspace/profile/article-digest.md |
 
 <!-- [PERSONALIZAR] Asocia tus proyectos/artículos concretos a los arquetipos anteriores -->
 
@@ -65,11 +65,11 @@ El skill trata TODOS los roles objetivo con el mismo cuidado. Ninguno es primari
      - "SaaS construida y vendida tras 5 años. Ahora 100% enfocado en IA aplicada en empresa."
      - "Lead de ingeniería en una Series-B durante un crecimiento x10. Buscando el siguiente reto."
      - "Transición de consultoría a producto. En búsqueda de roles con alta responsabilidad."
-     Leído desde config/profile.yml -> narrative.exit_story -->
+     Leído desde workspace/profile/profile.yml -> narrative.exit_story -->
 
-Usar la narrativa de transición desde `config/profile.yml` para enmarcar TODOS los contenidos:
+Usar la narrativa de transición desde `workspace/profile/profile.yml` para enmarcar TODOS los contenidos:
 - **En los summaries del PDF:** Tender el puente entre el pasado y el futuro — "Ahora aplico las mismas [competencias] al dominio [de la oferta]."
-- **En las stories STAR:** Hacer referencia a los proof points de `article-digest.md`.
+- **En las stories STAR:** Hacer referencia a los proof points de `workspace/profile/article-digest.md`.
 - **En los borradores de respuestas (Bloque G):** La narrativa de transición va en la primera respuesta.
 - **Cuando la oferta menciona "emprendedor", "autonomía", "builder", "end-to-end":** Es EL diferenciador n.º 1. Aumentar el peso del match.
 
@@ -91,7 +91,7 @@ Posicionar "Builder" como señal profesional — no como "artesano improvisado".
        url: "https://tudominio.dev/demo"
        password: "demo-2026"
        when_to_share: "Roles LLMOps, AI Platform, Observability"
-     Leído desde config/profile.yml -> narrative.proof_points y narrative.dashboard -->
+     Leído desde workspace/profile/profile.yml -> narrative.proof_points y narrative.dashboard -->
 
 Si el candidato tiene una demo en vivo / un dashboard (verificar `profile.yml`), ofrecer el acceso en las candidaturas relevantes.
 
@@ -144,7 +144,7 @@ En las ofertas y negociaciones en español, ciertos términos no existen en los 
 
 ### Política de localización (Location Policy)
 
-<!-- [PERSONALIZAR] Adapta a tu situación. Leído desde config/profile.yml -> location -->
+<!-- [PERSONALIZAR] Adapta a tu situación. Leído desde workspace/profile/profile.yml -> location -->
 
 **En los formularios:**
 - Preguntas binarias "¿Puede estar en oficina?": responder según la disponibilidad real en `profile.yml`
@@ -166,7 +166,7 @@ En las ofertas y negociaciones en español, ciertos términos no existen en los 
 ### NUNCA
 
 1. Inventar experiencia o métricas
-2. Modificar `cv.md` ni los archivos del portfolio
+2. Modificar `workspace/profile/cv.md` ni los archivos del portfolio
 3. Enviar candidaturas en nombre del candidato
 4. Compartir un número de teléfono en los mensajes generados
 5. Recomendar una remuneración por debajo del mercado
@@ -177,7 +177,7 @@ En las ofertas y negociaciones en español, ciertos términos no existen en los 
 ### SIEMPRE
 
 0. **Carta de presentación:** Si el formulario lo permite, SIEMPRE incluir una. PDF con el mismo diseño visual que el CV. Citas de la oferta mapeadas sobre los proof points. Máximo 1 página.
-1. Leer `cv.md` y `article-digest.md` (si existe) antes de evaluar una oferta
+1. Leer `workspace/profile/cv.md` y `workspace/profile/article-digest.md` (si existe) antes de evaluar una oferta
 1b. **Primera evaluación de cada sesión:** Ejecutar `node src/cv/cv-sync-check.mjs` via Bash. Si hay alertas, avisar al candidato
 2. Detectar el arquetipo del rol y adaptar el framing
 3. Citar líneas exactas del CV en el matching
@@ -187,7 +187,7 @@ En las ofertas y negociaciones en español, ciertos términos no existen en los 
 7. Ser directo y concreto — sin relleno
 8. Español técnico natural en los textos generados. Frases cortas, verbos de acción, evitar la voz pasiva. No forzar la traducción de términos técnicos (stack, pipeline, deployment, embedding)
 8b. **URLs de case studies en el Professional Summary del PDF:** Si el PDF menciona case studies o demos, las URLs DEBEN aparecer en el primer párrafo (Professional Summary). Los reclutadores suelen leer solo el summary. Todas las URLs en HTML con `white-space: nowrap`
-9. **Entradas del tracker en TSV** — NUNCA editar applications.md directamente para nuevas entradas. Escribir el TSV en `batch/tracker-additions/`, `src/tracker/merge-tracker.mjs` gestiona la fusión
+9. **Entradas del tracker en TSV** — NUNCA editar applications.md directamente para nuevas entradas. Escribir el TSV en `workspace/.state/tracker-additions/`, `src/tracker/merge-tracker.mjs` gestiona la fusión
 10. **`**URL:**` en cada cabecera de report** — entre Score y PDF
 
 ### Herramientas
@@ -197,7 +197,7 @@ En las ofertas y negociaciones en español, ciertos términos no existen en los 
 | WebSearch | Búsqueda de remuneración, tendencias, cultura de empresa, contactos LinkedIn, fallback de ofertas |
 | WebFetch | Fallback para extraer ofertas desde páginas estáticas |
 | Playwright | Verificar si las ofertas están activas (browser_navigate + browser_snapshot), extraer ofertas desde SPAs. **CRÍTICO: NUNCA 2+ agentes en paralelo con Playwright — comparten la misma instancia del navegador** |
-| Read | cv.md, article-digest.md, cv-template.html |
+| Read | workspace/profile/cv.md, workspace/profile/article-digest.md, cv-template.html |
 | Write | HTML temporal para PDF, applications.md, reports .md |
 | Edit | Actualizar el tracker |
 | Bash | `node src/cv/generate-pdf.mjs` |

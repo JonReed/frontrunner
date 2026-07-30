@@ -1,5 +1,5 @@
 /**
- * tracker-table.mjs — header-aware parsing of the `data/applications.md` table
+ * tracker-table.mjs — header-aware parsing of the `workspace/applications/tracker.md` table
  * for the web read path.
  *
  * The header-alias table is NOT mirrored here: it is loaded at runtime from
@@ -107,7 +107,7 @@ export function detectColumnMap(lines, aliases) {
  * is the fallback when no recognizable header row is present.
  * Rows without a numeric # cell (header, separator, stray pipes) are skipped,
  * mirroring parseTrackerRow in tracker-parse.mjs.
- * @param {string} md - content of data/applications.md.
+ * @param {string} md - content of workspace/applications/tracker.md.
  * @param {string} rootDir - frontrunner root holding src/tracker/tracker-aliases.json.
  * @returns {{n: string, date: string, company: string, via: string, role: string, score: string, status: string, pdf: string, report: string, notes: string}[]}
  */

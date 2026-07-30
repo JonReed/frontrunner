@@ -9,4 +9,4 @@ stages without evaluation.
 
 Apply India-market vocabulary and rules from `modes/hi/_shared.md` and
 `modes/hi/naukri.md`. Human-facing output still follows
-`config/profile.yml` → `language.output`.
+`workspace/profile/profile.yml` → `language.output`.

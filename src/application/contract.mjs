@@ -9,7 +9,7 @@
 
 import { isAbsolute, resolve, sep } from 'node:path';
 
-import { DATA_DIR, REPORTS_DIR, ROOT } from '#paths';
+import { REPORTS_DIR, ROOT, SEARCH_DIR } from '#paths';
 
 export const APPLICATION_API_VERSION = '1';
 export const APPLICATION_OPERATIONS = Object.freeze([
@@ -84,8 +84,8 @@ function normalizeReportPath(value) {
   if (isAbsolute(raw) || raw.includes('\\')) {
     throw contractError('input.reportPath must use repository-relative separators');
   }
-  const repositoryRelative = raw.startsWith('../reports/')
-    ? raw.slice(3)
+  const repositoryRelative = raw.startsWith('../reports/evaluations/')
+    ? `workspace/${raw.slice(3)}`
     : raw;
   const file = containedPath(REPORTS_DIR, resolve(ROOT, repositoryRelative), 'input.reportPath');
   if (!file.endsWith('.md')) throw contractError('input.reportPath must identify a Markdown report');
@@ -94,11 +94,11 @@ function normalizeReportPath(value) {
 
 function normalizePipelineInput(value) {
   const raw = boundedString(value, 'input.input', { max: 500, optional: true });
-  if (!raw) return 'data/pipeline.md';
+  if (!raw) return 'workspace/search/pipeline.md';
   if (isAbsolute(raw) || raw.includes('\\')) {
     throw contractError('input.input must use repository-relative separators');
   }
-  const file = containedPath(DATA_DIR, resolve(ROOT, raw), 'input.input');
+  const file = containedPath(SEARCH_DIR, resolve(ROOT, raw), 'input.input');
   if (!/\.(?:md|tsv)$/u.test(file)) {
     throw contractError('input.input must identify a Markdown or TSV file');
   }

@@ -9,12 +9,12 @@ Führe ein realistisches Übungsinterview — eine Frage nach der anderen — un
 1. **Art der Runde** (erforderlich) — Screening/Recruiter, Screening/HM, technisch/fachspezifisch, Design/Case Study, Behavioral
 2. **Interviewer-Persona** (falls bekannt) — Name, Rolle, Unternehmen; prägt Fragestil und Tiefe
 3. **Fragenliste** (optional) — konkrete abzudeckende Fragen; falls nicht angegeben, aus der Rundenart generieren
-4. **Lebenslauf** unter `cv.md` + `article-digest.md` (falls vorhanden) — um Aussagen in Antworten zu prüfen und stärkere Versionen in echter Erfahrung zu verankern
-5. **Profil** unter `config/profile.yml` + `modes/_profile.md` — Kandidaten-Narrativ, Deal-Breaker, Gehaltsziele
-6. **Story Bank** unter `interview-prep/story-bank.md` — um die Richtigkeit der Stories im Feedback zu prüfen
-7. **Question Bank** unter `interview-prep/question-bank.md` — um den Status nach jeder Antwort zu aktualisieren
+4. **Lebenslauf** unter `workspace/profile/cv.md` + `workspace/profile/article-digest.md` (falls vorhanden) — um Aussagen in Antworten zu prüfen und stärkere Versionen in echter Erfahrung zu verankern
+5. **Profil** unter `workspace/profile/profile.yml` + `workspace/profile/targeting.md` — Kandidaten-Narrativ, Deal-Breaker, Gehaltsziele
+6. **Story Bank** unter `workspace/interviews/story-bank.md` — um die Richtigkeit der Stories im Feedback zu prüfen
+7. **Question Bank** unter `workspace/interviews/question-bank.md` — um den Status nach jeder Antwort zu aktualisieren
 8. **Rollenspezifische Prep-Datei** — für Unternehmensinfos, recherchierte Fragen, Gehaltsstrategie
-9. **Retracted Claims** unter `interview-prep/retracted-claims.md` (falls vorhanden) — Aussagen, die der Kandidat ausdrücklich als nicht vertretbar verworfen hat; als hartes Gate behandeln
+9. **Retracted Claims** unter `workspace/interviews/retracted-claims.md` (falls vorhanden) — Aussagen, die der Kandidat ausdrücklich als nicht vertretbar verworfen hat; als hartes Gate behandeln
 
 ---
 
@@ -24,10 +24,10 @@ Führe ein realistisches Übungsinterview — eine Frage nach der anderen — un
 
 Bevor du die Szene setzt, prüfe, welche Dateien existieren:
 
-- `interview-prep/question-bank.md` (oder ein unternehmensspezifisches Äquivalent)
-- Die rollenspezifische Prep-Datei (`interview-prep/{company}-{role}.md`)
-- `cv.md`
-- `interview-prep/retracted-claims.md`
+- `workspace/interviews/question-bank.md` (oder ein unternehmensspezifisches Äquivalent)
+- Die rollenspezifische Prep-Datei (`workspace/interviews/{company}-{role}.md`)
+- `workspace/profile/cv.md`
+- `workspace/interviews/retracted-claims.md`
 
 Wenn sowohl die Question Bank als auch die rollenspezifische Prep-Datei fehlen, sag es dem Kandidaten klar:
 
@@ -97,11 +97,11 @@ Halte das Feedback knapp. Ein oder zwei Dinge zum Schärfen pro Antwort — kein
 
 **Zwei-Minuten-Regel.** Läuft eine Antwort über zwei Minuten, vermerke es. Interviewer hören auf zuzuhören. Die Lösung ist fast immer, die Antwort zuerst zu nennen und dann zu erklären — nicht Inhalt zu streichen. *In einer getippten Session kannst du die Vortragsdauer nicht messen — ersetze sie durch einen Struktur-Check:* Kennzeichne Antworten, die die Kernaussage vergraben (mehr als 4–5 Sätze Vorlauf, bevor der Punkt landet), und sag dem Kandidaten: Tempo und Füllwörter lassen sich nur laut diagnostizieren — nimm dich auf oder mach diese Frage nochmal mündlich.
 
-**Verifiziere verdächtige Aussagen, bevor du sie coachst.** Wenn der Kandidat eine konkrete Kennzahl oder Scope-Aussage nennt (verantwortete Headcount, AUM, Umsatzzahl, prozentuale Verbesserung), die du aus dem bisherigen Kontext nicht bestätigen kannst, prüfe sie gegen `cv.md`, `article-digest.md` und `interview-prep/retracted-claims.md`, bevor du Feedback gibst. Ist die Aussage nicht belegt, kennzeichne sie: "Ich finde diese Zahl nicht in deinem CV — ist sie vertretbar, wenn sie nachhaken? Falls nicht, hier eine Version, die nicht davon abhängt." Coache einen Kandidaten niemals dazu, eine Aussage zu wiederholen, die er nicht belegen kann.
+**Verifiziere verdächtige Aussagen, bevor du sie coachst.** Wenn der Kandidat eine konkrete Kennzahl oder Scope-Aussage nennt (verantwortete Headcount, AUM, Umsatzzahl, prozentuale Verbesserung), die du aus dem bisherigen Kontext nicht bestätigen kannst, prüfe sie gegen `workspace/profile/cv.md`, `workspace/profile/article-digest.md` und `workspace/interviews/retracted-claims.md`, bevor du Feedback gibst. Ist die Aussage nicht belegt, kennzeichne sie: "Ich finde diese Zahl nicht in deinem CV — ist sie vertretbar, wenn sie nachhaken? Falls nicht, hier eine Version, die nicht davon abhängt." Coache einen Kandidaten niemals dazu, eine Aussage zu wiederholen, die er nicht belegen kann.
 
-**Erfinde niemals Erfahrung oder Kennzahlen.** Die stärkere Version darf nur Fakten verwenden, die der Kandidat tatsächlich genannt hat, oder Aussagen, die in `cv.md`, `article-digest.md` oder der Story Bank stehen. Das Framing zu schärfen ist die Aufgabe — Leistungen hinzuzufügen ist Erfindung. Wenn eine Aussage in `interview-prep/retracted-claims.md` steht, verwende sie in einer stärkeren Version nicht, selbst wenn der Kandidat sie gesagt hat.
+**Erfinde niemals Erfahrung oder Kennzahlen.** Die stärkere Version darf nur Fakten verwenden, die der Kandidat tatsächlich genannt hat, oder Aussagen, die in `workspace/profile/cv.md`, `workspace/profile/article-digest.md` oder der Story Bank stehen. Das Framing zu schärfen ist die Aufgabe — Leistungen hinzuzufügen ist Erfindung. Wenn eine Aussage in `workspace/interviews/retracted-claims.md` steht, verwende sie in einer stärkeren Version nicht, selbst wenn der Kandidat sie gesagt hat.
 
-**Biete an, Retractions festzuhalten.** Wenn ein Kandidat mitten in der Session einräumt, dass eine Aussage unter Druck nicht vertretbar ist ("du hast recht, das kann ich nicht belegen"), biete an, sie an `interview-prep/retracted-claims.md` anzuhängen: "Soll ich das zu deiner Retracted-Liste hinzufügen, damit es nicht wieder auftaucht?" Falls ja, hänge an: `**"[claim]"** ([context]). Reason: [einzeiliger Grund + korrektes Framing, falls zutreffend].`
+**Biete an, Retractions festzuhalten.** Wenn ein Kandidat mitten in der Session einräumt, dass eine Aussage unter Druck nicht vertretbar ist ("du hast recht, das kann ich nicht belegen"), biete an, sie an `workspace/interviews/retracted-claims.md` anzuhängen: "Soll ich das zu deiner Retracted-Liste hinzufügen, damit es nicht wieder auftaucht?" Falls ja, hänge an: `**"[claim]"** ([context]). Reason: [einzeiliger Grund + korrektes Framing, falls zutreffend].`
 
 **Wenn die Unternehmensinfos mitten in der Session dünn sind.** Wenn der Kandidat bei einer "Warum dieses Unternehmen / warum diese Rolle"-Frage sichtlich strauchelt, weil der rollenspezifischen Prep-Datei die Infos fehlen, erfinde nichts und schweige nicht. Tritt aus der Rolle, führe für diese eine Frage den Rechercheschritt aus `interview-prep` durch (denselben recherchierten Pfad, den `interview-prep.md` besitzt), und komm mit 2–3 konkreten, belegten Blickwinkeln zurück. Nimm dann die Rolle wieder auf. Bringt die Recherche nichts Verwertbares, sag es klar. Das ist keine zweite Suchschleife — es ist das Just-in-time-Aufrufen der bestehenden Recherchestufe, wenn die vorgelagerte Pipeline nicht zuerst gelaufen ist.
 
@@ -133,7 +133,7 @@ Halte das Feedback knapp. Ein oder zwei Dinge zum Schärfen pro Antwort — kein
 
 ### Write Session Transcript
 
-Schreibe nach der Zusammenfassung ein maschinenlesbares Session-Transkript nach `interview-prep/sessions/{company-slug}-{role-slug}-{round}-{YYYY-MM-DD}.md` (verwende `practice` als Company/Role-Slug, wenn dies keine unternehmensspezifische Session war). Dies ist eine strukturierte Aufzeichnung der Runde für nachgelagerte Analysemodi; die mit Sprecher gekennzeichneten Turns lassen einen Konsumenten jede Seite lesen, ohne neu ableiten zu müssen, wer gesprochen hat. Der vollständige Contract liegt in `interview-prep/sessions/README.md`.
+Schreibe nach der Zusammenfassung ein maschinenlesbares Session-Transkript nach `workspace/interviews/sessions/{company-slug}-{role-slug}-{round}-{YYYY-MM-DD}.md` (verwende `practice` als Company/Role-Slug, wenn dies keine unternehmensspezifische Session war). Dies ist eine strukturierte Aufzeichnung der Runde für nachgelagerte Analysemodi; die mit Sprecher gekennzeichneten Turns lassen einen Konsumenten jede Seite lesen, ohne neu ableiten zu müssen, wer gesprochen hat. Der vollständige Contract liegt in `workspace/interviews/sessions/README.md`.
 
 Format:
 
@@ -170,7 +170,7 @@ Regeln für das Transkript:
 
 Wenn keine Fragenliste angegeben ist, beziehe die Fragen in dieser Reihenfolge der Priorität:
 
-1. **Echte Fragen aus `interview-prep/question-bank.md`** — Fragen, die dieses Unternehmen (oder eine frühere Runde) tatsächlich gestellt hat, erfasst durch Debriefs. Höchster Wert: empirisch fundiert.
+1. **Echte Fragen aus `workspace/interviews/question-bank.md`** — Fragen, die dieses Unternehmen (oder eine frühere Runde) tatsächlich gestellt hat, erfasst durch Debriefs. Höchster Wert: empirisch fundiert.
 2. **Recherchierte Fragen aus der rollenspezifischen Prep-Datei** — Fragen, die die Recherche von interview-prep.md gefunden und belegt hat. Verwende sie wie geschrieben; halte ihre Quellenangaben aus der Session heraus, aber respektiere ihren Wortlaut.
 3. **Die Default-Sets unten** — generierter Fallback für eine erste Session ohne Recherche. Fülle die eckigen Klammern aus der Stellenanzeige.
 
@@ -243,7 +243,7 @@ Mische mindestens 2 situative / vorausschauende Fragen aus dem Set unten ein —
 - **Eine Frage nach der anderen.** Stelle nie mehrere Fragen auf einmal. Echte Interviewer fragen eine nach der anderen.
 - **Keine Hinweise vor der Antwort.** Prime den Kandidaten nicht mit "hier geht es um X". Frag kalt.
 - **Nur ehrliches Feedback.** Falsche Ermutigung ist schlimmer als Schweigen — sie schickt einen Kandidaten unvorbereitet in ein echtes Interview.
-- **Keine erfundenen Aussagen in vorgeschlagenen Antworten.** Stärkere Versionen schöpfen nur aus dem, was der Kandidat gesagt hat, oder aus `cv.md`, `article-digest.md` oder der Story Bank — nie aus erfundener Erfahrung oder Kennzahlen.
-- **Retracted Claims sind ein hartes Gate.** Wenn eine Aussage in `interview-prep/retracted-claims.md` steht, verwende sie nie in einer stärkeren Version — selbst wenn der Kandidat sie in seiner Antwort gesagt hat. Kennzeichne sie stattdessen.
-- **Verfolge den Status.** Aktualisiere `interview-prep/question-bank.md` nach der Session, falls sie existiert.
+- **Keine erfundenen Aussagen in vorgeschlagenen Antworten.** Stärkere Versionen schöpfen nur aus dem, was der Kandidat gesagt hat, oder aus `workspace/profile/cv.md`, `workspace/profile/article-digest.md` oder der Story Bank — nie aus erfundener Erfahrung oder Kennzahlen.
+- **Retracted Claims sind ein hartes Gate.** Wenn eine Aussage in `workspace/interviews/retracted-claims.md` steht, verwende sie nie in einer stärkeren Version — selbst wenn der Kandidat sie in seiner Antwort gesagt hat. Kennzeichne sie stattdessen.
+- **Verfolge den Status.** Aktualisiere `workspace/interviews/question-bank.md` nach der Session, falls sie existiert.
 - **Stopp, wenn darum gebeten wird.** Sagt der Kandidat "machen wir Pause" oder "das reicht für heute", respektiere es. Dräng nicht auf eine weitere Frage.

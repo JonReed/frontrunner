@@ -253,12 +253,12 @@ export async function runPipelineEvaluations({ engine, kept, jdsDir, run = defau
 }
 
 export async function runCanonicalPipeline({
-  input = join(ROOT, 'data', 'pipeline.md'),
-  jdsDir = join(ROOT, 'jds'),
-  activeInput = join(ROOT, 'batch', 'liveness-active.tsv'),
-  batchInput = join(ROOT, 'batch', 'batch-input.tsv'),
-  rejects = join(ROOT, 'batch', 'prefilter-rejects.tsv'),
-  livenessResults = join(ROOT, 'batch', 'liveness-results.tsv'),
+  input = join(ROOT, 'workspace', 'search', 'pipeline.md'),
+  jdsDir = join(ROOT, 'workspace', 'jobs', 'descriptions'),
+  activeInput = join(ROOT, 'workspace', '.state', 'liveness-active.tsv'),
+  batchInput = join(ROOT, 'workspace', '.state', 'batch-input.tsv'),
+  rejects = join(ROOT, 'workspace', '.state', 'prefilter-rejects.tsv'),
+  livenessResults = join(ROOT, 'workspace', '.state', 'liveness-results.tsv'),
   engine = 'claude',
   scan = true,
   scanRunner = () => defaultRun(process.execPath, [join(ROOT, 'src/scan/scan.mjs')]),
@@ -512,7 +512,7 @@ Usage:
   node src/pipeline/run.mjs [--engine claude|openrouter|openai|gemini|none]
 
 Options:
-  --input <file>       Input pipeline/TSV (default data/pipeline.md)
+  --input <file>       Input pipeline/TSV (default workspace/search/pipeline.md)
   --engine <name>      Tool-less evaluation provider (default claude)
   --skip-scan          Use the existing input without running scan first
   --prepare-only       Alias for --engine none
@@ -532,7 +532,7 @@ Options:
   let result;
   try {
     result = await runCanonicalPipeline({
-      input: resolve(ROOT, argValue(args, '--input', 'data/pipeline.md')),
+      input: resolve(ROOT, argValue(args, '--input', 'workspace/search/pipeline.md')),
       engine,
       scan: !args.includes('--skip-scan'),
       now,

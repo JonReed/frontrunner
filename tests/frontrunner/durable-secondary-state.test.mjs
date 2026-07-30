@@ -85,13 +85,13 @@ test('application-answer publication is atomic and contained under reports', asy
 
   await assert.rejects(
     writeApplicationAnswers(outside, { state: 'filled' }, { reportsDir }),
-    /under reports/u,
+    /under workspace\/reports\/evaluations/u,
   );
   const link = join(reportsDir, 'escape.md');
   symlinkSync(outside, link);
   assert.throws(
     () => resolveApplicationAnswersReportPath(link, reportsDir),
-    /under reports/u,
+    /under workspace\/reports\/evaluations/u,
   );
   assert.equal(readFileSync(outside, 'utf8'), '# Outside\n');
 

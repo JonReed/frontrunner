@@ -4,7 +4,7 @@
  * update-system.mjs — Safe auto-updater for Frontrunner
  *
  * Updates ONLY system layer files (modes, scripts, templates, and docs).
- * NEVER touches user data (cv.md, profile.yml, _profile.md, data/, reports/).
+ * NEVER touches user data (workspace/profile/cv.md, profile.yml, _profile.md, data/, workspace/reports/evaluations/).
  *
  * Usage:
  *   node update-system.mjs check      # Check if update available
@@ -129,8 +129,6 @@ const SYSTEM_PATHS = [
   'modes/offer-prep.md',
   'modes/interview-prep.md',
   'modes/interview/',
-  'interview-prep/sessions/.gitkeep',
-  'interview-prep/sessions/README.md',
   'modes/patterns.md',
   'modes/titles.md',
   'modes/upskill.md',
@@ -215,6 +213,7 @@ const SYSTEM_PATHS = [
   'src/tracker/pipeline-lock.mjs',
   'src/paths.mjs',
   'tests/frontrunner/root-paths.test.mjs',
+  'tests/frontrunner/workspace-layout.test.mjs',
   'tests/frontrunner/node-requirements.test.mjs',
   'tests/frontrunner/cover-letter-security.test.mjs',
   'tests/frontrunner/jd-cache-durability.test.mjs',
@@ -256,6 +255,7 @@ const SYSTEM_PATHS = [
   'src/lib/skill-entrypoints.mjs',
   'src/security/',
   'src/application/',
+  'src/workspace/',
   'src/pipeline/run.mjs',
   'src/pipeline/pipeline-files.mjs',
   'src/benchmark/pipeline-benchmark.mjs',
@@ -330,8 +330,6 @@ const SYSTEM_PATHS = [
   '.claude-plugin/',
   '.antigravitycli/skills/',
   'docs/',
-  'writing-samples/README.md',
-  'cv-versions/README.md',
   'VERSION',
   'DATA_CONTRACT.md',
   'CONTRIBUTING.md',
@@ -377,13 +375,16 @@ const BOOTSTRAP_PATHS = [
 
 // User layer paths — NEVER touch these (safety check)
 const USER_PATHS = [
+  'workspace/',
+  'workspace/profile/targeting.md',
+  'workspace/profile/preferences.md',
+  // Legacy roots remain protected while an older installation is waiting to
+  // be archived. The application itself never reads or writes them.
   'cv.md',
   'config/profile.yml',
-  'modes/_profile.md',
-  'modes/_custom.md',
-  'voice-dna.md',
   'portals.yml',
   'article-digest.md',
+  'voice-dna.md',
   'interview-prep/',
   'data/',
   'reports/',
@@ -391,6 +392,8 @@ const USER_PATHS = [
   'jds/',
   'writing-samples/',
   'cv-versions/',
+  'batch/logs/',
+  'batch/tracker-additions/',
   '.claude/settings.json',
   '.claude/hooks/',
 ];
@@ -1266,7 +1269,7 @@ async function apply() {
         const file = entry.path;
         if (initialStatusPaths.has(file)) continue;
         // Explicit SYSTEM_PATHS entries override USER_PATHS prefix matches.
-        // (e.g. writing-samples/README.md is system-owned doc inside a user dir.)
+        // (e.g. workspace/profile/writing-samples/README.md is system-owned doc inside a user dir.)
         if (updatePaths.includes(file)) continue;
         for (const userPath of USER_PATHS) {
           if (file.startsWith(userPath)) {

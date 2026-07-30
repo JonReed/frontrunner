@@ -28,13 +28,17 @@ The single most important architectural rule: **system files** and **user files*
 - **Application trees** — `web/` and `ui/` are versioned interfaces with their
   own locked packages. They contain no user data and are updated by
   `update-system.mjs` with the rest of the system layer.
-- **User layer** — your data: `cv.md`, `config/profile.yml`, `modes/_profile.md`, `data/`, `reports/`, `jds/`, etc. The updater **never** touches these. Listed in `USER_PATHS`.
+- **Private workspace** — every user file, generated artifact and mutable
+  runtime record is below `workspace/`. It is blanket-ignored, contains no
+  tracked scaffolds, and is represented by one `workspace/` entry in the
+  updater denylist. Canonical backend paths live in `src/paths.mjs`; the UI's
+  server-only mirror lives in `ui/src/lib/root.ts`.
 
 `DATA_CONTRACT.md` is the source of truth for this boundary, and `updater-migration-tests.mjs` enforces that no system path ever overlaps a user path.
 
 ## Files are canonical — databases are derived
 
-Settled doctrine ([#918](https://github.com/santifer/career-ops/issues/918)): the human-readable, git-diffable files (`data/applications.md`, `reports/`, `data/pipeline.md`) are the **permanent source of truth**. SQLite exists only as a derived index (fast queries, reindex-on-delete) and will never become a primary store — not even opt-in. The web interfaces and external scripts read the files; a second canonical store would force every reader to support two modes forever. Performance work is welcome **on the derived layer**; the files stay the brain.
+Settled doctrine ([#918](https://github.com/santifer/career-ops/issues/918)): the human-readable, git-diffable files (`workspace/applications/tracker.md`, `workspace/reports/evaluations/`, `workspace/search/pipeline.md`) are the **permanent source of truth**. SQLite exists only as a derived index (fast queries, reindex-on-delete) and will never become a primary store — not even opt-in. The web interfaces and external scripts read the files; a second canonical store would force every reader to support two modes forever. Performance work is welcome **on the derived layer**; the files stay the brain.
 
 ## Domain layout and stable entry points
 
@@ -57,8 +61,8 @@ AI coding CLI  ─┐
    ┌────────────┼─────────────────────────────────────────────┐
    ▼            ▼                  ▼               ▼            ▼
  scan        evaluate          generate         track       update
- src/scan/scan.mjs    oferta.md         PDFs/CVs/        data/        update-
- providers/  (+eval scripts)   cover letters    reports/     system.mjs
+ src/scan/scan.mjs    oferta.md         PDFs/CVs/     workspace/     update-
+ providers/  (+eval scripts)   cover letters                 system.mjs
 ```
 
 ### Discovery — `src/scan/scan.mjs` + `providers/`
@@ -68,10 +72,10 @@ Teamtailor, Workday, Breezy) and RSS/JSON boards via per-board modules in
 `providers/`. Every result then crosses `providers/_contract.mjs`, which
 enforces the same closed, bounded Job schema for every built-in source before
 any filter or persistence step. Auth-gated/login-required sources are
-intentionally unsupported. Results land in `data/pipeline.md`.
+intentionally unsupported. Results land in `workspace/search/pipeline.md`.
 
 ### Evaluation — `modes/oferta.md` + `modes/_shared.md`
-The heart of the tool. `oferta.md` defines the A–G evaluation blocks; `_shared.md` defines the 1–5 scoring system, archetype detection, posting-legitimacy signals, and global rules. The AI reads these plus your `cv.md` and produces a structured report.
+The heart of the tool. `oferta.md` defines the A–G evaluation blocks; `_shared.md` defines the 1–5 scoring system, archetype detection, posting-legitimacy signals, and global rules. The AI reads these plus your `workspace/profile/cv.md` and produces a structured report.
 
 **Standalone evaluators** let you run the same scoring without an interactive CLI, against cheaper/local models: `src/evaluate/gemini-eval.mjs` (Google free tier), `src/evaluate/ollama-eval.mjs` (fully local), and `src/evaluate/openai-eval.mjs` (any OpenAI-compatible endpoint).
 
@@ -91,7 +95,7 @@ renders the selected template, verifies claims, and atomically publishes HTML.
 validated and size-bounded buffers through `src/cv/pdf-artifact-store.mjs`.
 Same-directory fsync-backed replacement means interruption cannot expose a
 partial PDF or truncate an existing artifact. Generated-CV
-`data/pdf-index.tsv` bookkeeping is centralized in
+`workspace/.state/pdf-index.tsv` bookkeeping is centralized in
 `src/cv/pdf-index-store.mjs`: records are schema-bounded, repository-relative,
 merged under an owner-verified lock and atomically replaced. Concurrent renders
 therefore retain every distinct entry, while a failed replacement leaves the
@@ -100,9 +104,9 @@ previous manifest readable.
 `src/cv/generate-cover-letter.mjs` provide the other generation paths. ATS-safe
 templates live in `templates/` and `fonts/`.
 
-### Tracking — `data/` + `reports/` + tracker scripts
-Every evaluated offer is registered. `data/applications.md` is the canonical
-tracker table; `reports/{NNN}-{company}-{date}.md` holds full evaluations.
+### Tracking — `workspace/applications/` + reports + tracker scripts
+Every evaluated offer is registered. `workspace/applications/tracker.md` is the canonical
+tracker table; `workspace/reports/evaluations/{NNN}-{company}-{date}.md` holds full evaluations.
 `src/evaluate/evaluation-publication.mjs` journals the report and tracker
 fragment before either becomes visible, then replays interrupted publication
 idempotently. `src/tracker/tracker.mjs`, `src/tracker/merge-tracker.mjs`,
@@ -148,20 +152,20 @@ every pin, and interruption between the durable temporary write and rename
 leaves the prior follow-up history intact.
 External reply content is schema/size bounded before persistence, and
 application-answer writes resolve only to existing Markdown files contained
-under `reports/`.
-Opt-in ATS discovery updates re-read, validate and deduplicate `portals.yml`
+under `workspace/reports/evaluations/`.
+Opt-in ATS discovery updates re-read, validate and deduplicate `workspace/search/portals.yml`
 inside the same lock before atomically preserving the user's formatting.
 Confirmed candidate-source additions use
 `src/tracker/add-entry-publication.mjs`: a bounded write-ahead journal makes a
-joint `cv.md` + `article-digest.md` change recoverable, while before-state
+joint `workspace/profile/cv.md` + `workspace/profile/article-digest.md` change recoverable, while before-state
 hashes stop recovery from overwriting a human edit made after interruption.
 JD cache publication is centralized in `src/scan/jd-cache-store.mjs`.
 Scanner descriptions, bulk ATS fetching and browser fallback all re-read and
-merge `jds/index.tsv` under one lock, atomically publish bounded description
+merge `workspace/jobs/descriptions/index.tsv` under one lock, atomically publish bounded description
 files, and replace the manifest last. Concurrent publishers cannot lose entries
 and an interrupted manifest replacement leaves the prior index readable.
 Completed backend operations use the same boundary for the bounded local
-`data/run-history.ndjson`. The history contains safe operational metadata and
+`workspace/.state/run-history.ndjson`. The history contains safe operational metadata and
 aggregate counts only—not remote content, prompts, generated output, URLs, logs
 or environment values—and audit failure never changes the backend result.
 
@@ -207,8 +211,8 @@ login action. The probe uses the shared process-tree supervisor, so timeout,
 controller cancellation or output flooding cannot leave CLI descendants
 running after a disconnected result is returned.
 
-Profile edits cross another narrow controller. A single save may span `cv.md`,
-`cv-versions/` and `config/profile.yml`, so individual atomic replacements are
+Profile edits cross another narrow controller. A single save may span `workspace/profile/cv.md`,
+`workspace/profile/cv-versions/` and `workspace/profile/profile.yml`, so individual atomic replacements are
 not sufficient. The backend preflights the complete request, acquires one
 transaction claim plus deterministically ordered target locks, then persists a
 private write-ahead journal before replacement. A later read/save recovers an
@@ -251,7 +255,7 @@ are removed only after a 24-hour age gate, under that same lock, when every
 artifact is a regular file and no valid state exists. Strict old atomic-write
 debris is removed separately; symlinks, directories, young files and lookalike
 names survive. Durable aggregate evidence remains separately bounded in
-`data/run-history.ndjson`.
+`workspace/.state/run-history.ndjson`.
 
 Both direct application requests and persistent jobs publish one terminal run
 record. A supervised pipeline child publishes detailed counts and provider
@@ -266,13 +270,13 @@ runs use the same contract with their own generated run ID.
 The canonical pipeline additionally owns a cross-process run lease for its
 entire scan → cache → liveness → prefilter → evaluation transaction. This
 covers direct CLI calls as well as application-service children, prevents
-shared `jds/` and `batch/` artifacts from interleaving, and stops a second
+shared `workspace/jobs/descriptions/` and `batch/` artifacts from interleaving, and stops a second
 process before it can duplicate model spend. Dead owners are recovered through
 the shared owner-verified lock implementation.
 
 Each evaluator also has a data-only execution-result boundary on fixed file
 descriptor 3. The versioned 2 KiB schema permits only terminal status, model
-request count and normalized input/output/cached token totals. This keeps
+request count and normalized input/workspace/documents/cached token totals. This keeps
 accounting independent of human console wording and prevents job content,
 scores, reports or model output entering run history. Missing provider usage is
 preserved as missing rather than silently converted to zero.
@@ -340,13 +344,13 @@ Frontrunner runtime.
 ## System Overview
 
 ```
-data/pipeline.md
+workspace/search/pipeline.md
        │
        ▼
 src/pipeline/run.mjs
        │
        ├─ scan ─────────────── public provider/ATS APIs
-       ├─ cache ────────────── clean descriptions in jds/
+       ├─ cache ────────────── clean descriptions in workspace/jobs/descriptions/
        ├─ liveness ─────────── provider API → Playwright fallback
        ├─ prefilter ────────── deterministic keep/reject + audit TSV
        └─ evaluation ───────── only surviving roles reach a model
@@ -362,7 +366,7 @@ src/pipeline/run.mjs
                          └──── atomic/locked merge ────┘
                                   │
                                   ▼
-                         data/applications.md
+                         workspace/applications/tracker.md
 ```
 
 ## Evaluation Flow (Single Offer)
@@ -387,8 +391,9 @@ src/pipeline/run.mjs
    YAML consumed by the deterministic analysis commands.
 6. **Score**: validated 1–5 dimensions and global score
 7. **Publish**: `src/evaluate/evaluation-publication.mjs` first writes a
-   bounded `reports/{num}-PUBLISHING.json` journal, then atomically publishes
-   `reports/{num}-{company}-{date}.md` and its tracker TSV
+   bounded `workspace/.state/evaluation-publications/{num}-PUBLISHING.json`
+   journal, then atomically publishes
+   `workspace/reports/evaluations/{num}-{company}-{date}.md` and its tracker TSV
 8. **Track**: `src/tracker/merge-tracker.mjs` merges the TSV; only after the
    tracker contains the exact report identity is the journal removed. A later
    evaluation replays any interrupted journal idempotently. Status updates to
@@ -462,7 +467,12 @@ bounded, fingerprinted, marked as hostile data, and never grants model tools.
 `src/evaluate/save-evaluation.mjs` routes every evaluator through the same
 bounded, path-derived publication journal; model fields never choose paths.
 The CV renderers own their filesystem effects. The local UI is loopback-only
-and treats reports and generated HTML as untrusted output.
+and treats reports and generated HTML as untrusted output. It is launched
+through `src/application/ui-launch.mjs`, which supplies the canonical root and
+fixed Next.js process specification; UI code never derives the checkout from
+its working directory. Generated-document routes accept only a tracker role ID
+and closed format, resolve the corresponding published artifact server-side,
+then apply extension and realpath containment plus an HTML sandbox.
 
 ## Failure and Concurrency Boundaries
 
@@ -477,15 +487,15 @@ and treats reports and generated HTML as untrusted output.
   fail before shared artifacts or tokens are touched; dead owners recover.
 - Tracker mutations use shared locking and atomic replacement.
 - Application-answer report sections, pasted reply candidates and assessment
-  events use the same boundary; report paths are contained under `reports/`
+  events use the same boundary; report paths are contained under `workspace/reports/evaluations/`
   and hostile reply records have closed shape, count and byte limits.
 - Opt-in ATS discovery validates fixed provider URLs and re-deduplicates
-  `portals.yml` inside its write lock, preventing lost boards across concurrent
+  `workspace/search/portals.yml` inside its write lock, preventing lost boards across concurrent
   discovery runs while preserving comments and formatting.
 - Report numbers are reserved with atomic sentinels before parallel work.
 - Evaluation report/tracker publication is write-ahead journaled and
   idempotently recovered after interruption or merge failure.
-- Confirmed additions spanning `cv.md` and `article-digest.md` are serialized,
+- Confirmed additions spanning `workspace/profile/cv.md` and `workspace/profile/article-digest.md` are serialized,
   write-ahead journaled and replayed only when each source still matches its
   recorded before-state; newer human edits fail closed.
 - Scanner, bulk-fetch and browser-fallback JD cache writes share one locked
@@ -505,10 +515,10 @@ and treats reports and generated HTML as untrusted output.
 ## Data Flow
 
 ```
-cv.md                    →  Evaluation context
-article-digest.md        →  Proof points for matching
-config/profile.yml       →  Candidate identity
-portals.yml              →  Scanner configuration
+workspace/profile/cv.md                    →  Evaluation context
+workspace/profile/article-digest.md        →  Proof points for matching
+workspace/profile/profile.yml       →  Candidate identity
+workspace/search/portals.yml              →  Scanner configuration
 templates/states.yml     →  Canonical status values
 templates/cv-template.html → PDF generation template
 ```
@@ -517,7 +527,7 @@ templates/cv-template.html → PDF generation template
 
 - Reports: `{###}-{company-slug}-{YYYY-MM-DD}.md` (3-digit zero-padded)
 - PDFs: `cv-candidate-{report}-{company-slug}-{YYYY-MM-DD}.pdf`
-- Tracker TSVs: `batch/tracker-additions/{id}.tsv`
+- Tracker TSVs: `workspace/.state/tracker-additions/{id}.tsv`
 
 ## Pipeline Integrity
 

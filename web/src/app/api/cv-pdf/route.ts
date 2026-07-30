@@ -6,9 +6,9 @@ import { frontrunnerRoot } from "@/lib/frontrunner";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Serve the tailored CV PDF the pdf mode wrote to output/cv-…-{company}-…pdf for
+// Serve the tailored CV PDF the pdf mode wrote to workspace/documents/cv-…-{company}-…pdf for
 // a given offer (matched by company slug, newest first). Inline so it opens in
-// the browser. Local-first: reads the user's own output/ dir.
+// the browser. Local-first: reads the user's own workspace/documents/ dir.
 export async function GET(req: NextRequest) {
   const company = (req.nextUrl.searchParams.get("company") ?? "").trim();
   if (!company) return new Response("company required", { status: 400 });

@@ -31,9 +31,9 @@ function publicationPaths(rootDir, number, slug, date) {
   return {
     num,
     filename,
-    reportPath: join(rootDir, 'reports', filename),
-    trackerPath: join(rootDir, 'batch', 'tracker-additions', `${num}-${slug}.tsv`),
-    journalPath: join(rootDir, 'reports', `${num}-PUBLISHING.json`),
+    reportPath: join(rootDir, 'workspace', 'reports', 'evaluations', filename),
+    trackerPath: join(rootDir, 'workspace', '.state', 'tracker-additions', `${num}-${slug}.tsv`),
+    journalPath: join(rootDir, 'workspace', '.state', 'evaluation-publications', `${num}-PUBLISHING.json`),
   };
 }
 
@@ -112,7 +112,7 @@ async function mergeTrackerDefault(rootDir) {
     env: {
       ...process.env,
       FRONTRUNNER_TRACKER: trackerPath,
-      FRONTRUNNER_ADDITIONS: join(rootDir, 'batch', 'tracker-additions'),
+      FRONTRUNNER_ADDITIONS: join(rootDir, 'workspace', '.state', 'tracker-additions'),
     },
   });
   return result.stdout;
@@ -199,14 +199,14 @@ export async function recoverEvaluationPublications({
   mergeTrackerFn,
   afterStage,
 } = {}) {
-  const reportsDir = join(rootDir, 'reports');
-  if (!existsSync(reportsDir)) return [];
-  const journals = readdirSync(reportsDir)
+  const journalsDir = join(rootDir, 'workspace', '.state', 'evaluation-publications');
+  if (!existsSync(journalsDir)) return [];
+  const journals = readdirSync(journalsDir)
     .filter(name => JOURNAL_RE.test(name))
     .sort((left, right) => Number(left.match(JOURNAL_RE)[1]) - Number(right.match(JOURNAL_RE)[1]));
   const recovered = [];
   for (const name of journals) {
-    const result = await replayJournal(join(reportsDir, name), {
+    const result = await replayJournal(join(journalsDir, name), {
       rootDir,
       mergeTrackerFn,
       afterStage,

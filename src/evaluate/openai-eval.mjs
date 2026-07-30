@@ -12,8 +12,8 @@
  *
  * Usage:
  *   node src/evaluate/openai-eval.mjs "Paste full JD text here"
- *   node src/evaluate/openai-eval.mjs --file ./jds/my-job.txt
- *   node src/evaluate/openai-eval.mjs --url https://openrouter.ai/api/v1 --model meta-llama/llama-3.3-70b-instruct --file ./jds/job.txt
+ *   node src/evaluate/openai-eval.mjs --file ./workspace/jobs/descriptions/my-job.txt
+ *   node src/evaluate/openai-eval.mjs --url https://openrouter.ai/api/v1 --model meta-llama/llama-3.3-70b-instruct --file ./workspace/jobs/descriptions/job.txt
  *
  * Requires (for hosted endpoints):
  *   OPENAI_API_KEY (or --key)   — your provider key
@@ -21,7 +21,7 @@
  *                                 https://openrouter.ai/api/v1
  *   OPENAI_MODEL (or --model)   — the model id
  *
- * Privacy: your cv.md + the full JD are sent to the configured endpoint. Pick a
+ * Privacy: your workspace/profile/cv.md + the full JD are sent to the configured endpoint. Pick a
  * provider you trust; for fully local/private use, run a local server and point
  * --url at http://localhost:... (or use ollama-eval.mjs).
  */
@@ -58,11 +58,11 @@ import { ROOT } from '#paths';
 // Paths
 // ---------------------------------------------------------------------------
 const PATHS = {
-  cv:        join(ROOT, 'cv.md'),
-  profileYml: join(ROOT, 'config', 'profile.yml'),
-  profileMode: join(ROOT, 'modes', '_profile.md'),
-  articleDigest: join(ROOT, 'article-digest.md'),
-  customRules: join(ROOT, 'modes', '_custom.md'),
+  cv:        join(ROOT, 'workspace/profile/cv.md'),
+  profileYml: join(ROOT, 'workspace', 'profile', 'profile.yml'),
+  profileMode: join(ROOT, 'workspace', 'profile', 'targeting.md'),
+  articleDigest: join(ROOT, 'workspace/profile/article-digest.md'),
+  customRules: join(ROOT, 'workspace', 'profile', 'preferences.md'),
 };
 
 // ---------------------------------------------------------------------------
@@ -80,8 +80,8 @@ if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
 
   USAGE
     node src/evaluate/openai-eval.mjs "<JD text>"
-    node src/evaluate/openai-eval.mjs --file ./jds/my-job.txt
-    node src/evaluate/openai-eval.mjs --url <base> --model <id> --file ./jds/job.txt
+    node src/evaluate/openai-eval.mjs --file ./workspace/jobs/descriptions/my-job.txt
+    node src/evaluate/openai-eval.mjs --url <base> --model <id> --file ./workspace/jobs/descriptions/job.txt
 
   OPTIONS
     --file <path>    Read JD from a file instead of inline text
@@ -89,7 +89,7 @@ if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
     --url <base>     OpenAI-compatible base URL, including any /v1
                      (env OPENAI_BASE_URL, default https://api.openai.com/v1)
     --key <key>      API key             (env OPENAI_API_KEY)
-    --no-save        Do not save report to reports/ directory
+    --no-save        Do not save report to workspace/reports/evaluations/ directory
     --help           Show this help
 
   ENV
@@ -104,7 +104,7 @@ if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
     LM Studio:   --url http://localhost:1234/v1        --model <loaded-model>   (no key)
 
   EXAMPLES
-    OPENAI_API_KEY=sk-... node src/evaluate/openai-eval.mjs --file ./jds/job.txt
+    OPENAI_API_KEY=sk-... node src/evaluate/openai-eval.mjs --file ./workspace/jobs/descriptions/job.txt
     node src/evaluate/openai-eval.mjs --url http://localhost:1234/v1 --model local "<JD text>"
 `);
   process.exit(0);
@@ -156,7 +156,7 @@ if (jobDocument.suspiciousSignals.length) {
 
 // ---------------------------------------------------------------------------
 // Endpoint + security guard.
-// cv.md + the full JD (and the API key) are sent to this endpoint, so:
+// workspace/profile/cv.md + the full JD (and the API key) are sent to this endpoint, so:
 //   - Non-loopback endpoints MUST use HTTPS (never leak credentials/data in
 //     cleartext); plain http is allowed only for localhost dev servers.
 //   - Hosted (non-loopback) endpoints require an API key.
@@ -221,9 +221,9 @@ function readFile(path, label) {
 // ---------------------------------------------------------------------------
 console.log('\n📂  Loading context files...');
 
-const cvContent     = readFile(PATHS.cv,         'cv.md');
-const profileYml    = readFile(PATHS.profileYml, 'config/profile.yml');
-const profileMode   = readFile(PATHS.profileMode, 'modes/_profile.md');
+const cvContent     = readFile(PATHS.cv,         'workspace/profile/cv.md');
+const profileYml    = readFile(PATHS.profileYml, 'workspace/profile/profile.yml');
+const profileMode   = readFile(PATHS.profileMode, 'workspace/profile/targeting.md');
 const articleDigest = existsSync(PATHS.articleDigest) ? readFileSync(PATHS.articleDigest, 'utf8').trim() : '';
 const customRules   = existsSync(PATHS.customRules) ? readFileSync(PATHS.customRules, 'utf8').trim() : '';
 const languageInstruction = outputLanguageInstruction(parseOutputLanguage(profileYml));
@@ -279,7 +279,7 @@ if (Number.isNaN(timeoutMs) || timeoutMs <= 0) {
   process.exit(1);
 }
 
-console.log(`\n🔒  Privacy: your cv.md + JD will be sent to ${endpointHost}.`);
+console.log(`\n🔒  Privacy: your workspace/profile/cv.md + JD will be sent to ${endpointHost}.`);
 console.log(`🤖  Calling ${modelName} via ${endpointHost}... this may take a minute.\n`);
 
 const headers = { 'Content-Type': 'application/json' };
@@ -346,8 +346,8 @@ if (saveReport) {
       tool: `OpenAI-compatible (${modelName} @ ${endpointHost})`,
       rootDir: ROOT,
     });
-    console.log(`\n✅  Report saved: reports/${artifact.filename}`);
-    console.log('📊  Tracker merged into data/applications.md.');
+    console.log(`\n✅  Report saved: workspace/reports/evaluations/${artifact.filename}`);
+    console.log('📊  Tracker merged into workspace/applications/tracker.md.');
   } catch (err) {
     console.warn(`⚠️   Could not publish evaluation: ${err.message}`);
     console.warn('⚠️   Any pending publication journal will be recovered on the next evaluation.');

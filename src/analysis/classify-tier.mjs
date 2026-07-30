@@ -21,7 +21,7 @@ import { fileURLToPath } from 'url';
  *
  * NOTE: Unrecognized or plain titles (e.g., "Software Engineer" with no explicit level
  * indicators) fall back to 'mid' as the default/unknown bucket. Consequently, configuring
- * `skip_tiers: [mid]` in portals.yml will exclude most unmatched/ordinary listings, not
+ * `skip_tiers: [mid]` in workspace/search/portals.yml will exclude most unmatched/ordinary listings, not
  * just explicit mid-level roles.
  *
  * @param {string} title - The job title to classify.

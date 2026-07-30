@@ -12,6 +12,15 @@ and remediated in this review: the UI was pinned to its two canonical loopback
 Hosts and Origins, cover-letter links were restricted to HTTPS, and PDF browser
 execution/egress was disabled.
 
+A follow-up review on 2026-07-30 found no new critical or high-severity issue
+after the first major UI pass. It removed two unnecessary ambient authorities:
+the UI no longer infers the repository root from its working directory, and a
+browser can no longer supply even a contained generated-document path. The
+same review fixed a boundary-contract defect where the interface accepted a
+512 KiB CV but the controller rejected requests above 64 KiB; profile saves now
+have one explicit 1.5 MiB aggregate cap while every other local protocol keeps
+the 64 KiB default.
+
 ## Remediation status
 
 | Finding | Severity | Status | Implemented control |
@@ -19,6 +28,8 @@ execution/egress was disabled.
 | FR-002 | Low | Remediated | Footnote links allow only uncredentialed HTTPS URLs |
 | FR-003 | Low | Remediated | PDF pages disable JavaScript and abort non-`file:`/`data:` requests |
 | FR-004 | Low | Remediated | UI accepts only `127.0.0.1:3100` and `localhost:3100`, with their matching HTTP Origins when present |
+| FR-005 | Low | Remediated | Fixed launcher supplies the canonical root and closed Next.js process specification; artifact requests use role IDs rather than paths |
+| FR-006 | Reliability | Remediated | Profile transport and Server Action enforce the same explicit 1.5 MiB aggregate cap |
 
 ## Scope and assumptions
 
@@ -235,18 +246,17 @@ flowchart LR
 
 ## Verification evidence
 
-- Focused remediation tests: 4/4 passed.
-- `node --test tests/frontrunner/*.test.mjs`: 200/200 passed.
-- Live UI probe: both canonical `127.0.0.1:3100` and `localhost:3100`
-  identities returned 200; `localhost.:3100` and a hostile Origin returned 403.
-- UI TypeScript check and production build passed. The build reported one
-  pre-existing broad file-tracing warning for `src/lib/roles.ts`.
-- Root `npm audit --json`: zero known vulnerabilities.
+- Focused UI/application/security regression run: 55/55 passed.
+- Live UI probe after canonical restart: the accepted Host returned 200;
+  a hostile Host and Origin returned 403; the removed `path` selector and
+  malformed role/format selectors returned 400.
+- UI TypeScript check and production build passed. The build reports the known
+  broad file-tracing warning for server-side user-data reads.
+- UI production dependency audit: zero known vulnerabilities.
 - UI dependency versions were verified locally (`next` 16.2.12, React 19.2.8,
-  Mammoth 1.12.0). The remote UI audit was not performed because sending the
-  private package dependency graph to npm was not authorized.
-- `node test-all.mjs`: 2188 passed, 0 failed, 0 warnings, including the
-  Playwright browser checks.
+  Mammoth 1.12.0).
+- `node test-all.mjs`: 2,223 passed, 0 failed, 0 warnings, including the
+  destructive process, filesystem and browser checks.
 
 ## Quality check
 
