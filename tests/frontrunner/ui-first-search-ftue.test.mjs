@@ -23,3 +23,11 @@ test('first search makes costs and the free scan path explicit', async () => {
   assert.match(control, /AI subscription is used only for roles that pass your filters/u);
   assert.match(control, /Search your configured sources now\. It costs nothing/u);
 });
+
+test('allowance tooltips avoid the sticky header instead of being clipped', async () => {
+  const button = await read('ui/src/components/ai-button.tsx');
+  assert.match(button, /clearAbove/u);
+  assert.match(button, /clearBelow/u);
+  assert.match(button, /top-full right-0 mt-2/u);
+  assert.match(button, /z-30/u);
+});
