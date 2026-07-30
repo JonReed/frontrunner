@@ -13,6 +13,7 @@ import {
   parseDate,
   DEFAULT_CADENCE,
   parseFollowups,
+  analyzeFromContent,
 } from '../src/tracker/followup-cadence.mjs';
 
 let passed = 0;
@@ -123,6 +124,29 @@ eq(
   'parseFollowups returns empty array for empty content',
   parseFollowups(''),
   [],
+);
+
+const trackerMd = [
+  '| # | Date | Company | Role | Score | Status | PDF | Report | Notes |',
+  '|---|------|---------|------|-------|--------|-----|--------|-------|',
+  '| 1 | 2026-05-01 | Acme | Eng | 4.5/5 | Applied | ✅ | ❌ | note |',
+  '| 2 | 2026-05-01 | Beta | Eng | 4.0/5 | Applied | ✅ | ❌ | note |',
+].join('\n');
+const followupsMd = [
+  '| # | App | Date | Company | Role | Channel | Contact | Notes |',
+  '|---|-----|------|---------|------|---------|---------|-------|',
+  '| 1 | 1 | 2026-05-10 | Acme | Eng | email | jane | f1 |',
+  '| 2 | 1 | 2026-05-20 | Acme | Eng | email | jane | f2 |',
+].join('\n');
+eq(
+  'analyzeFromContent classifies exhausted applied cadence as cold',
+  analyzeFromContent(trackerMd, followupsMd).entries.filter((entry) => entry.urgency === 'cold').map((entry) => entry.num),
+  [1],
+);
+eq(
+  'analyzeFromContent degrades safely without follow-up content',
+  analyzeFromContent(trackerMd).entries.some((entry) => entry.urgency === 'cold'),
+  false,
 );
 
 console.log(`\n${passed} passed, ${failed} failed`);

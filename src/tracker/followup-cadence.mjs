@@ -154,10 +154,11 @@ export function addDays(date, days) {
 }
 
 // --- Parse applications.md ---
-function parseTracker() {
-  if (!existsSync(APPS_FILE)) return [];
-  const content = readFileSync(APPS_FILE, 'utf-8');
-  const lines = content.split('\n');
+// Content-based core so any consumer (stats.mjs, tests) can classify rows
+// from in-memory strings without touching disk. The disk-backed wrapper
+// below is what the CLI path uses.
+function parseTrackerContent(content) {
+  const lines = String(content ?? '').split('\n');
   const colmap = resolveColumns(lines);
   const entries = [];
   for (const line of lines) {
@@ -174,7 +175,7 @@ function parseTracker() {
 // check below and never enter `entries`.
 export function parseFollowups(content) {
   const entries = [];
-  for (const line of content.split('\n')) {
+  for (const line of String(content ?? '').split('\n')) {
     if (!line.startsWith('|')) continue;
     const parts = line.split('|').map(s => s.trim());
     if (parts.length < 8) continue;
@@ -192,11 +193,6 @@ export function parseFollowups(content) {
     });
   }
   return entries;
-}
-
-function readFollowups() {
-  if (!existsSync(FOLLOWUPS_FILE)) return [];
-  return parseFollowups(readFileSync(FOLLOWUPS_FILE, 'utf-8'));
 }
 
 // --- Next-date overrides (pins) ---
@@ -228,11 +224,6 @@ export function resolveNextOverride(override, lastFollowupDate) {
   if (!override) return null;
   if (lastFollowupDate && lastFollowupDate > override.setDate) return null;
   return override.date;
-}
-
-function parseOverrides() {
-  if (!existsSync(FOLLOWUPS_FILE)) return new Map();
-  return parseNextOverrides(readFileSync(FOLLOWUPS_FILE, 'utf-8'));
 }
 
 // --- Extract contacts from notes ---
@@ -305,14 +296,22 @@ export function computeNextFollowupDate(status, appDate, lastFollowupDate, follo
 }
 
 // --- Main analysis ---
-function analyze() {
-  const apps = parseTracker();
+// Content-based core so consumers outside this CLI (stats.mjs, tests) can
+// reuse the exact same cadence/urgency math — including the 'cold'
+// classification — without duplicating it or touching disk. `followupsContent`
+// missing/empty (the common case when data/follow-ups.md doesn't exist yet)
+// degrades gracefully: every app gets followupCount 0, so 'cold' (which
+// requires followupCount >= applied_max_followups) simply never triggers —
+// no error, no guessing, matching the same "absent optional file = pass
+// through" convention used elsewhere in this project.
+export function analyzeFromContent(trackerContent, followupsContent = '') {
+  const apps = parseTrackerContent(trackerContent);
   if (apps.length === 0) {
     return { error: 'No applications found in tracker.' };
   }
 
-  const followups = readFollowups();
-  const overrides = parseOverrides();
+  const followups = parseFollowups(followupsContent);
+  const overrides = parseNextOverrides(String(followupsContent ?? ''));
 
   // Group follow-ups by app number
   const followupsByApp = new Map();
@@ -415,6 +414,13 @@ function analyze() {
     entries: filtered,
     cadenceConfig: CADENCE,
   };
+}
+
+// --- Main analysis (disk-backed CLI entry point) ---
+function analyze() {
+  const trackerContent = existsSync(APPS_FILE) ? readFileSync(APPS_FILE, 'utf-8') : '';
+  const followupsContent = existsSync(FOLLOWUPS_FILE) ? readFileSync(FOLLOWUPS_FILE, 'utf-8') : '';
+  return analyzeFromContent(trackerContent, followupsContent);
 }
 
 // --- Summary mode ---

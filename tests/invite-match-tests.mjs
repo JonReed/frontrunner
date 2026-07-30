@@ -6,7 +6,7 @@
  * Run: node tests/invite-match-tests.mjs
  */
 
-import { matchInvite, normalizeCompanyName } from '../src/tracker/invite-match.mjs';
+import { extractPlatform, matchInvite, normalizeCompanyName } from '../src/tracker/invite-match.mjs';
 
 let passed = 0;
 let failed = 0;
@@ -86,6 +86,15 @@ eq(
   normalizeCompanyName('Northwind Solutions Group') === normalizeCompanyName('Northwind Technologies Holdings'),
   false
 );
+
+eq('Zoom URL detected', extractPlatform('Join https://us05web.zoom.us/j/9998887777'), 'Zoom');
+eq('Teams URL detected', extractPlatform('Join https://teams.microsoft.com/l/meetup-join/abc'), 'Microsoft Teams');
+eq('Google Meet URL detected', extractPlatform('Join https://meet.google.com/xyz-abcd-efg'), 'Google Meet');
+eq('phone fallback detected', extractPlatform('We will call 416-555-0199.'), 'Phone');
+eq('meeting URL outranks dial-in fallback', extractPlatform('https://zoom.us/j/123\n416-555-0199'), 'Zoom');
+eq('lookalike host rejected', extractPlatform('https://teams.microsoft.com.evil.example/x'), null);
+eq('path segment rejected', extractPlatform('https://example.com/zoom.us'), null);
+eq('explicit port accepted', extractPlatform('https://meet.google.com:443/xyz-abcd-efg'), 'Google Meet');
 
 console.log(`\n${passed} passed, ${failed} failed`);
 if (failed > 0) {

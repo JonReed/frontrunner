@@ -1190,6 +1190,15 @@ if (
   fail('Batch runner interpolates score values into awk programs');
 }
 
+if (
+  /no cached JD; refusing agent\/browser fallback" "\$retries"\n\s+release_report_num "\$report_num"\n/.test(batchRunnerSource) &&
+  /mark_paused_rate_limit "\$id" "\$url" "\$started_at" "\$report_num" "\$retries" "\$log_file"\n\s+release_report_num "\$report_num"/.test(batchRunnerSource)
+) {
+  pass('Batch runner releases shared report reservations on pre-worker and paused exits');
+} else {
+  fail('Batch runner can leak a shared report reservation on an early terminal exit');
+}
+
 // ── 6. PERSONAL DATA LEAK CHECK ─────────────────────────────────
 
 console.log('\n6. Personal data leak check');
@@ -10487,6 +10496,193 @@ try {
   }
 } catch (e) {
   fail(`transcript-input debrief check: ${e.message}`);
+}
+
+// ── CONTRADICTED-FACTS CORRECTION (#2125) ────────────────────────
+// interview/debrief was append-only against the role-specific prep file —
+// no path existed for correcting an existing fact the interview directly
+// contradicts (as opposed to appending a new gap/story/retraction). This
+// section pins that the mode now documents an in-place correction step,
+// the strikethrough-plus-correction example format, and inference-tag
+// resolution, without touching the pre-existing append-only steps.
+
+console.log('\n64. Contradicted-facts correction step (#2125)');
+
+try {
+  const debriefMode = readFile('modes/interview/debrief.md');
+
+  if (debriefMode.includes('Check for Contradicted Facts')) {
+    pass('interview/debrief has a dedicated contradicted-facts step');
+  } else {
+    fail('interview/debrief missing a dedicated contradicted-facts step');
+  }
+
+  // Scoped regex: both bullets must appear, in order, within the same
+  // decision-list paragraph — not just "appends" and "correct in place"
+  // occurring anywhere independently in the file.
+  if (
+    /"This is new information"\s*→\s*appends\.[\s\S]{0,200}"This directly contradicts something the prep file already asserts as fact"\s*→\s*correct in place\./.test(
+      debriefMode
+    )
+  ) {
+    pass('interview/debrief distinguishes new-information-appends from contradiction-corrects-in-place');
+  } else {
+    fail('interview/debrief missing the append-vs-correct distinction');
+  }
+
+  // Scoped regex: the strikethrough, the bolded correction, and the
+  // confirmation-date parenthetical must all appear together on the same
+  // example line — not merely present somewhere in the file independently.
+  if (
+    /~~Metro Hall, on-site~~\s+\*\*Metro Hall — hybrid\*\*\s*\(confirmed on the \{date\} call\)/.test(
+      debriefMode
+    )
+  ) {
+    pass('interview/debrief includes a concrete strikethrough-plus-correction example with the confirmation detail');
+  } else {
+    fail('interview/debrief missing the strikethrough-plus-correction example format with its confirmation detail');
+  }
+
+  // Scoped regex: the resolve-inference-tags instruction, the literal tag,
+  // and the actual resolution behavior must appear tied together in the
+  // same instruction — not as three unrelated substrings anywhere in the file.
+  if (
+    /\*\*Resolve inference tags on contradiction or confirmation\.\*\*[\s\S]{0,200}`\[inferred from JD\]`[\s\S]{0,400}resolve the tag/.test(
+      debriefMode
+    )
+  ) {
+    pass('interview/debrief instructs resolving inference tags once confirmed or corrected');
+  } else {
+    fail('interview/debrief missing the inference-tag resolution instruction tied to its own guidance');
+  }
+} catch (e) {
+  fail(`contradicted-facts correction check: ${e.message}`);
+}
+
+// ── CALL-PLATFORM DETECTION (#2126) ─────────────────────────────
+// Pins the new **Platform:** field in interview-prep.md's Step 2 (Process
+// Overview) and Step 3 (Round-by-Round Breakdown) — distinct from the
+// existing round-type **Format:** field, cross-referencing invite-match.mjs's
+// extractPlatform without duplicating its detection logic in prose, and
+// falling back to "not stated in the invite, confirm before the call"
+// rather than guessing when the invite text doesn't say.
+
+console.log('\n65. Call-platform detection wired into interview-prep (#2126)');
+
+try {
+  const prepModeDoc = readFile('modes/interview-prep.md');
+
+  // Scope assertions to the actual sections they're supposed to be in,
+  // rather than whole-document .includes() checks that could pass even if
+  // Platform only exists in the wrong section (#2128 review finding).
+  const processOverview = prepModeDoc.match(
+    /## Step 2 — Process Overview[\s\S]*?## Step 2\.5 — Audience Map/
+  )?.[0] ?? '';
+  const roundBreakdown = prepModeDoc.match(
+    /## Step 3 — Round-by-Round Breakdown[\s\S]*?(?=\n## |$)/
+  )?.[0] ?? '';
+  const processOverviewFlat = processOverview.replace(/\s+/g, ' ');
+
+  if (processOverview.includes('- **Format:**') && processOverview.includes('- **Platform:**')) {
+    pass('interview-prep Process Overview has both Format (round type) and Platform (call medium) as distinct fields');
+  } else {
+    fail('interview-prep Process Overview missing the distinct Platform field alongside Format');
+  }
+
+  if (processOverviewFlat.includes("extractPlatform") && processOverviewFlat.includes('invite-match.mjs')) {
+    pass('interview-prep Platform field cross-references invite-match.mjs\'s extractPlatform instead of restating the detection logic');
+  } else {
+    fail('interview-prep Platform field missing the cross-reference to invite-match.mjs\'s extractPlatform');
+  }
+
+  if (processOverviewFlat.includes('not stated in the invite, confirm before the call')) {
+    pass('interview-prep Platform field falls back to "not stated in the invite, confirm before the call" instead of guessing');
+  } else {
+    fail('interview-prep Platform field missing the "not stated in the invite, confirm before the call" fallback');
+  }
+
+  if (/### Round \{N\}:[\s\S]*?- \*\*Platform:\*\*/.test(roundBreakdown)) {
+    pass('interview-prep Round-by-Round Breakdown (Step 3) also carries a per-round Platform field');
+  } else {
+    fail('interview-prep Round-by-Round Breakdown missing a per-round Platform field');
+  }
+
+  // The fallback instruction must independently exist in the Round {N}
+  // template itself, not just in Step 2 — otherwise a future edit that
+  // drops it from Step 3 only would go unnoticed (#2128 review finding).
+  // Scoped to the Round {N} template specifically (not just anywhere in
+  // Step 3's surrounding prose) so a future edit that drops the fallback
+  // from the round template but leaves it elsewhere in Step 3 would still
+  // be caught (#2128 review finding, round 2).
+  const roundTemplate = roundBreakdown.match(
+    /### Round \{N\}:[\s\S]*?(?=\n### |\n## |$)/
+  )?.[0] ?? '';
+  const roundTemplateFlat = roundTemplate.replace(/\s+/g, ' ');
+  if (roundTemplateFlat.includes('not stated in the invite, confirm before the call')) {
+    pass('interview-prep Round-by-Round Breakdown (Step 3) also carries the "not stated in the invite, confirm before the call" fallback');
+  } else {
+    fail('interview-prep Round-by-Round Breakdown missing the "not stated in the invite, confirm before the call" fallback');
+  }
+} catch (e) {
+  fail(`call-platform detection wiring check: ${e.message}`);
+}
+
+// ── 64. PLAN-SOURCED-QUESTION RESEARCH CHECK (#2096) ────────────
+// interview-prep.md's Step 1 sourced-question research and interview/practice.md's
+// reactive mid-session reuse of it were already wired together; interview/plan.md
+// was the one mode of the three with no equivalent step before Block 4's
+// behavioral-story mapping. Pins the research-check section, the reuse-existing-file
+// rule, the tagging discipline cross-reference, and the sparse-intel honesty rule.
+
+console.log('\n66. interview/plan research check before Block 4 (#2096)');
+
+try {
+  const planMode = readFile('modes/interview/plan.md');
+  const planFlat = planMode.replace(/\s+/g, ' ');
+
+  if (planFlat.includes('Research check — before drafting Block 4')) {
+    pass('interview/plan has the "Research check — before drafting Block 4" section (#2096)');
+  } else {
+    fail('interview/plan missing the "Research check — before drafting Block 4" section');
+  }
+
+  if (
+    planFlat.includes('workspace/interviews/{company-slug}-{role-slug}.md') &&
+    planFlat.includes('never re-search work that\'s already been done and cited')
+  ) {
+    pass('interview/plan reuses an existing interview-prep file instead of re-searching');
+  } else {
+    fail('interview/plan missing the reuse-existing-research-file rule');
+  }
+
+  if (
+    planFlat.includes('`modes/interview-prep.md`\'s "Step 1 — Research" WebSearch queries') &&
+    planFlat.includes('[inferred from JD]')
+  ) {
+    pass('interview/plan cross-references interview-prep.md Step 1 queries and the [inferred from JD] tag convention (no duplicated query table)');
+  } else {
+    fail('interview/plan missing the interview-prep.md Step 1 cross-reference or the [inferred from JD] tag convention');
+  }
+
+  if (planFlat.includes('If the search genuinely yields nothing') && planFlat.includes('partial-but-honest')) {
+    pass('interview/plan states the honest-if-nothing-found fallback (partial-but-honest, not perfect-or-nothing)');
+  } else {
+    fail('interview/plan missing the honest sparse-intel fallback');
+  }
+
+  if (planFlat.includes('When company-intel is thin mid-session')) {
+    pass('interview/plan cross-references practice.md\'s reactive research path instead of duplicating it');
+  } else {
+    fail('interview/plan missing the cross-reference to practice.md\'s reactive research path');
+  }
+
+  if (planFlat.includes('Check for real reported questions before Block 4') && planFlat.includes('Never generate fake company intel')) {
+    pass('interview/plan Rules section reinforces the research check alongside the existing "never fake intel" rule');
+  } else {
+    fail('interview/plan Rules section missing the research-check rule or its tie-in to "never fake intel"');
+  }
+} catch (e) {
+  fail(`interview/plan research-check wiring check (#2096): ${e.message}`);
 }
 
 await runDiscovered();

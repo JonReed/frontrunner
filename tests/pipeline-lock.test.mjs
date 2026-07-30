@@ -18,15 +18,20 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, existsSync, mkdirSync, writeFileSync, readFileSync, utimesSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
-import { acquirePipelineLock, LockTimeoutError } from '../src/tracker/pipeline-lock.mjs';
+import { acquirePipelineLock, LockTimeoutError, OWNERLESS_GRACE_MS } from '../src/tracker/pipeline-lock.mjs';
 
 function fixtureRoot() {
   const root = mkdtempSync(join(tmpdir(), 'frontrunner-pipeline-lock-'));
   mkdirSync(join(root, 'data'), { recursive: true });
   return root;
+}
+
+function backdate(dir, ms) {
+  const when = new Date(Date.now() - ms);
+  utimesSync(dir, when, when);
 }
 
 test('acquirePipelineLock: a live holder blocks a second acquirer, which times out', async () => {
@@ -132,6 +137,36 @@ test('release(): a holder whose lock was reclaimed by another process must not d
     const owner = JSON.parse(readFileSync(join(lockDir, 'owner.json'), 'utf-8'));
     assert.equal(owner.token, 'a-different-owners-token');
     rmSync(lockDir, { recursive: true, force: true });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('acquirePipelineLock: fresh ownerless locks respect the grace floor', async () => {
+  const root = fixtureRoot();
+  try {
+    const p = join(root, 'data', 'pipeline.md');
+    const lockDir = `${p}.lock`;
+    mkdirSync(lockDir, { recursive: true });
+    await assert.rejects(
+      () => acquirePipelineLock(p, { timeoutMs: 200, retryMs: 20, staleMs: 0 }),
+      (error) => error instanceof LockTimeoutError,
+    );
+    assert.ok(existsSync(lockDir));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('acquirePipelineLock: aged ownerless locks remain recoverable', async () => {
+  const root = fixtureRoot();
+  try {
+    const p = join(root, 'data', 'pipeline.md');
+    const lockDir = `${p}.lock`;
+    mkdirSync(lockDir, { recursive: true });
+    backdate(lockDir, OWNERLESS_GRACE_MS * 3);
+    const lock = await acquirePipelineLock(p, { timeoutMs: 500, retryMs: 20, staleMs: 1 });
+    lock.release();
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

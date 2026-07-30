@@ -20,6 +20,7 @@ import { dirname, join } from 'node:path';
 const DEFAULT_STALE_MS = 30_000;
 const DEFAULT_RETRY_MS = 80;
 const DEFAULT_TIMEOUT_MS = 8_000;
+export const OWNERLESS_GRACE_MS = 1_000;
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 export class FileLockTimeoutError extends Error {
@@ -88,7 +89,7 @@ function lockCanRecover(lockDir, staleMs) {
   const owner = readLockOwner(lockDir);
   if (owner?.pid) return !processIsAlive(owner.pid);
   try {
-    return Date.now() - statSync(lockDir).mtimeMs > staleMs;
+    return Date.now() - statSync(lockDir).mtimeMs > Math.max(staleMs, OWNERLESS_GRACE_MS);
   } catch {
     return true;
   }

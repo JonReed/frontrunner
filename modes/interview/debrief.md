@@ -22,7 +22,7 @@ After a real interview, capture what was asked, assess what landed and what didn
 6. **Story bank** at `workspace/interviews/story-bank.md` — add new stories if surfaced
 7. **CV** at `workspace/profile/cv.md` + `workspace/profile/article-digest.md` (if present) — to ground suggested answers in real experience
 8. **Retracted claims** at `workspace/interviews/retracted-claims.md` (if present) — hard gate; never use a retracted claim in a suggested answer even if the candidate said it in the interview
-9. **Role-specific prep file** — append debrief notes
+9. **Role-specific prep file** — append debrief notes; correct in place any existing fact the interview directly contradicts (see Step 1b)
 
 ---
 
@@ -54,6 +54,23 @@ If memory is incomplete, ask targeted prompts:
 Set the explicit source marker: **`input_source: recall`**.
 
 Whichever path produced the question/answer data, Steps 2 onward operate on it identically — honest assessment, gap-closing, and question-bank/story-bank updates don't distinguish between an `input_source: transcript` and an `input_source: recall` debrief. The marker itself is still carried through unchanged so Step 9 can read it.
+
+---
+
+## Step 1b — Check for Contradicted Facts
+
+While capturing what was said, compare it with factual claims in the role-specific prep file. New information remains append-only, but a direct contradiction of an existing claim (such as location, compensation, team size, reporting structure, or stack) must be corrected where the claim appears.
+
+- **"This is new information" → appends.** Use the existing Step 4 / Step 5 / Step 8 flows.
+- **"This directly contradicts something the prep file already asserts as fact" → correct in place.** Do not leave a known-wrong claim standing.
+
+Preserve the history with strikethrough plus the confirmed correction:
+
+```markdown
+~~Metro Hall, on-site~~ **Metro Hall — hybrid** (confirmed on the {date} call)
+```
+
+**Resolve inference tags on contradiction or confirmation.** If the original carried `[inferred from JD]` or another uncertainty marker, resolve the tag and replace it with the interview-confirmed source. This applies to role facts only; candidate claims still belong in the story bank and `workspace/interviews/retracted-claims.md`.
 
 ---
 
@@ -217,3 +234,4 @@ Rules for the transcript:
 - **Extract vocabulary gaps explicitly.** If the candidate used an imprecise term where a precise one exists, add it to `workspace/interviews/interview-prep-guide.md` under the vocabulary section (if the candidate maintains one).
 - **One gap = one fix.** Don't overwhelm with a full study plan for every gap. Prioritize the 1–2 most likely to be tested in the next round.
 - **Celebrate what worked.** Debrief isn't only about gaps. Name what was strong — it reinforces the right behaviour and builds confidence for the next round.
+- **Contradicted facts get corrected in place, not appended around.** Strike the old value, bold the confirmed value, and record when/how it was confirmed (see Step 1b).
