@@ -343,6 +343,24 @@ This signal does not change the High Confidence / Proceed with Caution / Suspici
 
 **Scope note:** This signal is prompt-instruction-only for now — the agent manually compares the two sources when both are present in what the user provided. It does not modify `src/scan/check-liveness.mjs` or `src/scan/liveness-core.mjs` to automatically fetch and compare both pages; that is out of scope for this pass and left as a future decision.
 
+**10. Agency Licensing Check** (from JD text + `templates/agency-licensing.yml`; jurisdiction from the role's stated work location and the end employer/client location):
+
+This Block G signal is keyed to **who posted** rather than what the posting says. Several jurisdictions require temporary help agencies and third-party recruiters to hold a licence and publish an official public registry where anyone can check an operator's status. The registry pointer gives the candidate a source-backed check without treating licensing status as a proxy for whether the posting itself is genuine.
+
+**Trigger — BOTH conditions required:**
+1. The posting is **agency-mediated**: detected from the JD's own text (phrases like "our client", "on behalf of our client", a staffing/recruiting brand posting for an unnamed end employer — e.g. a fictional "Acme Staffing Group" advertising a role at an undisclosed manufacturer), or the user states in conversation that the role came through an agency or recruiter.
+2. The role's stated work location or the end employer/client location brings it within a jurisdiction represented in `templates/agency-licensing.yml` (a data reference, not instruction logic — adding a jurisdiction row there never requires touching this rule text; every row carries the licensing scope, effective date, official registry URL, legal basis, transitional notes, sources, and an `as_of` verification date). For Ontario, the trigger is employment in Ontario or recruiting employees for an employer in Ontario; the candidate's home address does not determine the licensing scope, and an agency based outside Ontario may still fall within it. If neither the role location nor the employer/client location establishes the row's jurisdiction, or **no row exists, skip this signal silently** — absence of a row means "no verified regime data," not "no regime."
+
+If both conditions hold, append a short, non-alarmist note to the report:
+
+> ℹ️ **Agency licensing note:** [Render in {language.output}: state the regime facts from the table row and hand over the official registry link — e.g. for a fictional Acme Staffing Group recruiting for work in Ontario: "Ontario has required temporary help agencies and recruiters within the regime's scope to hold a licence since 2024-07-01 (ESA 2000 + O. Reg. 99/23); the Ministry of Labour publishes a public status checker where you can look up an agency's recorded status: {registry.url}." Mention the client-side prohibition and official penalty schedule as context. Note the transitional rule from the row (e.g. pre-deadline applicants may lawfully operate while their application pends), so the candidate reads the registry result correctly. Close with a note that this is information about the jurisdiction's licensing regime, not legal advice.]
+
+**Tracker composition (suggestion only):** when this evaluation lands in the tracker with a `via={Agency}` field (#1596), suggest carrying the registry pointer into the tracker note — so the one-click check survives into the follow-up workflow. This mode **never writes the tracker itself**; tracker updates go through the normal TSV/`set-status.mjs` paths with the user in the loop.
+
+**Hard rule (mandatory):** this signal **never asserts an agency is unlicensed** and **never fetches or scrapes the registry** — no WebFetch, no WebSearch, no Playwright against the registry URL; Frontrunner stays zero-fetch here by design. Transitional rules alone (operators with a pending pre-deadline application may lawfully operate) make "this agency is unlicensed" unknowable from outside the registry; only the official lookup, clicked by the candidate, answers it. State the regime facts and the pointer — never render this finding as an accusation that any specific agency is operating unlawfully.
+
+This signal does not change the High Confidence / Proceed with Caution / Suspicious tier below — the posting can be entirely real and licensed; this is a jurisdiction-awareness pointer, reported separately.
+
 ### Output format:
 
 **Assessment:** One of three tiers:
