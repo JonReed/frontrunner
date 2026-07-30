@@ -3,7 +3,7 @@ const PIPELINE_LABELS = new Set(['posted', 'trust', 'note']);
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * Parse the metadata portion after a pipeline row's URL.
+ * Parse the metadata portion after a UI inbox row's URL.
  *
  * The scanner emits positional company/role/location/compensation cells, then
  * labeled metadata. Empty positional cells are significant: dropping them can

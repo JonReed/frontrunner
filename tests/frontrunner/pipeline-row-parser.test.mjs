@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { parsePipelineMetadata } from '../../src/scan/pipeline-row.mjs';
+import { parsePipelineMetadata } from '../../ui/src/lib/pipeline-row.mjs';
 
 test('labeled metadata is never treated as a missing location', () => {
   assert.deepEqual(
