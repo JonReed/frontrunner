@@ -8,7 +8,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { isAbsolute, join, relative, sep } from 'node:path';
 import test from 'node:test';
 
 import {
@@ -39,7 +39,13 @@ test('every canonical private path is owned by the one workspace boundary', () =
     REPORTS_DIR,
     STATE_DIR,
   ]) {
-    assert.equal(file === WORKSPACE_DIR || file.startsWith(`${WORKSPACE_DIR}/`), true, file);
+    const local = relative(WORKSPACE_DIR, file);
+    assert.equal(
+      local === ''
+        || (local !== '..' && !local.startsWith(`..${sep}`) && !isAbsolute(local)),
+      true,
+      file,
+    );
   }
 });
 
