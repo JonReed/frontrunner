@@ -407,7 +407,7 @@ export function SetupFlow() {
       <div className="mb-9">
         <p className="page-eyebrow">Welcome to Frontrunner</p>
         <h1 className="editorial-title">
-          {step === 0 ? 'Let us get you set up' : 'Setting up'}
+          {step === 0 ? "Let's get you set up" : 'Setting up'}
         </h1>
         {step === 0 && (
           <p className="mt-1.5 text-[15px] text-[var(--color-ink-soft)]">
