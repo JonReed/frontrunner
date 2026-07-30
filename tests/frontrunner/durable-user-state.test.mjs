@@ -6,6 +6,7 @@ import {
   mkdtempSync,
   readFileSync,
   readdirSync,
+  renameSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
@@ -180,6 +181,34 @@ test('failure injection preserves the original file and removes the temporary wr
       /injected crash/u,
     );
     assert.equal(readFileSync(target, 'utf8'), 'original\n');
+    assert.deepEqual(readdirSync(fixture), ['state.tsv']);
+  } finally {
+    rmSync(fixture, { recursive: true, force: true });
+  }
+});
+
+test('atomic replacement retries transient Windows rename contention without exposing debris', () => {
+  const fixture = mkdtempSync(join(tmpdir(), 'frontrunner-atomic-rename-'));
+  const target = join(fixture, 'state.tsv');
+  try {
+    writeFileSync(target, 'original\n');
+    let attempts = 0;
+    replaceFileAtomic(target, 'replacement\n', {
+      platform: 'win32',
+      renameRetryDelaysMs: [0, 0],
+      renameFile(source, destination) {
+        attempts += 1;
+        if (attempts < 3) {
+          const error = new Error('injected transient Windows file contention');
+          error.code = 'EPERM';
+          throw error;
+        }
+        renameSync(source, destination);
+      },
+    });
+
+    assert.equal(attempts, 3);
+    assert.equal(readFileSync(target, 'utf8'), 'replacement\n');
     assert.deepEqual(readdirSync(fixture), ['state.tsv']);
   } finally {
     rmSync(fixture, { recursive: true, force: true });

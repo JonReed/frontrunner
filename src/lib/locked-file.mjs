@@ -21,6 +21,40 @@ import { basename, dirname, join } from 'node:path';
 import { withFileLock } from './file-lock.mjs';
 import { assertTestUserDataWriteAllowed } from './test-user-data-policy.mjs';
 
+const WINDOWS_RENAME_RETRY_CODES = new Set(['EACCES', 'EBUSY', 'EPERM']);
+const WINDOWS_RENAME_RETRY_DELAYS_MS = [10, 20, 40, 80, 160, 320, 500];
+const SLEEP_CELL = new Int32Array(new SharedArrayBuffer(4));
+
+function renameReplacingFile(source, destination, options) {
+  const renameFile = options.renameFile ?? renameSync;
+  const platform = options.platform ?? process.platform;
+  const retryDelays = options.renameRetryDelaysMs ?? WINDOWS_RENAME_RETRY_DELAYS_MS;
+  let attempt = 0;
+
+  for (;;) {
+    try {
+      renameFile(source, destination);
+      return;
+    } catch (error) {
+      if (
+        platform !== 'win32'
+        || !WINDOWS_RENAME_RETRY_CODES.has(error?.code)
+        || attempt >= retryDelays.length
+      ) {
+        throw error;
+      }
+      const delay = retryDelays[attempt++];
+      if (!Number.isSafeInteger(delay) || delay < 0) {
+        throw new TypeError('rename retry delays must be non-negative integers');
+      }
+      // Antivirus/indexing handles can briefly prevent an otherwise valid
+      // replace on Windows. Keep the retry bounded and inside the caller's
+      // file lock; readers continue to see the prior complete file.
+      if (delay > 0) Atomics.wait(SLEEP_CELL, 0, 0, delay);
+    }
+  }
+}
+
 function fsyncDirectory(directory) {
   let descriptor;
   try {
@@ -61,7 +95,7 @@ export function replaceFileAtomic(filePath, content, options = {}) {
     closeSync(descriptor);
     descriptor = undefined;
     options.afterWrite?.(temporary);
-    renameSync(temporary, filePath);
+    renameReplacingFile(temporary, filePath, options);
     // Persist the directory entry where the host filesystem supports it. A
     // rename is atomic for readers, while this best-effort fsync narrows the
     // power-loss window without turning an already-committed rename into a
