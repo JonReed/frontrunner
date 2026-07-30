@@ -32,7 +32,10 @@ test('UI root and process authority come only from the fixed application launche
     checkedDependencies,
     [join(ROOT, 'ui', 'node_modules', 'next', 'dist', 'bin', 'next')],
   );
-  assert.deepEqual(spec.args.slice(-5), ['dev', '--hostname', '127.0.0.1', '-p', '3100']);
+  assert.deepEqual(
+    spec.args.slice(-6),
+    ['dev', '--webpack', '--hostname', '127.0.0.1', '-p', '3100'],
+  );
   assert.throws(() => resolveUiLaunch('--hostname'), /must be one of/);
   assert.throws(() => resolveUiLaunch('anything-else'), /must be one of/);
   assert.throws(

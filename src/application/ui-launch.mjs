@@ -23,11 +23,12 @@ import {
 const UI_DIR = join(ROOT, 'ui');
 const NEXT_CLI = join(UI_DIR, 'node_modules', 'next', 'dist', 'bin', 'next');
 const COMMANDS = Object.freeze({
-  // Turbopack's CSS worker opens a loopback port during production builds.
-  // Webpack provides the same production compilation check without requiring
-  // network capability, so local hooks also work inside hardened sandboxes.
+  // Turbopack cannot resolve the UI's intentional server-only imports from
+  // the repository backend, and its CSS worker opens a loopback port during
+  // production builds. Webpack supports that fixed boundary in both modes
+  // and keeps local hooks usable inside hardened sandboxes.
   build: ['build', '--webpack'],
-  dev: ['dev', '--hostname', '127.0.0.1', '-p', '3100'],
+  dev: ['dev', '--webpack', '--hostname', '127.0.0.1', '-p', '3100'],
   start: ['start', '--hostname', '127.0.0.1', '-p', '3100'],
 });
 

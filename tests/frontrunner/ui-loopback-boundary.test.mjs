@@ -21,7 +21,7 @@ test('supported UI endpoint accepts only its two canonical loopback hosts and or
   assert.match(source, /matcher:\s*\[['"]\/:path\*['"]\]/);
   assert.match(pkg.scripts.dev, /ui-launch\.mjs dev/);
   assert.match(pkg.scripts.start, /ui-launch\.mjs start/);
-  assert.match(launcher, /\['dev', '--hostname', '127\.0\.0\.1', '-p', '3100'\]/);
+  assert.match(launcher, /\['dev', '--webpack', '--hostname', '127\.0\.0\.1', '-p', '3100'\]/);
   assert.match(launcher, /\['start', '--hostname', '127\.0\.0\.1', '-p', '3100'\]/);
   assert.match(launcher, /FRONTRUNNER_ROOT:\s*ROOT/);
   assert.match(launcher, /shell:\s*false/);
