@@ -35,16 +35,12 @@ function readFlags() {
   return constants.O_RDONLY | (supportsNoFollow() ? constants.O_NOFOLLOW : 0);
 }
 
-function validatePathIdentity(file, descriptorStat, beforeStat, label) {
-  if (!beforeStat) return;
-  const afterStat = lstatSync(file);
-  const unsafeType = !beforeStat.isFile() || !afterStat.isFile()
-    || beforeStat.isSymbolicLink() || afterStat.isSymbolicLink();
+function validatePathIdentity(file, descriptorStat, label) {
+  const pathStat = lstatSync(file);
+  const unsafeType = !pathStat.isFile() || pathStat.isSymbolicLink();
   const changed = (
-    beforeStat.dev !== descriptorStat.dev
-    || beforeStat.ino !== descriptorStat.ino
-    || afterStat.dev !== descriptorStat.dev
-    || afterStat.ino !== descriptorStat.ino
+    pathStat.dev !== descriptorStat.dev
+    || pathStat.ino !== descriptorStat.ino
   );
   if (unsafeType || changed) {
     throw fail(label, 'must be a stable regular file, not a symbolic link');
@@ -63,17 +59,12 @@ export function readBoundedRegularFileWithStatSync(
   validateMaxBytes(maxBytes);
   let descriptor;
   try {
-    // Windows does not expose O_NOFOLLOW. Check the reparse-point type before
-    // opening, then compare it with both the descriptor and the path after the
-    // open. Reading remains descriptor-based, so later path replacement cannot
-    // redirect the bytes being consumed.
-    const beforeStat = supportsNoFollow() ? null : lstatSync(file);
-    if (beforeStat?.isSymbolicLink() || (beforeStat && !beforeStat.isFile())) {
-      throw fail(label, 'must not be a symbolic link');
-    }
+    // Open first, then validate that the path still names the opened descriptor.
+    // That avoids a check/open race while keeping the same validation on every
+    // platform. O_NOFOLLOW is an additional kernel guard where available.
     descriptor = openSync(file, readFlags());
     const stat = fstatSync(descriptor);
-    validatePathIdentity(file, stat, beforeStat, label);
+    validatePathIdentity(file, stat, label);
     if (!stat.isFile() || stat.size > maxBytes) {
       throw fail(label, `must be a regular file no larger than ${String(maxBytes)} bytes`);
     }

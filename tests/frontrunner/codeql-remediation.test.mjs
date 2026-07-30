@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process';
 import {
   existsSync,
   mkdtempSync,
+  readFileSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -88,4 +89,24 @@ test('bounded file reads reject oversized files and final-component symlinks', t
     () => readBoundedRegularFileSync(link, { maxBytes: 5, label: 'fixture' }),
     /symbolic link/iu,
   );
+});
+
+test('portable file identity validation is unconditional and shared by the UI', () => {
+  const reader = readFileSync(join(ROOT, 'src/lib/safe-file-read.mjs'), 'utf8');
+  const roles = readFileSync(join(ROOT, 'ui/src/lib/roles.ts'), 'utf8');
+
+  assert.match(reader, /descriptor = openSync\(file, readFlags\(\)\)/u);
+  assert.match(reader, /const pathStat = lstatSync\(file\)/u);
+  assert.ok(
+    reader.indexOf('descriptor = openSync(file, readFlags())')
+      < reader.indexOf('validatePathIdentity(file, stat, label)'),
+    'the descriptor must be opened before path identity is checked',
+  );
+  assert.doesNotMatch(reader, /beforeStat|supportsNoFollow\(\)\s*\?\s*null/u);
+  assert.match(
+    roles,
+    /from '\.\.\/\.\.\/\.\.\/src\/lib\/safe-file-read\.mjs'/u,
+    'UI workspace reads must reuse the cross-platform safe reader',
+  );
+  assert.doesNotMatch(roles, /process\.platform|O_NOFOLLOW/u);
 });
