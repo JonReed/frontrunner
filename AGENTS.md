@@ -271,6 +271,7 @@ OpenAI-compatible endpoints, OpenRouter and local Ollama.
 | `src/cv/generate-latex.mjs` | LaTeX CV validator + pdflatex compiler |
 | `src/scan/scan.mjs` | Zero-token portal scanner (Greenhouse/Ashby/Lever APIs, zero LLM cost) |
 | `src/scan/discover-ats.mjs` | Zero-token company-to-ATS resolver; preview-only unless `--write`, then validates and appends unique boards to `workspace/search/portals.yml` under the shared durable-state lock |
+| `src/scan/fix-slugs.mjs` | Preview and apply ATS slug migrations suggested by portal verification; writes only the canonical portals file under the shared durable-state lock |
 | `src/scan/scan-ats-full.mjs` | Reverse-ATS keyword-first scanner over full public ATS datasets (Greenhouse/Lever/Ashby/Workday/iCIMS), filtered by workspace/search/portals.yml `title_filter`/`location_filter` — no company list needed; checkpoints every 500 companies, `--resume` continues an interrupted sweep |
 | `src/scan/check-liveness.mjs` / `src/scan/liveness-core.mjs` | Job posting liveness checker + shared logic (expired signals win over generic Apply text) |
 | `src/scan/liveness-service.mjs` | Canonical API-first liveness boundary with lazy Playwright fallback |
@@ -293,6 +294,7 @@ OpenAI-compatible endpoints, OpenRouter and local Ollama.
 | `src/analysis/salary-gap.mjs` | Desired/advertised/actual comp gap analyzer — folds report `advertised_comp` + `workspace/applications/salary-observations.tsv` (JSON or `--summary`) |
 | `src/analysis/assessment-log.mjs` | Skills-assessment logger — `add` safely appends platform/subject/threshold/score + staleness note to `workspace/applications/assessments.tsv` under the shared durable-state lock (JSON or `--summary`) |
 | `src/analysis/jd-skill-gap.mjs` | Zero-LLM JD skill classifier vs `workspace/profile/cv.md`: existing / supportedByResume / gap; never auto-adds claims to `workspace/profile/cv.md` (JSON or `--summary`) |
+| `src/analysis/check-table-freshness.mjs` | Read-only staleness check for jurisdiction tables in `templates/`; expired effective dates fail, overdue review warns (JSON or `--summary`) |
 | `workspace/reports/evaluations/` | Evaluation reports `{###}-{company-slug}-{YYYY-MM-DD}.md` — Blocks A-G + Risk Summary + `## Machine Summary` YAML for downstream analysis |
 
 ### First Run — Onboarding (IMPORTANT)

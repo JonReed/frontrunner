@@ -43,6 +43,8 @@ contains only a few compatibility entry points. Common commands are exposed via
 | `npm run reconcile` | `src/tracker/reconcile-pipeline.mjs` | Remove batch-evaluated offers under the shared pipeline lock with an atomic backup/replacement |
 | `npm run cover-letter` | `src/cv/generate-cover-letter.mjs` | Render a cover-letter JSON payload to PDF |
 | `npm run verify:portals` | `src/scan/verify-portals.mjs` | Probe ATS endpoints to confirm workspace/search/portals.yml slugs resolve (network) |
+| `npm run fix:slugs` | `src/scan/fix-slugs.mjs` | Preview verified ATS slug migrations; add `-- --fix` to update the canonical portals file under lock |
+| `npm run freshness` | `src/analysis/check-table-freshness.mjs` | Check dated jurisdiction tables for expired changes and overdue review |
 | `npm run reposts` | `src/analysis/detect-reposts.mjs` | Flag re-listed (ghost) postings from scan history |
 | `npm run gemini:eval` | `src/evaluate/gemini-eval.mjs` | Evaluate a JD with Google Gemini (free-tier alternative) |
 | `npm run ollama:eval` | `src/evaluate/ollama-eval.mjs` | Evaluate a JD with a local Ollama model |
