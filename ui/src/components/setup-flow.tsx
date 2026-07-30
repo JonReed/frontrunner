@@ -28,8 +28,10 @@
  * setting it up is the wrong first impression.
  */
 
-import { useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { saveDetails } from '@/app/actions';
+import { suggestCvContact } from '@/lib/cv-contact-suggestions.mjs';
+import { suggestJobTitles } from '@/lib/job-title-suggestions.mjs';
 
 const STEPS = ['Your CV', 'About you', 'What you want', 'Finish'] as const;
 
@@ -324,8 +326,19 @@ export function SetupFlow() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
+  const suggestedContact = useMemo(() => suggestCvContact(draft.cv), [draft.cv]);
+  const suggestedRoles = useMemo(() => suggestJobTitles(draft.cv), [draft.cv]);
   const set = <K extends keyof SetupDraft>(k: K, v: SetupDraft[K]) =>
     setDraft((d) => ({ ...d, [k]: v }));
+
+  const addSuggestedRole = (title: string) =>
+    setDraft((d) => {
+      const roles = d.targetRoles.split('\n').map((role) => role.trim()).filter(Boolean);
+      if (roles.some((role) => role.toLocaleLowerCase('en') === title.toLocaleLowerCase('en'))) {
+        return d;
+      }
+      return { ...d, targetRoles: [...roles, title].join('\n') };
+    });
 
   const addCv = () =>
     setDraft((d) => ({
@@ -341,6 +354,18 @@ export function SetupFlow() {
 
   const removeCv = (id: string) =>
     setDraft((d) => ({ ...d, otherCvs: d.otherCvs.filter((c) => c.id !== id) }));
+
+  const advance = () => {
+    if (step === 0) {
+      setDraft((d) => ({
+        ...d,
+        fullName: d.fullName || suggestedContact.name || '',
+        email: d.email || suggestedContact.email || '',
+        location: d.location || suggestedContact.location || '',
+      }));
+    }
+    setStep((s) => s + 1);
+  };
 
   /**
    * Write everything, then leave setup for good.
@@ -407,7 +432,7 @@ export function SetupFlow() {
       <div className="mb-9">
         <p className="page-eyebrow">Welcome to Frontrunner</p>
         <h1 className="editorial-title">
-          {step === 0 ? 'Let us get you set up' : 'Setting up'}
+          {step === 0 ? "Let's get you set up" : 'Setting up'}
         </h1>
         {step === 0 && (
           <p className="mt-1.5 text-[15px] text-[var(--color-ink-soft)]">
@@ -561,6 +586,12 @@ export function SetupFlow() {
             Used on the CVs and cover letters this builds. Nothing here is sent anywhere on its
             own.
           </p>
+          {(suggestedContact.name || suggestedContact.email || suggestedContact.location) && (
+            <p className="mb-5 rounded-lg border border-[var(--color-line)] bg-[var(--color-card)] px-3.5 py-3 text-sm text-[var(--color-ink-soft)]">
+              We filled what we could identify in your CV. Check it and change anything that is
+              not right.
+            </p>
+          )}
           <Field label="Full name">
             <input
               className={FIELD}
@@ -602,7 +633,7 @@ export function SetupFlow() {
           </p>
           <Field
             label="Job titles you would take"
-            hint="One per line. Titles you would actually accept, not just aim for."
+            hint="Choose any useful suggestions from your CV, then add or change them. Only include roles you would actually accept."
           >
             <textarea
               className={`${FIELD} resize-y`}
@@ -611,6 +642,42 @@ export function SetupFlow() {
               onChange={(e) => set('targetRoles', e.target.value)}
               placeholder={'Head of Operations\nOperations Director'}
             />
+            {suggestedRoles.length > 0 ? (
+              <div className="mt-3">
+                <p className="text-sm font-medium text-[var(--color-ink-soft)]">
+                  Suggested from your CV
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {suggestedRoles.map((title) => {
+                    const selected = draft.targetRoles
+                      .split('\n')
+                      .some((role) => role.trim().toLocaleLowerCase('en') === title.toLocaleLowerCase('en'));
+                    return (
+                      <button
+                        key={title}
+                        type="button"
+                        onClick={() => addSuggestedRole(title)}
+                        disabled={selected}
+                        aria-pressed={selected}
+                        className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+                          selected
+                            ? 'cursor-default border-[var(--color-act)] bg-[var(--color-act-wash)] text-[var(--color-act)]'
+                            : 'cursor-pointer border-[var(--color-line-strong)] bg-[var(--color-card)] text-[var(--color-ink-soft)] hover:border-[var(--color-act)] hover:text-[var(--color-act)]'
+                        }`}
+                      >
+                        {selected ? '✓ ' : '+ '}
+                        {title}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-[var(--color-ink-faint)]">
+                We could not reliably identify a title in your CV, so add the roles you would be
+                happy to see.
+              </p>
+            )}
           </Field>
           <Field label="Salary you are aiming for" hint="Optional. Roles below it get marked down.">
             <input
@@ -730,7 +797,7 @@ export function SetupFlow() {
         {step < STEPS.length - 1 && (
           <button
             type="button"
-            onClick={() => setStep((s) => s + 1)}
+            onClick={advance}
             disabled={!canAdvance}
             className="cursor-pointer rounded-lg bg-[var(--color-act)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-act-hover)] disabled:cursor-not-allowed disabled:bg-[var(--color-line-strong)]"
           >
