@@ -52,44 +52,50 @@ silently breaks any use of `ROOT` in that file.
 | `*.test.mjs` | Auto-discovered. Helper-based suites run **in-process** and share `test-all`'s counters; `node:test` suites run in one supervised child so assertion failures propagate. Must never call `process.exit()`. |
 | `*-tests.mjs` | Standalone suite with its own runner and exit code. Invoked explicitly. |
 
-**3. Prefer new files over editing inherited ones.** This fork tracks upstream
-(`git pull upstream main`). New files can never conflict; edits to theirs can.
-When behaviour must change, add a module and call it rather than rewriting
+**3. Prefer new files over editing inherited ones.** This fork reviews the
+parent repository for useful ideas, but never imports its branch wholesale.
+New files cannot conflict with later source reviews; edits to inherited files
+can. When behaviour must change, add a module and call it rather than rewriting
 theirs.
 
-**4. Merging upstream — the whole procedure.**
+**4. Upstream maintenance is permanently selective.**
 
 ```bash
-git fetch upstream && git merge upstream/main
-# resolve conflicts (see below), then:
-node src/lib/root-paths.mjs --fix     # repair references to the old flat layout
-node test-all.mjs                     # must be 0 failures
-git add -A && git commit
+git fetch upstream
+git log --oneline --no-merges <last-reviewed-upstream-sha>..upstream/main
+git show <candidate-sha> --stat
 ```
 
-Conflicts are almost always **our paths vs their content**, and resolve the
-same way every time:
+Never merge, rebase or pull the parent branch into Frontrunner. Review each
+upstream commit as a source of ideas, choose only changes that improve this
+product, and port them through a short-lived Frontrunner PR. Prefer a clean
+reimplementation against Frontrunner's current modules and boundaries; use a
+cherry-pick only when the candidate commit is genuinely isolated and needs no
+inherited architecture, branding, agent-first workflow or unsafe behavior.
 
-| Conflict in | Resolution |
-|---|---|
-| An import block | Keep OUR paths, take any NEW imports they added |
-| A doc they improved | Take THEIRS, then `node src/lib/root-paths.mjs --fix` |
-| `README.md` | Always ours |
+For every selected change:
 
-Two things that will bite otherwise. Never `git add -A` before every conflict
-is resolved — it stages the conflict markers as content, and the suite then
-reports dozens of unrelated files as broken. And upstream writes against the
-flat layout, so their NEW code arrives referencing `scan.mjs` rather than
-`src/scan/scan.mjs`; `tests/frontrunner/root-paths.test.mjs` catches that, but
-only if you run the suite.
+1. Record the candidate SHA and the accept/reject rationale in the PR.
+2. Preserve Frontrunner paths, security controls, deterministic boundaries,
+   local UI, private workspace contract and branding.
+3. Add or strengthen destructive tests for the behavior being ported.
+4. Run `node src/lib/root-paths.mjs --fix` if imported text referenced the old
+   flat layout, then run `npm run qa:full`.
 
-**5. Application updates and upstream merges are different operations.**
+Upstream writes against a flat layout, so even useful code commonly references
+`scan.mjs` rather than `src/scan/scan.mjs`.
+`tests/frontrunner/root-paths.test.mjs` catches that class of mistake. A
+candidate that cannot pass Frontrunner's complete gate is rejected rather than
+used as a reason to weaken the gate.
+
+**5. Application updates and upstream reviews are different operations.**
 
 - Ordinary Frontrunner updates use `node update-system.mjs apply`. The updater
   is pinned to `Furls-Digital/frontrunner` and fails closed for any other
   source.
-- Maintainers merge the parent with `git fetch upstream && git merge
-  upstream/main`. Never point the application updater at the parent repository.
+- Maintainers fetch the parent only for commit-by-commit review and selectively
+  port accepted behavior. Never point the application updater at the parent
+  repository.
 
 ## The pipeline
 
