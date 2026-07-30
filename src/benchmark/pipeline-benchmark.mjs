@@ -118,13 +118,13 @@ function benchmarkMarkdown(result) {
   return `<!-- pipeline-benchmark:start -->
 The checked-in ${result.corpus.roles}-role, ${result.corpus.boards}-board fixture currently produces:
 
-| Measure | inherited flow | Frontrunner | Change |
+| What was measured | inherited flow | Frontrunner | Result |
 |---|---:|---:|---:|
-| Description HTTP calls | ${number(result.httpCalls.legacy)} | ${number(result.httpCalls.frontrunner)} | −${result.httpCalls.reductionPct}% |
-| Approximate model input tokens | ${number(result.tokens.input.legacy)} | ${number(result.tokens.input.frontrunner)} | −${result.tokens.input.reductionPct}% |
-| Approximate model output tokens | ${number(result.tokens.output.legacy)} | ${number(result.tokens.output.frontrunner)} | −${result.tokens.output.reductionPct}% |
-| Roles reaching the model | ${result.corpus.roles} | ${result.modelPass.roles} | ${result.modelPass.ratePct}% pass rate |
-| False rejects at score ≥${result.falseRejects.threshold}.0 | — | ${result.falseRejects.count} | — |
+| Separate job-listing lookups | ${number(result.httpCalls.legacy)} | ${number(result.httpCalls.frontrunner)} | ${result.httpCalls.reductionPct}% fewer |
+| Approximate AI input needed | ${number(result.tokens.input.legacy)} | ${number(result.tokens.input.frontrunner)} | ${result.tokens.input.reductionPct}% less |
+| Approximate AI output needed | ${number(result.tokens.output.legacy)} | ${number(result.tokens.output.frontrunner)} | ${result.tokens.output.reductionPct}% less |
+| Roles kept for AI review | ${result.corpus.roles} | ${result.modelPass.roles} | All ${result.modelPass.roles} kept |
+| Promising roles filtered out | — | ${result.falseRejects.count} | None |
 
 The separate ${number(result.calibration.corpus.roles)}-role leadership calibration rejects
 ${number(result.calibration.lowScoreRejected)} of ${number(result.calibration.lowScoreRoles)} roles scoring

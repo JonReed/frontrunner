@@ -7,8 +7,8 @@
 <h1 align="center">Frontrunner</h1>
 
 <p align="center">
-  <strong>Open-source, local-first AI job search.</strong><br>
-  Find strong matches, prepare grounded applications, and keep every next step clear.
+  <strong>Turn your Claude or ChatGPT subscription into a personal job-search assistant.</strong><br>
+  Find promising roles, filter the noise, prepare stronger applications, and keep every next step clear.
 </p>
 
 <p align="center">
@@ -21,15 +21,15 @@
   <a href="https://github.com/Furls-Digital/frontrunner/issues">Issues</a>
 </p>
 
-Frontrunner is a local-first job-search product. It finds roles, filters obvious
-mismatches before spending model tokens, evaluates the rest against your real
-experience, and keeps your applications and documents together on your
-computer.
+Frontrunner works through Claude Code or Codex, using the AI subscription you
+already have to manage the whole search. It finds roles, clears away obvious
+mismatches, evaluates the strongest possibilities against your real experience,
+and keeps your applications and documents together on your computer.
 
 > **Current status:** the workflow-first interface covers setup, discovery,
 > assessment, tailored CV preparation, application tracking, and follow-ups.
-> Installation still requires Node.js, Git, and an AI coding assistant, so this
-> is not yet a one-click consumer install.
+> Setup is guided by Claude Code or Codex rather than a traditional one-click
+> installer.
 
 ## One clear flow
 
@@ -43,7 +43,7 @@ flowchart LR
 
 | Local-first | Evidence-grounded | Efficient by design |
 |---|---|---|
-| Your profile, tracker, reports, and documents are readable files in a workspace on your computer. | Tailored material can reframe your experience, but never invent it. | APIs and deterministic checks do the mechanical work before a model is used. |
+| Your profile, tracker, reports, and documents are readable files in a workspace on your computer. | Tailored material can reframe your experience, but never invent it. | Repetitive sorting happens first, leaving more of your AI subscription for roles with real potential. |
 
 Frontrunner never submits an application. It helps you decide, prepares the
 material, and keeps the process organised; you review everything and make the
@@ -73,19 +73,20 @@ Only the final evaluation stage needs a model.
 
 ## Measured difference
 
-Frontrunner adds bulk job-description ingestion, conservative filtering, and a
-compact scoring contract to the inherited workflow.
+Frontrunner does the repetitive work in groups and filters conservatively before
+asking AI to judge a role. The result is less wasted subscription usage without
+discarding promising opportunities.
 
 <!-- pipeline-benchmark:start -->
 The checked-in 8-role, 3-board fixture currently produces:
 
-| Measure | inherited flow | Frontrunner | Change |
+| What was measured | inherited flow | Frontrunner | Result |
 |---|---:|---:|---:|
-| Description HTTP calls | 8 | 3 | −62.5% |
-| Approximate model input tokens | 286,398 | 21,441 | −92.5% |
-| Approximate model output tokens | 17,125 | 3,123 | −81.8% |
-| Roles reaching the model | 8 | 8 | 100% pass rate |
-| False rejects at score ≥3.0 | — | 0 | — |
+| Separate job-listing lookups | 8 | 3 | 62.5% fewer |
+| Approximate AI input needed | 286,398 | 21,441 | 92.5% less |
+| Approximate AI output needed | 17,125 | 3,123 | 81.8% less |
+| Roles kept for AI review | 8 | 8 | All 8 kept |
+| Promising roles filtered out | — | 0 | None |
 
 The separate 105-role leadership calibration rejects
 15 of 88 roles scoring
