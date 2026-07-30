@@ -15,7 +15,8 @@
     "hooks:install": "git config core.hooksPath .github/hooks",
     "doctor": "node doctor.mjs",
     "ui": "npm --prefix ui run dev",
-    "ui:install": "npm --prefix ui install",
+    "ui:install": "npm --prefix ui ci",
+    "browser:install": "playwright install chromium",
     "or": "node src/evaluate/openrouter-runner.mjs",
     "or:scan": "node src/evaluate/openrouter-runner.mjs scan",
     "or:pipeline": "node src/pipeline/run.mjs --engine openrouter",
@@ -66,7 +67,6 @@
     "star": "node src/evaluate/match-star.mjs",
     "archive": "node src/scan/archive-posting.mjs",
     "prepare:application": "node src/evaluate/prepare-application.mjs",
-    "postinstall": "npx playwright install chromium --with-deps || npx playwright install chromium --with-deps",
     "check:paths": "node src/lib/root-paths.mjs",
     "fix:paths": "node src/lib/root-paths.mjs --fix"
   },

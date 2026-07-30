@@ -12,6 +12,7 @@ import {
   assertOfficialUpdateSource,
   CANONICAL_REPO,
   FRONTRUNNER_REPO_SLUG,
+  installPlaywrightBrowser,
   installUpdatedDependencies,
 } from '../../update-system.mjs';
 
@@ -130,4 +131,25 @@ test('dependency installation covers every shipped app and fails the update on a
   } finally {
     rmSync(fixtureRoot, { recursive: true, force: true });
   }
+});
+
+test('browser installation uses the pinned local npm script instead of npx', () => {
+  const calls = [];
+  installPlaywrightBrowser('/fixture/frontrunner', {
+    timeout: 1234,
+    stdio: 'pipe',
+    run(command, args, options) {
+      calls.push({ command, args, options });
+    },
+  });
+
+  assert.deepEqual(calls, [{
+    command: 'npm',
+    args: ['run', 'browser:install', '--silent'],
+    options: {
+      cwd: '/fixture/frontrunner',
+      timeout: 1234,
+      stdio: 'pipe',
+    },
+  }]);
 });

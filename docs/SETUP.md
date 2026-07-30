@@ -10,18 +10,28 @@
 
 ### Recommended
 
-Clone the official Frontrunner repository and install its dependencies:
+Clone the official Frontrunner repository and start its local interface:
 
 ```bash
 git clone https://github.com/Furls-Digital/frontrunner.git
 cd frontrunner
-npm install
+npm ci
+npm run ui:install
+npm run ui
+```
+
+Open <http://127.0.0.1:3100/welcome>.
+
+If you prefer a conversational agent host, run one from the repository instead
+of starting the UI:
+
+```bash
 claude   # or codex / agy
 ```
 
-Claude Code, Codex and Antigravity CLI are the tested hosts. Other agent CLIs
-may work through the shared `AGENTS.md` contract as compatibility paths but are
-not supported configurations; see [Supported CLIs](SUPPORTED_CLIS.md).
+Claude Code, Codex and Antigravity CLI are the tested agent hosts. Other agent
+CLIs may work through the shared `AGENTS.md` contract as compatibility paths
+but are not supported configurations; see [Supported CLIs](SUPPORTED_CLIS.md).
 
 **On first launch, Frontrunner walks you through setup by chatting** — it asks
 for your CV, your details (name, target roles, salary), and sets up the job
@@ -57,7 +67,7 @@ codex exec "Run frontrunner tracker mode and summarize the current statuses."
 ```bash
 git clone https://github.com/Furls-Digital/frontrunner.git
 cd frontrunner
-npm install
+npm ci
 ```
 
 Then open your AI CLI in the folder — the same first-run onboarding applies. Use this path if you want to track a specific branch, contribute, or audit the code before installing dependencies.
@@ -69,7 +79,7 @@ Then open your AI CLI in the folder — the same first-run onboarding applies. U
 PDFs are rendered with a headless Chromium. Install it once per machine:
 
 ```bash
-npx playwright install chromium
+npm run browser:install
 ```
 
 ## Available Commands
@@ -94,9 +104,16 @@ node src/tracker/verify-pipeline.mjs     # Check pipeline integrity
 
 ## Local Interface
 
-The supported workflow remains conversation-first. `ui/` is the incomplete
-workflow-first Frontrunner interface and the only web runtime under active
-development. It is not yet a one-click consumer installation.
+`ui/` is the supported workflow-first local interface and the only web runtime
+under active development. It remains bound to loopback and is not yet a
+one-click consumer installation.
+
+```bash
+npm run ui:install
+npm run ui
+```
+
+Open <http://127.0.0.1:3100/welcome>.
 
 Do not run `web/`. That directory preserves inherited source for upstream
 reference only. Its `dev` and `start` commands deliberately fail, and its

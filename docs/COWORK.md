@@ -13,7 +13,7 @@ Cowork mounts your frontrunner folder and the agent reads the same instruction f
 1. In a terminal (one time), clone frontrunner **and install its dependencies** — Cowork's local shell has no npm network access, so do this before opening the folder:
    ```bash
    git clone https://github.com/Furls-Digital/frontrunner.git ~/frontrunner
-   cd ~/frontrunner && npm install
+   cd ~/frontrunner && npm ci
    ```
 2. Install [Claude Cowork](https://claude.com/download) and, in **Colaborar/Collaborate** mode, add the `~/frontrunner` folder.
 3. Say (anchored, so Cowork's own generic setup doesn't hijack the phrase "set me up"):
@@ -30,7 +30,7 @@ Cowork mounts your frontrunner folder and the agent reads the same instruction f
 | Merge/validation scripts (`src/tracker/merge-tracker.mjs`, `src/tracker/verify-pipeline.mjs`, …) | ✅ Sandbox |
 | **PDF generation** (`src/cv/generate-pdf.mjs`) and **browser-driven checks** (Playwright) | ⚠️ Playwright's Chromium lives on your machine, not in the sandbox — run these through the local shell when asked, or generate the HTML in Cowork and print to PDF |
 
-That Playwright caveat is the only real difference from the CLI experience. Two more small notes from verification: run `npm install` in a terminal before starting (Cowork's local shell can't reach npm), and if a stray `workspace/reports/evaluations/.reserve-*` sentinel file survives a run (Cowork's file bridge can't delete files), it's harmless — the allocator garbage-collects stale sentinels after 4 hours.
+That Playwright caveat is the only real difference from the CLI experience. Two more small notes from verification: run `npm ci` in a terminal before starting (Cowork's local shell can't reach npm), and use `npm run browser:install` there if you need browser-backed features. If a stray `workspace/reports/evaluations/.reserve-*` sentinel file survives a run (Cowork's file bridge can't delete files), it's harmless — the allocator garbage-collects stale sentinels after 4 hours.
 
 ## Credit where due
 
