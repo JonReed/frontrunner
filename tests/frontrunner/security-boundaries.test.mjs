@@ -209,8 +209,28 @@ test('CV tailoring excludes identity and local paths from model output', () => {
   assert.doesNotMatch(contract, /required:\s*\[[^\]]*['"]candidate['"]/);
   assert.doesNotMatch(`${claude}\n${openai}`, /payload\.experience\?\.\[0\]\?\.company/);
   assert.doesNotMatch(openai, /Output ONLY raw HTML|tailoredHtml/);
-  assert.match(claude, /replaceFileAtomic\(html,\s*readFileSync\(renderedHtml/);
-  assert.match(openai, /replaceFileAtomic\(outputPath,\s*readFileSync\(renderedFile/);
+  assert.match(claude, /replaceFileAtomic\(html,\s*readBoundedRegularFileSync\(renderedHtml/);
+  assert.match(openai, /replaceFileAtomic\(outputPath,\s*readBoundedRegularFileSync\(renderedFile/);
+});
+
+test('canonical modes keep hostile job content away from tool-capable agents', () => {
+  const shared = readFileSync(join(ROOT, 'modes', '_shared.md'), 'utf8');
+  const scan = readFileSync(join(ROOT, 'modes', 'scan.md'), 'utf8');
+  const automatic = readFileSync(join(ROOT, 'modes', 'auto-pipeline.md'), 'utf8');
+  const pdf = readFileSync(join(ROOT, 'modes', 'pdf.md'), 'utf8');
+  const router = readFileSync(join(ROOT, '.agents', 'skills', 'frontrunner', 'SKILL.md'), 'utf8');
+  const codexGuide = readFileSync(join(ROOT, 'docs', 'CODEX.md'), 'utf8');
+  const parserGuide = readFileSync(join(ROOT, 'docs', 'local-parser-cookbook.md'), 'utf8');
+
+  assert.match(scan, /Source coverage belongs in code, not\s+in an agent prompt/);
+  assert.match(automatic, /zero tools/);
+  assert.match(pdf, /Do not read a job description into\s+the interactive agent/);
+  assert.match(shared, /Do not spawn agents for scanning, fetching, liveness, filtering/);
+  assert.doesNotMatch(`${scan}\n${automatic}`, /browser_navigate|browser_snapshot|WebFetch/);
+  assert.match(router, /Do not delegate `scan`, `pipeline`, liveness, fetching, filtering/);
+  assert.doesNotMatch(router, /Modes delegated to subagent|Agent\(/);
+  assert.doesNotMatch(codexGuide, /Browser-heavy flows such as `scan`, `pipeline`/);
+  assert.doesNotMatch(parserGuide, /Agent scan|full agent scan mode|Nivel 3 WebSearch/);
 });
 
 test('UI worker state uses atomic replacement rather than truncating live state', () => {

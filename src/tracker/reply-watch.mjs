@@ -11,7 +11,6 @@
  *   node src/tracker/reply-watch.mjs [path/to/candidates.json]
  */
 
-import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline';
 import { fileURLToPath } from 'node:url';
@@ -20,12 +19,41 @@ import { resolveColumns, parseTrackerRow } from './tracker-parse.mjs';
 import {
   openTrackerTransaction, rebuildRow, resolveTrackerPath,
 } from './tracker-utils.mjs';
+import { readBoundedRegularFileSync } from '../lib/safe-file-read.mjs';
 import { runCheckedSubprocess } from '../security/subprocess.mjs';
 
 import { ROOT as __dirname } from '#paths';
 const DEFAULT_CANDIDATES_PATH = path.join(__dirname, 'workspace', 'applications', 'reply-candidates.json');
 const APPS_FILE = resolveTrackerPath(__dirname);
 const FOLLOWUPS_FILE = path.join(__dirname, 'workspace', 'applications', 'follow-ups.md');
+const MAX_TRACKER_BYTES = 5 * 1024 * 1024;
+const MAX_FOLLOWUPS_BYTES = 5 * 1024 * 1024;
+const MAX_CANDIDATES_BYTES = 10 * 1024 * 1024;
+const MAX_CANDIDATES = 10_000;
+
+function validateCandidate(candidate, index) {
+  if (
+    !candidate
+    || typeof candidate !== 'object'
+    || Array.isArray(candidate)
+    || typeof candidate.message_id !== 'string'
+    || !/^[a-zA-Z0-9._:@/-]{1,500}$/u.test(candidate.message_id)
+    || typeof candidate.from !== 'string'
+    || candidate.from.length > 1_000
+    || typeof candidate.subject !== 'string'
+    || candidate.subject.length > 2_000
+    || typeof candidate.body_snippet !== 'string'
+    || candidate.body_snippet.length > 100_000
+    || (
+      candidate.signal !== null
+      && candidate.signal !== undefined
+      && (typeof candidate.signal !== 'string' || candidate.signal.length > 100)
+    )
+  ) {
+    throw new Error(`entry ${String(index + 1)} is malformed or exceeds safe limits`);
+  }
+  return candidate;
+}
 
 // Helper to ask a question in the CLI
 function askQuestion(query) {
@@ -54,52 +82,14 @@ function getSignalDesc(text, signal) {
   return signal || 'none';
 }
 
-// Create a default set of mock candidates if the file doesn't exist
-function ensureCandidatesFile(filePath) {
-  if (fs.existsSync(filePath)) return;
-
-  const mockCandidates = [
-    {
-      message_id: 'msg1',
-      from: 'recruiter@wingyun.com',
-      subject: '恭喜简历通过，杭州赢云贸易有限公司邀您面试',
-      body_snippet: '您的首轮面试是AI微信小程序面试。面试形式：AI微信小程序面试，面试时长：约15~30分钟',
-      signal: 'interview_invite'
-    },
-    {
-      message_id: 'msg2',
-      from: 'hr@examplelabs.com',
-      subject: 'Update on your application for Full-stack Engineer',
-      body_snippet: '很遗憾地通知您，您的简历与我们当前岗位的需求暂不匹配，不合适我司的要求，未能进入下一轮。',
-      signal: 'rejection'
-    },
-    {
-      message_id: 'msg3',
-      from: 'alerts@zhaopin.com',
-      subject: 'Zhaopin job alert',
-      body_snippet: '我们为您推荐了以下职位：邀请投递测试工程师岗位，现在沟通，抢面试先机！近期热招职位，立即投递！',
-      signal: null
-    },
-    {
-      message_id: 'msg4',
-      from: 'hr@somecompany.com',
-      subject: '补充信息',
-      body_snippet: '邀请您在面试/入职之前更新或补充最新的应聘信息。',
-      signal: null
-    }
-  ];
-
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, JSON.stringify(mockCandidates, null, 2), 'utf-8');
-  console.log(`Created default mock candidates file at ${filePath}`);
-}
-
 // Load applications tracker rows
 function loadTrackerApps() {
-  if (!fs.existsSync(APPS_FILE)) {
-    return [];
-  }
-  const content = fs.readFileSync(APPS_FILE, 'utf-8');
+  const content = readBoundedRegularFileSync(APPS_FILE, {
+    maxBytes: MAX_TRACKER_BYTES,
+    allowMissing: true,
+    label: 'applications tracker',
+  });
+  if (content === null) return [];
   const lines = content.split('\n');
   const colmap = resolveColumns(lines);
   const apps = [];
@@ -114,10 +104,12 @@ function loadTrackerApps() {
 
 // Load followups history
 function loadFollowups() {
-  if (!fs.existsSync(FOLLOWUPS_FILE)) {
-    return [];
-  }
-  const content = fs.readFileSync(FOLLOWUPS_FILE, 'utf-8');
+  const content = readBoundedRegularFileSync(FOLLOWUPS_FILE, {
+    maxBytes: MAX_FOLLOWUPS_BYTES,
+    allowMissing: true,
+    label: 'follow-up history',
+  });
+  if (content === null) return [];
   const lines = content.split('\n');
   const followups = [];
   for (const line of lines) {
@@ -230,16 +222,27 @@ Usage:
   }
 
   const candidatesPath = arg || DEFAULT_CANDIDATES_PATH;
-  ensureCandidatesFile(candidatesPath);
 
-  if (!fs.existsSync(candidatesPath)) {
-    console.error(`Error: candidates file not found at ${candidatesPath}`);
+  const candidatesText = readBoundedRegularFileSync(candidatesPath, {
+    maxBytes: MAX_CANDIDATES_BYTES,
+    allowMissing: true,
+    label: 'reply candidates',
+  });
+  if (candidatesText === null) {
+    console.error(
+      `Error: candidates file not found at ${candidatesPath}\n`
+      + 'Add a real reply with `node src/tracker/paste-reply.mjs`; no sample employer messages were created.',
+    );
     process.exit(1);
   }
 
   let candidates;
   try {
-    candidates = JSON.parse(fs.readFileSync(candidatesPath, 'utf-8'));
+    candidates = JSON.parse(candidatesText);
+    if (!Array.isArray(candidates) || candidates.length > MAX_CANDIDATES) {
+      throw new Error(`expected an array of at most ${String(MAX_CANDIDATES)} entries`);
+    }
+    candidates = candidates.map(validateCandidate);
   } catch (e) {
     console.error(`Error parsing candidates JSON: ${e.message}`);
     process.exit(1);

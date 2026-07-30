@@ -123,6 +123,9 @@ test('no module outside src/paths.mjs derives the repo root from its own locatio
   // expensive. If it creeps back, the next one will be expensive too.
   const ALLOWED = new Set([
     'src/paths.mjs',
+    // The updater must be self-loading because old clients check out this one
+    // file before the target release has materialized its dependencies.
+    'update-system.mjs',
     // Must resolve its own location: it detects being run from an untracked
     // temp copy, which a shared ROOT would mask.
     'validate-system-paths-coverage.mjs',
@@ -130,7 +133,6 @@ test('no module outside src/paths.mjs derives the repo root from its own locatio
   const offenders = [];
   for (const m of MODULES) {
     if (ALLOWED.has(m)) continue;
-    if (!m.includes('/')) continue;             // root-level: own dirname IS the root
     if (m.startsWith('batch/')) continue;       // standalone batch tooling
     const src = readFileSync(join(ROOT, m), 'utf8');
     // Match ANY use, not just `const X = ...`. scan.mjs built its providers

@@ -114,27 +114,33 @@ export function parseJobUrl(raw) {
   } catch {
     return null;
   }
+  if (u.protocol !== 'https:') return null;
   const host = u.hostname.toLowerCase();
   const parts = u.pathname.split('/').filter(Boolean);
 
   // Greenhouse: job-boards[.eu].greenhouse.io/{slug}/jobs/{id}
   //             boards.greenhouse.io/{slug}/jobs/{id}
-  if (host.endsWith('greenhouse.io')) {
+  const greenhouseEu = host === 'job-boards.eu.greenhouse.io';
+  if (
+    host === 'job-boards.greenhouse.io'
+    || greenhouseEu
+    || host === 'boards.greenhouse.io'
+  ) {
     const i = parts.indexOf('jobs');
     if (i > 0 && parts[i + 1]) {
-      return { provider: 'greenhouse', slug: parts[i - 1], jobId: parts[i + 1], eu: host.includes('.eu.') };
+      return { provider: 'greenhouse', slug: parts[i - 1], jobId: parts[i + 1], eu: greenhouseEu };
     }
     return null;
   }
 
   // Ashby: jobs.ashbyhq.com/{slug}/{uuid}
-  if (host.endsWith('ashbyhq.com')) {
+  if (host === 'jobs.ashbyhq.com') {
     if (parts.length >= 2) return { provider: 'ashby', slug: parts[0], jobId: parts[1] };
     return null;
   }
 
   // Lever: jobs.lever.co/{slug}/{uuid}
-  if (host.endsWith('lever.co')) {
+  if (host === 'jobs.lever.co' || host === 'jobs.eu.lever.co') {
     if (parts.length >= 2) return { provider: 'lever', slug: parts[0], jobId: parts[1] };
     return null;
   }

@@ -8,12 +8,9 @@
  */
 
 import {
-  existsSync,
   mkdirSync,
   mkdtempSync,
-  readFileSync,
   rmSync,
-  statSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -22,6 +19,7 @@ import { pathToFileURL } from 'node:url';
 
 import { ROOT } from '#paths';
 import { replaceFileAtomic } from '../lib/locked-file.mjs';
+import { readBoundedRegularFileSync } from '../lib/safe-file-read.mjs';
 import { outputLanguageInstruction, parseOutputLanguage } from '../lib/profile-language.mjs';
 import { frameUntrustedJobText } from '../security/job-document.mjs';
 import { requestModelJson } from '../security/model-http.mjs';
@@ -62,15 +60,13 @@ function option(args, name, fallback = '') {
 }
 
 function readBoundedFile(file, label, { required = true } = {}) {
-  if (!existsSync(file)) {
-    if (required) throw new Error(`${label} not found: ${file}`);
-    return '';
-  }
-  const size = statSync(file).size;
-  if (size > MAX_SOURCE_BYTES) {
-    throw new Error(`${label} exceeds ${MAX_SOURCE_BYTES} bytes`);
-  }
-  return readFileSync(file, 'utf8').trim();
+  const content = readBoundedRegularFileSync(file, {
+    maxBytes: MAX_SOURCE_BYTES,
+    allowMissing: !required,
+    label,
+  });
+  if (content === null) return '';
+  return content.trim();
 }
 
 export function endpointPolicy(baseUrl, apiKey) {
@@ -249,7 +245,10 @@ export async function runOpenAiTailoring({
       { cwd: rootDir, stdio: ['ignore', 'pipe', 'pipe'] },
     );
     mkdirSync(outputDir, { recursive: true });
-    replaceFileAtomic(outputPath, readFileSync(renderedFile, 'utf8'), { mode: 0o600 });
+    replaceFileAtomic(outputPath, readBoundedRegularFileSync(renderedFile, {
+      maxBytes: MAX_SOURCE_BYTES,
+      label: 'rendered CV',
+    }), { mode: 0o600 });
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }

@@ -16,7 +16,7 @@ src/analysis/        patterns, upskill, stats, salary, funnel
 src/evaluate/        model-backed evaluation and tailoring
 src/application/     local operations, persistent jobs, supervision, cancellation
 src/lib/             shared helpers
-tests/               ALL tests (see the two conventions below)
+tests/               ALL tests; runner/core orchestration plus focused suites
 templates/ modes/ providers/ config/   versioned system content
 workspace/                              private/generated/runtime content
 ```
@@ -35,9 +35,11 @@ const ROOT = dirname(fileURLToPath(import.meta.url));    // WRONG
 
 61 modules each had their own copy of the second form, which is why moving a
 file used to break everything. A test enforces this
-(`tests/frontrunner/module-loadability.test.mjs`). The one documented
-exception is `validate-system-paths-coverage.mjs`, which must resolve its own
-location to detect being run from a temp copy.
+(`tests/frontrunner/module-loadability.test.mjs`). The documented exceptions
+are `validate-system-paths-coverage.mjs`, which must resolve its own location
+to detect being run from a temp copy, and `update-system.mjs`, which must
+remain self-loading because old clients bootstrap an update by checking out
+that file before the rest of the target release exists.
 
 Note `import { ROOT } from '#paths'; export { ROOT };` — a bare
 `export { ROOT } from '#paths'` re-exports **without a local binding**, which
@@ -551,7 +553,8 @@ examples, not support commitments.
 
 ## Stack and Conventions
 
-- Node.js (`.mjs`), Playwright (PDF + scraping), YAML (config), HTML/CSS (template), Markdown (data), Canva MCP (optional visual CV)
+- Node.js (`.mjs`), Playwright (PDF + application-owned bounded browser
+  fallback), YAML (config), HTML/CSS (template), Markdown (data)
 - Output in `workspace/documents/` · Reports in `workspace/reports/evaluations/`
   · JDs in `workspace/jobs/descriptions/` (referenced as
   `local:workspace/jobs/descriptions/{file}` in pipeline.md) · Mutable batch

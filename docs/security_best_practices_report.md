@@ -21,6 +21,15 @@ same review fixed a boundary-contract defect where the interface accepted a
 have one explicit 1.5 MiB aggregate cap while every other local protocol keeps
 the 64 KiB default.
 
+The CodeQL backlog review on 2026-07-30 fixed four further classes of defect:
+ATS URLs now require HTTPS and exact provider hosts; hostile prefilter patterns
+run through a linear-time RE2-compatible engine; active local readers open and
+validate one descriptor instead of checking then reopening a path; and
+`reply-watch` no longer invents sample employer messages when user input is
+missing. The interactive scan, automatic-evaluation and PDF mode instructions
+now delegate mechanical work to deterministic code and expose hostile job text
+only to tool-less, schema-bounded model workers.
+
 ## Remediation status
 
 | Finding | Severity | Status | Implemented control |
@@ -30,6 +39,11 @@ the 64 KiB default.
 | FR-004 | Low | Remediated | UI accepts only `127.0.0.1:3100` and `localhost:3100`, with their matching HTTP Origins when present |
 | FR-005 | Low | Remediated | Fixed launcher supplies the canonical root and closed Next.js process specification; artifact requests use role IDs rather than paths |
 | FR-006 | Reliability | Remediated | Profile transport and Server Action enforce the same explicit 1.5 MiB aggregate cap |
+| FR-007 | Medium | Remediated | Exact HTTPS provider-host allowlists reject suffix/lookalike domains before API selection |
+| FR-008 | Medium | Remediated | User filter patterns compile with RE2-compatible linear-time semantics; lookaround and backreferences fail closed |
+| FR-009 | Low | Remediated | Descriptor-first bounded reads remove active read-side check/reopen races and reject final symlinks on POSIX |
+| FR-010 | Integrity | Remediated | Missing reply input exits without writing or seeding fictitious user content |
+| FR-011 | Defense in depth | Remediated | Canonical mode prompts route scans, evaluation and tailoring through deterministic orchestration and zero-tool model contracts |
 
 ## Scope and assumptions
 

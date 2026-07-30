@@ -23,7 +23,9 @@ test('every shipped package declares the same Node minimum', () => {
 });
 
 test('doctor enforces Node 22.5 instead of treating it as optional', () => {
-  const source = readFileSync(join(ROOT, 'doctor.mjs'), 'utf8');
+  const entrypoint = readFileSync(join(ROOT, 'doctor.mjs'), 'utf8');
+  const source = readFileSync(join(ROOT, 'src/application/doctor.mjs'), 'utf8');
+  assert.match(entrypoint, /import '\.\/src\/application\/doctor\.mjs'/);
   assert.match(source, /Node\.js >= 22\.5\.0/);
   assert.doesNotMatch(source, /major >= 18/);
   assert.doesNotMatch(source, /highly recommended/);

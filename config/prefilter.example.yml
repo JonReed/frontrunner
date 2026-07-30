@@ -14,7 +14,8 @@
 # DESIGN RULE: bias toward keeping. An unclear role passes through to the LLM.
 # A false reject costs an opportunity; a false keep costs a few cents.
 #
-# All patterns are case-insensitive JS regex fragments.
+# All patterns are case-insensitive RE2-compatible regex fragments. They run
+# through a linear-time engine, so lookarounds and backreferences are rejected.
 
 # ---------------------------------------------------------------------------
 # keep_signals — tokens implying the role owns an org, a programme, or a P&L.
@@ -136,7 +137,7 @@ below_level: []
 #   - '\b(intern|internship|graduate|apprentice|trainee|placement)\b'
 #   - '\bjunior\b'
 #   - '\bentry[- ]level\b'
-#   - '\bassociate\b(?!\s+(director|partner|vp))'
+#   - '\bassociate\b'
 #   - '\bfellows?(hips?)?\b'
 #   - '\bresidency\b'
 #   - '\bbootcamp\b'

@@ -5,7 +5,9 @@ import { readFileSync } from 'node:fs';
 import { ROOT } from '#paths';
 
 test('aggregate runner supervises node:test suites instead of exiting over their results', () => {
-  const source = readFileSync(`${ROOT}/test-all.mjs`, 'utf8');
+  const entrypoint = readFileSync(`${ROOT}/test-all.mjs`, 'utf8');
+  const source = readFileSync(`${ROOT}/tests/runner.mjs`, 'utf8');
+  assert.match(entrypoint, /import '\.\/tests\/runner\.mjs'/);
   assert.match(source, /nodeTestFiles\.push\(f\)/);
   assert.match(source, /spawnSync\(NODE, \['--test', \.\.\.nodeTestFiles\]/);
   assert.match(source, /result\.status === 0/);

@@ -84,6 +84,11 @@ supported launch path and a direct Next.js bypass remain unavailable.
 - The UI is intended for one user and must remain bound to the local machine.
 - Core providers use anonymous public endpoints only. Authenticated sources are
   intentionally unsupported.
+- CodeQL scans every reachable backend and `ui/` source with the
+  `security-extended` query suite. It excludes only the runtime-disabled
+  inherited `web/` tree and test fixtures that deliberately construct hostile
+  inputs; a repository test prevents the exclusion list from expanding
+  silently.
 - Every website, API response, feed entry, job URL, job description, and field
   derived from one is attacker-controlled data.
 - Candidate CV/profile data, local files, API credentials, and AI CLI sessions

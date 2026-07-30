@@ -570,6 +570,8 @@ From: <sender>
 ```
 
 If no `Subject:`/`From:` header lines are found, the whole file is treated as the body. After appending, run `node src/tracker/reply-watch.mjs` to classify the new candidate and review suggested tracker updates.
+If the candidates file does not exist, `reply-watch.mjs` exits without creating
+anything; sample employer messages are never inserted into user state.
 
 **Exit codes:** `0` candidate appended, `1` missing `--file` argument, input file not found, or no subject/body text found.
 
@@ -609,9 +611,12 @@ Renders a cover-letter JSON payload to PDF: fills
 same Playwright pipeline as CVs.
 
 ```bash
-npm run cover-letter -- payload.json
-node src/cv/generate-cover-letter.mjs --payload payload.json --out workspace/documents/slug-cover.pdf
+npm run cover-letter -- --payload payload.json
+node src/cv/generate-cover-letter.mjs --payload payload.json --out slug-cover.pdf
 ```
+
+Output is always confined to `workspace/documents/`; an `--out` value selects
+only the sanitized filename, never an arbitrary directory.
 
 ---
 
@@ -695,8 +700,15 @@ open the apply URL, and submit yourself. See
 [APPLY_AUTOFILL.md](APPLY_AUTOFILL.md).
 
 ```bash
-npm run prepare:application -- --url https://boards.greenhouse.io/acme/jobs/123
+npm run prepare:application -- \
+  --url https://boards.greenhouse.io/acme/jobs/123 \
+  --pdf workspace/documents/cv-acme.pdf \
+  --cover workspace/documents/cover-acme.txt
 ```
+
+`--pdf` is required and `--cover` is optional. Both are confined to
+`workspace/documents/`, opened without following a final symlink, and size
+bounded before any content is used.
 
 ---
 
@@ -710,7 +722,7 @@ These have no `npm run` binding — modes and agents call them with
 | `node src/tracker/set-status.mjs <report#\|company> <State> [--note]` | Canonical tracker write path: strict states.yml validation, shared lock, fsync-backed atomic publication and test user-data protection. Modes call this instead of hand-editing `applications.md` |
 | `node src/tracker/followup-cadence.mjs [--summary]` | Follow-up cadence per active application; flags overdue entries |
 | `node src/tracker/followup-seed.mjs [--backfill]` | Seed `workspace/applications/follow-ups.md` with a pinned first follow-up date when a row turns Applied; shared owner-verified locking and atomic publication preserve concurrent pins and prior bytes after interruption |
-| `node src/tracker/reply-watch.mjs` | Classify employer replies from `workspace/applications/reply-candidates.json`, match to tracker rows, print a review digest |
+| `node src/tracker/reply-watch.mjs` | Deterministically classify bounded employer replies from `workspace/applications/reply-candidates.json`, match to tracker rows, and print a review digest; missing input fails closed and never seeds examples |
 | `node src/analysis/process-quality.mjs [--summary]` | Aggregate `[process-friction]` tags from `workspace/applications/active-interviews.md` per company |
 | `node src/tracker/reserve-report-num.mjs [--count N]` | Atomically reserve report numbers for parallel workers (fixes the #749 race) |
 | `node src/tracker/agent-inbox.mjs add "..."` | Atomically append a request to the queue the agent drains at the next session start; concurrent local clients are serialized |

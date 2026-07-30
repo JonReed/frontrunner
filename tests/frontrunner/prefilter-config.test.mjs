@@ -16,13 +16,14 @@ const base = {
   comp: { enabled: true, clearance_margin: 0.8 },
 };
 
-test('config compiler rejects malformed structures and unsafe regexes', () => {
+test('config compiler rejects malformed structures and non-linear regex features', () => {
   const cases = [
     [{ ...base, below_level: 'junior' }, /below_level must be an array/],
     [{ ...base, below_leveel: [] }, /unknown key "below_leveel"/],
-    [{ ...base, keep_signals: ['('] }, /not a valid regex/],
+    [{ ...base, keep_signals: ['('] }, /not valid linear-time regex syntax/],
     [{ ...base, keep_signals: ['   '] }, /non-empty regex string/],
-    [{ ...base, keep_signals: ['^(a+)+$'] }, /super-linear regex/],
+    [{ ...base, keep_signals: ['\\bassociate\\b(?!\\s+director)'] }, /not valid linear-time regex syntax/],
+    [{ ...base, keep_signals: ['(a)\\1'] }, /not valid linear-time regex syntax/],
     [{ ...base, comp: { enabled: true, clearance_margin: 'nope' } }, /clearance_margin/],
     [{ ...base, comp: { enabled: true, clearance_margin: true } }, /clearance_margin/],
     [{
@@ -40,7 +41,7 @@ test('config compiler rejects malformed structures and unsafe regexes', () => {
     [{
       ...base,
       hard_blockers: [{ id: 'disabled_but_broken', enabled: false, all: ['('] }],
-    }, /not a valid regex/],
+    }, /not valid linear-time regex syntax/],
     [{
       ...base,
       hard_blockers: [
@@ -81,6 +82,22 @@ test('config compiler rejects malformed structures and unsafe regexes', () => {
       (error) => error instanceof PrefilterConfigError && expected.test(error.message),
     );
   }
+});
+
+test('hostile descriptions cannot trigger native-regex catastrophic backtracking', () => {
+  const rules = compilePrefilterConfig({
+    ...base,
+    hard_blockers: [{
+      id: 'hostile_pattern',
+      enabled: true,
+      all: ['^(a|aa)+$'],
+      reason: 'fixture',
+    }],
+  });
+  const startedAt = performance.now();
+  const result = classify('Role', `${'a'.repeat(23_999)}!`, {}, rules);
+  assert.equal(result.verdict, 'keep');
+  assert.ok(performance.now() - startedAt < 1_000, 'linear-time regex evaluation exceeded one second');
 });
 
 test('unsupported compensation currencies bias toward keeping', () => {

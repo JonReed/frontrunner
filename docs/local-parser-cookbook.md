@@ -71,6 +71,10 @@ The scanner only needs stdout. If a parser also writes full JSON snapshots for d
 
 Local parsers run before ATS API detection. If a local parser fails and the company has a detectable Greenhouse, Ashby, or Lever API source, `src/scan/scan.mjs` records the parser failure and falls back to the API path for that company instead of dropping it from the scan.
 
-## Agent scan (`/frontrunner scan`)
+## Canonical scan (`/frontrunner scan`)
 
-`src/scan/scan.mjs` already uses one provider per company (local parser only, no duplicate API pass). In full agent scan mode (`modes/scan.md`), when Nivel 0 succeeds for a company, the agent must **skip** Playwright (Nivel 1) and API (Nivel 2) for that company, and filter Nivel 3 WebSearch hits that match the same company. General portal queries (`site:jobs.ashbyhq.com`, role keywords) still run for discovery of other employers.
+`src/scan/scan.mjs` owns source selection and uses one provider per company.
+When a local parser succeeds, code does not duplicate the request through
+another provider. Provider APIs and the application-owned bounded Playwright
+fallback handle supported remote sources; there is no agent-authored
+Playwright/WebSearch scan tier.

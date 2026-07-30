@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import yaml from 'js-yaml';
+import { RE2JS } from 're2js';
 
 import { ROOT } from '#paths';
 
@@ -43,14 +44,6 @@ function rejectUnknownKeys(value, allowed, label, source) {
   }
 }
 
-function hasNestedUnboundedQuantifier(pattern) {
-  const stripped = pattern
-    .replace(/\\./g, 'x')
-    .replace(/\[(?:\\.|[^\]])*\]/g, 'x');
-  return /\)\s*(?:[+*]|\{\d*,\})/.test(stripped)
-    || /(?:\.\*|\.\+).*(?:\.\*|\.\+)/.test(stripped);
-}
-
 function compilePattern(value, label, source) {
   if (typeof value !== 'string' || value.trim().length === 0) {
     throw new PrefilterConfigError(source, `${label} must be a non-empty regex string`);
@@ -61,16 +54,16 @@ function compilePattern(value, label, source) {
       `${label} exceeds ${PREFILTER_CONFIG_LIMITS.maxPatternChars} characters`,
     );
   }
-  if (/(^|[^\\])\\[1-9]/.test(value)) {
-    throw new PrefilterConfigError(source, `${label} uses a backreference, which is not allowed`);
-  }
-  if (hasNestedUnboundedQuantifier(value)) {
-    throw new PrefilterConfigError(source, `${label} contains a potentially super-linear regex`);
-  }
   try {
-    return new RegExp(value, 'i');
+    // Job descriptions are hostile input. RE2JS executes the supported regex
+    // subset in linear time, so a crafted advertisement cannot trigger the
+    // catastrophic backtracking possible in JavaScript's native RegExp.
+    return RE2JS.compile(value, RE2JS.CASE_INSENSITIVE);
   } catch (error) {
-    throw new PrefilterConfigError(source, `${label} is not a valid regex: ${error.message}`);
+    throw new PrefilterConfigError(
+      source,
+      `${label} is not valid linear-time regex syntax: ${error.message}`,
+    );
   }
 }
 

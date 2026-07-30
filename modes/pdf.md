@@ -2,44 +2,33 @@
 
 ## Full pipeline
 
-1. Read `workspace/profile/cv.md` as the source of truth
-2. Ask the user for the JD if it is not in context (text or URL)
-3. Extract 15-20 keywords from the JD
-4. Run the zero-LLM skill-gap check before drafting anything: write the JD to a scratch file (e.g. `workspace/jobs/descriptions/{slug}.md`) if it isn't already one, then `node src/analysis/jd-skill-gap.mjs workspace/jobs/descriptions/{slug}.md --summary`. This classifies the JD's explicit requirements against `workspace/profile/cv.md` into three buckets — never surface `result.gap` items as if the candidate has them:
-   - `existing` — already a named skill in workspace/profile/cv.md's Skills section, safe to lead with
-   - `supportedByResume` — not a named skill yet, but workspace/profile/cv.md's prose already demonstrates it; legitimate candidates for the Skills section in the user's own words (Step 12's competency grid draws from here first)
-   - `gap` — workspace/profile/cv.md has no trace of it at all. **Tell the user explicitly which skills are gaps before generating the CV.** Never paper over a gap by inventing a claim, and never silently drop it from the conversation — the user decides whether to proceed, address it in the cover letter/interview, or skip the role
-5. Detect JD language → CV language (EN default)
-6. Detect company location → paper format:
-   - US/Canada → `letter`
-   - Rest of the world → `a4`
-7. Detect role archetype → adapt framing
-8. Build an internal recruiter-side risk map from the JD using `modes/heuristics/recruiter-side.md`: likely doubts, matching evidence, and which document section should address each doubt
-9. Rewrite Professional Summary by injecting JD keywords + exit narrative bridge ("Built and sold a business. Now applying systems thinking to [JD domain].")
-10. Select top 3-4 most relevant projects for the job
-11. Reorder experience bullets by JD relevance and by the risk map: strongest matching evidence first
-12. Build competency grid from JD requirements (6-8 keyword phrases), prioritizing `existing` and `supportedByResume` skills from Step 4 — never a `gap` skill
-13. Inject keywords naturally into existing achievements (NEVER invent)
-14. Apply the six-second clarity gate from `modes/heuristics/recruiter-side.md`: top third must make target role, strongest fit, and proof obvious
-15. Read `name` from `workspace/profile/profile.yml` → normalize to kebab-case lowercase (e.g. "John Doe" → "john-doe") → `{candidate}`
-**Filename convention (IMPORTANT).** `{report}` is the zero-padded report
-number (`001`, `042`) — the same NNN used in `workspace/reports/evaluations/NNN-…md`. It comes FIRST
-so that two roles at the same company cannot overwrite each other's CV. Without
-it, tailoring a second Monzo role silently destroys the first one's HTML, and
-its PDF too when both are generated on the same day. When there is no report
-number yet, use the tracker `#` instead; never omit it entirely.
+The canonical path is `src/cv/claude-tailor.mjs`, normally dispatched through
+the local application service as `cv.build`. Do not read a job description into
+the interactive agent and do not construct a render payload by hand.
 
-16. Build the render payload (see the **JSON Input Schema** below) from the tailored content — emit compact structured JSON, **not** full HTML markup — and write it to `/tmp/cv-{candidate}-{report}-{company}.json`
-17. Run: `node src/cv/build-cv-html.mjs /tmp/cv-{candidate}-{report}-{company}.json workspace/documents/cv-{candidate}-{report}-{company}.html {template}` — where `{template}` is the path printed by **Selecting the template** below (omit the argument to use the base `cv-template.html`). The script merges the payload into that template, owning every tag, CSS class, and the HTML escaping. Write to `workspace/documents/` (NOT a temp dir — the recorded HTML is the durable rendering source and must survive temp cleanup)
-18. Run the fact gate: `node src/cv/verify-cv-facts.mjs workspace/documents/cv-{candidate}-{report}-{company}.html`
-    - This is a hard gate before PDF rendering.
-    - If it fails, stop and fix the generated HTML by removing invented metrics or adding verified evidence to `workspace/profile/cv.md`, `workspace/profile/article-digest.md`, or `workspace/profile/cv-facts.json`.
-19. Execute: `node src/cv/generate-pdf.mjs workspace/documents/cv-{candidate}-{report}-{company}.html workspace/documents/cv-{candidate}-{report}-{company}-{YYYY-MM-DD}.pdf --format={letter|a4} --report={report number}`
-    - `{report number}` is the NNN from the report filename/link (e.g. `008` for `workspace/reports/evaluations/008-acme-….md`), not the tracker `#` column. Pass it whenever the application has (or will have) a report; it records the PDF↔report linkage in `workspace/.state/pdf-index.tsv` so scripts and interfaces can find the exact PDF. Omit it only for one-off CVs with no tracker entry.
-    - The rendered PDF has a two-page warning threshold by default. `--max-pages=N` accepts a positive integer; pass `--max-pages=1` when the user or market prefers a one-page CV.
-    - If the rendered PDF exceeds its threshold, generation warns loudly with the actual and allowed page counts plus trimming guidance, then reports and indexes the unchanged PDF so existing longer-CV flows keep working.
-    - Pass `--strict-pages` only when the user or market requires a hard limit. Strict overflow leaves the draft available for inspection but does not report or index it as successful; trim lower-priority content and rerun.
-20. Report: PDF path, number of pages, keyword coverage %, and any skill gaps from Step 4 still unaddressed
+1. Resolve the role through `node find.mjs <report#|tracker#|company> --json`.
+2. If the role has no cached description, run the canonical pipeline preparation
+   first. Never give an agent browser or filesystem tools as a fallback.
+3. Run:
+
+   ```bash
+   node src/cv/claude-tailor.mjs \
+     --url "<canonical job URL>" \
+     --report "workspace/reports/evaluations/<report>.md" \
+     --tracker "<tracker number>"
+   ```
+
+4. The worker reads bounded trusted profile sources itself, quarantines the
+   cached hostile JD, launches Claude with zero tools and a closed JSON schema,
+   injects identity in code, renders fixed templates, verifies claims, and
+   publishes/indexes the PDF through fixed paths.
+5. Report the generated PDF path. If the fact gate or page check fails, surface
+   the exact error; never bypass either gate or edit the generated HTML.
+
+For an OpenAI-compatible provider use `src/evaluate/openai-tailor.mjs`; it uses
+the same bounded tailoring contract and deterministic renderer. The schema and
+template material below document that code-owned boundary for maintainers.
+They are not instructions for an interactive agent to reproduce it.
 
 ## ATS Rules (clean parsing)
 
@@ -210,9 +199,16 @@ node src/cv/build-cv-html.mjs --preview /tmp/cv-{candidate}-{report}-{company}.j
 The preview is written to `workspace/documents/cv-preview.html`. A missing, unreadable, empty,
 or unsupported photo fails with an actionable error before any output is written.
 
-## Canva CV Generation (optional)
+## Canva CV Generation (disabled legacy reference)
 
-If `workspace/profile/profile.yml` has `cv.canva_resume_design_id` set, offer the user a choice before generating:
+Do not offer or execute this inherited connector-driven flow. It exposes
+hostile job content to a tool-capable model and lets model output drive remote
+editing operations, so it does not meet Frontrunner's execution boundary. The
+supported path is the tool-less, schema-bounded local renderer above.
+
+The remaining steps in this section describe the inherited behavior only; they
+are non-normative reference material pending removal. Historically, if
+`workspace/profile/profile.yml` had `cv.canva_resume_design_id` set, it offered:
 - **"HTML/PDF (fast, ATS-optimized)"** — existing flow above
 - **"Canva CV (visual, design-preserving)"** — new flow below
 

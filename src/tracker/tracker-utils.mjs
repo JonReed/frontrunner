@@ -318,7 +318,7 @@ export async function acquireTrackerLock(lockDir, options = {}) {
               token,
               started_at: new Date().toISOString(),
               tracker: options.tracker ?? '',
-            }, null, 2));
+            }, null, 2), { flag: 'wx', mode: 0o600 });
           } catch (ownerErr) {
             // We created the dir but could not record ownership. An empty,
             // owner-less lock dir would block every future locker until the

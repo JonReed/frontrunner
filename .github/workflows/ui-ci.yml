@@ -30,5 +30,7 @@ jobs:
           cache: npm
           cache-dependency-path: ui/package-lock.json
       - run: npm ci --ignore-scripts
-      - run: npm run typecheck
-      - run: npm run build
+      # Keep hosted UI checks behind the same root command used by the local
+      # commit/push gate, so the two cannot drift.
+      - run: npm run qa:ui
+        working-directory: .

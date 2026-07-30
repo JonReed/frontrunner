@@ -123,6 +123,18 @@ test('security checks cannot be silently downgraded and installs stay reproducib
   assert.deepEqual(violations, [], violations.join('\n'));
 });
 
+test('CodeQL scans all reachable product code and excludes only non-product trees', () => {
+  const configPath = join(ROOT, '.github', 'codeql', 'codeql-config.yml');
+  const config = yaml.load(readFileSync(configPath, 'utf8'), { schema: yaml.JSON_SCHEMA });
+  assert.deepEqual(config?.['paths-ignore'], ['tests/**', 'web/**']);
+
+  const { document } = loadWorkflow('codeql.yml');
+  const init = document.jobs?.analyze?.steps?.find(step =>
+    typeof step?.uses === 'string' && step.uses.startsWith('github/codeql-action/init@'));
+  assert.equal(init?.with?.['config-file'], './.github/codeql/codeql-config.yml');
+  assert.equal(init?.with?.queries, 'security-extended');
+});
+
 test('CI package lockfiles exist and are explicitly versionable', () => {
   const gitignore = readFileSync(join(ROOT, '.gitignore'), 'utf8');
   for (const relativePath of ['package-lock.json', 'ui/package-lock.json', 'web/package-lock.json']) {

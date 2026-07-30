@@ -10,12 +10,12 @@
 import {
   existsSync,
   lstatSync,
-  readFileSync,
 } from 'node:fs';
 import { join } from 'node:path';
 
 import { ROOT } from '#paths';
 import { mutateFileLocked } from '../lib/locked-file.mjs';
+import { readBoundedRegularFileSync } from '../lib/safe-file-read.mjs';
 import { PIPELINE_STAGES } from './progress.mjs';
 
 export const RUN_HISTORY_VERSION = '1';
@@ -35,6 +35,12 @@ const TERMINAL_STATUS_PRIORITY = Object.freeze({
 const OPERATION_RE = /^[a-z][a-z0-9.-]{0,79}$/u;
 const RUN_ID_RE = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u;
 const PIPELINE_STAGE_SET = new Set(PIPELINE_STAGES);
+
+function assertSafeHistoryWriteTarget(file) {
+  if (existsSync(file) && lstatSync(file).isSymbolicLink()) {
+    throw new Error('run history path must not be a symbolic link');
+  }
+}
 
 function safeInteger(value, fallback = null) {
   return Number.isSafeInteger(value) && value >= 0 ? value : fallback;
@@ -168,12 +174,6 @@ export function normalizeRunHistoryRecord(value) {
   return Object.freeze(record);
 }
 
-function assertSafeHistoryTarget(file) {
-  if (existsSync(file) && lstatSync(file).isSymbolicLink()) {
-    throw new Error('run history path must not be a symbolic link');
-  }
-}
-
 function parseHistory(content) {
   if (!content.trim()) return [];
   return content.trimEnd().split('\n').map((line, index) => {
@@ -211,12 +211,21 @@ export function readRunHistory(options = {}) {
   if (status !== null && !TERMINAL_STATUSES.has(status)) {
     throw new TypeError('invalid run history status filter');
   }
-  assertSafeHistoryTarget(file);
-  if (!existsSync(file)) return Object.freeze([]);
-  if (lstatSync(file).size > DEFAULT_RUN_HISTORY_BYTES) {
-    throw new Error('run history exceeds the maximum readable size');
+  let content;
+  try {
+    content = readBoundedRegularFileSync(file, {
+      maxBytes: DEFAULT_RUN_HISTORY_BYTES,
+      allowMissing: true,
+      label: 'run history',
+    });
+  } catch (error) {
+    if (error?.code === 'UNSAFE_FILE_READ' && /no larger than/u.test(error.message)) {
+      throw new Error('run history exceeds the maximum readable size');
+    }
+    throw error;
   }
-  const records = parseHistory(readFileSync(file, 'utf8'))
+  if (content === null) return Object.freeze([]);
+  const records = parseHistory(content)
     .filter(record => operation === null || record.operation === operation)
     .filter(record => status === null || record.status === status)
     .slice(-limit)
@@ -236,9 +245,9 @@ export async function writeRunHistory(value, options = {}) {
   }
   const record = normalizeRunHistoryRecord(value);
 
-  assertSafeHistoryTarget(file);
+  assertSafeHistoryWriteTarget(file);
   await mutateFileLocked(file, (content) => {
-    assertSafeHistoryTarget(file);
+    assertSafeHistoryWriteTarget(file);
     const records = parseHistory(content);
     const existingIndex = records.findIndex(item =>
       item.runId === record.runId && item.operation === record.operation);

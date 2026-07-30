@@ -30,7 +30,7 @@
  *   node src/scan/scan-ats-full.mjs --help               # print this usage block and exit
  */
 
-import { readFileSync, existsSync, mkdirSync, statSync } from 'fs';
+import { readFileSync, existsSync, mkdirSync } from 'fs';
 import { pathToFileURL } from 'url';
 import { createHash } from 'crypto';
 import path from 'path';
@@ -47,6 +47,7 @@ import icims from '../../providers/icims.mjs';
 import { buildTitleFilter, buildLocationFilter, buildContentFilter, matchedTitleKeywords, loadSeenUrls, normalizeUrlForDedup, appendToPipeline, appendToScanHistory, loadBlacklist } from './scan.mjs';
 import { SEED_SOURCES, toPortalEntry } from '../../config/seeds/vc-portfolios.mjs';
 import { removeFileProtected, replaceFileAtomic } from '../lib/locked-file.mjs';
+import { readBoundedRegularFileWithStatSync } from '../lib/safe-file-read.mjs';
 import { normalizeCompany } from '../tracker/tracker-utils.mjs';
 
 // ── Config ──────────────────────────────────────────────────────────
@@ -344,12 +345,24 @@ function parseArgs(argv) {
 // The status lets callers (and --json) distinguish a degraded scan from an empty one.
 async function loadCompanyList(name, url) {
   const cacheFile = path.join(CACHE_DIR, `${name}.json`);
-  if (existsSync(cacheFile)) {
-    const ageHours = (Date.now() - statSync(cacheFile).mtimeMs) / 3_600_000;
-    if (ageHours < CACHE_TTL_HOURS) {
-      try { return { list: JSON.parse(readFileSync(cacheFile, 'utf-8')), status: 'ok' }; } catch { /* refetch below */ }
+  let staleContent = null;
+  try {
+    const cached = readBoundedRegularFileWithStatSync(cacheFile, {
+      maxBytes: 64 * 1024 * 1024,
+      allowMissing: true,
+      label: `${name} company-list cache`,
+    });
+    if (cached !== null) {
+      staleContent = cached.content;
+      const ageHours = (Date.now() - cached.stat.mtimeMs) / 3_600_000;
+      if (ageHours < CACHE_TTL_HOURS) {
+        try {
+          const { content } = cached;
+          return { list: JSON.parse(content), status: 'ok' };
+        } catch { /* refetch below */ }
+      }
     }
-  }
+  } catch { /* refetch below */ }
   try {
     const data = await fetchJson(url, { timeoutMs: 30_000 });
     if (Array.isArray(data)) {
@@ -360,9 +373,9 @@ async function loadCompanyList(name, url) {
     console.error(`⚠️  ${name}: could not download company list — ${err.message}`);
   }
   // Stale cache beats nothing.
-  if (existsSync(cacheFile)) {
-    try { return { list: JSON.parse(readFileSync(cacheFile, 'utf-8')), status: 'stale' }; } catch { /* fall through */ }
-  }
+  try {
+    if (staleContent !== null) return { list: JSON.parse(staleContent), status: 'stale' };
+  } catch { /* fall through */ }
   return { list: [], status: 'empty' };
 }
 

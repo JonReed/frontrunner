@@ -12,6 +12,8 @@
   "scripts": {
     "test": "node test-all.mjs",
     "qa": "npm test && npm run benchmark:check",
+    "qa:ui": "npm --prefix ui run typecheck && npm --prefix ui run build",
+    "qa:full": "npm run qa && npm run qa:ui",
     "hooks:install": "git config core.hooksPath .github/hooks",
     "doctor": "node doctor.mjs",
     "ui": "npm --prefix ui run dev",
@@ -93,6 +95,7 @@
     "dotenv": "^17.0.0",
     "js-yaml": "^4.1.1",
     "playwright": "1.62.0",
+    "re2js": "2.8.6",
     "yaml": "^2.9.0"
   },
   "bugs": {

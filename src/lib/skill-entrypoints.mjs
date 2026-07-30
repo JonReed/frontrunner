@@ -9,8 +9,11 @@
 // than a skills directory, so it needs no entry. Copies for Cursor, OpenCode,
 // Qwen, Grok and Kimi were removed with those CLIs: eight byte-identical
 // copies of one 202-line file is not support, it is duplication.
-import { readFileSync, writeFileSync, existsSync, mkdirSync, lstatSync, rmSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { rmSync } from 'node:fs';
+import { join } from 'node:path';
+
+import { createFileExclusive, replaceFileAtomic } from './locked-file.mjs';
+import { readBoundedRegularFileSync } from './safe-file-read.mjs';
 
 export const CANONICAL_SKILL_PATH = '.agents/skills/frontrunner/SKILL.md';
 
@@ -53,9 +56,12 @@ export function pruneRetiredSkillEntrypoints(root, trackedPaths = []) {
 
 function readCanonical(root) {
   const canonicalPath = repoPath(root, CANONICAL_SKILL_PATH);
-  if (!existsSync(canonicalPath)) return null;
   try {
-    return readFileSync(canonicalPath, 'utf-8');
+    return readBoundedRegularFileSync(canonicalPath, {
+      maxBytes: 2 * 1024 * 1024,
+      allowMissing: true,
+      label: 'canonical skill',
+    });
   } catch {
     return null;
   }
@@ -68,21 +74,15 @@ export function materializeSkillEntrypoints(root) {
   const materialized = [];
   for (const entry of SKILL_ENTRYPOINTS) {
     const entryPath = repoPath(root, entry.path);
-    if (!existsSync(entryPath)) continue;
-
-    let stat = null;
     try {
-      stat = lstatSync(entryPath);
-    } catch {
-      continue;
-    }
-    if (stat.isSymbolicLink()) continue;
-    if (!stat.isFile()) continue;
-
-    try {
-      const content = readFileSync(entryPath, 'utf-8').trim();
+      const content = readBoundedRegularFileSync(entryPath, {
+        maxBytes: 2 * 1024 * 1024,
+        allowMissing: true,
+        label: entry.path,
+      })?.trim();
+      if (content === undefined) continue;
       if (content !== entry.pointer) continue;
-      writeFileSync(entryPath, canonicalContent);
+      replaceFileAtomic(entryPath, canonicalContent, { mode: 0o644 });
     } catch {
       continue;
     }
@@ -100,30 +100,34 @@ export function ensureSkillEntrypoints(root) {
   for (const entry of SKILL_ENTRYPOINTS) {
     const entryPath = repoPath(root, entry.path);
 
-    if (!existsSync(entryPath)) {
-      try {
-        mkdirSync(dirname(entryPath), { recursive: true });
-        writeFileSync(entryPath, entry.pointer);
-        touched.push(entry.path);
-      } catch {
-        continue;
-      }
-    }
-
-    let stat = null;
     try {
-      stat = lstatSync(entryPath);
+      const existing = readBoundedRegularFileSync(entryPath, {
+        maxBytes: 2 * 1024 * 1024,
+        allowMissing: true,
+        label: entry.path,
+      });
+      if (existing === null) {
+        try {
+          createFileExclusive(entryPath, entry.pointer, { mode: 0o644 });
+          touched.push(entry.path);
+        } catch (error) {
+          if (error?.code !== 'EEXIST') continue;
+        }
+      }
     } catch {
       continue;
     }
-    if (stat.isSymbolicLink()) continue;
-    if (!stat.isFile()) continue;
 
     try {
-      const content = readFileSync(entryPath, 'utf-8').trim();
+      const content = readBoundedRegularFileSync(entryPath, {
+        maxBytes: 2 * 1024 * 1024,
+        label: entry.path,
+      }).trim();
       if (content !== entry.pointer) continue;
-      writeFileSync(entryPath, canonicalContent);
-      if (!touched.includes(entry.path)) touched.push(entry.path);
+      replaceFileAtomic(entryPath, canonicalContent, { mode: 0o644 });
+      if (!touched.includes(entry.path)) {
+        touched.push(entry.path);
+      }
     } catch {
       continue;
     }

@@ -19,11 +19,15 @@ test('Dependabot is the only dependency update bot', () => {
 
 test('installs are lockfile-reproducible and browser setup is explicit', () => {
   const packageJson = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
+  const doctor = readFileSync(join(ROOT, 'src', 'application', 'doctor.mjs'), 'utf8');
 
   assert.equal(packageJson.scripts.postinstall, undefined);
   assert.equal(packageJson.scripts['ui:install'], 'npm --prefix ui ci');
   assert.equal(packageJson.scripts['browser:install'], 'playwright install chromium');
   assert.doesNotMatch(packageJson.scripts['browser:install'], /\bnpx\b/u);
+  assert.match(doctor, /Run: npm ci/u);
+  assert.match(doctor, /Run: npm run browser:install/u);
+  assert.doesNotMatch(doctor, /Run: npm install|npx playwright/u);
 });
 
 test('npm updates use explicit maturity windows and keep majors separate', () => {

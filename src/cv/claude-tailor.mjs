@@ -7,13 +7,15 @@
  * and index the PDF.
  */
 
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { ROOT } from '#paths';
 import { replaceFileAtomic } from '../lib/locked-file.mjs';
+import { outputLanguageInstruction, parseOutputLanguage } from '../lib/profile-language.mjs';
+import { readBoundedRegularFileSync } from '../lib/safe-file-read.mjs';
 import { frameUntrustedJobText } from '../security/job-document.mjs';
 import {
   runBoundedSubprocess,
@@ -36,12 +38,22 @@ function containedFile(base, candidate) {
 function cachedJdFor(url) {
   const jdsDir = join(ROOT, 'workspace', 'jobs', 'descriptions');
   const index = join(jdsDir, 'index.tsv');
-  if (!url || !existsSync(index)) return null;
-  for (const line of readFileSync(index, 'utf8').split(/\r?\n/).slice(1)) {
+  if (!url) return null;
+  const indexText = readBoundedRegularFileSync(index, {
+    maxBytes: 5 * 1024 * 1024,
+    allowMissing: true,
+    label: 'JD cache index',
+  });
+  if (indexText === null) return null;
+  for (const line of indexText.split(/\r?\n/).slice(1)) {
     const [entryUrl, file] = line.split('\t');
     if (entryUrl === url && file) {
       const candidate = containedFile(jdsDir, file);
-      return existsSync(candidate) ? readFileSync(candidate, 'utf8') : null;
+      return readBoundedRegularFileSync(candidate, {
+        maxBytes: 2 * 1024 * 1024,
+        allowMissing: true,
+        label: 'cached JD',
+      });
     }
   }
   return null;
@@ -105,13 +117,26 @@ export async function tailorCv({
   if (!jd) {
     throw new Error('No cached job description is available. Run the pipeline first; Frontrunner will not give an agent browser or filesystem access as a fallback.');
   }
-  const cv = readFileSync(join(ROOT, 'workspace/profile/cv.md'), 'utf8');
-  const profile = readFileSync(join(ROOT, 'workspace', 'profile', 'profile.yml'), 'utf8');
-  const proof = existsSync(join(ROOT, 'workspace/profile/article-digest.md'))
-    ? readFileSync(join(ROOT, 'workspace/profile/article-digest.md'), 'utf8')
-    : '[none supplied]';
+  const cv = readBoundedRegularFileSync(join(ROOT, 'workspace/profile/cv.md'), {
+    maxBytes: 2 * 1024 * 1024,
+    label: 'workspace/profile/cv.md',
+  });
+  const profile = readBoundedRegularFileSync(join(ROOT, 'workspace', 'profile', 'profile.yml'), {
+    maxBytes: 2 * 1024 * 1024,
+    label: 'workspace/profile/profile.yml',
+  });
+  const proof = readBoundedRegularFileSync(join(ROOT, 'workspace/profile/article-digest.md'), {
+    maxBytes: 2 * 1024 * 1024,
+    allowMissing: true,
+    label: 'workspace/profile/article-digest.md',
+  }) ?? '[none supplied]';
   const document = frameUntrustedJobText(jd);
-  const systemPrompt = buildTailoringSystemPrompt({ cv, profile, proof });
+  const systemPrompt = buildTailoringSystemPrompt({
+    cv,
+    profile,
+    proof,
+    languageInstruction: outputLanguageInstruction(parseOutputLanguage(profile)),
+  });
 
   console.log('Reading the cached job description');
   const child = await runModel('claude', buildTailorClaudeArgs(systemPrompt, model), {
@@ -155,7 +180,10 @@ export async function tailorCv({
     await runCode(process.execPath, [join(ROOT, 'src/cv/verify-cv-facts.mjs'), renderedHtml], {
       cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'],
     });
-    replaceFileAtomic(html, readFileSync(renderedHtml, 'utf8'), { mode: 0o600 });
+    replaceFileAtomic(html, readBoundedRegularFileSync(renderedHtml, {
+      maxBytes: 2 * 1024 * 1024,
+      label: 'rendered CV',
+    }), { mode: 0o600 });
     console.log('Building the PDF');
     await runCode(process.execPath, [
       join(ROOT, 'src/cv/generate-pdf.mjs'), html, pdf,
