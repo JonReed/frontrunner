@@ -407,7 +407,9 @@ export function SetupFlow() {
         setSaving(false);
         return;
       }
-      window.location.href = '/';
+      // Setup is complete; the next useful thing is the first search, not an
+      // empty dashboard that makes a new user infer the product's purpose.
+      window.location.href = '/found?welcome=1';
     });
   };
 
@@ -780,7 +782,7 @@ export function SetupFlow() {
             disabled={saving}
             className="w-full cursor-pointer rounded-lg bg-[var(--color-act)] px-5 py-3 text-[15px] font-semibold text-white transition hover:bg-[var(--color-act-hover)] disabled:cursor-not-allowed disabled:bg-[var(--color-line-strong)] sm:w-auto"
           >
-            {saving ? 'Saving…' : 'Save and start'}
+            {saving ? 'Saving…' : 'Finish and find roles'}
           </button>
         </section>
       )}

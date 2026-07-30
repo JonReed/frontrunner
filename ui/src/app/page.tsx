@@ -143,7 +143,17 @@ function Band({
   );
 }
 
-function Headline({ due, ready, nearly }: { due: number; ready: number; nearly: number }) {
+function Headline({
+  due,
+  ready,
+  nearly,
+  firstSearch,
+}: {
+  due: number;
+  ready: number;
+  nearly: number;
+  firstSearch: boolean;
+}) {
   if (due > 0) {
     return (
       <>
@@ -180,7 +190,14 @@ function Headline({ due, ready, nearly }: { due: number; ready: number; nearly: 
       </>
     );
   }
-  return (
+  return firstSearch ? (
+    <>
+      <h1 className="editorial-title">Start your search</h1>
+      <p className="mt-1 text-[15px] text-[var(--color-ink-soft)]">
+        Your profile is ready. The next step is to look for roles.
+      </p>
+    </>
+  ) : (
     <>
       <h1 className="editorial-title">You are all caught up</h1>
       <p className="mt-1 text-[15px] text-[var(--color-ink-soft)]">
@@ -234,7 +251,12 @@ export default async function NextUpPage() {
       */}
       <div className="mb-9">
         <p className="page-eyebrow">Next up</p>
-        <Headline due={dueRoles.length} ready={counts.readyToSend} nearly={counts.oneStepAway} />
+        <Headline
+          due={dueRoles.length}
+          ready={counts.readyToSend}
+          nearly={counts.oneStepAway}
+          firstSearch={roles.length === 0 && counts.inbox === 0}
+        />
       </div>
 
       <ConnectionBanner health={health} />
@@ -249,7 +271,9 @@ export default async function NextUpPage() {
           scanner has found anything yet.
         */
         <div className="paper-surface rounded-2xl border border-dashed p-12 text-center">
-          <p className="font-medium">Nothing needs your attention.</p>
+          <p className="font-medium">
+            {counts.inbox > 0 ? 'Nothing needs your attention.' : 'Your profile is ready.'}
+          </p>
           <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
             {counts.inbox > 0 ? (
               <>
@@ -261,14 +285,18 @@ export default async function NextUpPage() {
               </>
             ) : (
               <>
-                Search your configured sources for openings that match your profile.{' '}
-                <Link href="/found" className="text-[var(--color-act)] hover:underline">
-                  Find roles
-                </Link>
-                .
+                Start by searching your configured sources for openings that match your profile.
               </>
             )}
           </p>
+          {counts.inbox === 0 && (
+            <Link
+              href="/found?welcome=1"
+              className="mt-5 inline-flex min-h-[44px] items-center rounded-lg bg-[var(--color-act)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--color-act-hover)]"
+            >
+              Find roles
+            </Link>
+          )}
         </div>
       ) : (
         <>

@@ -44,7 +44,7 @@ const POSTING_LINK =
 export default async function FoundPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; company?: string; location?: string }>;
+  searchParams: Promise<{ q?: string; company?: string; location?: string; welcome?: string }>;
 }) {
   const filters = await searchParams;
   const [inbox, rejects, roles, runningJob, health] = await Promise.all([
@@ -68,6 +68,9 @@ export default async function FoundPage({
   ));
   const grouped = groupByRule(filteredRejects);
   const filtering = Boolean(q || company || location);
+  // A one-time route from setup, not persisted state. It deliberately puts
+  // the search action ahead of empty tables and filters on a new install.
+  const firstSearch = filters.welcome === '1' && inbox.length === 0 && !runningJob;
   const companies = [...new Set(inbox.map((role) => role.company).filter(Boolean))]
     .sort((a, b) => a.localeCompare(b));
 
@@ -80,10 +83,14 @@ export default async function FoundPage({
       <PipelineOverview counts={pipelineCounts(roles, inbox.length)} active="inbox" />
 
       <div className="mb-9">
-        <p className="page-eyebrow">Discovery</p>
-        <h1 className="editorial-title">Everything found</h1>
+        <p className="page-eyebrow">{firstSearch ? 'Ready to start' : 'Discovery'}</p>
+        <h1 className="editorial-title">
+          {firstSearch ? 'Let’s find your first roles' : 'Everything found'}
+        </h1>
         <p className="page-lead mt-3 text-[var(--color-ink-soft)]">
-          Unassessed roles and the ones your filters ruled out.
+          {firstSearch
+            ? 'Your profile is ready. Start by searching the sources you configured.'
+            : 'Unassessed roles and the ones your filters ruled out.'}
         </p>
       </div>
 
@@ -91,6 +98,7 @@ export default async function FoundPage({
         inboxCount={inbox.length}
         connected={health.signedIn}
         initialJob={runningJob}
+        firstSearch={firstSearch}
       />
 
       <form

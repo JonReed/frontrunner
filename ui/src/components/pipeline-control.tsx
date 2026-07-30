@@ -31,10 +31,13 @@ export function PipelineControl({
   inboxCount,
   connected,
   initialJob,
+  firstSearch = false,
 }: {
   inboxCount: number;
   connected: boolean;
   initialJob: Job | null;
+  /** Shown immediately after setup, before any search has happened. */
+  firstSearch?: boolean;
 }) {
   const actions = pipelineActions(inboxCount, connected);
   const [job, setJob] = useState<Job | null>(initialJob);
@@ -160,16 +163,26 @@ export function PipelineControl({
   }
 
   return (
-    <section className="pipeline-surface mb-9 rounded-2xl border px-5 py-5 sm:px-6">
+    <section
+      className={`pipeline-surface mb-9 rounded-2xl border px-5 py-5 sm:px-6 ${
+        firstSearch ? 'border-[var(--color-act)]/40 shadow-[0_12px_32px_rgb(26_25_23/0.08)]' : ''
+      }`}
+    >
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-[17px] font-bold tracking-tight">
-            {inboxCount > 0
+            {firstSearch
+              ? 'Run your first search'
+              : inboxCount > 0
               ? `${inboxCount.toLocaleString()} roles are waiting for assessment`
               : 'Look for your next set of roles'}
           </p>
           <p className="mt-1 max-w-2xl text-sm text-[var(--color-ink-soft)]">
-            {inboxCount > 0
+            {firstSearch
+              ? connected
+                ? 'We search your configured sources first. If you choose to assess, your AI subscription is used only for roles that pass your filters.'
+                : 'Search your configured sources now. It costs nothing; you can connect an AI subscription later to assess the results.'
+              : inboxCount > 0
               ? 'Assess what is already here, or search your configured sources for anything new.'
               : 'Search is free. Assessment compares promising roles with your CV using your connected AI subscription.'}
           </p>
