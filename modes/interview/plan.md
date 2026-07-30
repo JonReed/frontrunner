@@ -72,6 +72,15 @@ Calculate hours available from now until interview time. Divide into blocks:
 
 Before sizing the blocks, check `workspace/interviews/question-bank.md` (if it exists). Any question marked 🔴 from a prior round is a proven gap — it gets a dedicated block regardless of how the CV-vs-JD analysis ranks it. Real performance data outranks inferred risk.
 
+**Research check — before drafting Block 4.** Block 4 maps stories to likely question types, so use real reported questions when they are available:
+
+1. If `workspace/interviews/{company-slug}-{role-slug}.md` already exists, reuse its sourced questions — never re-search work that's already been done and cited.
+2. Otherwise run `modes/interview-prep.md`'s "Step 1 — Research" WebSearch queries, scoped to this round's audience.
+3. Preserve the same tags: cite sourced questions; mark unsupported fallbacks `[inferred from JD]`.
+4. If the search genuinely yields nothing, say so and proceed with partial-but-honest JD/profile inference.
+
+This is the proactive counterpart to `modes/interview/practice.md`'s "When company-intel is thin mid-session" path.
+
 **Template (adjust block sizes based on total hours available):**
 
 ```
@@ -91,7 +100,7 @@ Block 3 — Secondary domain topic
   - Time: ~20% of available hours
 
 Block 4 — Behavioral stories
-  - Map existing stories to likely question types
+  - Map existing stories to sourced question types first; use `[inferred from JD]` only to fill remaining gaps
   - Practice the 2-minute verbal version of each
   - Prepare the Reflection for each — the senior-candidate differentiator
   - Time: ~15% of available hours
@@ -154,4 +163,5 @@ Save the plan to `workspace/interviews/{company-slug}-{role-slug}.md` if a file 
 - **One topic per block.** Mixing topics in a single block reduces retention.
 - **Always include rest time.** A rested candidate outperforms a cramming one.
 - **Never generate fake company intel.** If you don't have research, say so — don't invent culture claims or technical details about the company.
+- **Check for real reported questions before Block 4.** Reuse existing sourced research, or run `modes/interview-prep.md` Step 1 queries scoped to the round before falling back to `[inferred from JD]`.
 - **Never invent claims for the candidate.** The anchor sentence and pre-interview talking points in the quick-reference (Step 4) must be grounded in what the candidate actually has — `workspace/profile/cv.md`, `workspace/profile/article-digest.md`, or the story bank. Don't draft claims that depend on experience or metrics the candidate doesn't have. If a claim appears in `workspace/interviews/retracted-claims.md`, never include it.

@@ -23,7 +23,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import yaml from 'js-yaml';
 import { resolveColumns, parseTrackerRow } from '../tracker/tracker-parse.mjs';
-import { normalizeStatus } from '../tracker/followup-cadence.mjs';
+import { analyzeFromContent, normalizeStatus } from '../tracker/followup-cadence.mjs';
 
 import { ROOT } from '#paths';
 const APPS_FILE = join(ROOT, 'workspace', 'applications', 'tracker.md');
@@ -111,6 +111,13 @@ export function trackerStatusByNum(content) {
     if (row) byNum.set(row.num, canonicalStatus(row.status));
   }
   return byNum;
+}
+
+/** Tracker row numbers independently classified as cold by follow-up cadence. */
+export function computeColdAppNums(trackerContent, followupsContent) {
+  const result = analyzeFromContent(trackerContent, followupsContent || '');
+  if (result.error) return new Set();
+  return new Set(result.entries.filter((entry) => entry.urgency === 'cold').map((entry) => entry.num));
 }
 
 // ── Cumulative funnel ───────────────────────────────────────────────
@@ -397,8 +404,22 @@ export function computeAllStats({
   const portals = read(portalsFile);
   const runs = read(scanRunsFile);
   const portalHealth = read(portalHealthFile);
-  const tracker = apps ? computeTrackerStats(apps) : null;
+  const trackerBase = apps ? computeTrackerStats(apps) : null;
   const scan = scanHist ? computeScanStats(scanHist) : null;
+  let tracker = trackerBase;
+  if (trackerBase) {
+    const coldNums = computeColdAppNums(apps, fups);
+    const byNum = trackerStatusByNum(apps);
+    let activeAppsCold = 0;
+    for (const [num, status] of byNum) {
+      if (ACTIVE_STATUSES.has(status) && coldNums.has(num)) activeAppsCold++;
+    }
+    tracker = {
+      ...trackerBase,
+      activeAppsLive: trackerBase.activeApps - activeAppsCold,
+      activeAppsCold,
+    };
+  }
   return {
     metadata: {
       generatedAt: new Date().toISOString().slice(0, 10),
@@ -431,7 +452,8 @@ function printSummary(stats) {
     const fit = t.avgScore != null
       ? ` | avg fit ${t.avgScore}/5${t.avgScoreApplied != null ? ` (pursued roles ${t.avgScoreApplied}/5)` : ''} | top ${t.topScore}`
       : '';
-    console.log(`Tracker:    ${t.total} total | ${t.activeApps} active${fit}`);
+    const liveInfo = t.activeAppsCold > 0 ? ` (${t.activeAppsLive} live, ${t.activeAppsCold} cold)` : '';
+    console.log(`Tracker:    ${t.total} total | ${t.activeApps} active${liveInfo}${fit}`);
     const statusLine = Object.entries(t.byStatus).filter(([, c]) => c > 0).map(([s, c]) => `${s} ${c}`).join(' · ');
     if (statusLine) console.log(`Status:     ${statusLine}`);
   } else {

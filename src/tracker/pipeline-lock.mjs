@@ -8,9 +8,12 @@
 
 import {
   FileLockTimeoutError,
+  OWNERLESS_GRACE_MS,
   acquireFileLock,
   fileLockDirFor,
 } from '../lib/file-lock.mjs';
+
+export { OWNERLESS_GRACE_MS };
 
 export class LockTimeoutError extends FileLockTimeoutError {
   constructor(lockDir, timeoutMs) {
