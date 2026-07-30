@@ -46,4 +46,8 @@ codex exec "Run frontrunner tracker mode and summarize the current statuses."
 
 - If your Codex environment exposes slash commands, the shared `/frontrunner` router semantics still apply.
 - If it does not, use the same mode names through prompts or `codex exec`.
-- Browser-heavy flows such as `scan`, `pipeline`, and `apply` still depend on Playwright browser tools being available in the active agent setup.
+- `scan` and `pipeline` run through application code; they do not depend on
+  browser tools in the active agent. The application may launch its own bounded
+  Playwright fallback when a provider API is inconclusive. `apply` remains a
+  local, user-visible browser workflow, but model-authored answers are isolated
+  from browser and local tools.

@@ -147,7 +147,7 @@ Available commands:
   /frontrunner apply     → Live application assistant (reads form + generates answers)
   /frontrunner scan      → Scan portals and discover new offers
   /frontrunner discover  → Resolve a company list to scannable ATS boards + append to workspace/search/portals.yml (zero-token)
-  /frontrunner batch     → Batch processing with parallel workers
+  /frontrunner batch     → Batch processing through the canonical pipeline
   /frontrunner patterns  → Analyze rejection patterns and improve targeting
   /frontrunner offer-prep → Read a received offer/contract with the candidate: clause walk + lawyer questions (not legal advice)
   /frontrunner titles    → Suggest adjacent job titles from your CV to broaden the search
@@ -186,16 +186,14 @@ Read `workspace/profile/targeting.md` (if exists) + `workspace/profile/preferenc
 
 Applies to: `tracker`, `agent-inbox`, `deep`, `interview-prep`, `interview`, `regional/eu-swe`, `interview/plan`, `interview/practice`, `interview/debrief`, `latex`, `latex-tex`, `training`, `project`, `patterns`, `titles`, `upskill`, `followup`, `cover`, `email`, `add`, `offer-prep`, `discover`
 
-### Modes delegated to subagent
+### Execution boundary
 
-For `scan` and `apply` (with Playwright): launch as a worker/subagent with the content of `_shared.md` + `_profile.md` (if exists) + `_custom.md` (if exists) + `modes/{mode}.md` injected into the worker prompt. `pipeline` is deliberately excluded: run the canonical backend command above. If your CLI exposes an `Agent(...)` primitive, the call looks like this:
-
-```python
-Agent(
-  subagent_type="general-purpose",
-  prompt="[output language directive]\n\n[content of modes/_shared.md]\n\n[content of workspace/profile/targeting.md if exists]\n\n[content of workspace/profile/preferences.md if exists]\n\n[content of modes/{mode}.md]\n\n[invocation-specific data]",
-  description="frontrunner {mode}"
-)
-```
+Do not delegate `scan`, `pipeline`, liveness, fetching, filtering, tracker
+mutation, rendering, or statistics to an agent. Run their deterministic
+application entry points. `apply` is a local, user-visible browser workflow:
+application code owns navigation and field operations, while a model may only
+draft bounded answers from trusted profile facts. A model that has seen remote
+job or form content must not receive browser, filesystem, shell, or local
+application tools.
 
 Execute the instructions from the loaded mode file.

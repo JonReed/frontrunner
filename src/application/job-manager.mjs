@@ -10,9 +10,7 @@
 
 import {
   existsSync,
-  lstatSync,
   mkdirSync,
-  readFileSync,
   readdirSync,
   rmSync,
 } from 'node:fs';
@@ -22,6 +20,7 @@ import { join } from 'node:path';
 import { ROOT, STATE_DIR } from '#paths';
 import { withFileLock } from '../lib/file-lock.mjs';
 import { replaceFileAtomic } from '../lib/locked-file.mjs';
+import { readBoundedRegularFileSync } from '../lib/safe-file-read.mjs';
 import { withPipelineLock } from '../tracker/pipeline-lock.mjs';
 import {
   APPLICATION_API_VERSION,
@@ -127,10 +126,11 @@ function technicalTail(text) {
 
 function readBoundedRegularFile(file, maxBytes) {
   try {
-    const stat = lstatSync(file);
-    if (!stat.isFile() || stat.isSymbolicLink() || stat.size > maxBytes) return null;
-    const content = readFileSync(file, 'utf8');
-    return Buffer.byteLength(content) <= maxBytes ? content : null;
+    return readBoundedRegularFileSync(file, {
+      maxBytes,
+      allowMissing: true,
+      label: 'application job state',
+    });
   } catch {
     return null;
   }

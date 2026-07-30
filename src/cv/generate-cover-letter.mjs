@@ -13,14 +13,15 @@
  * without loading Playwright (renderHtmlToPdf is imported lazily inside main).
  */
 
-import { readFileSync, existsSync, mkdirSync } from "fs";
-import { ROOT } from '#paths';
-import { dirname, resolve, basename, join } from "path";
+import { readFileSync, mkdirSync } from "fs";
+import { OUTPUT_DIR, ROOT } from '#paths';
+import { resolve, basename, join } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 import { parseArgs } from "util";
 import { resolveTemplate } from "./cv-templates.mjs";
+import { readBoundedRegularFileSync } from "../lib/safe-file-read.mjs";
 
-const OUTPUT_ROOT = resolve("output");
+const OUTPUT_ROOT = OUTPUT_DIR;
 
 function safeOutputPath(raw) {
   // Derive a sanitized filename from raw string (strip path separators and dots)
@@ -203,12 +204,16 @@ Usage:
   }
 
   const payloadPath = resolve(args.payload);
-  if (!existsSync(payloadPath)) {
-    console.error(`ERROR: payload file not found: ${payloadPath}`);
+  let payload;
+  try {
+    payload = JSON.parse(readBoundedRegularFileSync(payloadPath, {
+      maxBytes: 1024 * 1024,
+      label: 'cover-letter payload',
+    }));
+  } catch (error) {
+    console.error(`ERROR: invalid payload at ${payloadPath}: ${error.message}`);
     process.exit(1);
   }
-
-  const payload = JSON.parse(readFileSync(payloadPath, "utf-8"));
 
   if (args.out) {
     payload.output_path = args.out;
@@ -222,7 +227,7 @@ Usage:
     payload.output_path = safeOutputPath(payload.output_path);
   }
 
-  if (!existsSync(OUTPUT_ROOT)) mkdirSync(OUTPUT_ROOT, { recursive: true });
+  mkdirSync(OUTPUT_ROOT, { recursive: true });
 
   // Imported lazily so buildHtml can be used (and tested) without Playwright.
   const { renderHtmlToPdf } = await import("./generate-pdf.mjs");

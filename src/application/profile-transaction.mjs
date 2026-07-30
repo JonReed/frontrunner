@@ -8,16 +8,12 @@
  */
 
 import { createHash } from 'node:crypto';
-import {
-  existsSync,
-  lstatSync,
-  mkdirSync,
-  readFileSync,
-} from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 import { withFileLock } from '../lib/file-lock.mjs';
 import { removeFileProtected, replaceFileAtomic } from '../lib/locked-file.mjs';
+import { readBoundedRegularFileSync } from '../lib/safe-file-read.mjs';
 import {
   cvPath,
   cvVersionFilename,
@@ -69,16 +65,15 @@ function resolveTarget(relativePath, base = profileBase()) {
 }
 
 function readTarget(file) {
-  if (!existsSync(file)) return null;
-  const stat = lstatSync(file);
-  if (!stat.isFile() || stat.isSymbolicLink() || stat.size > MAX_TARGET_BYTES) {
-    throw fail(`profile target is not a bounded regular file: ${file}`);
+  try {
+    return readBoundedRegularFileSync(file, {
+      maxBytes: MAX_TARGET_BYTES,
+      allowMissing: true,
+      label: 'profile target',
+    });
+  } catch (error) {
+    throw fail(`profile target is not a bounded regular file: ${file} (${error.message})`);
   }
-  const content = readFileSync(file, 'utf8');
-  if (Buffer.byteLength(content) > MAX_TARGET_BYTES) {
-    throw fail(`profile target exceeds its byte limit: ${file}`);
-  }
-  return content;
 }
 
 function validateJournal(value, base, file) {
@@ -136,15 +131,17 @@ function validateJournal(value, base, file) {
 
 function readJournal(base = profileBase()) {
   const file = journalPath(base);
-  if (!existsSync(file)) return null;
-  const stat = lstatSync(file);
-  if (!stat.isFile() || stat.isSymbolicLink() || stat.size > MAX_JOURNAL_BYTES) {
-    throw fail('profile save journal is not a bounded regular file');
+  let raw;
+  try {
+    raw = readBoundedRegularFileSync(file, {
+      maxBytes: MAX_JOURNAL_BYTES,
+      allowMissing: true,
+      label: 'profile save journal',
+    });
+  } catch (error) {
+    throw fail(`profile save journal is not a bounded regular file (${error.message})`);
   }
-  const raw = readFileSync(file, 'utf8');
-  if (Buffer.byteLength(raw) > MAX_JOURNAL_BYTES) {
-    throw fail('profile save journal exceeds its byte limit');
-  }
+  if (raw === null) return null;
   let parsed;
   try {
     parsed = JSON.parse(raw);

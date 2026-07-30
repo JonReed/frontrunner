@@ -207,7 +207,7 @@ export async function acquireFileLock(filePath, options = {}) {
         token,
         started_at: new Date().toISOString(),
         file: filePath,
-      }, null, 2), { flag: 'wx' });
+      }, null, 2), { flag: 'wx', mode: 0o600 });
     } catch (ownerError) {
       removeUnchangedLock(lockDir, createdIdentity, null);
       if (['EEXIST', 'ENOENT', 'EINVAL'].includes(ownerError?.code)) {

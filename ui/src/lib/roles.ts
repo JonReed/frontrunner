@@ -14,10 +14,10 @@
  * readiness so the first row is always the most useful thing to do.
  */
 
-import { readFile, readdir, open } from 'node:fs/promises';
-import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { readdir, open } from 'node:fs/promises';
+import { constants } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { dirname, resolve, sep } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { parsePipelineMetadata } from './pipeline-row.mjs';
 import { safeExternalUrl } from './urls';
 import { ROOT, WORKSPACE } from './root';
@@ -83,6 +83,24 @@ export interface Role {
 // ---------------------------------------------------------------- parsing
 
 const SCORE_RE = /^(\d+(?:\.\d+)?)\/5$/;
+const MAX_TRACKER_BYTES = 5 * 1024 * 1024;
+const MAX_PIPELINE_BYTES = 5 * 1024 * 1024;
+const MAX_PDF_INDEX_BYTES = 2 * 1024 * 1024;
+
+async function readBoundedText(file: string, maxBytes: number): Promise<string | null> {
+  let fh;
+  try {
+    fh = await open(file, reportReadFlags());
+    const stat = await fh.stat();
+    if (!stat.isFile() || stat.size > maxBytes) return null;
+    const content = await fh.readFile({ encoding: 'utf8' });
+    return Buffer.byteLength(content) <= maxBytes ? content : null;
+  } catch {
+    return null;
+  } finally {
+    await fh?.close().catch(() => {});
+  }
+}
 
 function parseScore(cell: string): number | null {
   const m = cell.trim().match(SCORE_RE);
@@ -95,8 +113,8 @@ function parseScore(cell: string): number | null {
  */
 export async function readTracker(): Promise<Role[]> {
   const file = WORKSPACE.tracker;
-  if (!existsSync(file)) return [];
-  const raw = await readFile(file, 'utf8');
+  const raw = await readBoundedText(file, MAX_TRACKER_BYTES);
+  if (raw === null) return [];
 
   const roles: Role[] = [];
   for (const line of raw.split('\n')) {
@@ -130,7 +148,7 @@ export async function readTracker(): Promise<Role[]> {
 
   // Attach generated documents. generate-pdf.mjs records each linkage here, so
   // this is the authoritative map rather than guessing from filenames.
-  const pdfIndex = readPdfIndex();
+  const pdfIndex = await readPdfIndex();
   for (const r of roles) {
     const key = String(r.num).padStart(3, '0');
     const entry = pdfIndex.get(key);
@@ -261,8 +279,8 @@ export interface InboxRole {
 /** Unscored roles waiting in workspace/search/pipeline.md — the "find" phase. */
 export async function readInbox(): Promise<InboxRole[]> {
   const file = WORKSPACE.pipeline;
-  if (!existsSync(file)) return [];
-  const raw = await readFile(file, 'utf8');
+  const raw = await readBoundedText(file, MAX_PIPELINE_BYTES);
+  if (raw === null) return [];
 
   const out: InboxRole[] = [];
   for (const line of raw.split('\n')) {
@@ -304,18 +322,20 @@ export async function summarise() {
  * authoritative mapping. Guessing from filenames would break the moment a
  * company name contains a character the slugger treats differently.
  */
-function readPdfIndex(): Map<string, { pdf: string; html: string }> {
+async function readPdfIndex(): Promise<Map<string, { pdf: string; html: string }>> {
   const out = new Map<string, { pdf: string; html: string }>();
   const file = WORKSPACE.pdfIndex;
-  if (!existsSync(file)) return out;
-  try {
-    for (const line of readFileSync(file, 'utf8').split('\n')) {
-      if (!line.trim() || line.startsWith('#')) continue;
-      const [num, pdf, html] = line.split('\t');
-      if (num && pdf) out.set(num.trim().padStart(3, '0'), { pdf: pdf.trim(), html: (html ?? '').trim() });
+  const content = await readBoundedText(file, MAX_PDF_INDEX_BYTES);
+  if (content === null) return out;
+  for (const line of content.split('\n')) {
+    if (!line.trim() || line.startsWith('#')) continue;
+    const [num, pdf, html] = line.split('\t');
+    if (num && pdf) {
+      out.set(num.trim().padStart(3, '0'), {
+        pdf: pdf.trim(),
+        html: (html ?? '').trim(),
+      });
     }
-  } catch {
-    /* a malformed index must not blank the screen */
   }
   return out;
 }
@@ -323,23 +343,47 @@ function readPdfIndex(): Map<string, { pdf: string; html: string }> {
 /** Read just the `**URL:**` line from a report header. */
 async function readUrlFromReport(reportPath: string): Promise<string | null> {
   const candidate = safeReportFile(reportPath);
-  if (!candidate || !existsSync(candidate)) return null;
-    try {
-      const fh = await open(candidate, 'r');
+  if (!candidate) return null;
+  let fh;
+  try {
+      fh = await open(candidate, reportReadFlags());
+      const stat = await fh.stat();
+      if (!stat.isFile() || stat.size > MAX_REPORT_BYTES) return null;
       const { buffer } = await fh.read(Buffer.alloc(2048), 0, 2048, 0);
-      await fh.close();
       const m = buffer.toString('utf8').match(/^\*\*URL:\*\*\s*(\S+)/m);
       return m ? safeExternalUrl(m[1]) : null;
-    } catch {
-      return null;
-    }
+  } catch {
+    return null;
+  } finally {
+    await fh?.close().catch(() => {});
+  }
 }
 
 /** Full report markdown for a role, when one exists. */
 export async function readReport(reportPath: string): Promise<string | null> {
   const candidate = safeReportFile(reportPath);
-  if (!candidate || !existsSync(candidate)) return null;
-  return readFile(candidate, { encoding: 'utf8', flag: 'r' });
+  if (!candidate) return null;
+  let fh;
+  try {
+    fh = await open(candidate, reportReadFlags());
+    const stat = await fh.stat();
+    if (!stat.isFile() || stat.size > MAX_REPORT_BYTES) return null;
+    const content = await fh.readFile({ encoding: 'utf8' });
+    return Buffer.byteLength(content) <= MAX_REPORT_BYTES ? content : null;
+  } catch {
+    return null;
+  } finally {
+    await fh?.close().catch(() => {});
+  }
+}
+
+const MAX_REPORT_BYTES = 2 * 1024 * 1024;
+
+function reportReadFlags(): number {
+  const noFollow = process.platform !== 'win32' && typeof constants.O_NOFOLLOW === 'number'
+    ? constants.O_NOFOLLOW
+    : 0;
+  return constants.O_RDONLY | noFollow;
 }
 
 function safeReportFile(reportPath: string): string | null {
@@ -355,21 +399,15 @@ function safeReportFile(reportPath: string): string | null {
   const candidate = [
     resolve(dirname(WORKSPACE.tracker), reportPath),
     resolve(ROOT, reportPath),
-  ].find(
-    (p) => p.startsWith(`${reportsRoot}${sep}`) && existsSync(p),
-  );
-  if (!candidate) return null;
-  try {
-    const realRoot = realpathSync(reportsRoot);
-    const realCandidate = realpathSync(candidate);
-    return realCandidate.startsWith(`${realRoot}${sep}`) ? realCandidate : null;
-  } catch {
-    return null;
-  }
+  ].find((p) => dirname(p) === reportsRoot);
+  return candidate ?? null;
 }
 
 export async function listReports(): Promise<string[]> {
   const dir = WORKSPACE.reports;
-  if (!existsSync(dir)) return [];
-  return (await readdir(dir)).filter((f) => f.endsWith('.md'));
+  try {
+    return (await readdir(dir)).filter((f) => f.endsWith('.md'));
+  } catch {
+    return [];
+  }
 }

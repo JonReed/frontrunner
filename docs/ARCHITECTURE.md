@@ -20,6 +20,21 @@ Frontrunner is built on three commitments that every design decision serves:
   compatibility paths rather than supported configurations.
 - **Human-in-the-loop.** The tool prepares and evaluates; the human reviews and clicks. It never submits applications on your behalf.
 
+## Deterministic code and model boundary
+
+Models are used only where the task genuinely needs judgement or authored
+language: fit scoring, evidence selection, and bounded CV or cover-letter
+tailoring. They receive quarantined remote text, have no local tools, and must
+return a versioned closed schema.
+
+Everything mechanical stays in code: provider/API collection, URL and path
+validation, liveness, deduplication, linear-time prefiltering, reply
+classification, state transitions, locking, recovery, report rendering and
+publication. Code injects trusted identity fields and chooses every output
+path. This keeps the result reproducible, reduces token spend, and prevents a
+malicious job advert or model response from becoming an instruction to the
+machine.
+
 ## The two layers (the data contract)
 
 The single most important architectural rule: **system files** and **user files** are strictly separated.
@@ -315,8 +330,10 @@ Frontrunner runtime.
 
 ## Quality gates
 
-- `test-all.mjs` — the full suite (2,200+ checks across scoring, scan, tracker,
-  PDF, security, updater). It executes the exact current system source in a
+- `test-all.mjs` — stable root entry point for `tests/runner.mjs`, with ordered
+  domain suites under `tests/core/` and auto-discovered focused tests. The full
+  suite runs 2,200+ checks across scoring, scan, tracker, PDF, security and the
+  updater. It executes the exact current system source in a
   disposable git repository with ignored user files omitted, a private
   HOME/temp/config/cache tree, fixed timezone and locale, and no inherited
   credentials, proxies or user `NODE_OPTIONS`. Filesystem and outbound-network

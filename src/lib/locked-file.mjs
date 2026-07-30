@@ -150,6 +150,17 @@ export function createFileExclusive(filePath, content, options = {}) {
   }
 }
 
+/**
+ * Create a contained directory through the same test/user-data boundary.
+ * Runtime consumers should still create directories lazily; this exists for
+ * setup checks that intentionally provision an empty destination.
+ */
+export function ensureDirectoryProtected(directoryPath) {
+  assertTestUserDataWriteAllowed(directoryPath);
+  mkdirSync(directoryPath, { recursive: true });
+  fsyncDirectory(dirname(directoryPath));
+}
+
 /** Publish a byte-for-byte copy without exposing a partial destination. */
 export function copyFileAtomic(sourcePath, destinationPath, options = {}) {
   assertTestUserDataWriteAllowed(destinationPath);

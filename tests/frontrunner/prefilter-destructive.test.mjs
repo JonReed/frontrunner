@@ -75,7 +75,7 @@ test('destructive CLI: summary completes and hostile TSV fields cannot create co
 test('destructive CLI: invalid config fails before replacing existing artifacts', (t) => {
   const invalidConfigs = [
     ['bad-array.yml', 'below_level: junior\n', /below_level must be an array/],
-    ['bad-regex.yml', "keep_signals:\n  - '^(a+)+$'\n", /super-linear regex/],
+    ['bad-regex.yml', "keep_signals:\n  - '\\bassociate\\b(?!\\s+director)'\n", /not valid linear-time regex syntax/],
     ['bad-margin.yml', 'comp:\n  clearance_margin: nope\n', /clearance_margin/],
     [
       'empty-blocker.yml',

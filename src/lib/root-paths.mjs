@@ -23,7 +23,7 @@
  * and `tests/frontrunner/root-paths.test.mjs` fails the suite if any survive.
  */
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join, basename } from 'node:path';
 import { ROOT } from '#paths';
@@ -52,7 +52,11 @@ function movedScripts(root) {
   const map = new Map();
   for (const f of out.split('\n').filter(Boolean)) {
     if (/\.test\.mjs$|-tests\.mjs$/.test(f)) continue;
-    map.set(basename(f), f);
+    const base = basename(f);
+    // A deliberately retained root entry point is a stable public command,
+    // not a stale reference. Only map basenames whose root file is absent.
+    if (existsSync(join(root, base))) continue;
+    map.set(base, f);
   }
   return map;
 }

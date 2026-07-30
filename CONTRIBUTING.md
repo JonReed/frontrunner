@@ -37,7 +37,7 @@ process, response-time promise or implied path to repository access.
 ## Development workflow
 
 1. Fork and clone the repository.
-2. Install the Node version declared in `package.json` and run `npm install`.
+2. Install the Node version declared in `package.json` and run `npm ci`.
 3. Create a focused branch.
 4. Make the change with tests.
 5. Run the checks below.
@@ -118,13 +118,17 @@ npm -C ui run typecheck
 npm -C ui run build
 
 # Tests
-npm run qa                    # Full local/CI gate — run before committing
+npm run qa                    # Backend tests + deterministic benchmark
+npm run qa:ui                 # UI typecheck + production build
+npm run qa:full               # Complete local gate — run before committing
 node test-all.mjs --only providers/themuse   # Run just one provider's test(s)
 ```
 
 Run `npm run hooks:install` once after cloning to enable the versioned
-pre-commit hook. The hook runs the same `npm run qa` command as GitHub Actions:
-the complete hermetic suite plus the reproducible benchmark-artifact check.
+pre-commit and pre-push hooks. They run `npm run qa:full`, covering both hosted
+backend and UI gates before GitHub can report a failure: the complete hermetic
+suite, reproducible benchmark-artifact check, UI typecheck, and production
+build.
 
 `test-all.mjs` copies the current tracked and untracked system source into a
 disposable git repository before executing any test. Ignored user data is never
@@ -142,13 +146,13 @@ when a fixture override is missing or stale.
 
 **Adding a test for a new scanner provider:** add one file at
 `tests/providers/{name}.test.mjs` — it's auto-discovered (`tests/**/*.test.mjs`),
-no registration needed. Do not add a section to `test-all.mjs` for this.
+no registration needed. Do not add it to the ordered `tests/core/` suites.
 
 **`--only` is a dev convenience, not a PR gate:** it runs *only* the discovered
-`tests/` files matching the given substring and skips every inline core
-section (syntax, scripts, data contract, personal data, paths,
-etc.). A green `--only` run is **not** a green suite — always run the full
-`node test-all.mjs` before pushing.
+`tests/` files matching the given substring and skips the ordered core suites
+(syntax, scripts, data contract, personal data, paths, etc.). A green `--only`
+run is **not** a green suite — always run the full `node test-all.mjs` before
+pushing.
 
 ## Brand
 

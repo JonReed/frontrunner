@@ -87,7 +87,7 @@ test('update check uses injected release fixtures without external I/O', async (
 });
 
 test('test harness contains no live update, browser, or remote fetch path', () => {
-  const source = readFileSync(join(ROOT, 'test-all.mjs'), 'utf8');
+  const source = readFileSync(join(ROOT, 'tests', 'runner.mjs'), 'utf8');
   const testSources = [
     join(ROOT, 'test-all.mjs'),
     ...readdirSync(join(ROOT, 'tests'), { recursive: true, withFileTypes: true })

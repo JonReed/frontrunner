@@ -18,11 +18,10 @@
  *   Lever       jobs.(eu.)?lever.co / lever.co
  */
 
-import { readFileSync, existsSync, statSync } from 'fs';
-import { basename, resolve, dirname, relative, isAbsolute } from 'path';
-import { fileURLToPath } from 'url';
+import { basename, resolve, relative, isAbsolute, join } from 'node:path';
 
-import { ROOT } from '#paths';
+import { OUTPUT_DIR, PROFILE_FILE, ROOT } from '#paths';
+import { readBoundedRegularFileSync } from '../lib/safe-file-read.mjs';
 const ALLOWED_HOSTS = new Set([
   'boards.greenhouse.io',
   'greenhouse.io',
@@ -49,7 +48,7 @@ if (!applyUrl || !pdfPath) {
 
 // ── PDF validation ────────────────────────────────────────────────────
 
-const outputDir = join(ROOT, 'workspace', 'documents');
+const outputDir = OUTPUT_DIR;
 const absPdf    = resolve(ROOT, pdfPath);
 
 const relPdf = relative(outputDir, absPdf);
@@ -57,12 +56,23 @@ if (relPdf === '' || relPdf.startsWith('..') || isAbsolute(relPdf)) {
   console.error(`Error: --pdf must point to a file inside workspace/documents/ (got ${pdfPath})`);
   process.exit(1);
 }
-if (!existsSync(absPdf)) {
-  console.error(`Error: PDF not found at ${pdfPath}`);
+let pdfBytes;
+try {
+  pdfBytes = readBoundedRegularFileSync(absPdf, {
+    maxBytes: 25 * 1024 * 1024,
+    encoding: null,
+    label: 'PDF',
+  });
+} catch (error) {
+  if (error?.code === 'ENOENT') {
+    console.error(`Error: PDF not found at ${pdfPath}`);
+  } else {
+    console.error(`Error: unsafe PDF at ${pdfPath}: ${error.message}`);
+  }
   process.exit(1);
 }
-if (!statSync(absPdf).isFile()) {
-  console.error(`Error: ${pdfPath} is not a file`);
+if (pdfBytes.subarray(0, 5).toString('ascii') !== '%PDF-') {
+  console.error(`Error: ${pdfPath} does not contain a PDF file`);
   process.exit(1);
 }
 
@@ -127,9 +137,12 @@ function detectAts(url) {
 // ── Profile reader ────────────────────────────────────────────────────
 
 function readProfile() {
-  const profilePath = resolve(ROOT, 'workspace/profile/profile.yml');
-  if (!existsSync(profilePath)) return {};
-  const raw = readFileSync(profilePath, 'utf-8');
+  const raw = readBoundedRegularFileSync(PROFILE_FILE, {
+    maxBytes: 1024 * 1024,
+    allowMissing: true,
+    label: 'workspace/profile/profile.yml',
+  });
+  if (raw === null) return {};
 
   const pick = (key) => {
     const m = raw.match(new RegExp(`^\\s*${key}:\\s*["']?([^"'\\n]+?)["']?\\s*$`, 'm'));
@@ -154,15 +167,14 @@ function readProfile() {
 function readCover() {
   if (!coverPath) return null;
   const abs = resolve(ROOT, coverPath);
-  if (!existsSync(abs)) {
-    console.error(`Warning: cover letter not found at ${coverPath} — skipping`);
-    return null;
+  const rel = relative(outputDir, abs);
+  if (rel === '' || rel.startsWith('..') || isAbsolute(rel)) {
+    throw new Error(`--cover must point to a file inside workspace/documents/ (got ${coverPath})`);
   }
-  if (!statSync(abs).isFile()) {
-    console.error(`Warning: ${coverPath} is not a file — skipping`);
-    return null;
-  }
-  const text = readFileSync(abs, 'utf-8').trim();
+  const text = readBoundedRegularFileSync(abs, {
+    maxBytes: 1024 * 1024,
+    label: 'cover letter',
+  }).trim();
   return { text, wordCount: text.split(/\s+/).filter(Boolean).length };
 }
 
@@ -215,7 +227,7 @@ if (!detected) {
 
 const { ats, companySlug, jobId } = detected;
 const pdfFile   = basename(absPdf);
-const pdfSizeKb = (statSync(absPdf).size / 1024).toFixed(1);
+const pdfSizeKb = (pdfBytes.byteLength / 1024).toFixed(1);
 const profile   = readProfile();
 const cover     = readCover();
 

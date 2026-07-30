@@ -1,0 +1,5 @@
+* text=auto eol=lf
+
+# Native Windows command files require CRLF when introduced.
+*.bat text eol=crlf
+*.cmd text eol=crlf

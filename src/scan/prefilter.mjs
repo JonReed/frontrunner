@@ -107,22 +107,23 @@ export function classify(title, jdText = '', profile = PROFILE, rules) {
   const body = String(jdText ?? '').slice(0, MAX_JOB_DOCUMENT_CHARS);
 
   const hitOf = (list) => list.find((re) => re.test(t));
+  const evidenceOf = (pattern, text = t) => pattern.exec(text)?.[0] ?? '';
 
   // 1. Wrong function — unambiguous, check first so "Head of Marketing" dies here.
   const wrong = hitOf(activeRules.wrong);
-  if (wrong) return { verdict: 'reject', rule: 'wrong_function', evidence: t.match(wrong)?.[0] ?? '' };
+  if (wrong) return { verdict: 'reject', rule: 'wrong_function', evidence: evidenceOf(wrong) };
 
   // 2. Junior — but a "Director" token rescues (e.g. "Associate Director").
   const junior = hitOf(activeRules.junior);
   if (junior && !hitOf(activeRules.keep)) {
-    return { verdict: 'reject', rule: 'below_level', evidence: t.match(junior)?.[0] ?? '' };
+    return { verdict: 'reject', rule: 'below_level', evidence: evidenceOf(junior) };
   }
 
   // 3. IC role family — leadership tokens rescue ("Engineering Manager").
   const ic = hitOf(activeRules.ic);
   const lead = hitOf(activeRules.keep);
   if (ic && !lead) {
-    return { verdict: 'reject', rule: 'ic_role_family', evidence: t.match(ic)?.[0] ?? '' };
+    return { verdict: 'reject', rule: 'ic_role_family', evidence: evidenceOf(ic) };
   }
 
   // 4. Hard blockers in the JD body.
@@ -138,7 +139,7 @@ export function classify(title, jdText = '', profile = PROFILE, rules) {
     if (activeRules.comp.enabled && profile.minComp > 0) {
       const sym = { GBP: '£', USD: '$', EUR: '€' }[profile.currency];
       if (!sym) {
-        return { verdict: 'keep', rule: lead ? 'leadership_signal' : 'unclear', evidence: lead ? t.match(lead)?.[0] ?? '' : '' };
+        return { verdict: 'keep', rule: lead ? 'leadership_signal' : 'unclear', evidence: lead ? evidenceOf(lead) : '' };
       }
       const re = new RegExp(`\\${sym}\\s?(\\d{2,3})(?:,(\\d{3}))?\\s?(k\\b)?`, 'gi');
       const vals = [];
@@ -170,7 +171,7 @@ export function classify(title, jdText = '', profile = PROFILE, rules) {
   }
 
   // 6. No rule fired — this needs judgement. Send it to the model.
-  return { verdict: 'keep', rule: lead ? 'leadership_signal' : 'unclear', evidence: lead ? t.match(lead)?.[0] ?? '' : '' };
+  return { verdict: 'keep', rule: lead ? 'leadership_signal' : 'unclear', evidence: lead ? evidenceOf(lead) : '' };
 }
 
 // ---------------------------------------------------------------- io

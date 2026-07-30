@@ -25,7 +25,6 @@ const APPROVED_RAW_MUTATORS = new Set([
   'src/lib/skill-entrypoints.mjs', // versioned system-layer installer
   'src/scan/prefilter.mjs', // guarded legacy two-file rollback transaction
   'src/scan/validate-portals.mjs', // private self-test fixture directory
-  'src/tracker/reply-watch.mjs', // private self-test fixture
   'src/tracker/tracker-utils.mjs', // legacy canonical tracker lock implementation
   'src/workspace/archive-legacy.mjs', // explicit, contained, manifest-backed legacy archive command
 ]);

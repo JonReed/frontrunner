@@ -72,7 +72,7 @@ The checked-in 8-role, 3-board fixture currently produces:
 | Measure | inherited flow | Frontrunner | Change |
 |---|---:|---:|---:|
 | Description HTTP calls | 8 | 3 | −62.5% |
-| Approximate model input tokens | 287,030 | 21,441 | −92.5% |
+| Approximate model input tokens | 286,302 | 21,441 | −92.5% |
 | Approximate model output tokens | 17,125 | 3,123 | −81.8% |
 | Roles reaching the model | 8 | 8 | 100% pass rate |
 | False rejects at score ≥3.0 | — | 0 | — |
@@ -140,9 +140,12 @@ available when that content must remain on the machine.
 
 Job adverts and remote responses are treated as hostile input. Network access
 is bounded, model inputs are quarantined, evaluators have no local tools, model
-output follows closed schemas, and deterministic code owns file writes and
-rendering. The UI binds only to loopback and should not be exposed to a LAN or
-the public internet.
+output follows closed schemas, and deterministic code owns URL parsing,
+linear-time prefilter matching, file reads and writes, rendering, and workflow
+control. User-supplied filter patterns use an RE2-compatible subset, so a
+crafted advertisement cannot trigger catastrophic regex backtracking. The UI
+binds only to loopback and should not be exposed to a LAN or the public
+internet.
 
 See the [data contract](DATA_CONTRACT.md) and
 [full threat model](docs/frontrunner-threat-model.md) for the precise

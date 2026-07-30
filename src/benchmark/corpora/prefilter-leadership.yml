@@ -43,7 +43,7 @@ below_level:
   - '\b(intern|internship|graduate|apprentice|trainee|placement)\b'
   - '\bjunior\b'
   - '\bentry[- ]level\b'
-  - '\bassociate\b(?!\s+(director|partner|vp))'
+  - '\bassociate\b'
   - '\bfellows?(hips?)?\b'
   - '\bresidency\b'
   - '\bbootcamp\b'

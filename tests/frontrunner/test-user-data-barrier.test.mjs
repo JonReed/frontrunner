@@ -18,6 +18,7 @@ import { ROOT } from '#paths';
 import {
   copyFileAtomic,
   createFileExclusive,
+  ensureDirectoryProtected,
   moveFileAtomic,
   removeFileProtected,
 } from '../../src/lib/locked-file.mjs';
@@ -155,9 +156,11 @@ test('destructive barrier: every canonical mutation primitive refuses the real u
   const source = join(PROTECTED_ROOT, 'workspace/profile/cv.md');
   const destination = join(PROTECTED_ROOT, 'output', 'must-never-exist.md');
   const reservation = join(PROTECTED_ROOT, 'reports', '999999-RESERVED.md');
+  const directory = join(PROTECTED_ROOT, 'workspace', 'must-never-exist');
 
   for (const operation of [
     () => createFileExclusive(reservation, 'unsafe'),
+    () => ensureDirectoryProtected(directory),
     () => copyFileAtomic(source, destination),
     () => moveFileAtomic(source, destination),
     () => removeFileProtected(source),
@@ -167,6 +170,7 @@ test('destructive barrier: every canonical mutation primitive refuses the real u
 
   assert.equal(existsSync(destination), false);
   assert.equal(existsSync(reservation), false);
+  assert.equal(existsSync(directory), false);
   assertUnchanged(before);
 });
 
@@ -176,7 +180,10 @@ test('canonical create/copy/move/remove primitives work inside a temporary fixtu
     const source = join(fixture, 'source.txt');
     const copy = join(fixture, 'nested', 'copy.txt');
     const moved = join(fixture, 'moved.txt');
+    const emptyDirectory = join(fixture, 'nested', 'empty');
 
+    ensureDirectoryProtected(emptyDirectory);
+    assert.equal(existsSync(emptyDirectory), true);
     createFileExclusive(source, 'original\n');
     assert.throws(
       () => createFileExclusive(source, 'replacement\n'),
