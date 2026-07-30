@@ -99,7 +99,7 @@ export function ApplicationRoleRow({
   }
 
   return (
-    <li className="flex flex-col gap-3 border-b border-[var(--color-line)] px-5 py-4 transition first:rounded-t-[15px] last:rounded-b-[15px] last:border-0 hover:bg-[var(--color-paper)] sm:flex-row sm:items-center sm:px-6">
+    <li className="product-row flex flex-col gap-3 border-b border-[var(--color-line)] px-5 py-4 transition first:rounded-t-[15px] last:rounded-b-[15px] last:border-0 hover:bg-[var(--color-paper)] sm:flex-row sm:items-center sm:px-6">
       <div className="min-w-0 flex-1">
         <Link href={`/role/${role.num}`} className="group block">
           <div className="text-[15px] font-semibold group-hover:text-[var(--color-act)]">

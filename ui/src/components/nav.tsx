@@ -73,7 +73,7 @@ export function HeaderNav() {
   const pathname = usePathname();
   if (isSetup(pathname)) return null;
   return (
-    <nav aria-label="Main" className="hidden items-center gap-5 text-sm sm:flex">
+    <nav aria-label="Main" className="hidden items-center gap-6 text-[13px] sm:flex">
       {NAV.map((n) => (
         <Link
           key={n.href}
@@ -81,7 +81,7 @@ export function HeaderNav() {
           aria-current={isActive(pathname, n.href) ? 'page' : undefined}
           className={
             isActive(pathname, n.href)
-              ? 'relative py-2 font-semibold text-[var(--color-ink)] after:absolute after:inset-x-0 after:-bottom-[14px] after:h-0.5 after:rounded-full after:bg-[var(--color-ink)]'
+              ? 'relative py-2 font-semibold text-[var(--color-ink)] after:absolute after:inset-x-0 after:-bottom-[16px] after:h-0.5 after:rounded-full after:bg-[var(--color-act)]'
               : 'py-2 font-medium text-[var(--color-ink-soft)] transition hover:text-[var(--color-ink)]'
           }
         >

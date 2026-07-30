@@ -72,7 +72,7 @@ export function EditDetails({ initial }: { initial: Record<string, string | stri
   };
 
   return (
-    <div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-card)] p-5 shadow-[0_1px_2px_rgb(26_25_23/0.03)]">
+    <div className="paper-surface rounded-2xl border p-5">
       {PROFILE_DETAIL_SECTIONS.map((section, index) => (
         <fieldset
           key={section.title}

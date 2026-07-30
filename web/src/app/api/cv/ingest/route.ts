@@ -6,8 +6,8 @@ import { resolveCli } from "@/lib/clis";
 import { frontrunnerRoot } from "@/lib/frontrunner";
 
 // Parse a CV (pasted text or an uploaded PDF) into clean workspace/profile/cv.md markdown by running
-// the USER'S OWN CLI headless — the web never ships a heavyweight parser, and the
-// real CV NEVER leaves the machine (local-first, PII-safe). This route is a
+// the user's selected CLI headless. The persistent file stays local, while the
+// CLI's model provider processes the bounded CV context needed for parsing. This route is a
 // PROPOSER: it produces candidate markdown only; the actual write to workspace/profile/cv.md happens
 // via the existing POST /api/cv after the user confirms (propose-then-confirm).
 export const runtime = "nodejs";

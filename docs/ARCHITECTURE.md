@@ -13,7 +13,9 @@ to keep true than two.
 
 Frontrunner is built on three commitments that every design decision serves:
 
-- **Local-first.** Everything runs on your machine against your files. No account required, no server in the loop for the core tool.
+- **Local-first.** Orchestration and persistent files live on your machine; the
+  core tool has no Frontrunner account or hosted application server.
+  Model-backed actions send bounded task context to the provider you configure.
 - **Model-agnostic backend.** Scoring and tailoring use versioned contracts
   across supported model transports. Claude Code, Codex and Antigravity CLI are
   the tested agent hosts; other CLIs may consume the same mode files but are

@@ -35,9 +35,9 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Everything found' };
 
-const LIST = 'overflow-hidden rounded-2xl border border-[var(--color-line)] bg-[var(--color-card)] shadow-[0_1px_2px_rgb(26_25_23/0.035)]';
+const LIST = 'product-list rounded-2xl border';
 const ROW =
-  'flex flex-col items-start gap-2 border-b border-[var(--color-line)] px-5 py-4 transition last:border-0 hover:bg-[var(--color-paper)] sm:flex-row sm:items-center sm:gap-4 sm:px-6';
+  'product-row flex flex-col items-start gap-2 border-b border-[var(--color-line)] px-5 py-4 transition last:border-0 hover:bg-[var(--color-paper)] sm:flex-row sm:items-center sm:gap-4 sm:px-6';
 const POSTING_LINK =
   'inline-flex min-h-[40px] shrink-0 items-center rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-card)] px-3 text-xs font-medium text-[var(--color-ink-soft)] transition hover:border-[var(--color-act)] hover:text-[var(--color-act)] sm:min-h-0 sm:py-1.5';
 
@@ -80,8 +80,9 @@ export default async function FoundPage({
       <PipelineOverview counts={pipelineCounts(roles, inbox.length)} active="inbox" />
 
       <div className="mb-9">
-        <h1 className="text-[30px] font-bold leading-tight tracking-[-0.025em] sm:text-[34px]">Everything found</h1>
-        <p className="mt-1 text-[15px] text-[var(--color-ink-soft)]">
+        <p className="page-eyebrow">Discovery</p>
+        <h1 className="editorial-title">Everything found</h1>
+        <p className="page-lead mt-3 text-[var(--color-ink-soft)]">
           Unassessed roles and the ones your filters ruled out.
         </p>
       </div>
@@ -94,7 +95,7 @@ export default async function FoundPage({
 
       <form
         method="get"
-        className="mb-9 grid gap-3 rounded-2xl border border-[var(--color-line)] bg-[var(--color-paper-deep)] p-4 sm:grid-cols-3 sm:p-5"
+        className="paper-surface mb-9 grid gap-3 rounded-2xl border p-4 sm:grid-cols-3 sm:p-5"
       >
         <label className="text-xs font-medium text-[var(--color-ink-soft)]">
           Role title
@@ -173,7 +174,7 @@ export default async function FoundPage({
         </p>
 
         {filteredInbox.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[var(--color-line-strong)] bg-[var(--color-card)] p-10 text-center">
+          <div className="paper-surface rounded-2xl border border-dashed p-10 text-center">
             <p className="font-medium">Nothing waiting.</p>
             <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
               Run a search to look for openings that match your profile.
@@ -225,7 +226,7 @@ export default async function FoundPage({
             {grouped.map((g) => (
               <details
                 key={g.rule}
-                className="overflow-hidden rounded-2xl border border-[var(--color-line)] bg-[var(--color-card)] shadow-[0_1px_2px_rgb(26_25_23/0.03)]"
+                className="paper-surface overflow-hidden rounded-2xl border"
               >
                 <summary className="flex cursor-pointer items-center justify-between gap-4 px-5 py-4 hover:bg-[var(--color-paper)]">
                   <span className="min-w-0">

@@ -1,16 +1,24 @@
 <p align="center">
-  <strong>FIND&nbsp;&nbsp;·&nbsp;&nbsp;PREPARE&nbsp;&nbsp;·&nbsp;&nbsp;APPLY&nbsp;&nbsp;·&nbsp;&nbsp;INTERVIEW</strong>
-</p>
-
-<p align="center">
-  <img src="ui/src/app/icon.svg" width="72" height="72" alt="Frontrunner">
+  <a href="https://frontrunner.website">
+    <img src="docs/assets/frontrunner-readme-hero.png" alt="Frontrunner — Know which jobs are worth your time" width="1200">
+  </a>
 </p>
 
 <h1 align="center">Frontrunner</h1>
 
 <p align="center">
-  <strong>Know which jobs are worth your time.</strong><br>
-  Find strong matches, prepare better applications, and keep every next step clear.
+  <strong>Open-source, local-first AI job search.</strong><br>
+  Find strong matches, prepare grounded applications, and keep every next step clear.
+</p>
+
+<p align="center">
+  <a href="https://frontrunner.website">Website</a>
+  &nbsp;·&nbsp;
+  <a href="#get-started">Install</a>
+  &nbsp;·&nbsp;
+  <a href="docs/SETUP.md">Setup guide</a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/Furls-Digital/frontrunner/issues">Issues</a>
 </p>
 
 Frontrunner is a local-first job-search product. It finds roles, filters obvious
@@ -35,7 +43,7 @@ flowchart LR
 
 | Local-first | Evidence-grounded | Efficient by design |
 |---|---|---|
-| Your profile, tracker, reports, and documents stay in your private workspace. | Tailored material can reframe your experience, but never invent it. | APIs and deterministic checks do the mechanical work before a model is used. |
+| Your profile, tracker, reports, and documents are readable files in a workspace on your computer. | Tailored material can reframe your experience, but never invent it. | APIs and deterministic checks do the mechanical work before a model is used. |
 
 Frontrunner never submits an application. It helps you decide, prepares the
 material, and keeps the process organised; you review everything and make the
@@ -93,9 +101,32 @@ against the scored corpus.
 
 ## Get started
 
-You need Node.js 22.5 or later, Git, and a tested agent host: Claude Code,
-Codex, or Antigravity CLI. Other assistants that consume `AGENTS.md` are
-compatibility paths rather than supported configurations.
+The easiest route is to open Claude Code or Codex and paste the instruction
+below. It is the same on macOS, Linux and Windows: the agent detects the
+operating system, checks the prerequisites, explains any permission request,
+and completes the supported setup.
+
+Claude Code, Codex and Antigravity CLI are the tested agent hosts. Other
+assistants that consume `AGENTS.md` remain compatibility paths rather than
+supported configurations.
+
+```text
+Set up and install Frontrunner from https://github.com/Furls-Digital/frontrunner in a new folder called frontrunner.
+
+First detect my operating system and check whether Git, Node.js 22.5 or later, and npm are available. If anything is missing or too old, install it using the safest standard method for this operating system. Do not merely tell me to install a prerequisite: perform the setup where you can. Explain any administrator or sudo permission in plain English before requesting it, and never bypass system security controls. Verify git --version, node --version and npm --version before continuing.
+
+Then clone Frontrunner, install its main and local interface dependencies, and follow the repository's onboarding instructions. Do not overwrite an existing folder or change an existing installation without asking. When it is ready, start the local interface and tell me exactly where to open it. If a system dialog or restart is unavoidable, give me one clear step, wait for me to complete it, then continue.
+```
+
+Frontrunner then opens locally and asks about your CV, target roles, location,
+salary and preferences. Personal and generated files are stored beneath the
+ignored `workspace/` directory. Model-backed actions send the relevant bounded
+context to the provider used by your chosen agent.
+
+<details>
+<summary><strong>Prefer to install it manually?</strong></summary>
+
+You need Node.js 22.5 or later and Git:
 
 ```bash
 git clone https://github.com/Furls-Digital/frontrunner.git
@@ -105,18 +136,14 @@ npm run ui:install
 npm run ui
 ```
 
-Open [http://127.0.0.1:3100/welcome](http://127.0.0.1:3100/welcome) and add your
-CV, target roles, and preferences. The interface saves personal and generated
-content beneath the ignored `workspace/` directory.
+Open [http://127.0.0.1:3100/welcome](http://127.0.0.1:3100/welcome). Install
+Chromium once with `npm run browser:install` if you want PDF generation or the
+browser fallback.
 
-Install Chromium once if you want PDF generation or browser fallback:
+</details>
 
-```bash
-npm run browser:install
-```
-
-You can also work conversationally. Open a tested AI coding assistant in the
-repository and say:
+Once installed, you can also work conversationally. Open a tested AI coding
+assistant in the repository and say:
 
 ```text
 Set up Frontrunner for me.

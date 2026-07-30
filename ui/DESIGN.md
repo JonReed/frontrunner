@@ -174,10 +174,21 @@ able to say why.
 
 ## Identity and product shell
 
-**The mark is three lanes and one leader.** It also reads as an F at favicon
-size, but it is not a generic initial in a coloured tile. The product narrows
-many possible roles into a few worth pursuing; the mark is that idea reduced
-to one shape. Keep it in ink, with blue reserved for the leading point.
+**The wordmark is the logo.** Use the widely tracked uppercase FRONTRUNNER
+wordmark in headers and other places where the name fits. A three-line symbol
+is too easily mistaken for a hamburger menu, especially when separated from
+the name.
+
+Where a compact icon is genuinely required, use the stacked-paper/check mark:
+the user's evidence and applications are documents, while the cobalt check
+means a role worth acting on. Do not place the compact icon beside the wordmark
+as decoration.
+
+**Material is part of the identity, not a decorative theme.** Warm paper,
+deckled edges, book cloth and card stock connect the public promise to the
+working product. Use the shared material image as a restrained edge, onboarding
+panel or background layer; never place operational text directly over its busy
+areas. Cards remain readable paper surfaces rather than glass panels.
 
 **The shell is quiet and persistent.** The wordmark and four destinations sit
 in a translucent paper header on larger screens. Active navigation uses a
@@ -198,9 +209,16 @@ from unrelated components.
 
 ## Type
 
-**One family: DM Sans.** Bundled locally, so no network request and it works
-offline. Hierarchy comes from size and weight only — mixing families is where
-interfaces start looking assembled rather than designed.
+**Editorial promise, practical workspace.** Page-level conclusions use a
+restrained editorial serif, matching the public identity and the expectation
+set before installation. It is deliberately limited to the one sentence that
+frames a screen: *Six applications are ready to send*, *Everything found*,
+*Head of Applied AI*.
+
+Everything operational stays in DM Sans: navigation, controls, labels, role
+rows, reports and data. DM Sans is bundled locally, so there is no network
+request and the working interface remains consistent offline. This is a
+two-purpose system, not free-form font mixing.
 
 Numbers that sit in columns use `.tabular`, not a monospace face. Monospace
 would drag the developer-tool feel straight back in.

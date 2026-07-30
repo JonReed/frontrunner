@@ -59,14 +59,14 @@ function StageList({
         </h2>
       )}
       {roles.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[var(--color-line-strong)] bg-[var(--color-card)] p-10 text-center">
+        <div className="paper-surface rounded-2xl border border-dashed p-10 text-center">
           <p className="font-semibold">Nothing here.</p>
           <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
             Roles appear here as they move through the process.
           </p>
         </div>
       ) : (
-        <ul className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-card)] shadow-[0_1px_2px_rgb(26_25_23/0.035)]">
+        <ul className="product-list rounded-2xl border">
           {roles.map((role) => (
             <ApplicationRoleRow
               key={role.num}
@@ -118,8 +118,9 @@ export default async function ApplicationsPage({
       />
 
       <div className="mb-9">
+        <p className="page-eyebrow">Applications</p>
         <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <h1 className="text-[30px] font-bold leading-tight tracking-[-0.025em] sm:text-[34px]">{heading}</h1>
+          <h1 className="editorial-title">{heading}</h1>
           {selected ? (
             <Link href="/applications" className="text-sm text-[var(--color-act)] hover:underline">
               Show every stage
@@ -133,7 +134,7 @@ export default async function ApplicationsPage({
             </Link>
           )}
         </div>
-        <p className="mt-1 text-[15px] text-[var(--color-ink-soft)]">
+        <p className="page-lead mt-3 text-[var(--color-ink-soft)]">
           {selected
             ? selected === 'closed' ? CLOSED_COPY : STAGE_COPY[selected]
             : `${live.length} roles still in play.`}

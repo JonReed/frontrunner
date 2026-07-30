@@ -75,13 +75,13 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
         {backLabel}
       </Link>
 
-      <div className="mb-8 rounded-2xl border border-[var(--color-line)] bg-[var(--color-card)] px-5 py-4 shadow-[0_1px_2px_rgb(26_25_23/0.03)]">
+      <div className="pipeline-surface mb-9 rounded-2xl border px-5 py-4">
         <RoleJourney stage={role.stage} status={role.status} />
       </div>
 
       <header className="mb-9">
-        <p className="mb-1 text-[15px] font-semibold text-[var(--color-act)]">{role.company}</p>
-        <h1 className="text-[30px] font-bold leading-[1.12] tracking-[-0.025em] sm:text-[36px]">{role.role}</h1>
+        <p className="page-eyebrow">{role.company}</p>
+        <h1 className="editorial-title editorial-title--role">{role.role}</h1>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <Match score={role.score} />
           <span className="text-sm text-[var(--color-ink-faint)]">{role.status}</span>
@@ -113,14 +113,14 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
       {/* The assessment. */}
       {report ? (
         <>
-          <article className="mb-8 rounded-2xl border border-[var(--color-line)] bg-[var(--color-card)] px-5 py-6 shadow-[0_1px_2px_rgb(26_25_23/0.03)] sm:px-7">
+          <article className="paper-surface mb-8 rounded-2xl border px-5 py-6 sm:px-7">
             {report.primary.map((s) => (
               <Section key={s.id} title={s.title} body={s.body} />
             ))}
           </article>
 
           {report.secondary.length > 0 && (
-            <details className="mb-8 rounded-2xl border border-[var(--color-line)] bg-[var(--color-card)] px-5 py-4">
+            <details className="paper-surface mb-8 rounded-2xl border px-5 py-4">
               <summary className="cursor-pointer text-sm font-semibold">
                 More detail
                 <span className="ml-2 font-normal text-[var(--color-ink-faint)]">
@@ -136,7 +136,7 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
           )}
         </>
       ) : (
-        <div className="mb-8 rounded-2xl border border-dashed border-[var(--color-line-strong)] bg-[var(--color-card)] p-8 text-center">
+        <div className="paper-surface mb-8 rounded-2xl border border-dashed p-8 text-center">
           <p className="font-medium">No assessment for this role yet.</p>
           <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
             Score it to see how well it matches your CV.
@@ -144,7 +144,7 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
         </div>
       )}
 
-      <section className="mb-8 rounded-2xl border border-[var(--color-line)] bg-[var(--color-card)] p-5">
+      <section className="paper-surface mb-8 rounded-2xl border p-5">
         <h2 className="font-semibold">Move this role</h2>
         <p className="mb-4 mt-0.5 text-sm text-[var(--color-ink-soft)]">
           Update where it sits, or remove it from the live lists. Its assessment and CV are kept.
