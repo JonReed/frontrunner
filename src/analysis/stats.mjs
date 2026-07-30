@@ -442,7 +442,7 @@ export function computeAllStats({
 }
 
 /** Human-readable table. pdfPct/reportPct are JSON-only by design — no job-search decision follows from them. */
-function printSummary(stats) {
+export function printSummary(stats) {
   const line = '━'.repeat(45);
   console.log(`\n${line}`);
   console.log(`Pipeline Stats — ${stats.metadata.generatedAt}`);
