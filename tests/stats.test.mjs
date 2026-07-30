@@ -225,32 +225,39 @@ try {
     fail('src/analysis/stats.mjs --summary missing header');
   }
 
-  // --summary cold-classification integration (#2123): the CLI reads its
-  // fixed workspace paths, so exercise it against real temporary tracker +
-  // follow-ups files at those exact paths, then restore whatever was there.
-  const liveAppsFile = join(ROOT, 'workspace', 'applications', 'tracker.md');
-  const liveFupsFile = join(ROOT, 'workspace', 'applications', 'follow-ups.md');
-  const { existsSync, readFileSync: readFileSyncNode, mkdirSync } = await import('fs');
-  const applicationsDir = join(ROOT, 'workspace', 'applications');
-  const dataDirExisted = existsSync(applicationsDir);
-  const appsExisted = existsSync(liveAppsFile);
-  const fupsExisted = existsSync(liveFupsFile);
-  const appsBackup = appsExisted ? readFileSyncNode(liveAppsFile, 'utf-8') : null;
-  const fupsBackup = fupsExisted ? readFileSyncNode(liveFupsFile, 'utf-8') : null;
+  // --summary cold-classification integration (#2123): use explicit fixture
+  // paths and call the renderer directly. Tests must never replace real
+  // workspace files, even briefly.
+  const summaryDir = mkdtempSync(join(tmpdir(), 'frontrunner-stats-summary-'));
+  const fixtureAppsFile = join(summaryDir, 'tracker.md');
+  const fixtureFupsFile = join(summaryDir, 'follow-ups.md');
   try {
-    if (!dataDirExisted) mkdirSync(applicationsDir, { recursive: true });
-    writeFileSync(liveAppsFile, coldTrackerMd);
-    writeFileSync(liveFupsFile, coldFollowupsMd);
-    const coldSummaryOut = run(NODE, [join(ROOT, 'src/analysis/stats.mjs'), '--summary']);
+    writeFileSync(fixtureAppsFile, coldTrackerMd);
+    writeFileSync(fixtureFupsFile, coldFollowupsMd);
+    const coldStats = stats.computeAllStats({
+      appsFile: fixtureAppsFile,
+      followupsFile: fixtureFupsFile,
+      scanHistoryFile: join(summaryDir, 'missing-scan-history.tsv'),
+      scanRunsFile: join(summaryDir, 'missing-scan-runs.tsv'),
+      portalsFile: join(summaryDir, 'missing-portals.yml'),
+      portalHealthFile: join(summaryDir, 'missing-portal-health.tsv'),
+    });
+    const rendered = [];
+    const originalLog = console.log;
+    try {
+      console.log = (...args) => rendered.push(args.join(' '));
+      stats.printSummary(coldStats);
+    } finally {
+      console.log = originalLog;
+    }
+    const coldSummaryOut = rendered.join('\n');
     if (coldSummaryOut && coldSummaryOut.includes('3 active (2 live, 1 cold)')) {
       pass('stats.mjs --summary integrates live/cold counts into the existing Tracker line');
     } else {
       fail(`stats.mjs --summary missing live/cold breakdown: ${coldSummaryOut}`);
     }
   } finally {
-    if (appsBackup !== null) writeFileSync(liveAppsFile, appsBackup); else if (!appsExisted) rmSync(liveAppsFile, { force: true });
-    if (fupsBackup !== null) writeFileSync(liveFupsFile, fupsBackup); else if (!fupsExisted) rmSync(liveFupsFile, { force: true });
-    if (!dataDirExisted) rmSync(applicationsDir, { recursive: true, force: true });
+    rmSync(summaryDir, { recursive: true, force: true });
   }
 } catch (e) {
   fail(`src/analysis/stats.mjs tests crashed: ${e.message}`);
