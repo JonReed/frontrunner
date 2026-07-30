@@ -10,6 +10,9 @@
     "node": ">=22.5.0"
   },
   "scripts": {
+    "test": "node test-all.mjs",
+    "qa": "npm test && npm run benchmark:check",
+    "hooks:install": "git config core.hooksPath .github/hooks",
     "doctor": "node doctor.mjs",
     "ui": "npm --prefix ui run dev",
     "ui:install": "npm --prefix ui install",

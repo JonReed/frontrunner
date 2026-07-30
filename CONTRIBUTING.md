@@ -111,9 +111,13 @@ npm -C ui run typecheck
 npm -C ui run build
 
 # Tests
-node test-all.mjs             # Full suite — run before pushing/opening a PR
+npm run qa                    # Full local/CI gate — run before committing
 node test-all.mjs --only providers/themuse   # Run just one provider's test(s)
 ```
+
+Run `npm run hooks:install` once after cloning to enable the versioned
+pre-commit hook. The hook runs the same `npm run qa` command as GitHub Actions:
+the complete hermetic suite plus the reproducible benchmark-artifact check.
 
 `test-all.mjs` copies the current tracked and untracked system source into a
 disposable git repository before executing any test. Ignored user data is never

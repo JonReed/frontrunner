@@ -37,6 +37,6 @@ jobs:
       # Skip the postinstall (npx playwright install chromium); the tests
       # never launch a browser, so the ~170 MB download is pure CI overhead.
       - run: npm ci --ignore-scripts
-      - run: node test-all.mjs --quick
-      - name: Efficiency benchmark artifact is current
-        run: npm run benchmark:check
+      # This is intentionally the same command as the versioned pre-commit
+      # hook. Keep the local and hosted merge gates behind one entry point.
+      - run: npm run qa

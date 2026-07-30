@@ -14,7 +14,13 @@ import {
 test('UI root and process authority come only from the fixed application launcher', () => {
   const roles = readFileSync(join(ROOT, 'ui', 'src', 'lib', 'roles.ts'), 'utf8');
   const root = readFileSync(join(ROOT, 'ui', 'src', 'lib', 'root.ts'), 'utf8');
-  const spec = resolveUiLaunch('dev');
+  const checkedDependencies = [];
+  const spec = resolveUiLaunch('dev', {
+    dependencyExists(path) {
+      checkedDependencies.push(path);
+      return true;
+    },
+  });
 
   assert.doesNotMatch(roles, /process\.cwd\(\)/);
   assert.match(root, /process\.env\.FRONTRUNNER_ROOT/);
@@ -22,9 +28,17 @@ test('UI root and process authority come only from the fixed application launche
   assert.equal(spec.command, process.execPath);
   assert.equal(spec.cwd, join(ROOT, 'ui'));
   assert.equal(spec.env.FRONTRUNNER_ROOT, ROOT);
+  assert.deepEqual(
+    checkedDependencies,
+    [join(ROOT, 'ui', 'node_modules', 'next', 'dist', 'bin', 'next')],
+  );
   assert.deepEqual(spec.args.slice(-5), ['dev', '--hostname', '127.0.0.1', '-p', '3100']);
   assert.throws(() => resolveUiLaunch('--hostname'), /must be one of/);
   assert.throws(() => resolveUiLaunch('anything-else'), /must be one of/);
+  assert.throws(
+    () => resolveUiLaunch('dev', { dependencyExists: () => false }),
+    /UI dependencies are missing/,
+  );
 });
 
 test('UI artifact reads use a role identity, never a browser-supplied filesystem path', () => {

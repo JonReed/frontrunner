@@ -28,11 +28,14 @@ const COMMANDS = Object.freeze({
   start: ['start', '--hostname', '127.0.0.1', '-p', '3100'],
 });
 
-export function resolveUiLaunch(command) {
+export function resolveUiLaunch(
+  command,
+  { dependencyExists = existsSync } = {},
+) {
   if (!Object.hasOwn(COMMANDS, command)) {
     throw new Error('UI command must be one of: dev, build, start');
   }
-  if (!existsSync(NEXT_CLI)) {
+  if (!dependencyExists(NEXT_CLI)) {
     throw new Error('UI dependencies are missing. Run npm run ui:install first.');
   }
   return Object.freeze({
