@@ -157,7 +157,15 @@ test('the installed launcher is executable and rewritable', (t) => {
   const file = installLauncher({ platform: 'darwin', root: '/opt/frontrunner', dir });
 
   assert.equal(file, join(dir, 'Frontrunner.command'));
-  assert.equal(statSync(file).mode & 0o111, 0o111, 'a launcher that is not executable does nothing');
+  /*
+    POSIX only. NTFS does not carry the executable bit — chmod is close to a
+    no-op there — and the Windows launcher is a .cmd, which the shell runs by
+    extension and never needs one. Asserting it everywhere tested the host's
+    filesystem rather than this code.
+  */
+  if (process.platform !== 'win32') {
+    assert.equal(statSync(file).mode & 0o111, 0o111, 'a launcher that is not executable does nothing');
+  }
 
   // Regenerating after a move must replace it rather than fail or append.
   installLauncher({ platform: 'darwin', root: '/opt/elsewhere', dir });
