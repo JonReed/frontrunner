@@ -118,3 +118,24 @@ test('profile controller extraction accepts only bounded CV input and cannot smu
     /requires CV text/u,
   );
 });
+
+test('profile controller completion has a closed first-run contract', () => {
+  const request = validateProfileControlRequest({
+    version: '1',
+    action: 'complete',
+    cv: '# Alex Example\n\nExperience',
+    fields: {
+      'candidate.email': 'alex@example.test',
+      'target_roles.primary': ['Product Director'],
+    },
+    targeting: { dealBreakers: 'No relocation' },
+  });
+  assert.equal(request.action, 'complete');
+  assert.equal(request.targeting.dealBreakers, 'No relocation');
+  assert.throws(() => validateProfileControlRequest({
+    version: '1', action: 'complete', cv: '# CV', fields: {}, targeting: { arbitrary: 'x' },
+  }), /unsupported targeting field/u);
+  assert.throws(() => validateProfileControlRequest({
+    version: '1', action: 'complete', fields: { 'target_roles.primary': ['Role'] },
+  }), /requires CV text/u);
+});

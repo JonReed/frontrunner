@@ -1,0 +1,27 @@
+[
+  {
+    "path": "workspace/profile/cv.md",
+    "title": "Your CV",
+    "why": "Every role is scored against it. Nothing works without this one."
+  },
+  {
+    "path": "workspace/profile/profile.yml",
+    "title": "Your details and targets",
+    "why": "Name, location, and the kind of work you are after."
+  },
+  {
+    "path": "workspace/profile/targeting.md",
+    "title": "Your search brief",
+    "why": "The rules used to judge whether a role is genuinely right for you."
+  },
+  {
+    "path": "workspace/search/portals.yml",
+    "title": "Where to search",
+    "why": "The job boards and title filters used by the scanner."
+  },
+  {
+    "path": "workspace/applications/tracker.md",
+    "title": "Your tracker",
+    "why": "Where assessed roles and applications are recorded."
+  }
+]

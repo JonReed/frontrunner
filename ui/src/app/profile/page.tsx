@@ -52,6 +52,10 @@ export default async function ProfilePage() {
   ]);
   const editable = snapshot.fields;
   const text = (path: string) => typeof editable[path] === 'string' ? editable[path] as string : '';
+  const list = (path: string) => Array.isArray(editable[path]) ? editable[path] as string[] : [];
+  const sponsorship = editable['location.needs_sponsorship'] === true
+    ? 'Yes'
+    : editable['location.needs_sponsorship'] === false ? 'No' : '';
   const searchArea = [text('location.city'), text('location.country')].filter(Boolean).join(', ');
   const completeness = profileCompleteness({ fields: editable, hasCv: p.hasCv });
 
@@ -137,6 +141,10 @@ export default async function ProfilePage() {
           <Row label="Search area" value={searchArea || NOT_SET} />
           <Row label="Timezone" value={text('location.timezone') || NOT_SET} />
           <Row label="Work authorisation (optional)" value={text('location.visa_status') || NOT_SET} />
+          <Row label="Countries authorised in" value={list('location.authorized_in').join(', ') || NOT_SET} />
+          <Row label="Needs sponsorship" value={sponsorship || NOT_SET} />
+          <Row label="AI usage level" value={text('spend_tier') || NOT_SET} />
+          <Row label="Output language" value={text('language.output') || NOT_SET} />
         </dl>
       </section>
 

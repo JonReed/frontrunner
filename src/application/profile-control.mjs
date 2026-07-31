@@ -19,6 +19,7 @@ import { pathToFileURL } from 'node:url';
 import { APPLICATION_API_VERSION } from './contract.mjs';
 import { readBoundedRequest } from './run.mjs';
 import { ensurePortalsFile } from './onboarding-files.mjs';
+import { completeOnboarding } from './onboarding-completion.mjs';
 import { extractProfileFromCv } from './profile-extraction.mjs';
 import {
   appendCvVersion,
@@ -31,9 +32,10 @@ import {
   recoverProfileSave,
 } from './profile-transaction.mjs';
 
-const CONTROL_KEYS = new Set(['version', 'action', 'fields', 'cv', 'versions', 'label', 'text']);
-const ACTIONS = new Set(['read', 'save', 'add-version', 'ensure-portals', 'extract']);
+const CONTROL_KEYS = new Set(['version', 'action', 'fields', 'cv', 'versions', 'label', 'text', 'targeting']);
+const ACTIONS = new Set(['read', 'save', 'complete', 'add-version', 'ensure-portals', 'extract']);
 const MAX_VERSIONS = 20;
+const TARGETING_KEYS = new Set(['superpower', 'workExcites', 'workDrains', 'dealBreakers']);
 // The generic application protocol stays deliberately tiny. Profile saves are
 // the one exception because the UI explicitly accepts a 512 KiB canonical CV
 // plus reference versions. Bound the aggregate request rather than silently
@@ -66,21 +68,21 @@ export function validateProfileControlRequest(value) {
   }
 
   if (value.action === 'read') {
-    for (const key of ['fields', 'cv', 'versions', 'label', 'text']) {
+    for (const key of ['fields', 'cv', 'versions', 'label', 'text', 'targeting']) {
       if (value[key] !== undefined) throw controlError(`read does not accept ${key}`);
     }
     return Object.freeze({ version: APPLICATION_API_VERSION, action: 'read' });
   }
 
   if (value.action === 'ensure-portals') {
-    for (const key of ['fields', 'cv', 'versions', 'label', 'text']) {
+    for (const key of ['fields', 'cv', 'versions', 'label', 'text', 'targeting']) {
       if (value[key] !== undefined) throw controlError(`ensure-portals does not accept ${key}`);
     }
     return Object.freeze({ version: APPLICATION_API_VERSION, action: 'ensure-portals' });
   }
 
   if (value.action === 'extract') {
-    for (const key of ['fields', 'versions', 'label', 'text']) {
+    for (const key of ['fields', 'versions', 'label', 'text', 'targeting']) {
       if (value[key] !== undefined) throw controlError(`extract does not accept ${key}`);
     }
     if (typeof value.cv !== 'string' || !value.cv.trim()) {
@@ -94,7 +96,7 @@ export function validateProfileControlRequest(value) {
   }
 
   if (value.action === 'add-version') {
-    for (const key of ['fields', 'cv', 'versions']) {
+    for (const key of ['fields', 'cv', 'versions', 'targeting']) {
       if (value[key] !== undefined) throw controlError(`add-version does not accept ${key}`);
     }
     if (typeof value.label !== 'string' || value.label.length > 500) {
@@ -138,16 +140,33 @@ export function validateProfileControlRequest(value) {
     }
   }
 
+  const targeting = value.targeting ?? {};
+  if (!plainObject(targeting)) throw controlError('targeting must be a plain object');
+  for (const [key, entry] of Object.entries(targeting)) {
+    if (!TARGETING_KEYS.has(key)) throw controlError(`unsupported targeting field: ${key}`);
+    if (typeof entry !== 'string' || entry.length > 2_000) {
+      throw controlError(`targeting.${key} must be text no longer than 2000 characters`);
+    }
+  }
+  if (value.action === 'save' && Object.keys(targeting).length > 0) {
+    throw controlError('save does not accept targeting');
+  }
+
+  if (value.action === 'complete' && (typeof value.cv !== 'string' || !value.cv.trim())) {
+    throw controlError('complete requires CV text');
+  }
+
   if (Object.keys(fields).length === 0 && value.cv === undefined && versions.length === 0) {
     throw controlError('save must change something');
   }
 
   return Object.freeze({
     version: APPLICATION_API_VERSION,
-    action: 'save',
+    action: value.action,
     fields: Object.freeze({ ...fields }),
     cv: value.cv,
     versions: Object.freeze(versions.map(v => Object.freeze({ ...v }))),
+    targeting: Object.freeze({ ...targeting }),
   });
 }
 
@@ -186,6 +205,15 @@ export async function main({ input = process.stdin, output = process.stdout, err
       const result = {
         version: APPLICATION_API_VERSION,
         ...(await extractProfileFromCv({ cv: control.cv })),
+      };
+      output.write(`${JSON.stringify(result)}\n`);
+      return result;
+    }
+
+    if (control.action === 'complete') {
+      const result = {
+        version: APPLICATION_API_VERSION,
+        ...(await completeOnboarding(control)),
       };
       output.write(`${JSON.stringify(result)}\n`);
       return result;

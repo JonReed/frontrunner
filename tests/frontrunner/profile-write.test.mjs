@@ -139,6 +139,29 @@ test('validates types and bounds', () => {
   assert.throws(() => validateProfilePatch({ 'candidate.full_name': 42 }), /must be text/);
   assert.throws(() => validateProfilePatch({ 'target_roles.primary': 'not a list' }), /must be a list/);
   assert.throws(() => validateProfilePatch({ 'candidate.full_name': 'x'.repeat(501) }), /too long/);
+  assert.throws(() => validateProfilePatch({ 'candidate.email': 'not-an-email' }), /valid email/);
+  assert.throws(() => validateProfilePatch({ 'compensation.currency': '£' }), /three-letter currency/);
+  assert.throws(() => validateProfilePatch({ 'location.timezone': 'PST' }), /IANA timezone/);
+  assert.throws(() => validateProfilePatch({ 'language.output': 'English' }), /language code/);
+  assert.throws(() => validateProfilePatch({ 'location.needs_sponsorship': 'no' }), /true or false/);
+  assert.deepEqual(validateProfilePatch({ 'location.needs_sponsorship': '' }), {
+    'location.needs_sponsorship': '',
+  });
+  assert.deepEqual(validateProfilePatch({
+    'candidate.email': 'jane@example.com',
+    'compensation.currency': 'GBP',
+    'location.timezone': 'Europe/London',
+    'language.output': 'en-GB',
+    'location.authorized_in': ['United Kingdom', 'United Kingdom'],
+    'location.needs_sponsorship': false,
+  }), {
+    'candidate.email': 'jane@example.com',
+    'compensation.currency': 'GBP',
+    'location.timezone': 'Europe/London',
+    'language.output': 'en-GB',
+    'location.authorized_in': ['United Kingdom'],
+    'location.needs_sponsorship': false,
+  });
   assert.throws(
     () => validateProfilePatch({ 'target_roles.primary': Array(41).fill('role') }),
     /too many/,

@@ -340,6 +340,7 @@ const SYSTEM_PATHS = [
   'templates/fonts/',
   'docs/examples/',
   'config/profile.example.yml',
+  'config/onboarding-prerequisites.json',
   'config/prefilter.example.yml',
   '.env.example',
   '.editorconfig',

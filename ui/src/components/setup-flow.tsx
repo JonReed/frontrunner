@@ -28,7 +28,7 @@
  */
 
 import { useMemo, useState, useTransition } from 'react';
-import { ensureSearchSources, saveDetails } from '@/app/actions';
+import { completeSetup } from '@/app/actions';
 import { OnboardingAiProfile } from '@/components/onboarding-ai-profile';
 import { suggestCvContact } from '@/lib/cv-contact-suggestions.mjs';
 import { suggestJobTitles } from '@/lib/job-title-suggestions.mjs';
@@ -55,9 +55,8 @@ const REMOTE_LABEL: Record<string, string> = {
  * Someone who has been job hunting has an "operations" version and a
  * "programme" version of the same career, worded differently and often
  * containing different facts — a project one of them has room for and the
- * other does not. Those extra versions are the best possible input for
- * tailoring, because they are the user's own words about their own work,
- * already vetted by them. Far better than anything scraped from a profile.
+ * other does not. Those extra versions are preserved locally for the user;
+ * they are not silently sent to an AI provider or treated as fact authority.
  *
  * But exactly one is canonical. `workspace/profile/cv.md` is what roles are scored against, and
  * the project's source-of-truth rules depend on there being a single answer to
@@ -94,11 +93,19 @@ export interface SetupDraft {
   city: string;
   timezone: string;
   visaStatus: string;
+  authorizedIn: string;
+  needsSponsorship: 'yes' | 'no' | 'unsure';
   targetRoles: string;
   salaryTarget: string;
   minimumSalary: string;
   salaryCurrency: string;
   remote: 'remote' | 'hybrid' | 'onsite' | '';
+  spendTier: 'economy' | 'standard' | 'premium';
+  outputLanguage: string;
+  superpower: string;
+  workExcites: string;
+  workDrains: string;
+  dealBreakers: string;
 }
 
 const EMPTY: SetupDraft = {
@@ -115,11 +122,19 @@ const EMPTY: SetupDraft = {
   city: '',
   timezone: '',
   visaStatus: '',
+  authorizedIn: '',
+  needsSponsorship: 'unsure',
   targetRoles: '',
   salaryTarget: '',
   minimumSalary: '',
   salaryCurrency: '',
   remote: '',
+  spendTier: 'standard',
+  outputLanguage: 'en',
+  superpower: '',
+  workExcites: '',
+  workDrains: '',
+  dealBreakers: '',
 };
 
 const PLAIN = /\.(md|markdown|txt|text|rtf)$/i;
@@ -433,7 +448,7 @@ export function SetupFlow({
     }
     setSaving(true);
     setError(null);
-    const fields: Record<string, string | string[]> = {};
+    const fields: Record<string, string | string[] | boolean> = {};
     fields['candidate.full_name'] = draft.fullName.trim();
     fields['candidate.email'] = draft.email.trim();
     fields['candidate.phone'] = draft.phone.trim();
@@ -446,6 +461,12 @@ export function SetupFlow({
     fields['location.country'] = draft.country.trim() || regional.country;
     fields['location.timezone'] = draft.timezone.trim() || regional.timezone;
     fields['location.visa_status'] = draft.visaStatus.trim();
+    fields['location.authorized_in'] = draft.authorizedIn.split(/\r?\n/u).map(value => value.trim()).filter(Boolean);
+    if (draft.needsSponsorship !== 'unsure') {
+      fields['location.needs_sponsorship'] = draft.needsSponsorship === 'yes';
+    }
+    fields['language.output'] = draft.outputLanguage.trim() || 'en';
+    fields['spend_tier'] = draft.spendTier;
     fields['compensation.currency'] = draft.salaryCurrency.trim() || regional.currency;
     fields['compensation.target_range'] = draft.salaryTarget.trim();
     fields['compensation.minimum'] = draft.minimumSalary.trim();
@@ -459,15 +480,19 @@ export function SetupFlow({
       .map((c) => ({ label: c.label, text: c.text }));
 
     startTransition(async () => {
-      const result = await saveDetails({ fields, cv: draft.cv, versions });
+      const result = await completeSetup({
+        fields,
+        cv: draft.cv,
+        versions,
+        targeting: {
+          superpower: draft.superpower,
+          workExcites: draft.workExcites,
+          workDrains: draft.workDrains,
+          dealBreakers: draft.dealBreakers,
+        },
+      });
       if ('error' in result) {
         setError(result.error);
-        setSaving(false);
-        return;
-      }
-      const sources = await ensureSearchSources();
-      if ('error' in sources) {
-        setError(sources.error);
         setSaving(false);
         return;
       }
@@ -600,8 +625,8 @@ export function SetupFlow({
             </summary>
             <p className="mt-3 text-sm text-[var(--color-ink-soft)]">
               Most people have a few, worded for different kinds of job. They are not scored
-              against and they do not replace the one above — they are kept as reference, so a
-              tailored CV can draw on how you have described your own work before.
+              against and they do not replace the one above — they are kept locally as reference
+              material and are not sent to your AI provider automatically.
             </p>
 
             {draft.otherCvs.length > 0 && (
@@ -906,7 +931,38 @@ export function SetupFlow({
                 placeholder="No sponsorship required"
               />
             </Field>
+            <Field label="Countries you can work in" hint="One per line. This is used for deterministic eligibility checks.">
+              <textarea
+                className={`${FIELD} resize-y`}
+                rows={3}
+                value={draft.authorizedIn}
+                onChange={(e) => set('authorizedIn', e.target.value)}
+                placeholder={'United Kingdom\nIreland'}
+              />
+            </Field>
+            <Field label="Do you need employer sponsorship?" hint="Choose unsure rather than guessing.">
+              <select
+                className={FIELD}
+                value={draft.needsSponsorship}
+                onChange={(e) => set('needsSponsorship', e.target.value as SetupDraft['needsSponsorship'])}
+              >
+                <option value="unsure">Unsure / depends</option>
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </Field>
           </div>
+          <Field label="AI usage level" hint="Controls the model used for assessments. You can change this for important roles later.">
+            <select
+              className={FIELD}
+              value={draft.spendTier}
+              onChange={(e) => set('spendTier', e.target.value as SetupDraft['spendTier'])}
+            >
+              <option value="economy">Economy — quickest and lowest usage</option>
+              <option value="standard">Standard — balanced (recommended)</option>
+              <option value="premium">Premium — strongest model, highest usage</option>
+            </select>
+          </Field>
         </section>
       )}
 
@@ -919,6 +975,32 @@ export function SetupFlow({
             We will show you what was captured and what is still missing. Nothing is hidden behind
             a completed-looking screen, and you can change every value later from My details.
           </p>
+
+          <details className="mb-6 rounded-xl border border-[var(--color-line)] bg-[var(--color-card)] px-5 py-4">
+            <summary className="cursor-pointer text-[15px] font-semibold">
+              Help Frontrunner judge fit more accurately
+              <span className="ml-2 font-normal text-[var(--color-ink-faint)]">optional</span>
+            </summary>
+            <p className="mb-4 mt-3 text-sm text-[var(--color-ink-soft)]">
+              These answers become your editable search brief. They are not inferred or replaced
+              with the original project author's preferences.
+            </p>
+            <Field label="What makes you distinctive?">
+              <textarea className={`${FIELD} resize-y`} rows={3} value={draft.superpower} onChange={(e) => set('superpower', e.target.value)} />
+            </Field>
+            <Field label="What work energises you?">
+              <textarea className={`${FIELD} resize-y`} rows={3} value={draft.workExcites} onChange={(e) => set('workExcites', e.target.value)} />
+            </Field>
+            <Field label="What work drains you?">
+              <textarea className={`${FIELD} resize-y`} rows={3} value={draft.workDrains} onChange={(e) => set('workDrains', e.target.value)} />
+            </Field>
+            <Field label="Any deal-breakers?">
+              <textarea className={`${FIELD} resize-y`} rows={3} value={draft.dealBreakers} onChange={(e) => set('dealBreakers', e.target.value)} />
+            </Field>
+            <Field label="Output language" hint="Language code used for reports and application material.">
+              <input className={FIELD} value={draft.outputLanguage} onChange={(e) => set('outputLanguage', e.target.value)} placeholder="en" />
+            </Field>
+          </details>
 
           <div className="mb-6 space-y-3">
             <div

@@ -94,8 +94,31 @@ export const WRITABLE_FIELDS = Object.freeze({
   'location.city': { type: 'text' },
   'location.timezone': { type: 'text' },
   'location.visa_status': { type: 'text' },
+  'location.authorized_in': { type: 'list' },
+  'location.needs_sponsorship': { type: 'boolean' },
+  'language.output': { type: 'text' },
   'spend_tier': { type: 'enum', values: ['economy', 'standard', 'premium'] },
 });
+
+function validateSemantic(path, value) {
+  if (value === '') return;
+  if (path === 'candidate.email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(value)) {
+    throw fail('"candidate.email" must be a valid email address.');
+  }
+  if (['candidate.linkedin', 'candidate.portfolio_url', 'candidate.github'].includes(path)
+    && !/^(?:https?:\/\/)?[a-z0-9][^\s]*\.[^\s]+$/iu.test(value)) {
+    throw fail(`"${path}" must be a web address.`);
+  }
+  if (path === 'compensation.currency' && !/^[A-Z]{3}$/u.test(value)) {
+    throw fail('"compensation.currency" must be a three-letter currency code such as GBP.');
+  }
+  if (path === 'location.timezone' && !/^(?:UTC|[A-Za-z_+-]+\/[A-Za-z0-9_+/-]+)$/u.test(value)) {
+    throw fail('"location.timezone" must be an IANA timezone such as Europe/London.');
+  }
+  if (path === 'language.output' && !/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/u.test(value)) {
+    throw fail('"language.output" must be a language code such as en or en-GB.');
+  }
+}
 
 function fail(message, code = 'INVALID_PROFILE_WRITE') {
   const error = new Error(message);
@@ -128,7 +151,17 @@ export function validateProfilePatch(patch) {
         .map(v => (typeof v === 'string' ? v.trim() : null))
         .filter(v => v !== null && v !== '');
       if (items.some(v => v.length > MAX_FIELD)) throw fail(`An entry in "${path}" is too long.`);
-      clean[path] = items;
+      clean[path] = [...new Set(items)];
+      continue;
+    }
+
+    if (rule.type === 'boolean') {
+      if (raw === '') {
+        clean[path] = '';
+        continue;
+      }
+      if (typeof raw !== 'boolean') throw fail(`"${path}" must be true or false.`);
+      clean[path] = raw;
       continue;
     }
 
@@ -138,6 +171,7 @@ export function validateProfilePatch(patch) {
     if (rule.type === 'enum' && value !== '' && !rule.values.includes(value)) {
       throw fail(`"${path}" must be one of: ${rule.values.join(', ')}.`);
     }
+    validateSemantic(path, value);
     clean[path] = value;
   }
   return clean;

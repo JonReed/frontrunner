@@ -19,10 +19,12 @@ import {
 } from '@/lib/jobs';
 import {
   addCvVersion as addCvVersionRequest,
+  completeOnboarding as completeOnboardingRequest,
   ensurePortals as ensurePortalsRequest,
   extractProfile,
   saveProfile,
   type ProfileExtraction,
+  type OnboardingSave,
   type ProfileSave,
 } from '@/lib/profile-save';
 import {
@@ -60,6 +62,18 @@ export async function saveDetails(save: ProfileSave): Promise<{ written: string[
       return { error: 'Your profile is being written by something else. Wait a moment, then try again.' };
     }
     return { error: detail || 'That could not be saved. Nothing was changed.' };
+  }
+}
+
+export async function completeSetup(save: OnboardingSave): Promise<{ written: string[] } | { error: string }> {
+  try {
+    return { written: await completeOnboardingRequest(save) };
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : '';
+    if (/lock timeout|busy/iu.test(detail)) {
+      return { error: 'Setup is being saved by something else. Wait a moment, then try again.' };
+    }
+    return { error: detail || 'Setup could not be completed. Your saved progress is safe; try again.' };
   }
 }
 

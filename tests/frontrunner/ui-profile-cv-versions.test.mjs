@@ -25,6 +25,7 @@ test('My details exposes canonical and additional CVs as separate workflows', ()
 test('onboarding provisions search sources before redirecting to the first search', () => {
   const setup = read('ui/src/components/setup-flow.tsx');
   const action = read('ui/src/app/actions.ts');
-  assert.match(setup, /await ensureSearchSources\(\)/u);
-  assert.match(action, /ensurePortalsRequest/u);
+  assert.match(setup, /await completeSetup\(/u);
+  assert.match(action, /completeOnboardingRequest/u);
+  assert.doesNotMatch(setup, /await ensureSearchSources\(\)/u);
 });

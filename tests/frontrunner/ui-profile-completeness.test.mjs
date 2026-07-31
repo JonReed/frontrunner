@@ -23,7 +23,7 @@ test('profile completeness distinguishes required, recommended and optional gaps
   assert.deepEqual(result.requiredMissing, []);
   assert.deepEqual(
     result.recommendedMissing.map((field) => field.id),
-    ['working_pattern', 'search_country', 'timezone'],
+    ['working_pattern', 'search_country', 'timezone', 'spend_tier'],
   );
   assert.equal(result.optionalMissing.some((field) => field.id === 'minimum'), true);
 });
@@ -43,4 +43,3 @@ test('a profile file cannot hide missing core onboarding facts', () => {
     ['email', 'target_roles'],
   );
 });
-

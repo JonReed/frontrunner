@@ -36,9 +36,9 @@ but are not supported configurations; see [Supported CLIs](SUPPORTED_CLIS.md).
 **On first launch, Frontrunner walks you through setup by chatting** — it asks
 for your CV, the core details needed for a useful search (name, email,
 location, and target job titles), and the preferences that improve matching.
-Salary currency/target/floor, working pattern, search area, timezone, work
-authorisation, phone and public links are shown explicitly as recommended or
-optional rather than being hidden behind a generic “complete” state. A final
+Salary currency/target/floor, working pattern, search area, timezone, structured
+work authorisation, AI usage level, output language, phone and public links are
+shown explicitly as recommended or optional rather than being hidden behind a generic “complete” state. A final
 review lists any missing values, and the profile page repeats that review later.
 CV header and title suggestions are deterministic and require confirmation;
 they do not spend AI allowance. After the user reviews the imported CV text,
@@ -51,6 +51,13 @@ selects which suggestions enter the form, reviews them on the later screens,
 and explicitly finishes onboarding before anything is written to the profile.
 Frontrunner never receives the user's Claude password or subscription
 credentials.
+
+The final button uses one recoverable backend operation. It writes the profile,
+creates a candidate-specific search brief, derives the scanner title and
+location filters from confirmed answers, and creates the empty application
+tracker. If the process is interrupted, setup remains visibly incomplete and a
+retry resumes safely. Additional CV versions are stored locally but are not
+automatically sent to an AI provider.
 
 If you are using Codex, start the interactive session with `codex`. Slash commands are not guaranteed in Codex, so use the same mode names in a prompt if `/frontrunner` is unavailable:
 

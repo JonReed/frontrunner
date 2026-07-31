@@ -78,6 +78,13 @@ export const PROFILE_COMPLETENESS_FIELDS = Object.freeze([
     reason: 'Helps with working-hours and location comparisons.',
   },
   {
+    id: 'spend_tier',
+    path: 'spend_tier',
+    label: 'AI usage level',
+    priority: 'recommended',
+    reason: 'Controls how much of your own AI allowance each assessment uses.',
+  },
+  {
     id: 'phone',
     path: 'candidate.phone',
     label: 'Phone',
@@ -118,6 +125,20 @@ export const PROFILE_COMPLETENESS_FIELDS = Object.freeze([
     label: 'Work authorisation',
     priority: 'optional',
     reason: 'Only needed when work permission or sponsorship affects your search.',
+  },
+  {
+    id: 'authorized_in',
+    path: 'location.authorized_in',
+    label: 'Countries you can work in',
+    priority: 'optional',
+    reason: 'Provides structured evidence for work-authorisation checks.',
+  },
+  {
+    id: 'needs_sponsorship',
+    path: 'location.needs_sponsorship',
+    label: 'Sponsorship requirement',
+    priority: 'optional',
+    reason: 'Prevents eligibility being inferred from ambiguous free text.',
   },
 ]);
 
@@ -163,7 +184,11 @@ export function onboardingCompleteness(draft) {
       'location.city': draft?.city ?? '',
       'location.timezone': draft?.timezone ?? '',
       'location.visa_status': draft?.visaStatus ?? '',
+      'location.authorized_in': String(draft?.authorizedIn ?? '').split(/\r?\n/u).filter(Boolean),
+      'location.needs_sponsorship': draft?.needsSponsorship === 'unsure'
+        ? undefined
+        : draft?.needsSponsorship === 'yes',
+      spend_tier: draft?.spendTier ?? '',
     },
   });
 }
-

@@ -150,40 +150,15 @@ function checkPlaywrightMcp(root) {
   };
 }
 
-// Single source of truth for the four user-layer prerequisites (the list
-// AGENTS.md "First Run" documents). BOTH the human checklist (`checkPrereq`)
-// and the machine-readable cold-start state (`onboardingState`) derive from
-// THIS array, so they cannot drift. Paths use "/" and are split for join().
-const USER_LAYER_PREREQS = [
-  {
-    path: 'workspace/profile/cv.md',
-    fix: [
-      'Create workspace/profile/cv.md with your CV in markdown',
-      'See docs/examples/ for reference CVs',
-    ],
-  },
-  {
-    path: 'workspace/profile/profile.yml',
-    fix: [
-      'Run: cp config/profile.example.yml workspace/profile/profile.yml',
-      'Then edit it with your details',
-    ],
-  },
-  {
-    path: 'workspace/profile/targeting.md',
-    fix: [
-      'Run: cp modes/_profile.template.md workspace/profile/targeting.md',
-      'Then customize your archetypes / targeting narrative',
-    ],
-  },
-  {
-    path: 'workspace/search/portals.yml',
-    fix: [
-      'Run: cp templates/portals.example.yml workspace/search/portals.yml',
-      'Then customize with your target companies',
-    ],
-  },
-];
+// Shared with the UI. File existence is intentionally only the first gate;
+// the UI additionally checks the required profile values.
+const USER_LAYER_PREREQS = JSON.parse(readFileSync(
+  join(ROOT, 'config', 'onboarding-prerequisites.json'),
+  'utf8',
+)).map(entry => ({
+  path: entry.path,
+  fix: `Complete onboarding to create ${entry.path}`,
+}));
 
 function prereqPresent(root, path) {
   return existsSync(join(root, ...path.split('/')));
@@ -358,14 +333,16 @@ async function main() {
   }
 }
 
-// Single source of truth for the cold-start state: the same four user-layer
+// Single source of truth for the cold-start state: the same user-layer
 // prerequisites that AGENTS.md "First Run" lists. `--json` turns the trigger into
 // a deterministic mechanism the agent runs (instead of re-deriving it from prose),
 // and `--target <dir>` lets the test suite point it at a simulated virgin env.
 function onboardingState(root) {
   const autoCopied = [];
+  // Preferences contain no candidate facts and are safe to seed. Targeting is
+  // generated from confirmed onboarding answers; copying the inherited
+  // engineer-specific example silently mis-targeted fresh installs.
   const templates = [
-    { target: 'workspace/profile/targeting.md', template: 'modes/_profile.template.md' },
     { target: 'workspace/profile/preferences.md', template: 'modes/_custom.template.md' },
   ];
   for (const { target, template } of templates) {

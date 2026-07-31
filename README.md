@@ -28,8 +28,8 @@ and keeps your applications and documents together on your computer.
 
 > **Current status:** the workflow-first interface covers setup, discovery,
 > assessment, tailored CV preparation, application tracking, and follow-ups.
-> Setup is guided by Claude Code or Codex rather than a traditional one-click
-> installer.
+> The local interface includes guided first-run setup; Claude Code, Codex and
+> Antigravity remain available for conversational workflows.
 
 ## One clear flow
 
@@ -122,7 +122,8 @@ Then clone Frontrunner, install its main and local interface dependencies, and f
 Frontrunner then opens locally and walks through the profile it actually needs:
 your CV, name, email, location and at least one target job title. It also gives
 you the opportunity to confirm salary currency, target and minimum pay, working
-pattern, search area, timezone, work authorisation, phone and public links.
+pattern, search area, timezone, structured work authorisation, AI usage level,
+output language, phone and public links.
 Values inferred from an explicitly entered UK location are shown for review;
 Frontrunner never fills a missing field with example-person data. The final
 screen separates required, recommended and optional gaps, and the profile page
@@ -136,6 +137,13 @@ Claude subscription and that usage comes from that subscription's allowance.
 Claude returns evidence-backed suggestions for the user to select; it cannot
 write the profile. Deterministic CV-header/title suggestions remain available
 without spending allowance.
+
+Finishing setup is one recoverable backend operation: it publishes the CV and
+profile, creates a neutral search brief from confirmed answers, configures the
+scanner's title/location filters from those answers, and creates the tracker.
+An interrupted save remains visibly incomplete and can be retried without
+overwriting an edited search brief or duplicating CV versions. Additional CV
+versions remain local reference files and are not silently sent to a model.
 
 <details>
 <summary><strong>Prefer to install it manually?</strong></summary>

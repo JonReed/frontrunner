@@ -313,7 +313,7 @@ OpenAI-compatible endpoints, OpenRouter and local Ollama.
 node doctor.mjs --json
 ```
 
-Output: `{"onboardingNeeded": <bool>, "missing": [...], "warnings": [...], "autoCopied": [...]}` — `missing` lists whichever of `workspace/profile/cv.md`, `workspace/profile/profile.yml`, `workspace/profile/targeting.md`, `workspace/search/portals.yml` are absent; `warnings` is reserved for non-blocking setup signals; `autoCopied` lists customization files (`workspace/profile/targeting.md` or `workspace/profile/preferences.md`) doctor copied from `modes/_profile.template.md` / `modes/_custom.template.md`.
+Output: `{"onboardingNeeded": <bool>, "missing": [...], "warnings": [...], "autoCopied": [...]}` — `missing` is derived from `config/onboarding-prerequisites.json` and covers `workspace/profile/cv.md`, `workspace/profile/profile.yml`, `workspace/profile/targeting.md`, `workspace/search/portals.yml`, and `workspace/applications/tracker.md`; `warnings` is reserved for non-blocking setup signals. Doctor may seed only the fact-free `workspace/profile/preferences.md`; it must never copy the inherited example targeting into a user workspace.
 
 **If `onboardingNeeded` is true, enter onboarding mode.** Do NOT proceed with evaluations, scans, or any other mode until the basics are in place. Guide the user step by step:
 
@@ -354,9 +354,9 @@ Fill in `workspace/profile/profile.yml` (including `spend_tier`, default `standa
 The local UI onboarding uses the same source-of-truth boundary but has a
 stricter completion check than file existence alone. It requires a CV, full
 name, email, location and at least one target title before the first search.
-Salary target/currency, working pattern, search area, country and timezone are
-recommended checks; phone, public links, minimum compensation and work
-authorisation are optional. The final review and `/profile` page must show
+Salary target/currency, working pattern, search area, country, timezone and AI
+usage level are recommended checks; phone, public links, minimum compensation
+and structured work authorisation are optional. The final review and `/profile` page must show
 missing values rather than treating an existing YAML file as proof that every
 field was captured. Location-derived values are suggestions to confirm, never
 facts to invent.
@@ -376,13 +376,17 @@ writes profile data. The UI requires per-field selection, keeps accepted
 suggestions in the unsaved onboarding draft, and only the normal allowlisted
 profile transaction may publish them when the user explicitly finishes setup.
 
-#### Step 3: Portals (recommended)
+#### Step 3: Portals (required for a usable completed setup)
 If `workspace/search/portals.yml` is missing:
 > "I'll set up the job scanner with 45+ pre-configured companies. Want me to customize the search keywords for your target roles?"
 
-Copy `templates/portals.example.yml` → `workspace/search/portals.yml`; if they gave target roles in Step 2, update `title_filter.positive`.
+Create `workspace/search/portals.yml` from `templates/portals.example.yml`, set
+`title_filter.positive` from the confirmed target roles, and derive only
+conservative location allow-lists from the confirmed search city/country and
+working pattern. Never retain the inherited example person's positive,
+negative, US-location or role filters.
 
-#### Step 4: Tracker
+#### Step 4: Tracker (required for a usable completed setup)
 If `workspace/applications/tracker.md` doesn't exist, create it:
 ```markdown
 # Applications Tracker
@@ -390,6 +394,12 @@ If `workspace/applications/tracker.md` doesn't exist, create it:
 | # | Date | Company | Role | Score | Status | PDF | Report | Notes |
 |---|------|---------|------|-------|--------|-----|--------|-------|
 ```
+
+The local UI performs Steps 1–4 through
+`src/application/onboarding-completion.mjs`. The operation is idempotent and
+recoverable across process interruption; setup reports success only after every
+canonical prerequisite exists. Do not split it back into independent profile,
+portals and tracker requests.
 
 #### Step 5: Get to know the user (important for quality)
 

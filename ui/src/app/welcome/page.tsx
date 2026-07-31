@@ -20,8 +20,12 @@ import { WORKSPACE } from '@/lib/root';
 
 export const dynamic = 'force-dynamic';
 
-function text(fields: Record<string, string | string[]>, path: string): string {
+function text(fields: Record<string, string | string[] | boolean>, path: string): string {
   return typeof fields[path] === 'string' ? fields[path] as string : '';
+}
+
+function booleanChoice(fields: Record<string, string | string[] | boolean>, path: string): 'yes' | 'no' | 'unsure' {
+  return fields[path] === true ? 'yes' : fields[path] === false ? 'no' : 'unsure';
 }
 
 function remoteValue(value: string): 'remote' | 'hybrid' | 'onsite' | '' {
@@ -59,11 +63,19 @@ export default async function WelcomePage() {
         city: text(fields, 'location.city'),
         timezone: text(fields, 'location.timezone'),
         visaStatus: text(fields, 'location.visa_status'),
+        authorizedIn: Array.isArray(fields['location.authorized_in'])
+          ? fields['location.authorized_in'].join('\n')
+          : '',
+        needsSponsorship: booleanChoice(fields, 'location.needs_sponsorship'),
         targetRoles: roles,
         salaryTarget: text(fields, 'compensation.target_range'),
         minimumSalary: text(fields, 'compensation.minimum'),
         salaryCurrency: text(fields, 'compensation.currency'),
         remote: remoteValue(text(fields, 'compensation.location_flexibility')),
+        spendTier: (['economy', 'standard', 'premium'].includes(text(fields, 'spend_tier'))
+          ? text(fields, 'spend_tier')
+          : 'standard') as 'economy' | 'standard' | 'premium',
+        outputLanguage: text(fields, 'language.output') || 'en',
       }}
     />
   );

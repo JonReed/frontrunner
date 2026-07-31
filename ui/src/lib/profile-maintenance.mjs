@@ -34,9 +34,36 @@ export const PROFILE_DETAIL_SECTIONS = [
         label: 'Work authorisation',
         placeholder: 'No sponsorship required',
       },
+      {
+        path: 'location.authorized_in',
+        label: 'Countries you can work in',
+        placeholder: 'One country per line',
+        multiline: true,
+      },
+      {
+        path: 'location.needs_sponsorship',
+        label: 'Needs employer sponsorship',
+        placeholder: '',
+        options: [
+          { value: '', label: 'Unsure / depends' },
+          { value: 'false', label: 'No' },
+          { value: 'true', label: 'Yes' },
+        ],
+      },
       { path: 'compensation.target_range', label: 'Salary target', placeholder: '£90k–£110k' },
       { path: 'compensation.minimum', label: 'Walk-away number', placeholder: '£85k' },
       { path: 'compensation.currency', label: 'Salary currency', placeholder: 'GBP' },
+      {
+        path: 'spend_tier',
+        label: 'AI usage level',
+        placeholder: '',
+        options: [
+          { value: 'economy', label: 'Economy' },
+          { value: 'standard', label: 'Standard' },
+          { value: 'premium', label: 'Premium' },
+        ],
+      },
+      { path: 'language.output', label: 'Output language', placeholder: 'en' },
     ],
   },
 ];

@@ -21,9 +21,20 @@ const RESPONSE_TIMEOUT_MS = 15_000;
 const AI_RESPONSE_TIMEOUT_MS = 3 * 60 * 1000 + 5_000;
 
 export interface ProfileSave {
-  fields?: Record<string, string | string[]>;
+  fields?: Record<string, string | string[] | boolean>;
   cv?: string;
   versions?: { label?: string; text: string }[];
+}
+
+export interface OnboardingSave extends ProfileSave {
+  fields: Record<string, string | string[] | boolean>;
+  cv: string;
+  targeting?: {
+    superpower?: string;
+    workExcites?: string;
+    workDrains?: string;
+    dealBreakers?: string;
+  };
 }
 
 export interface CvVersionSummary {
@@ -33,7 +44,7 @@ export interface CvVersionSummary {
 }
 
 export interface ProfileSnapshot {
-  fields: Record<string, string | string[]>;
+  fields: Record<string, string | string[] | boolean>;
   versions: CvVersionSummary[];
 }
 
@@ -151,7 +162,7 @@ export async function extractProfile(cv: string): Promise<ProfileExtraction> {
 }
 
 /** Fields currently on disk, for populating an edit form. */
-export async function readProfile(): Promise<Record<string, string | string[]>> {
+export async function readProfile(): Promise<Record<string, string | string[] | boolean>> {
   return (await readProfileSnapshot()).fields;
 }
 
@@ -161,7 +172,7 @@ export async function readProfileSnapshot(): Promise<ProfileSnapshot> {
   const versions = (value as { versions?: unknown })?.versions;
   return {
     fields: fields && typeof fields === 'object' && !Array.isArray(fields)
-      ? (fields as Record<string, string | string[]>)
+      ? (fields as Record<string, string | string[] | boolean>)
       : {},
     versions: Array.isArray(versions)
       ? versions.filter((item): item is CvVersionSummary => {
@@ -202,4 +213,21 @@ export async function saveProfile(save: ProfileSave): Promise<string[]> {
   const value = await invokeProfileControl(payload);
   const written = (value as { written?: unknown })?.written;
   return Array.isArray(written) ? written.filter((w): w is string => typeof w === 'string') : [];
+}
+
+/** Publish every first-run prerequisite through one recoverable backend operation. */
+export async function completeOnboarding(save: OnboardingSave): Promise<string[]> {
+  const value = await invokeProfileControl({
+    version: '1',
+    action: 'complete',
+    fields: save.fields,
+    cv: save.cv,
+    versions: save.versions ?? [],
+    targeting: save.targeting ?? {},
+  });
+  if ((value as { completed?: unknown })?.completed !== true) {
+    throw new Error('The secure backend did not confirm onboarding completion.');
+  }
+  const written = (value as { written?: unknown })?.written;
+  return Array.isArray(written) ? written.filter((entry): entry is string => typeof entry === 'string') : [];
 }

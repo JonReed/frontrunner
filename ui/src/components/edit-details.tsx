@@ -24,12 +24,17 @@ import {
 const FIELD =
   'w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-card)] px-3.5 py-2.5 text-[15px] outline-none transition placeholder:text-[var(--color-ink-faint)] focus:border-[var(--color-act)]';
 
-export function EditDetails({ initial }: { initial: Record<string, string | string[]> }) {
+export function EditDetails({ initial }: { initial: Record<string, string | string[] | boolean> }) {
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState<Record<string, string>>(() => {
     const seed: Record<string, string> = {};
     for (const f of PROFILE_DETAIL_FIELDS) {
-      seed[f.path] = typeof initial[f.path] === 'string' ? (initial[f.path] as string) : '';
+      const current = initial[f.path];
+      seed[f.path] = Array.isArray(current)
+        ? current.join('\n')
+        : typeof current === 'boolean'
+          ? String(current)
+          : typeof current === 'string' ? current : '';
     }
     const roles = initial['target_roles.primary'];
     seed.roles = Array.isArray(roles) ? roles.join('\n') : '';
@@ -54,10 +59,17 @@ export function EditDetails({ initial }: { initial: Record<string, string | stri
   const save = () => {
     setSaving(true);
     setError(null);
-    const fields: Record<string, string | string[]> = {};
+    const fields: Record<string, string | string[] | boolean> = {};
     // Empty strings are sent deliberately here, unlike in setup: on an edit
     // form, clearing a box is a request to remove that value.
-    for (const f of PROFILE_DETAIL_FIELDS) fields[f.path] = values[f.path] ?? '';
+    for (const f of PROFILE_DETAIL_FIELDS) {
+      const value = values[f.path] ?? '';
+      if (f.path === 'location.authorized_in') {
+        fields[f.path] = value.split(/\r?\n/u).map(item => item.trim()).filter(Boolean);
+      } else if (f.path === 'location.needs_sponsorship') {
+        fields[f.path] = value === '' ? '' : value === 'true';
+      } else fields[f.path] = value;
+    }
     fields['target_roles.primary'] = values.roles.split('\n').map((r) => r.trim()).filter(Boolean);
 
     startTransition(async () => {
@@ -83,12 +95,30 @@ export function EditDetails({ initial }: { initial: Record<string, string | stri
           {section.fields.map((f) => (
             <label key={f.path} className="mb-4 block">
               <span className="mb-1 block text-sm font-semibold">{f.label}</span>
-              <input
-                className={FIELD}
-                value={values[f.path]}
-                placeholder={f.placeholder}
-                onChange={(e) => setValues((v) => ({ ...v, [f.path]: e.target.value }))}
-              />
+              {f.options ? (
+                <select
+                  className={FIELD}
+                  value={values[f.path]}
+                  onChange={(e) => setValues((v) => ({ ...v, [f.path]: e.target.value }))}
+                >
+                  {f.options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              ) : f.multiline ? (
+                <textarea
+                  className={`${FIELD} resize-y`}
+                  rows={3}
+                  value={values[f.path]}
+                  placeholder={f.placeholder}
+                  onChange={(e) => setValues((v) => ({ ...v, [f.path]: e.target.value }))}
+                />
+              ) : (
+                <input
+                  className={FIELD}
+                  value={values[f.path]}
+                  placeholder={f.placeholder}
+                  onChange={(e) => setValues((v) => ({ ...v, [f.path]: e.target.value }))}
+                />
+              )}
             </label>
           ))}
 

@@ -9,26 +9,27 @@ import { readFile, normalizeEol, readTextLF } from './support.mjs';
 console.log('\n12. Cold-start trigger (deterministic onboarding state)');
 
 try {
-  // Virgin env: none of the 4 user-layer prerequisites present → must onboard.
+  // Virgin env: none of the canonical user-layer prerequisites present → must onboard.
   const virgin = mkdtempSync(join(tmpdir(), 'co-cold-'));
   const v = JSON.parse(run(NODE, ['doctor.mjs', '--json', '--target', virgin]) || '{}');
   if (
     v.onboardingNeeded === true &&
     Array.isArray(v.missing) &&
-    v.missing.length === 4 &&
+    v.missing.length === 5 &&
     Array.isArray(v.warnings)
   ) {
-    pass('Virgin env → onboarding triggered (4 prerequisites missing)');
+    pass('Virgin env → onboarding triggered (5 prerequisites missing)');
   } else {
     fail(`Virgin env not flagged for onboarding: ${JSON.stringify(v)}`);
   }
   rmSync(virgin, { recursive: true, force: true });
 
-  // Fully provisioned env: all 4 present → must NOT onboard.
+  // Fully provisioned env: all prerequisites present → must NOT onboard.
   const ready = mkdtempSync(join(tmpdir(), 'co-ready-'));
   mkdirSync(join(ready, 'workspace', 'profile'), { recursive: true });
   mkdirSync(join(ready, 'workspace', 'search'), { recursive: true });
-  for (const f of ['workspace/profile/cv.md', 'workspace/profile/profile.yml', 'workspace/profile/targeting.md', 'workspace/search/portals.yml']) {
+  mkdirSync(join(ready, 'workspace', 'applications'), { recursive: true });
+  for (const f of ['workspace/profile/cv.md', 'workspace/profile/profile.yml', 'workspace/profile/targeting.md', 'workspace/search/portals.yml', 'workspace/applications/tracker.md']) {
     writeFileSync(join(ready, f), 'x');
   }
   const r = JSON.parse(run(NODE, ['doctor.mjs', '--json', '--target', ready]) || '{}');
@@ -39,31 +40,31 @@ try {
   }
   rmSync(ready, { recursive: true, force: true });
 
-  // Auto-copy template: when workspace/profile/targeting.md or workspace/profile/preferences.md is missing but template exists,
-  // doctor --json auto-copies them, records them in autoCopied, and does not report them as missing (#1369).
+  // Only fact-free preferences are auto-copied. Targeting must be built from
+  // the candidate's confirmed answers, never the inherited example person.
   const autoCopy = mkdtempSync(join(tmpdir(), 'co-autocopy-'));
   mkdirSync(join(autoCopy, 'workspace', 'profile'), { recursive: true });
   mkdirSync(join(autoCopy, 'workspace', 'search'), { recursive: true });
+  mkdirSync(join(autoCopy, 'workspace', 'applications'), { recursive: true });
   mkdirSync(join(autoCopy, 'modes'), { recursive: true });
-  for (const f of ['workspace/profile/cv.md', 'workspace/profile/profile.yml', 'workspace/search/portals.yml']) {
+  for (const f of ['workspace/profile/cv.md', 'workspace/profile/profile.yml', 'workspace/search/portals.yml', 'workspace/applications/tracker.md']) {
     writeFileSync(join(autoCopy, f), 'x');
   }
   writeFileSync(join(autoCopy, 'modes/_profile.template.md'), '# profile template\n');
   writeFileSync(join(autoCopy, 'modes/_custom.template.md'), '# custom template\n');
   const ac = JSON.parse(run(NODE, ['doctor.mjs', '--json', '--target', autoCopy]) || '{}');
   if (
-    ac.onboardingNeeded === false &&
+    ac.onboardingNeeded === true &&
     Array.isArray(ac.missing) &&
-    ac.missing.length === 0 &&
+    ac.missing.length === 1 &&
+    ac.missing.includes('workspace/profile/targeting.md') &&
     Array.isArray(ac.autoCopied) &&
-    ac.autoCopied.includes('workspace/profile/targeting.md') &&
     ac.autoCopied.includes('workspace/profile/preferences.md') &&
-    existsSync(join(autoCopy, 'workspace/profile/targeting.md')) &&
-    readFileSync(join(autoCopy, 'workspace/profile/targeting.md'), 'utf-8') === '# profile template\n' &&
+    !existsSync(join(autoCopy, 'workspace/profile/targeting.md')) &&
     existsSync(join(autoCopy, 'workspace/profile/preferences.md')) &&
     readFileSync(join(autoCopy, 'workspace/profile/preferences.md'), 'utf-8') === '# custom template\n'
   ) {
-    pass('Auto-copy template → workspace/profile/targeting.md and workspace/profile/preferences.md copied silently in --json mode (#1369)');
+    pass('Auto-copy template → only fact-free preferences are seeded; targeting remains onboarding work');
   } else {
     fail(`Auto-copy template failed in --json mode: ${JSON.stringify(ac)}`);
   }
