@@ -107,6 +107,7 @@ test('status control builds one fixed canonical writer invocation', () => {
   });
   assert.deepEqual(args, [
     join(ROOT, 'src', 'tracker', 'set-status.mjs'),
+    '--row',
     '42',
     'Applied',
     '--json',
@@ -152,6 +153,7 @@ ${rowLine}
       buildRestoreStatusArgs(42, TOKEN, revision, new Set(['Interview'])),
       [
         join(ROOT, 'src', 'tracker', 'set-status.mjs'),
+        '--row',
         '42',
         'Interview',
         '--json',
