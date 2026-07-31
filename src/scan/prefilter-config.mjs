@@ -198,14 +198,33 @@ export function readPrefilterConfig(file) {
   return compilePrefilterConfig(config, { source: file });
 }
 
+/**
+ * Where the prefilter rules come from, in priority order.
+ *
+ * The canonical user-layer location is `workspace/search/prefilter.yml` — it
+ * is what `src/paths.mjs` declares, what `src/scan/prefilter.mjs --help`
+ * documents, and what the UI names when it explains a rejection. This resolver
+ * looked only in `config/`, so a file written to the documented path was
+ * silently ignored while `workspace/archive-legacy.mjs` moved the `config/`
+ * copy out from under it. Someone who tuned their rules got the shipped
+ * defaults and no indication why.
+ *
+ * The legacy path is still honoured, second, so an installation that predates
+ * the workspace layout keeps working until it is migrated.
+ */
 export function resolvePrefilterConfigPath({
   root = ROOT,
   override = process.env.FRONTRUNNER_PREFILTER,
 } = {}) {
   if (override) return resolve(override);
-  const user = join(root, 'config', 'prefilter.yml');
+  const candidates = [
+    join(root, 'workspace', 'search', 'prefilter.yml'),
+    join(root, 'config', 'prefilter.yml'),
+  ];
   const example = join(root, 'config', 'prefilter.example.yml');
-  if (existsSync(user)) return user;
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) return candidate;
+  }
   if (existsSync(example)) return example;
   throw new PrefilterConfigError(example, 'file does not exist');
 }

@@ -12,15 +12,38 @@ export type InboxChange = {
   state: 'dismissed' | 'pending';
 };
 
+export type InboxAddition = {
+  added: boolean;
+  duplicate: boolean;
+};
+
 export function removeInboxUrl(url: string): Promise<InboxChange> {
-  return changeInboxUrl('remove', url);
+  return changeInboxUrl('remove', url) as Promise<InboxChange>;
 }
 
 export function restoreInboxUrl(url: string): Promise<InboxChange> {
-  return changeInboxUrl('restore', url);
+  return changeInboxUrl('restore', url) as Promise<InboxChange>;
 }
 
-function changeInboxUrl(action: 'remove' | 'restore', url: string): Promise<InboxChange> {
+/**
+ * Add a job the user found themselves.
+ *
+ * The company and role are optional labels only — the pipeline reads the real
+ * description from the URL. They exist so a pasted row is recognisable in the
+ * list before anything has assessed it.
+ */
+export function addInboxUrl(
+  url: string,
+  labels: { company?: string; role?: string } = {},
+): Promise<InboxAddition> {
+  return changeInboxUrl('add', url, labels) as Promise<InboxAddition>;
+}
+
+function changeInboxUrl(
+  action: 'remove' | 'restore' | 'add',
+  url: string,
+  labels: { company?: string; role?: string } = {},
+): Promise<InboxChange | InboxAddition> {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [INBOX_CONTROL], {
       cwd: ROOT,
@@ -56,7 +79,17 @@ function changeInboxUrl(action: 'remove' | 'restore', url: string): Promise<Inbo
       clearTimeout(timer);
       if (code === 0) {
         try {
-          const value = JSON.parse(stdout.trim()) as Partial<InboxChange>;
+          const value = JSON.parse(stdout.trim()) as Partial<InboxChange & InboxAddition>;
+          // Two different result shapes over one transport, checked separately
+          // so neither can be accepted with the other's fields missing.
+          if (action === 'add') {
+            if (typeof value.added !== 'boolean' || typeof value.duplicate !== 'boolean') {
+              reject(new Error('The pending-role list returned an incomplete result.'));
+              return;
+            }
+            resolve({ added: value.added, duplicate: value.duplicate });
+            return;
+          }
           if (
             typeof value.changed !== 'boolean'
             || typeof value.found !== 'boolean'
@@ -83,6 +116,13 @@ function changeInboxUrl(action: 'remove' | 'restore', url: string): Promise<Inbo
       child.kill('SIGTERM');
       fail('The pending-role list did not respond in time.');
     }, RESPONSE_TIMEOUT_MS);
-    child.stdin.end(JSON.stringify({ version: '1', action, url }));
+    child.stdin.end(JSON.stringify({
+      version: '1',
+      action,
+      url,
+      ...(action === 'add'
+        ? { company: labels.company ?? '', role: labels.role ?? '' }
+        : {}),
+    }));
   });
 }

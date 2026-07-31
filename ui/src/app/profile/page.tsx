@@ -44,6 +44,12 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 
 const NOT_SET = <span className="text-[var(--color-ink-faint)]">Not provided yet</span>;
 
+const SPEND_LABEL: Record<string, string> = {
+  economy: 'Economy — fastest and cheapest',
+  standard: 'Standard — balanced',
+  premium: 'Premium — most capable',
+};
+
 export default async function ProfilePage() {
   const [p, snapshot, health] = await Promise.all([
     readProfile(),
@@ -143,7 +149,15 @@ export default async function ProfilePage() {
           <Row label="Work authorisation (optional)" value={text('location.visa_status') || NOT_SET} />
           <Row label="Countries authorised in" value={list('location.authorized_in').join(', ') || NOT_SET} />
           <Row label="Needs sponsorship" value={sponsorship || NOT_SET} />
-          <Row label="AI usage level" value={text('spend_tier') || NOT_SET} />
+          {/*
+            Shown as a plain phrase, not the config value. Someone checking what
+            their assessments cost should not have to know that "standard" is a
+            key in a YAML file.
+          */}
+          <Row
+            label="AI usage level"
+            value={SPEND_LABEL[text('spend_tier')] ?? (text('spend_tier') || NOT_SET)}
+          />
           <Row label="Output language" value={text('language.output') || NOT_SET} />
         </dl>
       </section>

@@ -7,8 +7,15 @@ import { usePathname } from 'next/navigation';
  * Navigation in the user's language, not ours.
  *
  * "Board" is jargon and "Pipeline" is sales-speak. Someone job hunting thinks
- * in four questions: what should I do now, what have I sent, what else is out
- * there, and what does it know about me. The labels answer those directly.
+ * in five questions: what should I do now, what have I sent, what else is out
+ * there, what am I even searching for, and what does it know about me. The
+ * labels answer those directly.
+ *
+ * "Where to search" earns a place in the header despite being a settings
+ * screen. The single most common reaction to a first set of results is "why
+ * these?", and the answer used to be a YAML file — so the one setting people
+ * genuinely need to reach is the one that was hardest to find. It is header
+ * only; see the note on its entry for why the phone bar keeps four.
  */
 export const NAV = [
   { href: '/', label: 'Next up', mobileLabel: 'Today', icon: 'home' },
@@ -16,6 +23,17 @@ export const NAV = [
   // Not "Find roles": nothing is found here, the scanner already did that.
   // This is where its results sit, assessed and ruled out alike.
   { href: '/found', label: 'Everything found', mobileLabel: 'Found', icon: 'search' },
+  /*
+    Header only. Five items fit a laptop; on a phone they leave about 67px per
+    label, and "Applications" is a single word with nowhere to break — at
+    320px it would overflow its tab rather than wrap.
+
+    Dropping the settings screen from the thumb bar is the right one to lose:
+    it is where you go when results look wrong, and the two places that
+    provokes — Everything found, and the empty states — both link to it
+    directly. The four destinations that answer "what now?" keep their tabs.
+  */
+  { href: '/search', label: 'Where to search', mobileLabel: 'Search', icon: 'settings', headerOnly: true },
   { href: '/profile', label: 'My details', mobileLabel: 'Profile', icon: 'profile' },
 ] as const;
 
@@ -40,6 +58,9 @@ function NavIcon({ name }: { name: (typeof NAV)[number]['icon'] }) {
   if (name === 'search') {
     return <svg {...common}><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4 4" /></svg>;
   }
+  if (name === 'settings') {
+    return <svg {...common}><path d="M4 7h10M18 7h2M4 17h2M10 17h10" /><circle cx="16" cy="7" r="2" /><circle cx="8" cy="17" r="2" /></svg>;
+  }
   return <svg {...common}><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-4 3-6 7-6s6.3 2 7 6" /></svg>;
 }
 
@@ -50,14 +71,14 @@ function isActive(pathname: string, href: string) {
 /**
  * Two renderings of one destination list.
  *
- * Four labels plus the wordmark do not fit across a phone — at 375px the last
- * one runs off the edge, so a quarter of the product is invisible on the
- * device people check between meetings. Hiding them behind a hamburger would
- * cost a tap on every move through what is, by design, a four-step workflow.
+ * Labels plus the wordmark do not fit across a phone — at 375px the last one
+ * runs off the edge, so part of the product is invisible on the device people
+ * check between meetings. Hiding them behind a hamburger would cost a tap on
+ * every move through what is, by design, a four-step workflow.
  *
- * So on a phone the destinations move to a fixed bottom bar: all four visible,
- * all four in thumb reach, nothing hidden. On a laptop, where they fit, they
- * stay inline in the header where navigation is expected to be.
+ * So on a phone the four workflow destinations move to a fixed bottom bar: all
+ * visible, all in thumb reach, nothing hidden. On a laptop, where the full set
+ * fits, they stay inline in the header where navigation is expected to be.
  */
 /**
  * Setup has no navigation.
@@ -102,7 +123,7 @@ export function BottomNav() {
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <ul className="flex">
-        {NAV.map((n) => {
+        {NAV.filter((n) => !('headerOnly' in n && n.headerOnly)).map((n) => {
           const active = isActive(pathname, n.href);
           return (
             <li key={n.href} className="flex-1">

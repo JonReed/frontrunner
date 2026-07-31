@@ -58,9 +58,9 @@ export const PROFILE_DETAIL_SECTIONS = [
         label: 'AI usage level',
         placeholder: '',
         options: [
-          { value: 'economy', label: 'Economy' },
-          { value: 'standard', label: 'Standard' },
-          { value: 'premium', label: 'Premium' },
+          { value: 'economy', label: 'Economy — fastest and cheapest' },
+          { value: 'standard', label: 'Standard — balanced (recommended)' },
+          { value: 'premium', label: 'Premium — most capable' },
         ],
       },
       { path: 'language.output', label: 'Output language', placeholder: 'en' },

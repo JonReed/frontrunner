@@ -20,13 +20,15 @@ import { safeExternalUrl } from '@/lib/urls';
 import { ReportMarkdown } from '@/components/report-markdown';
 import { Match } from '@/components/match';
 import { BuildCv } from '@/components/build-cv';
+import { BuildCover } from '@/components/build-cover';
 import { CvLinks } from '@/components/cv-links';
 import { RoleJourney } from '@/components/journey-rail';
 import { RoleActions } from '@/components/role-actions';
-import { readHealth } from '@/lib/health';
+import { readBrowserHealth, readHealth } from '@/lib/health';
 import { readFollowups } from '@/lib/followups';
 import { FollowupStatus } from '@/components/followup-status';
-import { readRunningCvJob } from '@/lib/jobs';
+import { FollowupActions } from '@/components/followup-actions';
+import { readRunningCoverJob, readRunningCvJob } from '@/lib/jobs';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,15 +45,21 @@ function Section({ title, body }: { title: string; body: string }) {
 
 export default async function RolePage({ params }: { params: Promise<{ num: string }> }) {
   const { num } = await params;
-  const [roles, health, followups] = await Promise.all([
+  // The browser check is asked for here and nowhere else: it launches a
+  // browser to answer, and this is the only screen that offers to build a PDF.
+  const [roles, health, followups, browser] = await Promise.all([
     readTracker(),
     readHealth(),
     readFollowups(),
+    readBrowserHealth(),
   ]);
   const role = roles.find((r) => String(r.num) === num);
   if (!role) notFound();
   const followup = followups.find((entry) => entry.num === role.num);
-  const runningCvJob = await readRunningCvJob(role.num);
+  const [runningCvJob, runningCoverJob] = await Promise.all([
+    readRunningCvJob(role.num),
+    readRunningCoverJob(role.num),
+  ]);
 
   const markdown = role.reportPath ? await readReport(role.reportPath) : null;
   const report = markdown ? parseReport(markdown) : null;
@@ -144,6 +152,24 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
         </div>
       )}
 
+      {/*
+        Only when one is actually due. A follow-up block on every role would be
+        a standing invitation to chase employers who have had the application
+        for two days, which is the behaviour this tool should make less likely
+        rather than more.
+      */}
+      {followup && (followup.urgency === 'urgent' || followup.urgency === 'overdue') && (
+        <section className="paper-surface mb-8 rounded-2xl border p-5">
+          <h2 className="font-semibold">Following up</h2>
+          <p className="mb-4 mt-0.5 text-sm text-[var(--color-ink-soft)]">
+            {followup.followupCount === 0
+              ? 'You have not chased this one yet. A short, polite nudge is normal at this point.'
+              : `You have followed up ${followup.followupCount === 1 ? 'once' : `${followup.followupCount} times`}. Record another, or push the reminder back.`}
+          </p>
+          <FollowupActions roleNum={role.num} />
+        </section>
+      )}
+
       <section className="paper-surface mb-8 rounded-2xl border p-5">
         <h2 className="font-semibold">Move this role</h2>
         <p className="mb-4 mt-0.5 text-sm text-[var(--color-ink-soft)]">
@@ -169,8 +195,24 @@ export default async function RolePage({ params }: { params: Promise<{ num: stri
           url={jobUrl}
           score={role.score}
           connected={health.signedIn}
+          browserReady={browser.installed}
           initialJob={runningCvJob}
         />
+        {/*
+          The letter, under the CV and only once one exists. Building a letter
+          for a role whose CV has not been tailored is work in the wrong order.
+        */}
+        {(role.hasPdf || role.cover) && (
+          <div className="mt-4 border-t border-[var(--color-line)] pt-4">
+            <BuildCover
+              roleNum={role.num}
+              hasCover={Boolean(role.cover)}
+              connected={health.signedIn}
+              browserReady={browser.installed}
+              initialJob={runningCoverJob}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

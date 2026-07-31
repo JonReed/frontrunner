@@ -31,6 +31,9 @@ export const WORKSPACE = Object.freeze({
   documents: join(ROOT, 'workspace', 'documents'),
   state: join(ROOT, 'workspace', '.state'),
   pdfIndex: join(ROOT, 'workspace', '.state', 'pdf-index.tsv'),
+  // Covering letters keep their own index. The shared one supersedes by report
+  // number, so a letter recorded there would delete that report's CV row.
+  coverIndex: join(ROOT, 'workspace', '.state', 'cover-index.tsv'),
   rejects: join(ROOT, 'workspace', '.state', 'prefilter-rejects.tsv'),
   prefilterOverrides: join(ROOT, 'workspace', 'search', 'prefilter-overrides.tsv'),
 });

@@ -153,10 +153,12 @@ test('production subprocess capabilities cannot grow outside reviewed boundaries
     .map(([path]) => path)
     .sort();
   assert.deepEqual(imports, [
+    'src/application/browser-health.mjs', // fixed PDF-renderer probe and installer
     'src/application/health-control.mjs', // fixed authentication protocol
     'src/application/operation-worker.mjs', // owner-death worker protocol
     'src/application/process-tree.mjs', // platform tree signalling primitive
     'src/application/service.mjs', // versioned application operation supervisor
+    'src/application/start.mjs', // fixed local UI startup and platform browser opener
     'src/application/status-control.mjs', // fixed tracker-decision protocol
     'src/application/ui-launch.mjs', // fixed local UI launcher and root injection
     'src/lib/root-paths.mjs', // maintainer-only repository migration utility

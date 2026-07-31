@@ -14,9 +14,12 @@ import { REPORTS_DIR, ROOT, SEARCH_DIR } from '#paths';
 export const APPLICATION_API_VERSION = '1';
 export const APPLICATION_OPERATIONS = Object.freeze([
   'cv.build',
+  'cover.build',
   'pipeline.run',
   'pipeline.prepare',
   'scan.run',
+  'companies.discover',
+  'companies.suggest',
 ]);
 export const APPLICATION_RESULT_STATUSES = Object.freeze([
   'succeeded',
@@ -30,10 +33,54 @@ const ENGINES = new Set(['claude', 'openrouter', 'openai', 'gemini', 'none']);
 const REQUEST_KEYS = new Set(['version', 'operation', 'input', 'idempotencyKey']);
 const INPUT_KEYS = Object.freeze({
   'cv.build': new Set(['roleNum', 'jobUrl', 'reportPath', 'model']),
+  // Identical input to cv.build: a cover letter is drafted from the same
+  // cached description, against the same tracker row.
+  'cover.build': new Set(['roleNum', 'jobUrl', 'reportPath', 'model']),
   'pipeline.run': new Set(['engine', 'scan', 'input']),
   'pipeline.prepare': new Set(['scan', 'input']),
   'scan.run': new Set([]),
+  'companies.discover': new Set(['names']),
+  // Reads the CV and the existing search settings; takes nothing from the request.
+  'companies.suggest': new Set(['model']),
 });
+
+/**
+ * What a company name may contain before it becomes a command argument.
+ *
+ * Anchored on a letter or digit, which is the load-bearing part: a name
+ * beginning with "-" would be read by the resolver as a flag rather than a
+ * company. The rest of the class is deliberately generous — real employers are
+ * called "M&S", "Ben & Jerry's", "L'Oréal", "Marks & Spencer (UK)" — because a
+ * validator that rejects the user's actual employer teaches them the product
+ * is broken, and the safety here comes from the anchor and the length bound,
+ * not from narrowness.
+ */
+const COMPANY_NAME_RE = /^[\p{L}\p{N}][\p{L}\p{N} .,&'’()+/-]*$/u;
+const MAX_COMPANY_NAMES = 20;
+
+function normalizeCompanyDiscovery(input) {
+  const names = input.names;
+  if (!Array.isArray(names) || names.length === 0) {
+    throw contractError('input.names must be a non-empty list of company names');
+  }
+  if (names.length > MAX_COMPANY_NAMES) {
+    throw contractError(`input.names accepts at most ${MAX_COMPANY_NAMES} companies`);
+  }
+  const seen = new Set();
+  const clean = [];
+  for (const raw of names) {
+    const name = boundedString(raw, 'input.names entry', { max: 80 });
+    if (!COMPANY_NAME_RE.test(name)) {
+      throw contractError(`input.names entry is not a usable company name: ${name.slice(0, 40)}`);
+    }
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    clean.push(name);
+  }
+  if (clean.length === 0) throw contractError('input.names must name at least one company');
+  return Object.freeze({ names: Object.freeze(clean) });
+}
 
 function contractError(message, code = 'INVALID_APPLICATION_REQUEST') {
   const error = new Error(message);
@@ -182,8 +229,16 @@ export function validateApplicationRequest(request) {
   }
 
   let normalizedInput;
-  if (request.operation === 'cv.build') {
+  if (request.operation === 'cv.build' || request.operation === 'cover.build') {
     normalizedInput = normalizeCvBuild(input);
+  } else if (request.operation === 'companies.discover') {
+    normalizedInput = normalizeCompanyDiscovery(input);
+  } else if (request.operation === 'companies.suggest') {
+    const model = boundedString(input.model, 'input.model', { max: 120, optional: true });
+    if (model && !/^[a-zA-Z0-9._:-]+$/u.test(model)) {
+      throw contractError('input.model contains unsupported characters');
+    }
+    normalizedInput = Object.freeze(model ? { model } : {});
   } else if (request.operation === 'pipeline.run' || request.operation === 'pipeline.prepare') {
     normalizedInput = normalizePipeline(request.operation, input);
   } else {

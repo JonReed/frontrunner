@@ -57,11 +57,27 @@ export const DEFAULT_TERMINAL_JOB_RETENTION_MS = 30 * 24 * 60 * 60_000;
 export const DEFAULT_MAX_TERMINAL_JOBS = 200;
 export { APPLICATION_JOB_ID_RE, DEFAULT_ORPHAN_ARTIFACT_RETENTION_MS };
 
+/**
+ * `roleScoped` marks the operations whose job belongs to one tracker row.
+ *
+ * These carry a roleNum, take a role-prefixed id, and dedupe per role rather
+ * than globally — two roles may have documents building at once, but one role
+ * must never pay for the same document twice. It was implicit in a chain of
+ * `operation === 'cv.build'` checks until the cover letter became the second
+ * such operation and every one of them would have silently excluded it.
+ */
 const OPERATION_META = Object.freeze({
   'cv.build': Object.freeze({
     prefix: 'cv',
     kind: 'build-cv',
+    roleScoped: true,
     initialStage: 'Starting the CV build',
+  }),
+  'cover.build': Object.freeze({
+    prefix: 'cover',
+    kind: 'build-cover',
+    roleScoped: true,
+    initialStage: 'Starting the covering letter',
   }),
   'pipeline.run': Object.freeze({
     prefix: 'pipeline',
@@ -78,9 +94,25 @@ const OPERATION_META = Object.freeze({
     kind: 'scan',
     initialStage: 'Starting the scan',
   }),
+  'companies.discover': Object.freeze({
+    prefix: 'companies',
+    kind: 'discover-companies',
+    initialStage: 'Looking up their job boards',
+  }),
+  'companies.suggest': Object.freeze({
+    prefix: 'suggest',
+    kind: 'suggest-companies',
+    initialStage: 'Reading your CV',
+  }),
 });
 
 const STAGE_SIGNALS = Object.freeze({
+  'cover.build': Object.freeze([
+    [/reading|fetching|job description|\bJD\b/iu, 'Reading the job description'],
+    [/writing|letter|draft/iu, 'Writing your covering letter'],
+    [/generate-cover|generate-pdf|playwright|chromium|pdf/iu, 'Building the PDF'],
+    [/pdf generated|✅|saved/iu, 'Finishing up'],
+  ]),
   'cv.build': Object.freeze([
     [/reading|fetching|job description|\bJD\b/iu, 'Reading the job description'],
     [/cv\.md|profile\.yml|comparing|match/iu, 'Comparing it with your CV'],
@@ -103,6 +135,14 @@ const STAGE_SIGNALS = Object.freeze({
     [/liveness|checking links/iu, 'Checking which roles are still live'],
     [/prefilter|filtering/iu, 'Filtering obvious mismatches'],
     [/complete|finished|summary/iu, 'Finishing preparation'],
+  ]),
+  'companies.suggest': Object.freeze([
+    [/reading|cv/iu, 'Reading your CV'],
+    [/choosing|match|employers/iu, 'Choosing employers that match your background'],
+  ]),
+  'companies.discover': Object.freeze([
+    [/probing|resolving|checking/iu, 'Looking up their job boards'],
+    [/resolved|matched|added/iu, 'Adding the ones that were found'],
   ]),
   'scan.run': Object.freeze([
     [/portal|provider|board/iu, 'Scanning job sources'],
@@ -138,15 +178,21 @@ function readBoundedRegularFile(file, maxBytes) {
 
 function operationFor(job) {
   if (APPLICATION_OPERATIONS.includes(job?.operation)) return job.operation;
+  // Jobs written before `operation` was persisted carry only `kind`.
   return job?.kind === 'build-cv' ? 'cv.build' : null;
+}
+
+/** True for operations whose job belongs to a single tracker row. */
+function isRoleScoped(operation) {
+  return OPERATION_META[operation]?.roleScoped === true;
 }
 
 function dedupeKeyFor(job) {
   const operation = operationFor(job);
-  if (operation === 'cv.build' && Number.isSafeInteger(job?.roleNum)) {
-    return `cv.build:tracker:${String(job.roleNum)}`;
+  if (isRoleScoped(operation) && Number.isSafeInteger(job?.roleNum)) {
+    return `${operation}:tracker:${String(job.roleNum)}`;
   }
-  return operation && operation !== 'cv.build' ? operation : null;
+  return operation && !isRoleScoped(operation) ? operation : null;
 }
 
 export class ApplicationOperationBusyError extends Error {
@@ -171,8 +217,8 @@ export class ApplicationOperationBusyError extends Error {
 function idMatchesJob(id, operation, roleNum) {
   const meta = OPERATION_META[operation];
   if (!meta || !APPLICATION_JOB_ID_RE.test(id)) return false;
-  return operation === 'cv.build'
-    ? Number.isSafeInteger(roleNum) && id.startsWith(`cv-${String(roleNum)}-`)
+  return meta.roleScoped
+    ? Number.isSafeInteger(roleNum) && id.startsWith(`${meta.prefix}-${String(roleNum)}-`)
     : id.startsWith(`job-${meta.prefix}-`);
 }
 
@@ -183,19 +229,40 @@ function publicFailure(job, result) {
     return 'The Claude CLI is not signed in. Frontrunner needs it connected to your AI subscription.';
   }
   if (/ENOENT/iu.test(String(result.error ?? ''))) {
-    return operation === 'cv.build'
-      ? 'Could not start the secure CV builder. Check that Node and the Claude CLI are installed.'
-      : 'Could not start the secure backend operation. Check that Frontrunner is installed correctly.';
+    if (operation === 'cv.build') {
+      return 'Could not start the secure CV builder. Check that Node and the Claude CLI are installed.';
+    }
+    if (operation === 'cover.build') {
+      return 'Could not start the secure letter writer. Check that Node and the Claude CLI are installed.';
+    }
+    return 'Could not start the secure backend operation. Check that Frontrunner is installed correctly.';
+  }
+  // The PDF renderer is a separate download, and its absence used to surface
+  // as a bare exit code at the very end of a run the user had already paid a
+  // model call for. The role page now checks before offering the button, so
+  // reaching here means the browser disappeared mid-run — say what it is.
+  if (/playwright|executable doesn't exist|browserType\.launch|chromium/iu.test(tail)) {
+    return 'The PDF maker is missing. Open the role again and Frontrunner will offer to download it.';
+  }
+  // Every scan reads this file, and its absence is the one failure a brand-new
+  // installation is most likely to hit. The raw message names a path and tells
+  // the user to run onboarding they have already completed.
+  if (/portals\.yml/iu.test(tail)) {
+    return 'Your search settings are missing. Open Where to search and Frontrunner will set them up.';
   }
   if (result.status === 'timed_out') {
-    return operation === 'cv.build'
-      ? 'Timed out. The CV build took longer than five minutes and was stopped.'
-      : 'Timed out. The backend operation exceeded its configured limit and was stopped.';
+    if (operation === 'cv.build') {
+      return 'Timed out. The CV build took longer than five minutes and was stopped.';
+    }
+    if (operation === 'cover.build') {
+      return 'Timed out. The covering letter took longer than five minutes and was stopped.';
+    }
+    return 'Timed out. The backend operation exceeded its configured limit and was stopped.';
   }
   if (result.status === 'cancelled') {
-    return operation === 'cv.build'
-      ? 'The CV build was cancelled.'
-      : 'The backend operation was cancelled.';
+    if (operation === 'cv.build') return 'The CV build was cancelled.';
+    if (operation === 'cover.build') return 'The covering letter was cancelled.';
+    return 'The backend operation was cancelled.';
   }
   return result.error || `The run failed (exit code ${String(result.exitCode ?? 'unknown')}).`;
 }
@@ -203,7 +270,7 @@ function publicFailure(job, result) {
 function validStoredJob(value) {
   const operation = operationFor(value);
   const meta = operation ? OPERATION_META[operation] : null;
-  const cvJob = operation === 'cv.build';
+  const cvJob = isRoleScoped(operation);
   return Boolean(
     value
     && typeof value === 'object'
@@ -288,8 +355,8 @@ export function createApplicationJobManager(options = {}) {
   }
   const idFactory = options.idFactory ?? ((request) => {
     const suffix = `${now().toString(36)}${randomUUID().replaceAll('-', '').slice(0, 6)}`;
-    if (request.operation === 'cv.build') {
-      return `cv-${String(request.input.roleNum)}-${suffix}`;
+    if (OPERATION_META[request.operation].roleScoped) {
+      return `${OPERATION_META[request.operation].prefix}-${String(request.input.roleNum)}-${suffix}`;
     }
     return `job-${OPERATION_META[request.operation].prefix}-${suffix}`;
   });
@@ -397,13 +464,13 @@ export function createApplicationJobManager(options = {}) {
   const reapIfStaleUnlocked = async (job) => {
     const staleAt = job.staleAt ?? (job.startedAt + LEGACY_CV_STALE_MS);
     if (job.status !== 'running' || now() < staleAt) return job;
-    const cvJob = operationFor(job) === 'cv.build';
+    const documentJob = isRoleScoped(operationFor(job));
     const reaped = {
       ...job,
       status: 'failed',
       finishedAt: now(),
-      error: cvJob
-        ? 'Timed out. The CV build stopped unexpectedly and can be tried again.'
+      error: documentJob
+        ? 'Timed out. The document build stopped unexpectedly and can be tried again.'
         : 'Timed out. The backend operation stopped unexpectedly and can be tried again.',
     };
     writeUnlocked(reaped);
@@ -531,10 +598,10 @@ export function createApplicationJobManager(options = {}) {
     }
   };
 
-  const runningJobFor = async roleNum => (
+  const runningJobFor = async (roleNum, operation = 'cv.build') => (
     (await listJobs()).find(
       job => (
-        operationFor(job) === 'cv.build'
+        operationFor(job) === operation
         && job.roleNum === roleNum
         && job.status === 'running'
       ),
@@ -591,8 +658,8 @@ export function createApplicationJobManager(options = {}) {
       error?.message
       ?? error
       ?? (
-        operationFor(job) === 'cv.build'
-          ? 'The secure CV builder failed to start.'
+        isRoleScoped(operationFor(job))
+          ? 'The secure document builder failed to start.'
           : 'The secure backend operation failed to start.'
       ),
     ).slice(0, 1_000);
@@ -674,7 +741,7 @@ export function createApplicationJobManager(options = {}) {
       const startedAt = now();
       const job = {
         id,
-        ...(request.operation === 'cv.build' ? { roleNum: request.input.roleNum } : {}),
+        ...(meta.roleScoped ? { roleNum: request.input.roleNum } : {}),
         operation: request.operation,
         kind: meta.kind,
         dedupeKey,
@@ -736,6 +803,17 @@ export function createApplicationJobManager(options = {}) {
     idempotencyKey: Number.isSafeInteger(roleNum) ? `cv:${String(roleNum)}` : undefined,
   });
 
+  const startCoverBuild = (roleNum, jobUrl, reportPath) => start({
+    version: APPLICATION_API_VERSION,
+    operation: 'cover.build',
+    input: {
+      roleNum,
+      jobUrl,
+      reportPath: reportPath ?? undefined,
+    },
+    idempotencyKey: Number.isSafeInteger(roleNum) ? `cover:${String(roleNum)}` : undefined,
+  });
+
   return Object.freeze({
     readJob,
     listJobs,
@@ -746,5 +824,6 @@ export function createApplicationJobManager(options = {}) {
     cancelJob,
     start,
     startCvBuild,
+    startCoverBuild,
   });
 }

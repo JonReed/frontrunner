@@ -72,6 +72,8 @@ export interface Role {
   /** Generated CV, when one exists. Read from workspace/.state/pdf-index.tsv. */
   pdf: string | null;
   html: string | null;
+  /** Generated covering letter, from its own index. See readDocumentIndex. */
+  cover: string | null;
   notes: string;
   stage: Stage;
   readiness: Readiness;
@@ -128,6 +130,7 @@ export async function readTracker(): Promise<Role[]> {
       url: null as string | null,
       pdf: null as string | null,
       html: null as string | null,
+      cover: null as string | null,
       num: Number(numRaw),
       revision: createHash('sha256').update(line).digest('hex'),
       date,
@@ -143,16 +146,20 @@ export async function readTracker(): Promise<Role[]> {
     roles.push({ ...base, ...classify(base) });
   }
 
-  // Attach generated documents. generate-pdf.mjs records each linkage here, so
-  // this is the authoritative map rather than guessing from filenames.
-  const pdfIndex = await readPdfIndex();
+  // Attach generated documents. Each renderer records its own linkage, so
+  // these are authoritative maps rather than guesses from filenames.
+  const [cvIndex, coverIndex] = await Promise.all([
+    readDocumentIndex(WORKSPACE.pdfIndex),
+    readDocumentIndex(WORKSPACE.coverIndex),
+  ]);
   for (const r of roles) {
     const key = String(r.num).padStart(3, '0');
-    const entry = pdfIndex.get(key);
-    if (entry) {
-      r.pdf = entry.pdf;
-      r.html = entry.html;
+    const cv = cvIndex.get(key);
+    if (cv) {
+      r.pdf = cv.pdf;
+      r.html = cv.html;
     }
+    r.cover = coverIndex.get(key)?.pdf ?? null;
   }
 
   // Enrich with posting URLs. Only the first 2KB of each report is read, so
@@ -313,26 +320,40 @@ export async function summarise() {
 }
 
 /**
- * report number -> generated documents, from workspace/.state/pdf-index.tsv.
+ * report number -> generated documents.
  *
- * generate-pdf.mjs writes this file on every render, so it is the
- * authoritative mapping. Guessing from filenames would break the moment a
- * company name contains a character the slugger treats differently.
+ * Two files, deliberately, rather than two kinds of row in one.
+ *
+ * `pdf-index.tsv` is shared: generate-pdf.mjs writes it on every render, and
+ * merge-tracker and sync-pdf-flags read it to decide whether a role has its CV
+ * ready. Its writer supersedes by report number — a rebuilt CV replaces the
+ * old one — which is correct for one document per report and destructive for
+ * two: recording a covering letter under report 007 would delete that report's
+ * CV row, and the CV would vanish from the interface that had just built it.
+ *
+ * So covering letters get their own index with the same shape. The shared
+ * file keeps its exact previous meaning for every existing consumer, and each
+ * kind supersedes only its own predecessor.
+ *
+ * Guessing either from filenames is still not an option — a company name
+ * containing a character the slugger treats differently would break it.
  */
-async function readPdfIndex(): Promise<Map<string, { pdf: string; html: string }>> {
-  const out = new Map<string, { pdf: string; html: string }>();
-  const file = WORKSPACE.pdfIndex;
+async function readDocumentIndex(
+  file: string,
+): Promise<Map<string, { pdf: string; html: string | null }>> {
+  const out = new Map<string, { pdf: string; html: string | null }>();
   const content = await readBoundedText(file, MAX_PDF_INDEX_BYTES);
   if (content === null) return out;
   for (const line of content.split('\n')) {
     if (!line.trim() || line.startsWith('#')) continue;
     const [num, pdf, html] = line.split('\t');
-    if (num && pdf) {
-      out.set(num.trim().padStart(3, '0'), {
-        pdf: pdf.trim(),
-        html: (html ?? '').trim(),
-      });
-    }
+    // A row with no report number cannot be attached to a role. Rows like that
+    // exist: generate-pdf records every render, with or without --report.
+    if (!num || !pdf) continue;
+    out.set(num.trim().padStart(3, '0'), {
+      pdf: pdf.trim(),
+      html: (html ?? '').trim() || null,
+    });
   }
   return out;
 }

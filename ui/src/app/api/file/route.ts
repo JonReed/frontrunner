@@ -32,7 +32,11 @@ export async function GET(req: Request) {
   if (!Number.isSafeInteger(roleNum) || roleNum < 1 || roleNum > 999_999) {
     return NextResponse.json({ error: 'invalid role' }, { status: 400 });
   }
-  if (format !== 'pdf' && format !== 'html') {
+  // 'cover' is a third document, not a third file type — it is a PDF like the
+  // CV, stored under the same role and validated by the same containment
+  // rules. Keeping it a separate format name rather than a path parameter is
+  // what stops the request naming a file.
+  if (format !== 'pdf' && format !== 'html' && format !== 'cover') {
     return NextResponse.json({ error: 'invalid format' }, { status: 400 });
   }
   const role = (await readTracker()).find((candidate) => candidate.num === roleNum);
@@ -54,7 +58,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  const ext = `.${format}`;
+  const ext = format === 'cover' ? '.pdf' : `.${format}`;
   if (!abs.toLowerCase().endsWith(ext)) {
     return NextResponse.json({ error: 'artifact mismatch' }, { status: 415 });
   }

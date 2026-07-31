@@ -36,6 +36,7 @@ import { pathToFileURL } from 'node:url';
 
 import { ROOT } from '#paths';
 import { APPLICATION_API_VERSION } from './contract.mjs';
+import { readBrowserStatus, startBrowserInstall } from './browser-health.mjs';
 import {
   shouldDetachProcessTree,
   signalProcessTree,
@@ -43,7 +44,13 @@ import {
 import { readBoundedRequest } from './run.mjs';
 
 const CONTROL_KEYS = new Set(['version', 'action']);
-const ACTIONS = new Set(['read', 'connect']);
+/**
+ * `browser` and `install-browser` mirror `read` and `connect` for the other
+ * dependency a CV build needs: the Playwright browser that renders the PDF.
+ * They are separate actions rather than fields on `read` because launching a
+ * browser costs a second or two, and the sign-in check runs on every page.
+ */
+const ACTIONS = new Set(['read', 'connect', 'browser', 'install-browser']);
 const TIMEOUT_MS = 10_000;
 const TERMINATION_GRACE_MS = 1_000;
 const OUTPUT_LIMIT = 64 * 1024;
@@ -254,6 +261,22 @@ export async function main({
       const connectResult = { version: APPLICATION_API_VERSION, started };
       output.write(`${JSON.stringify(connectResult)}\n`);
       return connectResult;
+    }
+
+    if (request.action === 'browser') {
+      const browser = await readBrowserStatus();
+      const browserResult = { version: APPLICATION_API_VERSION, ...browser };
+      output.write(`${JSON.stringify(browserResult)}\n`);
+      return browserResult;
+    }
+
+    if (request.action === 'install-browser') {
+      const installResult = {
+        version: APPLICATION_API_VERSION,
+        ...startBrowserInstall(),
+      };
+      output.write(`${JSON.stringify(installResult)}\n`);
+      return installResult;
     }
 
     const status = await readStatus({ signal: controller.signal });

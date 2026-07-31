@@ -285,7 +285,11 @@ export default async function NextUpPage() {
               </>
             ) : (
               <>
-                Start by searching your configured sources for openings that match your profile.
+                Start by searching the public job boards for openings that match your profile.{' '}
+                <Link href="/found" className="text-[var(--color-act)] hover:underline">
+                  Find roles
+                </Link>
+                .
               </>
             )}
           </p>

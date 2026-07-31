@@ -38,7 +38,11 @@ test('first search makes costs and the free scan path explicit', async () => {
   assert.match(found, /firstSearch=\{firstSearch\}/u);
   assert.match(control, /Run your first search/u);
   assert.match(control, /AI subscription is used only for roles that pass your filters/u);
-  assert.match(control, /Search your configured sources now\. It costs nothing/u);
+  // The promise under test is "free, and you can connect later" — not the
+  // phrase "configured sources", which stopped being accurate when search
+  // gained a sweep of the public ATS directories and no longer depends on a
+  // curated company list.
+  assert.match(control, /It costs nothing; you can connect an AI subscription later/u);
 });
 
 test('allowance tooltips avoid the sticky header instead of being clipped', async () => {

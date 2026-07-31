@@ -21,6 +21,7 @@
 import { useEffect, useState, useTransition } from 'react';
 import { buildCv } from '@/app/actions';
 import { AiButton } from './ai-button';
+import { InstallBrowser } from './install-browser';
 import type { Job } from '@/lib/jobs';
 
 /** Tailoring takes tens of seconds, so say what is happening rather than spin. */
@@ -44,6 +45,7 @@ export function BuildCv({
   url,
   score,
   connected = true,
+  browserReady = true,
   initialJob = null,
 }: {
   roleNum: number;
@@ -53,6 +55,8 @@ export function BuildCv({
   score?: number | null;
   /** False when the Claude CLI is missing or signed out. */
   connected?: boolean;
+  /** False when the Playwright browser that renders the PDF is not installed. */
+  browserReady?: boolean;
   /** Durable running job discovered by the server when this page was opened. */
   initialJob?: Job | null;
 }) {
@@ -214,6 +218,20 @@ export function BuildCv({
         </p>
       </div>
     );
+  }
+
+  /*
+    Missing renderer: fix it before offering the button, not after taking the
+    money. Checked here for the same reason the connection is — it costs
+    nothing to ask, and the alternative is a model call the user pays for that
+    then fails on its last step.
+
+    Ordered after the connection check because a signed-out CLI is the more
+    common state and the more confusing one; there is no value in telling
+    someone about a download when nothing would run anyway.
+  */
+  if (!browserReady) {
+    return <InstallBrowser />;
   }
 
   /*

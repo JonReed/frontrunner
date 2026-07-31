@@ -11,7 +11,7 @@
 import { spawn } from 'node:child_process';
 import { join } from 'node:path';
 import { ROOT } from './root';
-import { runningCvJobForRole } from './job-selection.mjs';
+import { runningDocumentJobForRole } from './job-selection.mjs';
 
 const JOB_CONTROL = join(ROOT, 'src', 'application', 'job-control.mjs');
 const RESPONSE_LIMIT = 64 * 1024;
@@ -20,15 +20,18 @@ const RESPONSE_TIMEOUT_MS = 12_000;
 export type JobStatus = 'running' | 'done' | 'failed';
 export type ApplicationOperation =
   | 'cv.build'
+  | 'cover.build'
   | 'pipeline.run'
   | 'pipeline.prepare'
-  | 'scan.run';
+  | 'scan.run'
+  | 'companies.discover'
+  | 'companies.suggest';
 
 export interface Job {
   id: string;
   operation?: ApplicationOperation;
   roleNum?: number;
-  kind: 'build-cv' | 'pipeline' | 'prepare-pipeline' | 'scan';
+  kind: 'build-cv' | 'build-cover' | 'pipeline' | 'prepare-pipeline' | 'scan' | 'discover-companies' | 'suggest-companies';
   status: JobStatus;
   startedAt: number;
   finishedAt?: number;
@@ -46,9 +49,12 @@ function isJob(value: unknown): value is Job {
   const operation = job.operation ?? (job.kind === 'build-cv' ? 'cv.build' : undefined);
   const shape = {
     'cv.build': { id: /^cv-\d+-[a-z0-9]+$/, kind: 'build-cv' },
+    'cover.build': { id: /^cover-\d+-[a-z0-9]+$/, kind: 'build-cover' },
     'pipeline.run': { id: /^job-pipeline-[a-z0-9]+$/, kind: 'pipeline' },
     'pipeline.prepare': { id: /^job-prepare-[a-z0-9]+$/, kind: 'prepare-pipeline' },
     'scan.run': { id: /^job-scan-[a-z0-9]+$/, kind: 'scan' },
+    'companies.discover': { id: /^job-companies-[a-z0-9]+$/, kind: 'discover-companies' },
+    'companies.suggest': { id: /^job-suggest-[a-z0-9]+$/, kind: 'suggest-companies' },
   }[String(operation)] as { id: RegExp; kind: Job['kind'] } | undefined;
   return (
     Boolean(shape)
@@ -56,12 +62,14 @@ function isJob(value: unknown): value is Job {
     && shape!.id.test(job.id)
     && job.kind === shape!.kind
     && (
-      operation === 'cv.build'
+      // Role-scoped operations carry a tracker number and a matching id
+      // prefix; everything else must carry neither.
+      operation === 'cv.build' || operation === 'cover.build'
         ? (
           Number.isSafeInteger(job.roleNum)
           && Number(job.roleNum) > 0
           && Number(job.roleNum) <= 999_999
-          && job.id.startsWith(`cv-${String(job.roleNum)}-`)
+          && job.id.startsWith(`${operation === 'cv.build' ? 'cv' : 'cover'}-${String(job.roleNum)}-`)
         )
         : job.roleNum === undefined
     )
@@ -236,15 +244,23 @@ export async function listRunningCvRoleNums(): Promise<Set<number>> {
   return roles;
 }
 
-/** Reattach one role page to the durable CV job that already owns its spend. */
-export async function readRunningCvJob(roleNum: number): Promise<Job | null> {
+/**
+ * Reattach one role page to the durable job that already owns its spend.
+ *
+ * Asked per operation: a role can be building a CV and a covering letter at
+ * once, and each control has to find its own run rather than adopt the other's.
+ */
+export async function readRunningDocumentJob(
+  roleNum: number,
+  operation: 'cv.build' | 'cover.build' = 'cv.build',
+): Promise<Job | null> {
   if (!Number.isSafeInteger(roleNum) || roleNum < 1 || roleNum > 999_999) return null;
   let value;
   try {
     value = await invokeJobControl({
       version: '1',
       action: 'list',
-      operation: 'cv.build',
+      operation,
       status: 'running',
       limit: 50,
     });
@@ -259,7 +275,15 @@ export async function readRunningCvJob(roleNum: number): Promise<Job | null> {
     return null;
   }
   const jobs = (value as { jobs: unknown[] }).jobs.filter(isJob);
-  return runningCvJobForRole(jobs, roleNum) as Job | null;
+  return runningDocumentJobForRole(jobs, roleNum, operation) as Job | null;
+}
+
+export function readRunningCvJob(roleNum: number): Promise<Job | null> {
+  return readRunningDocumentJob(roleNum, 'cv.build');
+}
+
+export function readRunningCoverJob(roleNum: number): Promise<Job | null> {
+  return readRunningDocumentJob(roleNum, 'cover.build');
 }
 
 /**
@@ -287,6 +311,93 @@ export async function startCvBuild(
   return value;
 }
 
+/** Start a covering letter. Deduped per role, separately from the CV. */
+export async function startCoverBuild(
+  roleNum: number,
+  jobUrl: string,
+  reportPath: string | null,
+): Promise<Job> {
+  const value = await invokeJobControl({
+    version: '1',
+    action: 'start',
+    request: {
+      version: '1',
+      operation: 'cover.build',
+      input: { roleNum, jobUrl, reportPath },
+      idempotencyKey: `cover:${String(roleNum)}`,
+    },
+  });
+  if (!isJob(value)) throw new Error('The secure backend returned an invalid job.');
+  return value;
+}
+
+/**
+ * Resolve company names to real job boards and follow them.
+ *
+ * The names are the only request-controlled part, and the contract anchors
+ * each one on a letter or digit so it can never be read as a flag. Costs no
+ * model allowance, which is why it can be offered during setup — when the CLI
+ * is usually not signed in yet.
+ */
+export async function startCompanyDiscovery(names: string[]): Promise<Job> {
+  const value = await invokeJobControl({
+    version: '1',
+    action: 'start',
+    request: {
+      version: '1',
+      operation: 'companies.discover',
+      input: { names },
+    },
+  });
+  if (!isJob(value)) throw new Error('The secure backend returned an invalid job.');
+  return value;
+}
+
+/** Ask the model which employers this CV suits. Spends allowance. */
+export async function startCompanySuggestion(): Promise<Job> {
+  const value = await invokeJobControl({
+    version: '1',
+    action: 'start',
+    request: { version: '1', operation: 'companies.suggest', input: {} },
+  });
+  if (!isJob(value)) throw new Error('The secure backend returned an invalid job.');
+  return value;
+}
+
+export function readRunningCompanySuggestion(): Promise<Job | null> {
+  return readRunningCompanyJob('companies.suggest');
+}
+
+export function readRunningCompanyDiscovery(): Promise<Job | null> {
+  return readRunningCompanyJob('companies.discover');
+}
+
+async function readRunningCompanyJob(operation: ApplicationOperation): Promise<Job | null> {
+  let value;
+  try {
+    value = await invokeJobControl({
+      version: '1',
+      action: 'list',
+      operation,
+      status: 'running',
+      limit: 5,
+    });
+  } catch {
+    return null;
+  }
+  if (
+    !value
+    || typeof value !== 'object'
+    || !Array.isArray((value as { jobs?: unknown }).jobs)
+  ) {
+    return null;
+  }
+  for (const item of (value as { jobs: unknown[] }).jobs) {
+    if (isJob(item) && item.operation === operation) return item;
+  }
+  return null;
+}
+
 async function startFixedPipelineOperation(
   operation: 'scan.run' | 'pipeline.run',
   input: Record<string, unknown>,
@@ -306,7 +417,7 @@ async function startFixedPipelineOperation(
   return value;
 }
 
-/** Scan configured portals without invoking a model. */
+/** Scan the public job boards and followed companies, without a model. */
 export function startScanRun(): Promise<Job> {
   return startFixedPipelineOperation('scan.run', {});
 }
