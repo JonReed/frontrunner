@@ -115,6 +115,25 @@ function claudePayload(stdout) {
   return envelope.structured_output ?? envelope.result ?? envelope;
 }
 
+/**
+ * The reason a `claude -p --output-format json` run failed.
+ *
+ * Exported because every tool-less worker in the project has the same
+ * problem: the CLI's own errors arrive on stdout as `{ is_error: true,
+ * result: "..." }`, so anything reading stderr alone reports a bare exit code
+ * for the one failure users actually hit.
+ */
+export function claudeFailureDetail(child) {
+  try {
+    const envelope = JSON.parse(String(child?.stdout ?? '').trim());
+    const message = envelope?.result ?? envelope?.error;
+    if (typeof message === 'string' && message.trim()) return message.trim().slice(0, 400);
+  } catch {
+    // Not a JSON envelope — fall through to stderr.
+  }
+  return String(child?.stderr ?? '').trim().split('\n').slice(-2).join(' ').slice(0, 400);
+}
+
 export function buildProfileExtractionClaudeArgs() {
   return [
     '-p',
@@ -204,8 +223,16 @@ export async function extractProfileFromCv({ cv, run = defaultRun } = {}) {
   });
   if (child.error) throw child.error;
   if (child.status !== 0) {
-    const detail = String(child.stderr ?? '').trim().split('\n').slice(-2).join(' ').slice(0, 400);
-    throw new Error(`Claude profile extraction exited ${child.status}${detail ? `: ${detail}` : ''}`);
+    /*
+      The CLI reports its own failures on STDOUT, inside the JSON envelope, and
+      leaves stderr empty. Reading only stderr produced "exited 1" with no
+      cause — so an expired session, the most common failure by far, looked
+      identical to a crash. Prefer the envelope's message and keep stderr as
+      the fallback for a process that died before producing one.
+    */
+    throw new Error(`Claude profile extraction exited ${child.status}${
+      claudeFailureDetail(child) ? `: ${claudeFailureDetail(child)}` : ''
+    }`);
   }
 
   return {

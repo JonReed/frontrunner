@@ -65,23 +65,26 @@
   --color-attention-wash: #fdf3e7;
 
   /* -- AI actions ------------------------------------------------------
-     Anything that spends the user's AI allowance is INK — the darkest,
-     heaviest control on the page — and carries the sparkle mark. Two
+     Anything that spends the user's AI allowance is VIOLET — a hue used
+     nowhere else in this interface — and carries the sparkle mark. Two
      signals, recognisable before the label is read.
 
-     This was violet, on the reasoning that violet is "the AI convention".
-     That reasoning is precisely what produces a generic AI-built look:
-     purple-for-AI is the single most recognised tell of a generated
-     interface, and adopting a convention because it is a convention is how
-     every such product ends up looking identical.
+     This was briefly ink, on the reasoning that purple-for-AI is a tell of a
+     generated interface. That traded the wrong thing away. The point of this
+     colour is not to follow a convention, it is to be unmistakably NOT the
+     ordinary controls: everything else here is ink, blue or paper, so an ink
+     button reads as one more normal action rather than the one that spends
+     something. A distinct hue is what makes "this costs you" legible at a
+     glance, and legibility beats novelty for a user who is not watching
+     closely.
 
-     Ink is better on the merits anyway. It is the heaviest thing on a light
-     page, so the one action that costs something reads as the most
-     deliberate — which is exactly what it is. */
-  --color-ai: #24211e;
-  --color-ai-hover: #100f0e;
-  --color-ai-wash: #f2f0ed;
-  --color-ai-line: #cfc9c2;
+     Chosen to sit with the warm paper rather than fight it: desaturated
+     enough not to glare beside #2563a8, dark enough to carry white text at
+     the required contrast. */
+  --color-ai: #6b4fc4;
+  --color-ai-hover: #593fab;
+  --color-ai-wash: #f2eefb;
+  --color-ai-line: #cfc0ee;
 
   --font-sans: 'DM Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-editorial: Georgia, 'Times New Roman', ui-serif, serif;

@@ -239,7 +239,15 @@ export async function extractCvProfile(
     return await extractProfile(cv);
   } catch (error) {
     const detail = error instanceof Error ? error.message : '';
+    if (/session expired|could not be refreshed|failed to authenticate/iu.test(detail)) {
+      // Distinct from "never connected": the fix is reconnecting an account
+      // that is already set up, and saying "connect your subscription" to
+      // someone who did that last week reads as the product forgetting them.
+      invalidateHealth();
+      return { error: 'Your Claude sign-in has expired. Reconnect it on My details, then try again.' };
+    }
     if (/not signed in|not logged in|auth|login/iu.test(detail)) {
+      invalidateHealth();
       return { error: 'Connect your Claude subscription before using AI suggestions.' };
     }
     if (/timeout|did not respond|cancel/iu.test(detail)) {
@@ -417,7 +425,12 @@ async function startPipelineAction(
     if (running) return running;
 
     const detail = error instanceof Error ? error.message : '';
+    if (/session expired|could not be refreshed|failed to authenticate/iu.test(detail)) {
+      invalidateHealth();
+      return { error: 'Your Claude sign-in has expired. Reconnect it on My details, then try again.' };
+    }
     if (/not signed in|not logged in|\/login/iu.test(detail)) {
+      invalidateHealth();
       return { error: 'Connect your AI subscription before assessing roles.' };
     }
     if (/lock timeout|busy|cannot start while/iu.test(detail)) {

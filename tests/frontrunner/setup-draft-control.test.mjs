@@ -124,3 +124,52 @@ test('the setup flow keeps the CV out of browser storage', async () => {
   assert.doesNotMatch(code, /sessionStorage|localStorage/u);
   assert.match(source, /storeSetupDraft|loadSetupDraft/u);
 });
+
+test('a CLI failure reported on stdout is surfaced, not swallowed', async () => {
+  const { claudeFailureDetail } = await import('../../src/application/profile-extraction.mjs');
+
+  /*
+    The regression: `claude -p --output-format json` reports its own errors in
+    the stdout envelope and leaves stderr empty, so reading stderr alone turned
+    an expired session — the commonest failure there is — into a bare
+    "exited 1" with no cause.
+  */
+  assert.equal(
+    claudeFailureDetail({
+      stdout: JSON.stringify({
+        is_error: true,
+        result: 'Failed to authenticate: OAuth session expired and could not be refreshed',
+      }),
+      stderr: '',
+    }),
+    'Failed to authenticate: OAuth session expired and could not be refreshed',
+  );
+
+  // Still falls back to stderr when the process died before printing JSON.
+  assert.equal(claudeFailureDetail({ stdout: 'not json', stderr: 'spawn ENOENT' }), 'spawn ENOENT');
+  assert.equal(claudeFailureDetail({}), '');
+});
+
+test('an expired sign-in offers the fix where it broke, not a page to visit', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { ROOT } = await import('#paths');
+
+  const notice = await readFile(join(ROOT, 'ui/src/components/reconnect-notice.tsx'), 'utf8');
+  // The remedy must be the button, not prose telling the user to go elsewhere.
+  assert.match(notice, /ConnectButton/u);
+
+  /*
+    Every control that spends allowance has to route an auth failure here.
+    Left to prose, each one drifts into its own wording and its own dead end —
+    which is exactly what this replaced.
+  */
+  for (const file of [
+    'ui/src/components/build-cv.tsx',
+    'ui/src/components/build-cover.tsx',
+    'ui/src/components/pipeline-control.tsx',
+    'ui/src/components/suggest-companies.tsx',
+  ]) {
+    const source = await readFile(join(ROOT, file), 'utf8');
+    assert.match(source, /isSignInFailure/u, `${file} must route sign-in failures to the notice`);
+  }
+});

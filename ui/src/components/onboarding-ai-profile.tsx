@@ -88,7 +88,6 @@ export function OnboardingAiProfile({
       <h3 className="mt-1 text-lg font-bold">Let Claude find the details already in your CV</h3>
       <p className="mt-2 text-sm leading-relaxed text-[var(--color-ink-soft)]">
         Whenever Frontrunner needs AI, the action uses this violet button with a sparkle.
-        Everything else runs locally with ordinary code.
       </p>
       <p className="mt-2 text-sm leading-relaxed text-[var(--color-ink-soft)]">
         Pressing it sends the CV text you reviewed above to Claude through your connected Claude
