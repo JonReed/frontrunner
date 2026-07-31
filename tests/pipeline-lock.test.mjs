@@ -18,7 +18,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, existsSync, mkdirSync, writeFileSync, readFileSync, utimesSync } from 'node:fs';
+import { mkdtempSync, rmSync, existsSync, mkdirSync, writeFileSync, readFileSync, statSync, utimesSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { acquirePipelineLock, LockTimeoutError, OWNERLESS_GRACE_MS } from '../src/tracker/pipeline-lock.mjs';
@@ -101,9 +101,15 @@ test('acquirePipelineLock: stale-reclaim is serialized — a second reclaimer ca
 
     // Two concurrent acquirers both see the same stale lock. Exactly one must
     // win; the loser must NOT end up holding a lock at the same time.
+    /*
+      A generous timeout on purpose. What is under test is mutual exclusion,
+      not latency: one acquirer wins immediately, so a longer deadline costs
+      nothing in the passing case and stops a slow runner turning "both timed
+      out" into a false failure about double-holding.
+    */
     const [a, b] = await Promise.allSettled([
-      acquirePipelineLock(p, { timeoutMs: 1000, retryMs: 15, staleMs: 1 }),
-      acquirePipelineLock(p, { timeoutMs: 1000, retryMs: 15, staleMs: 1 }),
+      acquirePipelineLock(p, { timeoutMs: 10_000, retryMs: 15, staleMs: 1 }),
+      acquirePipelineLock(p, { timeoutMs: 10_000, retryMs: 15, staleMs: 1 }),
     ]);
 
     const winners = [a, b].filter((r) => r.status === 'fulfilled');
@@ -148,8 +154,22 @@ test('acquirePipelineLock: fresh ownerless locks respect the grace floor', async
     const p = join(root, 'data', 'pipeline.md');
     const lockDir = `${p}.lock`;
     mkdirSync(lockDir, { recursive: true });
+    /*
+      The lock's age is pinned to the moment it was created, so this asserts
+      the grace floor itself rather than racing it. Previously the test was
+      only correct while less than OWNERLESS_GRACE_MS of real time had passed
+      since mkdirSync — a GC pause or a loaded CI runner made a correct
+      implementation fail. The acquisition deadline still uses real time, so
+      the timeout being asserted is a real one.
+    */
+    const createdAt = statSync(lockDir).mtimeMs;
     await assert.rejects(
-      () => acquirePipelineLock(p, { timeoutMs: 200, retryMs: 20, staleMs: 0 }),
+      () => acquirePipelineLock(p, {
+        timeoutMs: 200,
+        retryMs: 20,
+        staleMs: 0,
+        ageClock: () => createdAt,
+      }),
       (error) => error instanceof LockTimeoutError,
     );
     assert.ok(existsSync(lockDir));

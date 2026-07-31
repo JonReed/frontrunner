@@ -28,7 +28,13 @@
  */
 
 import { useEffect, useMemo, useState, useTransition } from 'react';
-import { completeSetup, createSearchSettings } from '@/app/actions';
+import {
+  completeSetup,
+  createSearchSettings,
+  discardSetupDraft,
+  loadSetupDraft,
+  storeSetupDraft,
+} from '@/app/actions';
 import { OnboardingAiProfile } from '@/components/onboarding-ai-profile';
 import { suggestCvContact } from '@/lib/cv-contact-suggestions.mjs';
 import { suggestJobTitles } from '@/lib/job-title-suggestions.mjs';
@@ -143,16 +149,15 @@ const EMPTY: SetupDraft = {
  * This flow asks for a CV — often pasted, sometimes typed over — and held all
  * of it in component state alone. A stray back-button, a reload, or a laptop
  * lid partway through threw the lot away, and the person had to find their CV
- * and start again. That is the worst moment in the product to lose someone's
- * work.
+ * and start again.
  *
- * sessionStorage rather than localStorage: this is a half-finished form, not a
- * document. It should survive a reload and die with the tab, so an abandoned
- * setup on a shared computer does not leave an employment history sitting in
- * browser storage. The key is versioned so a later change to the draft shape
- * cannot rehydrate into a form that no longer matches it.
+ * The obvious fix is sessionStorage, and it is the wrong one: it puts an
+ * employment history, contact details and salary expectations into browser
+ * storage in clear text. The draft is written to disk by the loopback server
+ * instead — the same place the finished profile goes moments later, and the
+ * same trusted writer — so the browser holds none of it. It also means the
+ * draft survives closing the tab, which is the loss people actually describe.
  */
-const DRAFT_KEY = 'frontrunner.setup.draft.v1';
 
 /** Ids for the optional extra CV versions. React keys only; never persisted. */
 let nextCvId = 0;
@@ -166,14 +171,7 @@ let nextCvId = 0;
  * match its default is discarded, which costs the user one unfinished field
  * rather than a setup screen they cannot get past.
  */
-function readDraft(raw: string | null): SetupDraft | null {
-  if (!raw) return null;
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return null;
-  }
+function readDraft(parsed: unknown): SetupDraft | null {
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
   const source = parsed as Record<string, unknown>;
   // Starts as a full, valid draft and is narrowed field by field, so the
@@ -439,35 +437,43 @@ export function SetupFlow({
   /*
     Restore after mount, never during render.
 
-    Reading storage while rendering produces different markup on the server and
-    the client, and React discards the restored draft resolving the mismatch —
-    the exact data this exists to keep.
+    Reading during render produces different markup on the server and the
+    client, and React discards the restored draft resolving the mismatch — the
+    exact data this exists to keep.
   */
   useEffect(() => {
-    try {
-      const saved = readDraft(window.sessionStorage.getItem(DRAFT_KEY));
-      if (saved) setDraft(saved);
-    } catch {
-      // Private browsing and blocked storage are ordinary. Losing the draft is
-      // the old behaviour, so failing quietly costs nothing already had.
-    }
-    setRestored(true);
+    let cancelled = false;
+    void (async () => {
+      const stored = await loadSetupDraft();
+      const saved = stored ? readDraft(stored) : null;
+      if (!cancelled && saved) setDraft(saved);
+      if (!cancelled) setRestored(true);
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   /*
+    Autosave, debounced.
+
+    Every keystroke changes the draft, and each save crosses a process
+    boundary — writing on all of them would spawn a controller per character.
+    A pause is also the honest trigger: the draft exists for the reload that
+    happens while someone is reading, not to mirror the form keystroke by
+    keystroke.
+
     `restored` guards the first write: without it the initial empty draft is
-    persisted before the effect above runs, overwriting the saved one with
+    persisted before the effect above finishes, overwriting the saved one with
     nothing — worse than not saving at all.
   */
   useEffect(() => {
     if (!restored) return;
-    try {
-      window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-    } catch {
-      // Storage full or unavailable. The form still works; only the safety net
-      // is missing, and saying so mid-setup would not help.
-    }
+    const timer = window.setTimeout(() => {
+      // Best effort. A failed autosave costs the safety net, never the form.
+      void storeSetupDraft(draft as unknown as Record<string, unknown>);
+    }, 1_000);
+    return () => window.clearTimeout(timer);
   }, [draft, restored]);
+
   const suggestedContact = useMemo(() => suggestCvContact(draft.cv), [draft.cv]);
   const suggestedRoles = useMemo(() => suggestJobTitles(draft.cv), [draft.cv]);
   const set = <K extends keyof SetupDraft>(k: K, v: SetupDraft[K]) =>
@@ -617,11 +623,9 @@ export function SetupFlow({
 
       // On disk now, so the browser copy is no longer a safety net — it is a
       // stale duplicate of someone's CV. Clear it before leaving.
-      try {
-        window.sessionStorage.removeItem(DRAFT_KEY);
-      } catch {
-        // Nothing to clean up if storage was never available.
-      }
+      // Written to the profile now, so the draft is a second copy of a CV
+      // with no reason to exist. Remove it.
+      await discardSetupDraft();
       // Setup is complete; the next useful thing is the first search, not an
       // empty dashboard that makes a new user infer the product's purpose.
       window.location.href = '/found?welcome=1';

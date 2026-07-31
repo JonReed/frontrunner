@@ -58,6 +58,11 @@ import {
   type FollowupChannel,
 } from '@/lib/followup-write';
 import { allowPrefilteredRole } from '@/lib/prefilter-overrides';
+import {
+  clearSetupDraft as clearDraft,
+  readSetupDraft as readDraft,
+  saveSetupDraft as saveDraft,
+} from '@/lib/setup-draft';
 import { revalidatePath } from 'next/cache';
 
 /**
@@ -309,6 +314,27 @@ export async function suggestCompanies(): Promise<Job | { error: string }> {
     }
     return { error: 'That could not be started. Wait a moment, then try again.' };
   }
+}
+
+/**
+ * The unfinished setup draft.
+ *
+ * Held on disk rather than in the browser: it contains a CV, contact details
+ * and salary expectations, and browser storage keeps that in clear text where
+ * anything on the origin can read it until the tab closes. These are
+ * best-effort by design — the draft is a safety net, and a failed autosave
+ * must never interrupt someone filling in a form.
+ */
+export async function loadSetupDraft(): Promise<Record<string, unknown> | null> {
+  return readDraft();
+}
+
+export async function storeSetupDraft(draft: Record<string, unknown>): Promise<{ saved: boolean }> {
+  return { saved: await saveDraft(draft) };
+}
+
+export async function discardSetupDraft(): Promise<void> {
+  await clearDraft();
 }
 
 export async function overridePrefilterRejection(

@@ -38,6 +38,7 @@ export function acquirePipelineLock(pipelinePath, options = {}) {
       ?? positiveIntegerEnv('FRONTRUNNER_PIPELINE_LOCK_TIMEOUT_MS', 8_000),
     retryMs: options.retryMs
       ?? positiveIntegerEnv('FRONTRUNNER_PIPELINE_LOCK_RETRY_MS', 80),
+    ...(options.ageClock ? { ageClock: options.ageClock } : {}),
     staleMs: options.staleMs
       ?? positiveIntegerEnv('FRONTRUNNER_PIPELINE_LOCK_STALE_MS', 30_000),
     ownerFields: { pipeline: pipelinePath },

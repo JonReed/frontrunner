@@ -14,6 +14,7 @@ const RAW_MUTATION_RE = /\b(?:writeFileSync|appendFileSync|copyFileSync|renameSy
 const APPROVED_RAW_MUTATORS = new Set([
   'src/application/job-manager.mjs', // contained ui/.jobs runtime state
   'src/application/job-storage-cleanup.mjs', // contained ui/.jobs cleanup
+  'src/application/draft-control.mjs', // deletes only its own contained setup draft; writes go through replaceFileAtomic
   'src/benchmark/pipeline-benchmark.mjs', // maintainer-owned benchmark artifact
   'src/analysis/weekly-interview-digest.mjs', // private mkdtemp self-test fixtures only; normal digest execution is read-only
   'src/cv/claude-cover.mjs', // private mkdtemp scratch directory

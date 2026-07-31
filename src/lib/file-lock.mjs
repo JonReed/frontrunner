@@ -85,11 +85,26 @@ function processIsAlive(pid) {
   }
 }
 
-function lockCanRecover(lockDir, staleMs) {
+/**
+ * Whether a lock may be taken from its current holder.
+ *
+ * `ageClock` exists so the ownerless grace floor can be tested for what it is
+ * — a rule about lock age — rather than by racing it. A test that creates a
+ * fresh lock and asserts it cannot be reclaimed is only correct while less
+ * than OWNERLESS_GRACE_MS of real time has passed since the directory was
+ * made, so a GC pause or a loaded CI runner turns a correct implementation
+ * into a red build. Injecting the clock makes the decision deterministic
+ * without weakening it: production passes nothing and gets Date.now.
+ *
+ * Deliberately separate from the acquisition deadline, which must keep using
+ * real time — a pinned clock there would mean a contended lock never timed
+ * out at all.
+ */
+function lockCanRecover(lockDir, staleMs, ageClock = Date.now) {
   const owner = readLockOwner(lockDir);
   if (owner?.pid) return !processIsAlive(owner.pid);
   try {
-    return Date.now() - statSync(lockDir).mtimeMs > Math.max(staleMs, OWNERLESS_GRACE_MS);
+    return ageClock() - statSync(lockDir).mtimeMs > Math.max(staleMs, OWNERLESS_GRACE_MS);
   } catch {
     return true;
   }
@@ -108,6 +123,8 @@ export async function acquireFileLock(filePath, options = {}) {
   const retryMs = lockTiming(options.retryMs, DEFAULT_RETRY_MS, 'retryMs', { allowZero: false });
   const staleMs = lockTiming(options.staleMs, DEFAULT_STALE_MS, 'staleMs');
   const lockDir = options.lockDir ?? fileLockDirFor(filePath);
+  // Judges lock AGE only; the deadline below stays on real time.
+  const ageClock = options.ageClock ?? Date.now;
   const recoverGuardDir = `${lockDir}.recover`;
   const token = randomUUID();
   const deadline = Date.now() + timeoutMs;
@@ -162,7 +179,7 @@ export async function acquireFileLock(filePath, options = {}) {
         hasRecoverGuard = true;
       } catch (guardError) {
         if (!['EEXIST', 'EPERM', 'EBUSY'].includes(guardError?.code)) throw guardError;
-        if (guardError?.code === 'EEXIST' && lockCanRecover(recoverGuardDir, staleMs)) {
+        if (guardError?.code === 'EEXIST' && lockCanRecover(recoverGuardDir, staleMs, ageClock)) {
           try {
             rmSync(recoverGuardDir, { recursive: true, force: true });
           } catch (recoverError) {
@@ -177,7 +194,7 @@ export async function acquireFileLock(filePath, options = {}) {
           const staleOwner = readLockOwner(lockDir);
           if (
             staleIdentity
-            && lockCanRecover(lockDir, staleMs)
+            && lockCanRecover(lockDir, staleMs, ageClock)
             && removeUnchangedLock(lockDir, staleIdentity, staleOwner?.token ?? null)
           ) {
             continue;
