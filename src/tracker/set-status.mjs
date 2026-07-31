@@ -74,12 +74,16 @@ const EXIT_NOT_FOUND = 2;
 const EXIT_AMBIGUOUS = 3;
 const EXIT_LOCK_TIMEOUT = 4;
 
-const USAGE = `Usage: node src/tracker/set-status.mjs <report#|company> <state> [--note "..."] [--role "..."] [--on YYYY-MM-DD] [--expect-revision <sha256>] [--force] [--dry-run] [--json]
+const USAGE = `Usage: node src/tracker/set-status.mjs <report#|company> <state> [options]
+       node src/tracker/set-status.mjs --row N <state> [options]
+       node src/tracker/set-status.mjs --report N <state> [options]
 
   <report#|company>  Row selector: tracker # (exact) or company name (normalized match)
   <state>            Canonical state from templates/states.yml (aliases accepted)
   --note "..."       Append to the Notes cell ("; "-separated, idempotent)
   --role "..."       Disambiguate when several rows share the company (fuzzy match)
+  --row N            Select explicitly by tracker row number
+  --report N         Select explicitly by linked report number
   --on YYYY-MM-DD    Real event date for the status-log entry (defaults to today —
                      pass it when the transition happened earlier than it's recorded)
   --expect-revision  Refuse the write unless the selected row still has this SHA-256 revision
@@ -96,6 +100,8 @@ const flags = {
   role: null,
   on: null,
   expectRevision: null,
+  row: null,
+  report: null,
   force: false,
   dryRun: false,
   json: false,
@@ -105,6 +111,8 @@ const VALUE_FLAGS = {
   '--role': 'role',
   '--on': 'on',
   '--expect-revision': 'expectRevision',
+  '--row': 'row',
+  '--report': 'report',
 };
 
 for (let i = 0; i < rawArgs.length; i++) {
@@ -116,6 +124,9 @@ for (let i = 0; i < rawArgs.length; i++) {
     if (value === undefined || value.startsWith('--')) {
       failUsage(`Missing value for ${a}`);
     }
+    if ((a === '--row' || a === '--report') && !/^[1-9]\d*$/.test(value)) {
+      failUsage(`${a} expects a positive integer, got "${value}"`);
+    }
     flags[VALUE_FLAGS[a]] = value;
     i++;
   }
@@ -126,7 +137,11 @@ for (let i = 0; i < rawArgs.length; i++) {
   else { positional.push(a); }
 }
 
-if (positional.length !== 2) {
+if (flags.row !== null && flags.report !== null) {
+  failUsage('--row and --report are mutually exclusive');
+}
+const explicitSelector = flags.row !== null || flags.report !== null;
+if (explicitSelector ? positional.length !== 1 : positional.length !== 2) {
   failUsage(positional.length === 0 ? null : `Expected 2 arguments (selector, state), got ${positional.length}`);
 }
 
@@ -143,7 +158,9 @@ if (flags.expectRevision !== null && !/^[a-f0-9]{64}$/u.test(flags.expectRevisio
   failUsage('--expect-revision expects a lowercase SHA-256 row revision');
 }
 
-const [selector, stateInput] = positional;
+const selector = explicitSelector ? null : positional[0];
+const stateInput = explicitSelector ? positional[0] : positional[1];
+const isBareNumericSelector = selector !== null && /^\d+$/.test(selector);
 
 /**
  * Emit a structured error and exit.
@@ -216,8 +233,22 @@ if (!existsSync(APPS_FILE)) {
  * @returns {object} The single matched row. Exits the process on 0 or 2+ matches.
  */
 function resolveRow(rows) {
-  if (/^\d+$/.test(selector)) {
-    const num = parseInt(selector, 10);
+  if (flags.report !== null) {
+    const num = Number(flags.report);
+    let matches = rows.filter(r => extractTrackerReportNumbers(r.report).includes(num));
+    if (matches.length === 0) failWith(EXIT_NOT_FOUND, 'not-found', `No tracker row links report #${num}`);
+    if (matches.length > 1 && flags.role) {
+      const narrowed = matches.filter(r => roleFuzzyMatch(r.role, flags.role));
+      if (narrowed.length === 1) return narrowed[0];
+    }
+    if (matches.length > 1) {
+      const candidates = matches.map(r => ({ num: r.num, company: r.company, role: r.role }));
+      failWith(EXIT_AMBIGUOUS, 'ambiguous', `Report #${num} is linked by ${matches.length} tracker rows`, { candidates });
+    }
+    return matches[0];
+  }
+  if (flags.row !== null || isBareNumericSelector) {
+    const num = Number(flags.row ?? selector);
     let matches = rows.filter(r => r.num === num);
     if (matches.length === 0) {
       failWith(EXIT_NOT_FOUND, 'not-found', `No tracker row with #${num}`);
@@ -327,7 +358,7 @@ if (flags.expectRevision !== null && flags.expectRevision !== previousRevision) 
 // has made the row ID disagree with its local report link, silently updating
 // that row can affect the wrong application. Company selectors remain usable,
 // and --force records an explicit decision to proceed despite the mismatch.
-if (/^\d+$/.test(selector) && !flags.force) {
+if (isBareNumericSelector && !flags.force) {
   const reportNums = extractTrackerReportNumbers(target.report);
   const mismatched = reportNums.filter(num => num !== target.num);
   if (mismatched.length > 0) {
@@ -335,9 +366,18 @@ if (/^\d+$/.test(selector) && !flags.force) {
       EXIT_AMBIGUOUS,
       'report-number-mismatch',
       `Tracker #${target.num} points to report ID(s) ${reportNums.map(num => `#${num}`).join(', ')}. ` +
-        'Use the company selector, repair the Report cell, or re-run with --force.',
+        `Say which you meant: --row ${target.num} or --report ${reportNums[0]}.`,
       { trackerNum: target.num, reportNums },
     );
+  }
+  if (reportNums.length === 0) {
+    const num = Number(selector);
+    const linkers = rows.filter(r => r !== target && extractTrackerReportNumbers(r.report).includes(num));
+    if (linkers.length > 0) {
+      failWith(EXIT_AMBIGUOUS, 'report-number-ambiguous',
+        `"${num}" names tracker row #${num}, but another row links report #${num}. Use --row or --report.`,
+        { trackerNum: target.num, reportNum: num, linkedBy: linkers.map(r => ({ num: r.num, company: r.company, role: r.role })) });
+    }
   }
 }
 

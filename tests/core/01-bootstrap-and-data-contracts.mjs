@@ -3,7 +3,7 @@ import { readFileSync, existsSync, readdirSync, mkdtempSync, mkdirSync, writeFil
 import { join, dirname, basename, delimiter } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { pass, fail, warn, run, fileExists, ROOT, NODE, getBash, toBashPath } from '../helpers.mjs';
+import { pass, fail, warn, run, formatRunFailure, fileExists, ROOT, NODE, getBash, toBashPath } from '../helpers.mjs';
 import { readFile, normalizeEol, readTextLF } from './support.mjs';
 
 // ── 1. SYNTAX CHECKS ────────────────────────────────────────────
@@ -135,7 +135,7 @@ try {
     } else if (allowFail) {
       pass(`${name} exits safely without user data`);
     } else {
-      fail(`${name} crashed`);
+      fail(`${name} crashed${formatRunFailure()}`);
     }
   }
 } finally {

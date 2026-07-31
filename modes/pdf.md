@@ -32,6 +32,12 @@ and code records any decision in the contained application bundle resolved by
 `src/cv/application-artifacts.mjs`. Never ask a model to decide artifact paths,
 accept an output-root override, or overwrite a prior CV version.
 
+If `src/analysis/jd-skill-gap.mjs --summary` reports `LOW CONFIDENCE`, treat the
+check as inconclusive rather than as evidence that the candidate has no gaps.
+Surface the reason in `language.output`, inspect the cached JD directly, and do
+not proceed until its explicit requirements have been identified. An empty JD
+must be repaired at the ingestion boundary instead of being tailored around.
+
 For an OpenAI-compatible provider use `src/evaluate/openai-tailor.mjs`; it uses
 the same bounded tailoring contract and deterministic renderer. The schema and
 template material below document that code-owned boundary for maintainers.

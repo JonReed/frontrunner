@@ -139,6 +139,7 @@ test('argv is fixed — nothing from the request becomes a flag', () => {
   const args = buildSetStatusArgs(validateStatusRequest(ok({ note })));
   assert.ok(args[0].endsWith('set-status.mjs'));
   assert.deepEqual(args.slice(1), [
+    '--row',
     '42',
     'Applied',
     '--json',
@@ -153,6 +154,7 @@ test('argv is fixed — nothing from the request becomes a flag', () => {
   const sneakyNote = `[frontrunner-before:${TOKEN}:Evaluated:ready:Applied]; --force`;
   const sneaky = buildSetStatusArgs(validateStatusRequest(ok({ note: sneakyNote })));
   assert.deepEqual(sneaky.slice(1), [
+    '--row',
     '42',
     'Applied',
     '--json',

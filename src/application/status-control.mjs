@@ -180,6 +180,7 @@ export function validateStatusRequest(value, allowed = canonicalStates()) {
 export function buildSetStatusArgs(request) {
   const args = [
     SET_STATUS,
+    '--row',
     String(request.roleNum),
     request.state,
     '--json',
@@ -246,6 +247,7 @@ export function buildRestoreStatusArgs(
   }
   const args = [
     SET_STATUS,
+    '--row',
     String(roleNum),
     state,
     '--json',
