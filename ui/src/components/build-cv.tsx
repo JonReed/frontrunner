@@ -22,6 +22,7 @@ import { useEffect, useState, useTransition } from 'react';
 import { buildCv } from '@/app/actions';
 import { AiButton } from './ai-button';
 import { InstallBrowser } from './install-browser';
+import { ReconnectNotice, isSignInFailure } from './reconnect-notice';
 import type { Job } from '@/lib/jobs';
 
 /** Tailoring takes tens of seconds, so say what is happening rather than spin. */
@@ -171,6 +172,9 @@ export function BuildCv({
   }
 
   const failure = error ?? job?.error;
+  // An expired sign-in carries its own fix rather than pointing at another
+  // screen — see reconnect-notice.tsx.
+  if (failure && isSignInFailure(failure)) return <ReconnectNotice message={failure} />;
   if (failure) {
     return (
       <div>

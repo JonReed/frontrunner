@@ -9,6 +9,7 @@ import {
 } from '@/app/actions';
 import { AiButton } from '@/components/ai-button';
 import { pipelineActions } from '@/lib/pipeline-actions.mjs';
+import { ReconnectNotice, isSignInFailure } from '@/components/reconnect-notice';
 import type { Job } from '@/lib/jobs';
 
 type ActionResult = Job | { error: string };
@@ -134,6 +135,14 @@ export function PipelineControl({
         <button type="button" onClick={() => window.location.reload()} className={SECONDARY}>
           Show results
         </button>
+      </section>
+    );
+  }
+
+  if (job?.status === 'failed' && isSignInFailure(job.error)) {
+    return (
+      <section aria-live="polite" className="mb-9 rounded-2xl border border-[var(--color-attention)] bg-[var(--color-attention-wash)] px-5 py-5 sm:px-6">
+        <ReconnectNotice message={job.error ?? ''} />
       </section>
     );
   }

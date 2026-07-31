@@ -21,6 +21,7 @@
 import { useEffect, useState, useTransition } from 'react';
 import { buildCover } from '@/app/actions';
 import { AiButton } from './ai-button';
+import { ReconnectNotice, isSignInFailure } from './reconnect-notice';
 import type { Job } from '@/lib/jobs';
 
 export function BuildCover({
@@ -112,6 +113,7 @@ export function BuildCover({
   }
 
   const failure = error ?? job?.error;
+  if (failure && isSignInFailure(failure)) return <ReconnectNotice message={failure} />;
   if (failure) {
     return (
       <div>

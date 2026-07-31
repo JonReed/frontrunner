@@ -31,6 +31,7 @@ import { useEffect, useState, useTransition } from 'react';
 import { followCompanies, suggestCompanies } from '@/app/actions';
 import { AiButton } from '@/components/ai-button';
 import type { CompanySuggestion } from '@/lib/company-suggestions';
+import { ReconnectNotice, isSignInFailure } from '@/components/reconnect-notice';
 import type { Job } from '@/lib/jobs';
 
 /** A Job always has an id; a rejected request never does. */
@@ -106,6 +107,9 @@ export function SuggestCompanies({
       setFollowed(true);
     });
   };
+
+  const failure = error ?? (job?.status === 'failed' ? job.error : null);
+  if (failure && isSignInFailure(failure)) return <ReconnectNotice message={failure} />;
 
   if (job?.status === 'running') {
     return (
