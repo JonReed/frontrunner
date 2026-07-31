@@ -124,3 +124,28 @@ test('the setup flow keeps the CV out of browser storage', async () => {
   assert.doesNotMatch(code, /sessionStorage|localStorage/u);
   assert.match(source, /storeSetupDraft|loadSetupDraft/u);
 });
+
+test('a CLI failure reported on stdout is surfaced, not swallowed', async () => {
+  const { claudeFailureDetail } = await import('../../src/application/profile-extraction.mjs');
+
+  /*
+    The regression: `claude -p --output-format json` reports its own errors in
+    the stdout envelope and leaves stderr empty, so reading stderr alone turned
+    an expired session — the commonest failure there is — into a bare
+    "exited 1" with no cause.
+  */
+  assert.equal(
+    claudeFailureDetail({
+      stdout: JSON.stringify({
+        is_error: true,
+        result: 'Failed to authenticate: OAuth session expired and could not be refreshed',
+      }),
+      stderr: '',
+    }),
+    'Failed to authenticate: OAuth session expired and could not be refreshed',
+  );
+
+  // Still falls back to stderr when the process died before printing JSON.
+  assert.equal(claudeFailureDetail({ stdout: 'not json', stderr: 'spawn ENOENT' }), 'spawn ENOENT');
+  assert.equal(claudeFailureDetail({}), '');
+});

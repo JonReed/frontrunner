@@ -225,8 +225,16 @@ function idMatchesJob(id, operation, roleNum) {
 function publicFailure(job, result) {
   const tail = technicalTail(result.outputTail);
   const operation = operationFor(job);
-  if (/not logged in|\/login/iu.test(tail)) {
-    return 'The Claude CLI is not signed in. Frontrunner needs it connected to your AI subscription.';
+  /*
+    An expired session is the commonest failure of all and used to surface as
+    a bare exit code: the CLI reports "Failed to authenticate: OAuth session
+    expired and could not be refreshed", which matched none of the old
+    patterns. `claude auth status` also keeps reporting a signed-in session
+    until something forces a refresh, so the pre-flight cannot catch this —
+    the run itself is the first honest signal, and it has to say so plainly.
+  */
+  if (/not logged in|\/login|failed to authenticate|oauth|session expired|could not be refreshed/iu.test(tail)) {
+    return 'Your Claude sign-in has expired. Reconnect it on My details, then try again — nothing was charged.';
   }
   if (/ENOENT/iu.test(String(result.error ?? ''))) {
     if (operation === 'cv.build') {
