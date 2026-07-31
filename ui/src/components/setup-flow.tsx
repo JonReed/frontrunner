@@ -27,8 +27,8 @@
  * subscription, and returns suggestions for review rather than writing facts.
  */
 
-import { useMemo, useState, useTransition } from 'react';
-import { completeSetup } from '@/app/actions';
+import { useEffect, useMemo, useState, useTransition } from 'react';
+import { completeSetup, createSearchSettings } from '@/app/actions';
 import { OnboardingAiProfile } from '@/components/onboarding-ai-profile';
 import { suggestCvContact } from '@/lib/cv-contact-suggestions.mjs';
 import { suggestJobTitles } from '@/lib/job-title-suggestions.mjs';
@@ -136,6 +136,71 @@ const EMPTY: SetupDraft = {
   workDrains: '',
   dealBreakers: '',
 };
+
+/**
+ * Where an unfinished setup lives between page loads.
+ *
+ * This flow asks for a CV — often pasted, sometimes typed over — and held all
+ * of it in component state alone. A stray back-button, a reload, or a laptop
+ * lid partway through threw the lot away, and the person had to find their CV
+ * and start again. That is the worst moment in the product to lose someone's
+ * work.
+ *
+ * sessionStorage rather than localStorage: this is a half-finished form, not a
+ * document. It should survive a reload and die with the tab, so an abandoned
+ * setup on a shared computer does not leave an employment history sitting in
+ * browser storage. The key is versioned so a later change to the draft shape
+ * cannot rehydrate into a form that no longer matches it.
+ */
+const DRAFT_KEY = 'frontrunner.setup.draft.v1';
+
+/** Ids for the optional extra CV versions. React keys only; never persisted. */
+let nextCvId = 0;
+
+/**
+ * Restore a draft without trusting it.
+ *
+ * Driven off EMPTY rather than a hand-written field list, so a field added to
+ * the draft is covered here automatically — the alternative silently stops
+ * persisting whatever the author forgot to add. Anything whose type does not
+ * match its default is discarded, which costs the user one unfinished field
+ * rather than a setup screen they cannot get past.
+ */
+function readDraft(raw: string | null): SetupDraft | null {
+  if (!raw) return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+  const source = parsed as Record<string, unknown>;
+  // Starts as a full, valid draft and is narrowed field by field, so the
+  // result is a SetupDraft by construction rather than by assertion.
+  const restored: SetupDraft = { ...EMPTY, otherCvs: [] };
+
+  for (const [key, fallback] of Object.entries(EMPTY)) {
+    const value = source[key];
+    if (key === 'otherCvs') {
+      // Ids are React keys, not data — regenerate rather than trust them.
+      restored.otherCvs = Array.isArray(value)
+        ? value.flatMap((entry) => {
+            const cv = entry as Partial<CvEntry>;
+            return typeof cv?.text === 'string'
+              ? [{ id: `cv-${nextCvId++}`, label: typeof cv.label === 'string' ? cv.label : '', text: cv.text }]
+              : [];
+          })
+        : [];
+    } else if (typeof value === 'string' && typeof fallback === 'string') {
+      // Every remaining field is a string in SetupDraft; the enum-typed ones
+      // narrow to their own union, and a value outside it simply renders as an
+      // unselected control rather than breaking the form.
+      (restored as unknown as Record<string, unknown>)[key] = value;
+    }
+  }
+  return restored;
+}
 
 const PLAIN = /\.(md|markdown|txt|text|rtf)$/i;
 const WORD = /\.docx$/i;
@@ -354,7 +419,6 @@ function FilePicker({
 
 /* -------------------------------------------------------------------- flow */
 
-let nextCvId = 0;
 
 export function SetupFlow({
   initial,
@@ -369,7 +433,41 @@ export function SetupFlow({
   const [fileError, setFileError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [restored, setRestored] = useState(false);
   const [, startTransition] = useTransition();
+
+  /*
+    Restore after mount, never during render.
+
+    Reading storage while rendering produces different markup on the server and
+    the client, and React discards the restored draft resolving the mismatch —
+    the exact data this exists to keep.
+  */
+  useEffect(() => {
+    try {
+      const saved = readDraft(window.sessionStorage.getItem(DRAFT_KEY));
+      if (saved) setDraft(saved);
+    } catch {
+      // Private browsing and blocked storage are ordinary. Losing the draft is
+      // the old behaviour, so failing quietly costs nothing already had.
+    }
+    setRestored(true);
+  }, []);
+
+  /*
+    `restored` guards the first write: without it the initial empty draft is
+    persisted before the effect above runs, overwriting the saved one with
+    nothing — worse than not saving at all.
+  */
+  useEffect(() => {
+    if (!restored) return;
+    try {
+      window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    } catch {
+      // Storage full or unavailable. The form still works; only the safety net
+      // is missing, and saying so mid-setup would not help.
+    }
+  }, [draft, restored]);
   const suggestedContact = useMemo(() => suggestCvContact(draft.cv), [draft.cv]);
   const suggestedRoles = useMemo(() => suggestJobTitles(draft.cv), [draft.cv]);
   const set = <K extends keyof SetupDraft>(k: K, v: SetupDraft[K]) =>
@@ -495,6 +593,34 @@ export function SetupFlow({
         setError(result.error);
         setSaving(false);
         return;
+      }
+      /*
+        Point the search at what they just told us.
+
+        Onboarding already provisions a portals file, but from the shipped
+        template — whose keywords are the ones this project was originally
+        built around. Left alone, a first search looks for someone else's job
+        titles. This carries the answers across; it is best-effort because the
+        profile is already saved by now, and failing the whole setup over a
+        filter they can edit on Where to search would be the wrong trade.
+      */
+      try {
+        await createSearchSettings({
+          roles,
+          location: draft.location.trim(),
+          remote: draft.remote,
+        });
+      } catch {
+        // Left as the template's defaults, visible and editable on Where to
+        // search rather than silently wrong with no way to see it.
+      }
+
+      // On disk now, so the browser copy is no longer a safety net — it is a
+      // stale duplicate of someone's CV. Clear it before leaving.
+      try {
+        window.sessionStorage.removeItem(DRAFT_KEY);
+      } catch {
+        // Nothing to clean up if storage was never available.
       }
       // Setup is complete; the next useful thing is the first search, not an
       // empty dashboard that makes a new user infer the product's purpose.

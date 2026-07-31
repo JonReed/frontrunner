@@ -21,7 +21,7 @@ export function pipelineActions(inboxCount, connected) {
         : {
             action: 'find-and-assess',
             label: 'Find and assess roles',
-            description: 'search your sources and assess the roles that match',
+            description: 'search the job boards and assess the roles that match',
           }
       : null,
     scan: {

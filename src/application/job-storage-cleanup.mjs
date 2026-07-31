@@ -13,7 +13,7 @@ import { join } from 'node:path';
 import { withFileLock } from '../lib/file-lock.mjs';
 
 export const APPLICATION_JOB_ID_RE =
-  /^(?:cv-\d+|job-(?:pipeline|prepare|scan))-[a-z0-9]+$/u;
+  /^(?:(?:cv|cover)-\d+|job-(?:pipeline|prepare|scan|companies|suggest))-[a-z0-9]+$/u;
 export const DEFAULT_ORPHAN_ARTIFACT_RETENTION_MS = 24 * 60 * 60_000;
 
 const ARTIFACT_SUFFIXES = Object.freeze([

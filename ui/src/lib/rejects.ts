@@ -46,6 +46,42 @@ export function describeRule(rule: string): string {
   return RULE_LABEL[rule] ?? rule.replace(/_/g, ' ');
 }
 
+/**
+ * Where the setting behind a rule actually lives.
+ *
+ * The page used to print the raw config key — `Rule: comp_below_floor` — on
+ * the grounds that a judgement made on the user's behalf should be traceable.
+ * That was right about the principle and wrong about the destination: it named
+ * something only a developer could open, next to a sentence telling the user
+ * the rule was theirs to change.
+ *
+ * A rule with no entry here is one of the shipped defaults with no single
+ * setting behind it. Those say nothing rather than inventing a link, because
+ * sending someone to a screen that cannot change what they were promised
+ * control over is worse than admitting it.
+ */
+const RULE_SOURCE: Record<string, { text: string; href: string; link: string }> = {
+  wrong_function: {
+    text: 'Decided by the job titles you are looking for.',
+    href: '/search',
+    link: 'Where to search',
+  },
+  comp_below_floor: {
+    text: 'Decided by your walk-away figure.',
+    href: '/profile',
+    link: 'My details',
+  },
+  below_level: {
+    text: 'Decided by the seniority of the roles you target.',
+    href: '/profile',
+    link: 'My details',
+  },
+};
+
+export function describeRuleSource(rule: string) {
+  return RULE_SOURCE[rule] ?? null;
+}
+
 export async function readRejects(): Promise<RejectedRole[]> {
   const file = WORKSPACE.rejects;
   if (!existsSync(file)) return [];

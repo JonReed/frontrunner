@@ -31,12 +31,23 @@ export function AiButton({
   size = 'md',
   onPointerEnter,
   onFocus,
+  tone = 'solid',
   ...rest
 }: {
   children: React.ReactNode;
   /** Plain-language description of the work, e.g. "rewrite your CV for this job". */
   what: string;
   size?: 'sm' | 'md';
+  /**
+   * `quiet` for a secondary AI action sitting beside a primary one — an
+   * outline rather than a fill.
+   *
+   * It keeps the violet and the sparkle, which are not decoration: they are
+   * the promise that anything wearing them spends allowance. A secondary AI
+   * action must still be unmistakably an AI action, so what changes is the
+   * emphasis, never the signal.
+   */
+  tone?: 'solid' | 'quiet';
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const pad = size === 'sm' ? 'px-3 py-1.5 text-sm' : 'px-4 py-2.5 text-sm';
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -63,6 +74,9 @@ export function AiButton({
     ? 'bottom-full right-0 mb-2'
     : 'top-full right-0 mt-2';
 
+  const skin = tone === 'quiet'
+    ? 'border border-[var(--color-ai-line)] bg-transparent text-[var(--color-ai)] hover:bg-[var(--color-ai-wash)]'
+    : 'bg-[var(--color-ai)] text-white hover:bg-[var(--color-ai-hover)]';
   return (
     <span className="group relative inline-flex">
       <button
@@ -78,7 +92,7 @@ export function AiButton({
           onFocus?.(event);
         }}
         {...rest}
-        className={`inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[var(--color-ai)] font-semibold text-white transition hover:bg-[var(--color-ai-hover)] disabled:cursor-not-allowed disabled:opacity-60 ${pad}`}
+        className={`inline-flex cursor-pointer items-center gap-2 rounded-lg font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${skin} ${pad}`}
       >
         <Sparkle />
         {children}

@@ -178,13 +178,19 @@ export function PipelineControl({
               : 'Look for your next set of roles'}
           </p>
           <p className="mt-1 max-w-2xl text-sm text-[var(--color-ink-soft)]">
+            {/*
+              Wording follows the source, not the other way round: searching no
+              longer depends on a curated company list, so describing it as
+              "your configured sources" would understate what a first search
+              actually covers.
+            */}
             {firstSearch
               ? connected
-                ? 'We search your configured sources first. If you choose to assess, your AI subscription is used only for roles that pass your filters.'
-                : 'Search your configured sources now. It costs nothing; you can connect an AI subscription later to assess the results.'
+                ? 'We search thousands of public job boards first. If you choose to assess, your AI subscription is used only for roles that pass your filters.'
+                : 'Search the public job boards now. It costs nothing; you can connect an AI subscription later to assess the results.'
               : inboxCount > 0
-              ? 'Assess what is already here, or search your configured sources for anything new.'
-              : 'Search is free. Assessment compares promising roles with your CV using your connected AI subscription.'}
+              ? 'Assess what is already here, or search the job boards again for anything new.'
+              : 'Searching is free and covers thousands of public job boards. Assessment compares promising roles with your CV using your connected AI subscription.'}
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">

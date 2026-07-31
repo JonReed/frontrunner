@@ -165,3 +165,92 @@ export function startConnect(): Promise<{ started: boolean }> {
 export function invalidateHealth(): void {
   cached = null;
 }
+
+/* ------------------------------------------------------- the PDF renderer */
+
+/**
+ * The second thing a CV build needs, and the one nobody was checking.
+ *
+ * Tailoring ends with Playwright rendering the PDF, and the browser that does
+ * it is a separate download `npm install` does not perform. The connection
+ * check above was pre-flighting the model call while this dependency failed
+ * afterwards — which is the expensive way round, because by then the model has
+ * already been paid for.
+ *
+ * Cached far longer than the sign-in state and asked for only where it
+ * matters. Launching a browser to answer the question costs a second or two,
+ * so a page that does not offer to build a CV never pays for it.
+ */
+const BROWSER_CACHE_MS = 10 * 60_000;
+let cachedBrowser: { at: number; installed: boolean } | null = null;
+
+export function readBrowserHealth(): Promise<{ installed: boolean }> {
+  // Same asymmetry as readHealth: good news is stable, bad news is something
+  // the user is actively trying to fix and must be re-checked to notice.
+  if (cachedBrowser && cachedBrowser.installed && Date.now() - cachedBrowser.at < BROWSER_CACHE_MS) {
+    return Promise.resolve({ installed: true });
+  }
+  return askHealthControl('browser', 60_000).then((value) => {
+    const installed = (value as { installed?: unknown })?.installed === true;
+    cachedBrowser = { at: Date.now(), installed };
+    return { installed };
+  });
+}
+
+/** Ask the backend to download the PDF renderer. Returns once it has started. */
+export function startBrowserInstall(): Promise<{ started: boolean }> {
+  cachedBrowser = null;
+  return askHealthControl('install-browser', RESPONSE_TIMEOUT_MS).then((value) => ({
+    started: (value as { started?: unknown })?.started === true,
+  }));
+}
+
+/**
+ * One request, one bounded reply, never throws.
+ *
+ * The two browser actions have different shapes but identical transport
+ * requirements, and a page that cannot reach the backend should render as
+ * "not ready" rather than fail — the same contract readHealth() keeps.
+ */
+function askHealthControl(action: string, timeoutMs: number): Promise<unknown> {
+  return new Promise((resolve) => {
+    let child;
+    try {
+      child = spawn(process.execPath, [HEALTH_CONTROL], {
+        cwd: ROOT, shell: false, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'],
+      });
+    } catch {
+      resolve(null);
+      return;
+    }
+    let stdout = '';
+    let settled = false;
+    const done = (value: unknown) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(value);
+    };
+    child.stdout.on('data', (chunk: Buffer) => {
+      stdout += chunk.toString();
+      if (stdout.length > RESPONSE_LIMIT) {
+        child.kill('SIGTERM');
+        done(null);
+      }
+    });
+    child.stderr.on('data', () => {});
+    child.once('error', () => done(null));
+    child.once('close', () => {
+      try {
+        done(JSON.parse(stdout.split('\n')[0] ?? ''));
+      } catch {
+        done(null);
+      }
+    });
+    const timer = setTimeout(() => {
+      child.kill('SIGTERM');
+      done(null);
+    }, timeoutMs);
+    child.stdin.end(JSON.stringify({ version: '1', action }));
+  });
+}

@@ -22,9 +22,10 @@
  */
 
 import { readInbox, readTracker } from '@/lib/roles';
-import { readRejects, groupByRule } from '@/lib/rejects';
+import { readRejects, groupByRule, describeRuleSource } from '@/lib/rejects';
 import { PipelineOverview } from '@/components/journey-rail';
 import { pipelineCounts } from '@/lib/journey';
+import { AddRole } from '@/components/add-role';
 import { InboxAction } from '@/components/inbox-action';
 import { PipelineControl } from '@/components/pipeline-control';
 import { OverrideRejection } from '@/components/override-rejection';
@@ -38,6 +39,15 @@ export const metadata = { title: 'Everything found' };
 const LIST = 'product-list rounded-2xl border';
 const ROW =
   'product-row flex flex-col items-start gap-2 border-b border-[var(--color-line)] px-5 py-4 transition last:border-0 hover:bg-[var(--color-paper)] sm:flex-row sm:items-center sm:gap-4 sm:px-6';
+/** The site a link came from, for rows that have no company name yet. */
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./u, '');
+  } catch {
+    return 'Added by you';
+  }
+}
+
 const POSTING_LINK =
   'inline-flex min-h-[40px] shrink-0 items-center rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-card)] px-3 text-xs font-medium text-[var(--color-ink-soft)] transition hover:border-[var(--color-act)] hover:text-[var(--color-act)] sm:min-h-0 sm:py-1.5';
 
@@ -100,6 +110,21 @@ export default async function FoundPage({
         initialJob={runningJob}
         firstSearch={firstSearch}
       />
+
+      {/*
+        The answer to "why these jobs?", next to the button that produced them.
+        This is where the question is actually asked, so this is where the way
+        to change it belongs — not only in the navigation.
+      */}
+      <p className="-mt-6 mb-6 text-sm text-[var(--color-ink-soft)]">
+        Not the right roles?{' '}
+        <Link href="/search" className="font-medium text-[var(--color-act)] underline underline-offset-2">
+          Change what you search for
+        </Link>
+        .
+      </p>
+
+      <AddRole />
 
       <form
         method="get"
@@ -185,7 +210,7 @@ export default async function FoundPage({
           <div className="paper-surface rounded-2xl border border-dashed p-10 text-center">
             <p className="font-medium">Nothing waiting.</p>
             <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
-              Run a search to look for openings that match your profile.
+              Run a search to look across the public job boards for your keywords.
             </p>
           </div>
         ) : (
@@ -193,8 +218,18 @@ export default async function FoundPage({
             {filteredInbox.slice(0, 60).map((r) => (
               <li key={r.url} className={ROW}>
                 <div className="w-full min-w-0 flex-1 sm:w-auto">
-                  <div className="truncate text-sm font-semibold">{r.company}</div>
-                  <div className="text-sm text-[var(--color-ink-soft)] sm:truncate">{r.role}</div>
+                  {/*
+                    A role pasted by hand may carry no company or title — the
+                    real ones come from the description once it is fetched.
+                    Falling back to the site it came from keeps the row
+                    identifiable instead of rendering as a blank line.
+                  */}
+                  <div className="truncate text-sm font-semibold">
+                    {r.company || hostOf(r.url)}
+                  </div>
+                  <div className="text-sm text-[var(--color-ink-soft)] sm:truncate">
+                    {r.role || 'Added by you — not read yet'}
+                  </div>
                   <div className="mt-0.5 truncate text-xs text-[var(--color-ink-faint)]">
                     {r.location}
                     {r.posted && ` · posted ${r.posted}`}
@@ -226,8 +261,9 @@ export default async function FoundPage({
             </span>
           </h2>
           <p className="mb-4 mt-0.5 text-sm text-[var(--color-ink-soft)]">
-            Dropped by your own filters before costing anything. Grouped by the rule that ruled
-            them out — if a rule looks wrong, it is yours to change.
+            Dropped by your own filters before costing anything. Grouped by the reason. If a whole
+            group looks wrong, the setting behind it is named inside — and any single role can be
+            put back with “Assess anyway”.
           </p>
 
           <div className="flex flex-col gap-3">
@@ -240,15 +276,21 @@ export default async function FoundPage({
                   <span className="min-w-0">
                     <span className="block text-[15px] font-semibold">{g.label}</span>
                     {/*
-                      The literal key from workspace/search/prefilter.yml. Shown because
-                      this is a judgement made on the user's behalf and they
-                      should be able to find the thing that made it — but not
-                      in monospace, which would make their own config look
-                      like source code they are not allowed to touch.
+                      Where the judgement came from, not what it is called
+                      internally. This line used to print the raw config key,
+                      which named a file the person reading it could not open.
                     */}
-                    <span className="mt-0.5 block text-xs text-[var(--color-ink-faint)]">
-                      Rule: {g.rule}
-                    </span>
+                    {describeRuleSource(g.rule) && (
+                      <span className="mt-0.5 block text-xs text-[var(--color-ink-faint)]">
+                        {describeRuleSource(g.rule)!.text}{' '}
+                        <Link
+                          href={describeRuleSource(g.rule)!.href}
+                          className="underline underline-offset-2 hover:text-[var(--color-act)]"
+                        >
+                          {describeRuleSource(g.rule)!.link}
+                        </Link>
+                      </span>
+                    )}
                   </span>
                   <span className="tabular shrink-0 text-sm text-[var(--color-ink-soft)]">
                     {g.roles.length}

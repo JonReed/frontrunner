@@ -16,6 +16,8 @@
     "qa:full": "npm run qa && npm run qa:ui",
     "hooks:install": "git config core.hooksPath .github/hooks",
     "doctor": "node doctor.mjs",
+    "start": "node src/application/start.mjs",
+    "launcher": "node src/application/install-launcher.mjs",
     "ui": "npm --prefix ui run dev",
     "ui:install": "npm --prefix ui ci",
     "browser:install": "playwright install chromium",

@@ -261,7 +261,11 @@ export async function runCanonicalPipeline({
   livenessResults = join(ROOT, 'workspace', '.state', 'liveness-results.tsv'),
   engine = 'claude',
   scan = true,
-  scanRunner = () => defaultRun(process.execPath, [join(ROOT, 'src/scan/scan.mjs')]),
+  // Both scan passes, matching the standalone scan operation: the tracked
+  // companies for depth, and a bounded sweep of every public ATS board for
+  // breadth. Running only the first here would make "Find and assess" and
+  // "Search" find different things from the same filters.
+  scanRunner = () => defaultRun(process.execPath, [join(ROOT, 'src/scan/scan-all.mjs')]),
   fetchJds = runFetchJds,
   checker = null,
   prefilter = runPrefilter,

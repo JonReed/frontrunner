@@ -145,10 +145,46 @@ test('operation catalog fixes executable, script, cwd, flags, timeout, and spend
   }));
   assert.equal(noModel.costsTokens, false);
 
+  // Searching runs BOTH passes: the tracked companies and a bounded sweep of
+  // the public ATS directories. Pinning the composite rather than scan.mjs is
+  // the point — a search that only read the curated list made that list the
+  // foundation of the product.
   const scan = resolveApplicationOperation(request('scan.run'));
-  assert.deepEqual(scan.args, [join(ROOT, 'src/scan/scan.mjs'), '--json']);
+  assert.deepEqual(scan.args, [join(ROOT, 'src/scan/scan-all.mjs')]);
   assert.equal(scan.costsTokens, false);
   assert.equal(scan.resourceKey, prepare.resourceKey);
+
+  const cover = resolveApplicationOperation(request('cover.build', {
+    roleNum: 7,
+    jobUrl: 'https://jobs.example.com/7',
+  }));
+  assert.equal(cover.args[0], join(ROOT, 'src/cv/claude-cover.mjs'));
+  assert.equal(cover.costsTokens, true);
+  // Deduped separately from the CV, so a letter can be added to a role whose
+  // CV is already built.
+  assert.equal(cover.dedupeKey, 'cover.build:tracker:7');
+  assert.notEqual(cover.dedupeKey, cv.dedupeKey);
+
+  // Company names become arguments, so the catalog must place them before the
+  // fixed flags and never let one be read as a flag.
+  const discover = resolveApplicationOperation(request('companies.discover', {
+    names: ['Marks & Spencer', "Sainsbury's"],
+  }));
+  assert.deepEqual(discover.args, [
+    join(ROOT, 'src/scan/discover-ats.mjs'),
+    'Marks & Spencer',
+    "Sainsbury's",
+    '--write',
+    '--summary',
+  ]);
+  assert.equal(discover.costsTokens, false);
+  for (const names of [['--write'], ['-x'], []]) {
+    assert.throws(() => resolveApplicationOperation(request('companies.discover', { names })));
+  }
+
+  const suggest = resolveApplicationOperation(request('companies.suggest', {}));
+  assert.deepEqual(suggest.args, [join(ROOT, 'src/cv/claude-companies.mjs')]);
+  assert.equal(suggest.costsTokens, true);
 });
 
 test('service emits ordered structured events and a bounded successful result', async () => {
