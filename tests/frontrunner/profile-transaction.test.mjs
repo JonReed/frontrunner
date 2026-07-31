@@ -247,3 +247,26 @@ test('profile controller appends an additional CV without accepting a path', asy
   assert.deepEqual(JSON.parse(rejected.stdout).added.name, '02-outside.md');
   assert.equal(existsSync(join(base, 'outside')), false);
 });
+
+test('profile controller provisions the search sources idempotently', async (t) => {
+  const base = sandbox(t);
+  mkdirSync(join(base, 'templates'), { recursive: true });
+  writeFileSync(
+    join(base, 'templates', 'portals.example.yml'),
+    '# bundled sources\ntracked_companies: []\n',
+  );
+
+  const first = await runControl(base, { version: '1', action: 'ensure-portals' });
+  assert.equal(first.code, 0, first.stderr);
+  assert.deepEqual(JSON.parse(first.stdout), {
+    version: '1', created: true, path: join(base, 'workspace/search/portals.yml'),
+  });
+
+  writeFileSync(join(base, 'workspace/search/portals.yml'), '# user sources\n');
+  const second = await runControl(base, { version: '1', action: 'ensure-portals' });
+  assert.equal(second.code, 0, second.stderr);
+  assert.deepEqual(JSON.parse(second.stdout), {
+    version: '1', created: false, path: join(base, 'workspace/search/portals.yml'),
+  });
+  assert.equal(readFileSync(join(base, 'workspace/search/portals.yml'), 'utf8'), '# user sources\n');
+});

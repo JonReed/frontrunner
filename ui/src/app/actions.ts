@@ -17,7 +17,12 @@ import {
   startScanRun,
   type Job,
 } from '@/lib/jobs';
-import { addCvVersion as addCvVersionRequest, saveProfile, type ProfileSave } from '@/lib/profile-save';
+import {
+  addCvVersion as addCvVersionRequest,
+  ensurePortals as ensurePortalsRequest,
+  saveProfile,
+  type ProfileSave,
+} from '@/lib/profile-save';
 import {
   restoreRoleStatus,
   setRoleStatus,
@@ -65,6 +70,16 @@ export async function addCvVersion(
   } catch (error) {
     const detail = error instanceof Error ? error.message : '';
     return { error: detail || 'That additional CV could not be saved. Nothing was changed.' };
+  }
+}
+
+export async function ensureSearchSources(): Promise<{ ok: true } | { error: string }> {
+  try {
+    await ensurePortalsRequest();
+    return { ok: true };
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : '';
+    return { error: detail || 'The job sources could not be set up. Nothing else was changed.' };
   }
 }
 

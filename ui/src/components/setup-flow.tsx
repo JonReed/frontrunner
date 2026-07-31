@@ -29,7 +29,7 @@
  */
 
 import { useMemo, useState, useTransition } from 'react';
-import { saveDetails } from '@/app/actions';
+import { ensureSearchSources, saveDetails } from '@/app/actions';
 import { suggestCvContact } from '@/lib/cv-contact-suggestions.mjs';
 import { suggestJobTitles } from '@/lib/job-title-suggestions.mjs';
 import { locationDefaults } from '@/lib/location-defaults.mjs';
@@ -408,6 +408,12 @@ export function SetupFlow() {
       const result = await saveDetails({ fields, cv: draft.cv, versions });
       if ('error' in result) {
         setError(result.error);
+        setSaving(false);
+        return;
+      }
+      const sources = await ensureSearchSources();
+      if ('error' in sources) {
+        setError(sources.error);
         setSaving(false);
         return;
       }

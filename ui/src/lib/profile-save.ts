@@ -143,6 +143,14 @@ export async function addCvVersion(label: string, text: string): Promise<string>
   return name;
 }
 
+export async function ensurePortals(): Promise<void> {
+  const value = await invokeProfileControl({ version: '1', action: 'ensure-portals' });
+  if ((value as { created?: unknown })?.created !== true
+    && (value as { created?: unknown })?.created !== false) {
+    throw new Error('The secure backend did not confirm the search sources.');
+  }
+}
+
 /** Returns the field paths and files actually written. */
 export async function saveProfile(save: ProfileSave): Promise<string[]> {
   const payload: Record<string, unknown> = { version: '1', action: 'save' };

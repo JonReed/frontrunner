@@ -18,6 +18,7 @@ import { pathToFileURL } from 'node:url';
 
 import { APPLICATION_API_VERSION } from './contract.mjs';
 import { readBoundedRequest } from './run.mjs';
+import { ensurePortalsFile } from './onboarding-files.mjs';
 import {
   appendCvVersion,
   listCvVersions,
@@ -30,7 +31,7 @@ import {
 } from './profile-transaction.mjs';
 
 const CONTROL_KEYS = new Set(['version', 'action', 'fields', 'cv', 'versions', 'label', 'text']);
-const ACTIONS = new Set(['read', 'save', 'add-version']);
+const ACTIONS = new Set(['read', 'save', 'add-version', 'ensure-portals']);
 const MAX_VERSIONS = 20;
 // The generic application protocol stays deliberately tiny. Profile saves are
 // the one exception because the UI explicitly accepts a 512 KiB canonical CV
@@ -68,6 +69,13 @@ export function validateProfileControlRequest(value) {
       if (value[key] !== undefined) throw controlError(`read does not accept ${key}`);
     }
     return Object.freeze({ version: APPLICATION_API_VERSION, action: 'read' });
+  }
+
+  if (value.action === 'ensure-portals') {
+    for (const key of ['fields', 'cv', 'versions', 'label', 'text']) {
+      if (value[key] !== undefined) throw controlError(`ensure-portals does not accept ${key}`);
+    }
+    return Object.freeze({ version: APPLICATION_API_VERSION, action: 'ensure-portals' });
   }
 
   if (value.action === 'add-version') {
@@ -149,6 +157,12 @@ export async function main({ input = process.stdin, output = process.stdout, err
       await recoverProfileSave();
       const added = await appendCvVersion(control.label, control.text);
       const result = { version: APPLICATION_API_VERSION, added };
+      output.write(`${JSON.stringify(result)}\n`);
+      return result;
+    }
+
+    if (control.action === 'ensure-portals') {
+      const result = { version: APPLICATION_API_VERSION, ...(await ensurePortalsFile()) };
       output.write(`${JSON.stringify(result)}\n`);
       return result;
     }
