@@ -46,6 +46,7 @@ contains only a few compatibility entry points. Common commands are exposed via
 | `npm run verify:portals` | `src/scan/verify-portals.mjs` | Probe ATS endpoints to confirm workspace/search/portals.yml slugs resolve (network) |
 | `npm run fix:slugs` | `src/scan/fix-slugs.mjs` | Preview verified ATS slug migrations; add `-- --fix` to update the canonical portals file under lock |
 | `npm run freshness` | `src/analysis/check-table-freshness.mjs` | Check dated jurisdiction tables for expired changes and overdue review |
+| `npm run digest` | `src/analysis/weekly-interview-digest.mjs` | Summarize interview sessions for the current ISO week or an explicit date range |
 | `npm run reposts` | `src/analysis/detect-reposts.mjs` | Flag re-listed (ghost) postings from scan history |
 | `npm run gemini:eval` | `src/evaluate/gemini-eval.mjs` | Evaluate a JD with Google Gemini (free-tier alternative) |
 | `npm run ollama:eval` | `src/evaluate/ollama-eval.mjs` | Evaluate a JD with a local Ollama model |
@@ -820,6 +821,26 @@ Portals:    — no data (workspace/search/portals.yml missing)
 Follow-ups: — no data (workspace/applications/follow-ups.md missing)
 Runs:       — no data (workspace/.state/scan-runs.tsv missing; created by the next scan)
 ```
+
+---
+
+## src/analysis/weekly-interview-digest.mjs
+
+Read-only, zero-LLM rollup of `workspace/interviews/sessions/*.md` for the
+current ISO week (Monday–Sunday) or an explicit inclusive range. It groups
+rounds by company and role, counts recurring competency annotations, and
+best-effort matches 🔴 question-bank entries to companies interviewed during
+the range.
+
+```bash
+npm run digest
+npm run digest -- --summary
+npm run digest -- --from 2026-07-13 --to 2026-07-19
+```
+
+Missing interview data returns an empty result with exit `0`. Invalid,
+one-sided, or reversed ranges and unknown options exit `1`. The CLI cannot
+select arbitrary filesystem paths.
 
 ---
 

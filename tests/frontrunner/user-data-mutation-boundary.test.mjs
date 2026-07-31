@@ -15,6 +15,7 @@ const APPROVED_RAW_MUTATORS = new Set([
   'src/application/job-manager.mjs', // contained ui/.jobs runtime state
   'src/application/job-storage-cleanup.mjs', // contained ui/.jobs cleanup
   'src/benchmark/pipeline-benchmark.mjs', // maintainer-owned benchmark artifact
+  'src/analysis/weekly-interview-digest.mjs', // private mkdtemp self-test fixtures only; normal digest execution is read-only
   'src/cv/claude-tailor.mjs', // private mkdtemp scratch directory
   'src/cv/generate-latex.mjs', // private mkdtemp compiler directory cleanup
   'src/evaluate/eval-golden.mjs', // private golden-test fixture directory

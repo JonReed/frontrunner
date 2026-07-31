@@ -295,6 +295,7 @@ const SYSTEM_PATHS = [
   'src/analysis/funnel-velocity.mjs',
   'src/analysis/assessment-log.mjs',
   'src/analysis/check-table-freshness.mjs',
+  'src/analysis/weekly-interview-digest.mjs',
   'src/tracker/followup-cadence.mjs',
   'tests/followup-cadence-tests.mjs',
   'src/tracker/invite-match.mjs',
