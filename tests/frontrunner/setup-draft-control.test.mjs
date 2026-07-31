@@ -36,10 +36,20 @@ test('a draft round-trips and is written owner-only', (t) => {
     salaryTarget: '£45,000',
   });
 
-  // This is an unfinished CV, not shared state. The mode is the reason it is
-  // safe to hold on disk at all, which is why it is asserted rather than
-  // assumed.
-  assert.equal(statSync(file).mode & 0o077, 0, 'the draft must not be group or world readable');
+  /*
+    This is an unfinished CV, not shared state. The mode is a large part of
+    why it is safe to hold on disk at all, so it is asserted rather than
+    assumed.
+
+    POSIX only, matching every other mode assertion in this suite: NTFS uses
+    ACLs and Node reports a synthesised mode there, so the check would be
+    testing the host rather than the writer. On Windows the file inherits the
+    ACLs of the user's own profile directory — comparable protection by a
+    different mechanism, which this assertion cannot speak to.
+  */
+  if (process.platform !== 'win32') {
+    assert.equal(statSync(file).mode & 0o077, 0, 'the draft must not be group or world readable');
+  }
 });
 
 test('clearing removes the second copy of the CV', (t) => {
