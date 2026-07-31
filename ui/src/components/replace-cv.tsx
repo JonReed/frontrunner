@@ -2,53 +2,12 @@
 
 import { useRef, useState, useTransition } from 'react';
 import { saveDetails } from '@/app/actions';
+import { CV_FILE_ACCEPT, readCvFile } from '@/lib/cv-file';
 import { cvReplacementReadiness } from '@/lib/profile-maintenance.mjs';
-
-const PLAIN = /\.(md|markdown|txt|text|rtf)$/iu;
-const WORD = /\.docx$/iu;
-const LEGACY_WORD = /\.doc$/iu;
-const MAX_PLAIN_BYTES = 512 * 1024;
-const MAX_DOCX_BYTES = 8 * 1024 * 1024;
 
 const FIELD =
   'w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-card)] px-3.5 py-3 text-[15px] text-[var(--color-ink)] outline-none transition placeholder:text-[var(--color-ink-faint)] focus:border-[var(--color-act)]';
 
-function readTextFile(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result ?? ''));
-    reader.onerror = () => reject(new Error('That file could not be read.'));
-    reader.readAsText(file);
-  });
-}
-
-function unescapeMarkdown(text: string): string {
-  return text.replace(/\\([^A-Za-z0-9\s])/gu, '$1');
-}
-
-async function readCvFile(file: File): Promise<string> {
-  if (PLAIN.test(file.name)) {
-    if (file.size > MAX_PLAIN_BYTES) {
-      throw new Error('That text file is over 512 KB. Choose the CV itself rather than a larger notes file.');
-    }
-    return readTextFile(file);
-  }
-
-  if (WORD.test(file.name)) {
-    if (file.size > MAX_DOCX_BYTES) {
-      throw new Error('That Word file is over 8 MB. Save a copy without large images, then try again.');
-    }
-    const mammoth = await import('mammoth');
-    const { value } = await mammoth.convertToMarkdown({ arrayBuffer: await file.arrayBuffer() });
-    return unescapeMarkdown(value);
-  }
-
-  throw new Error(
-    LEGACY_WORD.test(file.name)
-      ? 'That is an older Word format. Open it in Word and save it as .docx, then try again.'
-      : 'Choose a Word (.docx), Markdown or text file. For a PDF, export the original as Word or paste its text so the layout is not misread.',
-  );
-}
 
 export function ReplaceCv({ currentWords, hasCv }: { currentWords: number; hasCv: boolean }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -151,7 +110,7 @@ export function ReplaceCv({ currentWords, hasCv }: { currentWords: number; hasCv
         <input
           ref={inputRef}
           type="file"
-          accept=".docx,.md,.markdown,.txt,.text,.rtf"
+          accept={CV_FILE_ACCEPT}
           hidden
           onChange={(event) => void chooseFile(event.target.files?.[0])}
         />

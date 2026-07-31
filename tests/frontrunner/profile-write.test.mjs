@@ -22,6 +22,8 @@ import {
   profilePath,
   cvPath,
   cvVersionsDir,
+  appendCvVersion,
+  listCvVersions,
 } from '../../src/application/profile-write.mjs';
 
 const REAL_TEMPLATE = fileURLToPath(new URL('../../config/profile.example.yml', import.meta.url));
@@ -40,17 +42,19 @@ function cleanup(dir) {
   rmSync(dir, { recursive: true, force: true });
 }
 
-test('creates a profile from the documented template, keeping its comments', async () => {
+test('creates a safe profile without inheriting illustrative personal data', async () => {
   const dir = sandbox();
   try {
     await updateProfile({ 'candidate.full_name': 'Grizelda Thorncastle' });
 
     const written = readFileSync(profilePath(), 'utf8');
-    const template = readFileSync(REAL_TEMPLATE, 'utf8');
-    const commentsIn = (template.match(/^\s*#/gm) || []).length;
-    const commentsOut = (written.match(/^\s*#/gm) || []).length;
-
-    assert.equal(commentsOut, commentsIn, 'every explanatory comment must survive');
+    assert.match(written, /add only facts that are true for you/);
+    for (const inheritedFact of [
+      'Jane Smith', 'jane@example.com', '+1-555-0123', 'San Francisco',
+      'United States', 'USD', '$150K-200K', '$120K', 'No sponsorship needed',
+    ]) {
+      assert.doesNotMatch(written, new RegExp(inheritedFact.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+    }
     // Asserted through the parser, not a regex on the raw text: `yaml` keeps
     // the template's existing quote style, so the written line is
     // `full_name: "Grizelda Thorncastle"` — matching on formatting would make
@@ -222,6 +226,30 @@ test('concurrent writes do not lose an update', async () => {
     assert.equal(fields['candidate.full_name'], 'Jane Smith');
     assert.equal(fields['candidate.email'], 'jane@example.com');
     assert.equal(fields['location.city'], 'Manchester');
+  } finally {
+    cleanup(dir);
+  }
+});
+
+test('additional CV versions append into unique slots under contention', async () => {
+  const dir = sandbox();
+  try {
+    const first = await appendCvVersion('operations roles', '# Operations CV\nMore detail here.');
+    assert.equal(first.name, '01-operations-roles.md');
+
+    const added = await Promise.all([
+      appendCvVersion('product roles', '# Product CV\nMore detail here.'),
+      appendCvVersion('programme roles', '# Programme CV\nMore detail here.'),
+    ]);
+    assert.deepEqual(new Set(added.map(version => version.name)), new Set([
+      '02-product-roles.md',
+      '03-programme-roles.md',
+    ]));
+    assert.deepEqual(listCvVersions().map(version => version.name), [
+      '01-operations-roles.md',
+      '02-product-roles.md',
+      '03-programme-roles.md',
+    ]);
   } finally {
     cleanup(dir);
   }

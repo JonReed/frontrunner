@@ -19,6 +19,8 @@ import { pathToFileURL } from 'node:url';
 import { APPLICATION_API_VERSION } from './contract.mjs';
 import { readBoundedRequest } from './run.mjs';
 import {
+  appendCvVersion,
+  listCvVersions,
   readProfileFields,
   WRITABLE_FIELDS,
 } from './profile-write.mjs';
@@ -27,8 +29,8 @@ import {
   recoverProfileSave,
 } from './profile-transaction.mjs';
 
-const CONTROL_KEYS = new Set(['version', 'action', 'fields', 'cv', 'versions']);
-const ACTIONS = new Set(['read', 'save']);
+const CONTROL_KEYS = new Set(['version', 'action', 'fields', 'cv', 'versions', 'label', 'text']);
+const ACTIONS = new Set(['read', 'save', 'add-version']);
 const MAX_VERSIONS = 20;
 // The generic application protocol stays deliberately tiny. Profile saves are
 // the one exception because the UI explicitly accepts a 512 KiB canonical CV
@@ -62,10 +64,26 @@ export function validateProfileControlRequest(value) {
   }
 
   if (value.action === 'read') {
-    for (const key of ['fields', 'cv', 'versions']) {
+    for (const key of ['fields', 'cv', 'versions', 'label', 'text']) {
       if (value[key] !== undefined) throw controlError(`read does not accept ${key}`);
     }
     return Object.freeze({ version: APPLICATION_API_VERSION, action: 'read' });
+  }
+
+  if (value.action === 'add-version') {
+    for (const key of ['fields', 'cv', 'versions']) {
+      if (value[key] !== undefined) throw controlError(`add-version does not accept ${key}`);
+    }
+    if (typeof value.label !== 'string' || value.label.length > 500) {
+      throw controlError('add-version label must be text no longer than 500 characters');
+    }
+    if (typeof value.text !== 'string') throw controlError('add-version text must be a string');
+    return Object.freeze({
+      version: APPLICATION_API_VERSION,
+      action: 'add-version',
+      label: value.label,
+      text: value.text,
+    });
   }
 
   const fields = value.fields ?? {};
@@ -118,7 +136,19 @@ export async function main({ input = process.stdin, output = process.stdout, err
 
     if (control.action === 'read') {
       await recoverProfileSave();
-      const result = { version: APPLICATION_API_VERSION, fields: readProfileFields() };
+      const result = {
+        version: APPLICATION_API_VERSION,
+        fields: readProfileFields(),
+        versions: listCvVersions(),
+      };
+      output.write(`${JSON.stringify(result)}\n`);
+      return result;
+    }
+
+    if (control.action === 'add-version') {
+      await recoverProfileSave();
+      const added = await appendCvVersion(control.label, control.text);
+      const result = { version: APPLICATION_API_VERSION, added };
       output.write(`${JSON.stringify(result)}\n`);
       return result;
     }

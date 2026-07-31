@@ -165,9 +165,9 @@ test('destructive cross-process profile saves retain independent field updates',
   assert.deepEqual(results.map(result => result.code), [0, 0, 0]);
 
   const profile = readFileSync(join(base, 'workspace', 'profile', 'profile.yml'), 'utf8');
-  assert.match(profile, /full_name: "Jane Smith"/u);
-  assert.match(profile, /email: "jane@example.com"/u);
-  assert.match(profile, /city: "Manchester"/u);
+  assert.match(profile, /full_name:.*Jane Smith/u);
+  assert.match(profile, /email:.*jane@example.com/u);
+  assert.match(profile, /city:.*Manchester/u);
   assert.equal(existsSync(profileSaveJournalPath(base)), false);
 });
 
@@ -216,7 +216,34 @@ test('the fixed profile controller publishes one complete transaction', async (t
   );
   assert.match(
     readFileSync(join(base, 'workspace', 'profile', 'profile.yml'), 'utf8'),
-    /full_name: "Controller User"/u,
+    /full_name:.*Controller User/u,
   );
   assert.equal(existsSync(profileSaveJournalPath(base)), false);
+});
+
+test('profile controller appends an additional CV without accepting a path', async (t) => {
+  const base = sandbox(t);
+  const result = await runControl(base, {
+    version: '1',
+    action: 'add-version',
+    label: 'operations roles',
+    text: '# Operations CV\nMore detail here.',
+  });
+
+  assert.equal(result.code, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    version: '1',
+    added: { name: '01-operations-roles.md', bytes: 34, words: 6 },
+  });
+  assert.equal(
+    readFileSync(join(base, 'workspace', 'profile', 'cv-versions', '01-operations-roles.md'), 'utf8'),
+    '# Operations CV\nMore detail here.\n',
+  );
+
+  const rejected = await runControl(base, {
+    version: '1', action: 'add-version', label: '../../outside', text: '# Safe',
+  });
+  assert.equal(rejected.code, 0, rejected.stderr);
+  assert.deepEqual(JSON.parse(rejected.stdout).added.name, '02-outside.md');
+  assert.equal(existsSync(join(base, 'outside')), false);
 });

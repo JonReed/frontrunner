@@ -32,6 +32,7 @@ import { useMemo, useState, useTransition } from 'react';
 import { saveDetails } from '@/app/actions';
 import { suggestCvContact } from '@/lib/cv-contact-suggestions.mjs';
 import { suggestJobTitles } from '@/lib/job-title-suggestions.mjs';
+import { locationDefaults } from '@/lib/location-defaults.mjs';
 
 const STEPS = ['Your CV', 'About you', 'What you want', 'Finish'] as const;
 
@@ -374,10 +375,9 @@ export function SetupFlow() {
    * reads these files on the server, and every screen behind this one was
    * rendered when they did not exist.
    *
-   * Empty answers are omitted rather than sent as blanks. Someone who skipped
-   * the salary question has not asked for their salary target to be cleared,
-   * and a first run should never write an empty string over a template's
-   * documented default.
+   * Optional answers are omitted. Location-derived fields are different: they
+   * are sent even when unknown, so an old example profile can never leak US
+   * currency, authorisation or timezone into a new user's search.
    */
   const save = () => {
     setSaving(true);
@@ -389,7 +389,11 @@ export function SetupFlow() {
     put('candidate.full_name', draft.fullName);
     put('candidate.email', draft.email);
     put('candidate.location', draft.location);
-    put('location.city', draft.location);
+    const regional = locationDefaults(draft.location);
+    fields['location.city'] = regional.city;
+    fields['location.country'] = regional.country;
+    fields['location.timezone'] = regional.timezone;
+    fields['compensation.currency'] = regional.currency;
     put('compensation.target_range', draft.salaryTarget);
     put('compensation.location_flexibility', REMOTE_LABEL[draft.remote] ?? '');
 

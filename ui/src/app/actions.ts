@@ -17,7 +17,7 @@ import {
   startScanRun,
   type Job,
 } from '@/lib/jobs';
-import { saveProfile, type ProfileSave } from '@/lib/profile-save';
+import { addCvVersion as addCvVersionRequest, saveProfile, type ProfileSave } from '@/lib/profile-save';
 import {
   restoreRoleStatus,
   setRoleStatus,
@@ -53,6 +53,18 @@ export async function saveDetails(save: ProfileSave): Promise<{ written: string[
       return { error: 'Your profile is being written by something else. Wait a moment, then try again.' };
     }
     return { error: detail || 'That could not be saved. Nothing was changed.' };
+  }
+}
+
+export async function addCvVersion(
+  label: string,
+  text: string,
+): Promise<{ name: string } | { error: string }> {
+  try {
+    return { name: await addCvVersionRequest(label, text) };
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : '';
+    return { error: detail || 'That additional CV could not be saved. Nothing was changed.' };
   }
 }
 

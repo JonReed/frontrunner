@@ -3,17 +3,17 @@
 # This is the single source of truth for your personal data across all modes.
 
 candidate:
-  full_name: "Jane Smith"
-  email: "jane@example.com"
-  phone: "+1-555-0123"
+  full_name: ""
+  email: ""
+  phone: ""
   # Optional. Used by `/frontrunner email` contact blocks in markets where WeChat
   # is an expected recruiting channel. Omit or leave blank if not applicable.
   wechat: ""
-  location: "San Francisco, CA"
-  linkedin: "linkedin.com/in/janesmith"
-  portfolio_url: "https://janesmith.dev"
-  github: "github.com/janesmith"
-  twitter: "https://x.com/janesmith"
+  location: ""
+  linkedin: ""
+  portfolio_url: ""
+  github: ""
+  twitter: ""
   # Optional profile photo for the PDF CV (opt-in, #264). Leave empty to omit it
   # entirely: US/UK and many-market ATS penalize photos, so the photoless layout
   # is the default. Set it only for DACH/European markets (Germany, Austria,
@@ -25,64 +25,45 @@ candidate:
 
 target_roles:
   # Your North Star roles — what you're optimizing for
-  primary:
-    - "Senior AI Engineer"
-    - "Staff ML Engineer"
+  primary: []
   # Archetypes help the evaluation system score fit
-  archetypes:
-    - name: "AI/ML Engineer"
-      level: "Senior/Staff"
-      fit: "primary"        # primary = dream role, secondary = good fit, adjacent = stretch
-    - name: "AI Product Manager"
-      level: "Senior"
-      fit: "secondary"
-    - name: "Solutions Architect"
-      level: "Mid-Senior"
-      fit: "adjacent"
+  archetypes: []
+  # Add objects with name, level and fit (primary, secondary or adjacent).
 
 narrative:
   # Your professional headline (1 line)
-  headline: "ML Engineer turned AI product builder"
+  headline: ""
   # Your exit story — what makes you unique
-  exit_story: "Built and sold my SaaS after 5 years. Now focused on applied AI at scale."
+  exit_story: ""
   # Your top 3-5 superpowers
-  superpowers:
-    - "End-to-end ML pipelines"
-    - "Fast prototyping (idea to prod in 2 weeks)"
-    - "Cross-functional communication"
+  superpowers: []
   # Proof points — projects, articles, case studies with measurable impact
-  proof_points:
-    - name: "Project Alpha"
-      url: "https://janesmith.dev/project-alpha"
-      hero_metric: "Reduced inference latency 40%"
-    - name: "Open Source Tool"
-      url: "https://github.com/janesmith/tool"
-      hero_metric: "2K+ GitHub stars"
+  proof_points: []
   # Optional: dashboard/demo URL with credentials
   # dashboard:
   #   url: "https://janesmith.dev/demo"
   #   password: "demo-2026"
 
 compensation:
-  target_range: "$150K-200K"     # Your target total comp
-  currency: "USD"
-  minimum: "$120K"               # Walk-away number
-  location_flexibility: "Remote preferred, 1 week/month on-site possible"
+  target_range: ""                # Your target total comp
+  currency: ""
+  minimum: ""                     # Walk-away number
+  location_flexibility: ""
 
 location:
-  country: "United States"
-  city: "San Francisco"
-  timezone: "PST"
-  visa_status: "No sponsorship needed"
+  country: ""
+  city: ""
+  timezone: ""
+  visa_status: ""
   # Countries/regions where you ALREADY hold work authorization (no sponsorship
   # needed there). Drives the Work-Authorization signal in job evaluation
   # (modes/oferta.md → Block A "Work-authorization check"). Optional — omit or
   # leave [] if not applicable; the free-text visa_status above still applies.
-  authorized_in: ["United States"]
+  authorized_in: []
   # true if you need visa sponsorship for roles OUTSIDE authorized_in. When a JD
   # explicitly states it will not sponsor, that is a hard blocker (see
   # workspace/profile/targeting.md "Your Location Policy"). Omit → treated as false.
-  needs_sponsorship: false
+  # needs_sponsorship: false
   # For remote roles outside your country:
   # onsite_availability: "1 week/month in any city"
 
@@ -164,7 +145,7 @@ cover_letter:
   # Your notice period in calendar days. Surfaced as a prompt default when the
   # JD requests an immediate start. The user confirms the actual value before it
   # appears in the letter.
-  notice_period_days: 30
+  # notice_period_days: 30
   # Which cover-letter template to use by default. Kebab-case name of a file in
   # templates/ named cover-letter-template.<name>.html. Unset -> built-in
   # templates/cover-letter-template.html.
@@ -172,21 +153,14 @@ cover_letter:
 
   # Your current professional domain (used to detect domain gaps vs the JD).
   # Plain English, e.g. "digital media", "fintech", "healthcare IT".
-  primary_domain: "your current domain"
+  primary_domain: ""
 
   # Languages you are actively learning. Each entry MAY produce a closing
   # sentence in that language IF the JD location matches one of the listed
   # countries AND the user confirms inclusion during the cover letter flow.
   # Remove the block entirely if not applicable.
-  language_learning:
-    - language: Spanish
-      current_level: B1
-      target_level: B2
-      target_date: "end of 2026"
-      # The sentence to include, written in that language. Keep it one line.
-      sentence: "Estoy aprendiendo español y espero alcanzar el nivel B2 a finales de 2026."
-      # Only trigger this entry when the JD location is in one of these countries.
-      countries: [Spain, Mexico, Argentina, Colombia, Chile]
+  language_learning: []
+  # Add language, current_level, target_level, target_date, sentence and countries objects when relevant.
 
 # ── Contact Preferences ──────────────────────────────────────────────────────
 #

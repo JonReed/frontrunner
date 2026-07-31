@@ -25,6 +25,17 @@ export interface ProfileSave {
   versions?: { label?: string; text: string }[];
 }
 
+export interface CvVersionSummary {
+  name: string;
+  bytes: number;
+  words: number | null;
+}
+
+export interface ProfileSnapshot {
+  fields: Record<string, string | string[]>;
+  versions: CvVersionSummary[];
+}
+
 function controllerError(stderr: string, fallback: string): string {
   try {
     const parsed = JSON.parse(stderr.trim()) as { error?: unknown };
@@ -100,11 +111,36 @@ function invokeProfileControl(payload: object): Promise<unknown> {
 
 /** Fields currently on disk, for populating an edit form. */
 export async function readProfile(): Promise<Record<string, string | string[]>> {
+  return (await readProfileSnapshot()).fields;
+}
+
+export async function readProfileSnapshot(): Promise<ProfileSnapshot> {
   const value = await invokeProfileControl({ version: '1', action: 'read' });
   const fields = (value as { fields?: unknown })?.fields;
-  return fields && typeof fields === 'object' && !Array.isArray(fields)
-    ? (fields as Record<string, string | string[]>)
-    : {};
+  const versions = (value as { versions?: unknown })?.versions;
+  return {
+    fields: fields && typeof fields === 'object' && !Array.isArray(fields)
+      ? (fields as Record<string, string | string[]>)
+      : {},
+    versions: Array.isArray(versions)
+      ? versions.filter((item): item is CvVersionSummary => {
+        if (!item || typeof item !== 'object' || Array.isArray(item)) return false;
+        const record = item as Record<string, unknown>;
+        return typeof record.name === 'string'
+          && typeof record.bytes === 'number'
+          && (record.words === null || typeof record.words === 'number');
+      })
+      : [],
+  };
+}
+
+export async function addCvVersion(label: string, text: string): Promise<string> {
+  const value = await invokeProfileControl({
+    version: '1', action: 'add-version', label, text,
+  });
+  const name = (value as { added?: { name?: unknown } })?.added?.name;
+  if (typeof name !== 'string') throw new Error('The secure backend did not confirm the CV version.');
+  return name;
 }
 
 /** Returns the field paths and files actually written. */

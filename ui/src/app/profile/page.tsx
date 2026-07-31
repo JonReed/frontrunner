@@ -14,9 +14,10 @@
  */
 
 import { readProfile } from '@/lib/profile';
-import { readProfile as readEditableFields } from '@/lib/profile-save';
+import { readProfileSnapshot } from '@/lib/profile-save';
 import { EditDetails } from '@/components/edit-details';
 import { ReplaceCv } from '@/components/replace-cv';
+import { AdditionalCvs } from '@/components/additional-cvs';
 import { readHealth } from '@/lib/health';
 import { ConnectionDetail } from '@/components/connection';
 
@@ -43,7 +44,12 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 const NOT_SET = <span className="text-[var(--color-ink-faint)]">Not set</span>;
 
 export default async function ProfilePage() {
-  const [p, editable, health] = await Promise.all([readProfile(), readEditableFields(), readHealth()]);
+  const [p, snapshot, health] = await Promise.all([
+    readProfile(),
+    readProfileSnapshot(),
+    readHealth(),
+  ]);
+  const editable = snapshot.fields;
   const text = (path: string) => typeof editable[path] === 'string' ? editable[path] as string : '';
   const searchArea = [text('location.city'), text('location.country')].filter(Boolean).join(', ');
 
@@ -118,6 +124,7 @@ export default async function ProfilePage() {
           />
         </dl>
         <ReplaceCv currentWords={p.cvWords} hasCv={p.hasCv} />
+        <AdditionalCvs versions={snapshot.versions} />
       </section>
 
       {/*

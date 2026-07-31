@@ -32,11 +32,12 @@
  * is given, to paths it recognises, or it fails.
  */
 
-import { existsSync, readFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readFileSync, mkdirSync, readdirSync, lstatSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { parseDocument } from 'yaml';
 
 import { ROOT } from '#paths';
+import { withFileLock } from '../lib/file-lock.mjs';
 import { mutateFileLocked, replaceFileAtomic } from '../lib/locked-file.mjs';
 
 /**
@@ -63,6 +64,8 @@ export const cvPath = () => join(profileBase(), 'workspace/profile/cv.md');
  * their own. Gitignored like every other user-layer directory.
  */
 export const cvVersionsDir = () => join(profileBase(), 'workspace', 'profile', 'cv-versions');
+export const cvVersionsLockPath = (base = profileBase()) =>
+  join(base, 'workspace', 'profile', '.cv-versions.lock');
 
 const MAX_FIELD = 500;
 const MAX_LIST = 40;
@@ -143,15 +146,32 @@ export function validateProfilePatch(patch) {
 /**
  * Seed content for a profile that does not exist yet.
  *
- * The shipped example is the template on purpose: it carries the comments that
- * explain every field, so a profile created from the UI is as self-documenting
- * as one created by hand. Falling back to a bare skeleton would quietly give
- * UI-created installs a worse file than CLI-created ones.
+ * A new profile must never inherit example-person data. The published example
+ * is useful documentation for someone filling it in by hand, but copying it
+ * into a live workspace makes its name, salary, work authorisation and social
+ * links look like facts about the person using Frontrunner. This small seed
+ * deliberately contains only product defaults; the UI and CLI add user facts
+ * explicitly.
  */
 function seedProfile(base = profileBase()) {
-  const template = profileTemplatePath(base);
-  if (existsSync(template)) return readFileSync(template, 'utf8');
-  return 'candidate:\ncompensation:\nlocation:\ntarget_roles:\nspend_tier: standard\n';
+  // Keep `base` in the signature: callers supply it for isolated test roots
+  // and the template path remains a documented public helper. Do not read the
+  // template here: it intentionally contains illustrative, not real, data.
+  void base;
+  return [
+    '# Frontrunner profile — add only facts that are true for you.',
+    '# See config/profile.example.yml for every optional setting and explanation.',
+    'candidate: {}',
+    'target_roles: {}',
+    'compensation: {}',
+    'location: {}',
+    'language:',
+    '  output: en',
+    'spend_tier: standard',
+    'cv:',
+    '  output_format: html',
+    '',
+  ].join('\n');
 }
 
 export function renderProfilePatch(current, patch, options = {}) {
@@ -261,4 +281,60 @@ export async function writeCvVersion(label, markdown, index = 0) {
   const target = join(dir, name);
   replaceFileAtomic(target, text);
   return target;
+}
+
+const CV_VERSION_FILE = /^(\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$/u;
+
+/** Return metadata only; the profile page never needs the CV corpus itself. */
+export function listCvVersions() {
+  const dir = cvVersionsDir();
+  if (!existsSync(dir)) return [];
+
+  return readdirSync(dir, { withFileTypes: true })
+    .filter(entry => entry.isFile() && CV_VERSION_FILE.test(entry.name))
+    .map(entry => {
+      try {
+        const file = join(dir, entry.name);
+        const bytes = lstatSync(file).size;
+        const words = bytes <= MAX_CV_BYTES
+          ? readFileSync(file, 'utf8').split(/\s+/u).filter(Boolean).length
+          : null;
+        return { name: entry.name, bytes, words };
+      } catch {
+        // A concurrent removal should not take down the profile screen.
+        return null;
+      }
+    })
+    .filter(Boolean)
+    .sort((left, right) => left.name.localeCompare(right.name));
+}
+
+/** Append one reference CV at the first free bounded slot under a lock. */
+export async function appendCvVersion(label, markdown) {
+  if (typeof label !== 'string' || label.trim().length > MAX_FIELD) {
+    throw fail('CV version label must be text no longer than 500 characters.');
+  }
+  const text = normalizeCvText(markdown, 'CV version');
+  const dir = cvVersionsDir();
+  mkdirSync(dir, { recursive: true });
+
+  return withFileLock(cvVersionsLockPath(), async () => {
+    const used = new Set(
+      listCvVersions()
+        .map(version => Number(CV_VERSION_FILE.exec(version.name)?.[1]) - 1)
+        .filter(Number.isInteger),
+    );
+    let index = 0;
+    while (used.has(index) && index < 20) index++;
+    if (index >= 20) throw fail('You can keep up to 20 additional CV versions.');
+
+    const name = cvVersionFilename(label, index);
+    const target = join(dir, name);
+    replaceFileAtomic(target, text, { mode: 0o600 });
+    return {
+      name,
+      bytes: Buffer.byteLength(text, 'utf8'),
+      words: text.split(/\s+/u).filter(Boolean).length,
+    };
+  });
 }
