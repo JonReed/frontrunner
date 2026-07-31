@@ -23,6 +23,7 @@ import {
   runClaudeEvaluation,
 } from '../../src/evaluate/claude-eval.mjs';
 import { buildTailorClaudeArgs } from '../../src/cv/claude-tailor.mjs';
+import { buildProfileExtractionClaudeArgs } from '../../src/application/profile-extraction.mjs';
 
 function scoring(overrides = {}) {
   return {
@@ -126,10 +127,11 @@ test('destructive scoring response bounds attacker-controlled cardinality and fi
   assert.equal(parsed.risks.length, 24);
 });
 
-test('Claude evaluation and CV tailoring launch with zero tools and no permission bypass', async () => {
+test('Claude evaluation, tailoring and onboarding extraction launch with zero tools and no permission bypass', async () => {
   const evalArgs = buildClaudeArgs({ systemPrompt: 'system' });
   const cvArgs = buildTailorClaudeArgs('system');
-  for (const args of [evalArgs, cvArgs]) {
+  const extractionArgs = buildProfileExtractionClaudeArgs();
+  for (const args of [evalArgs, cvArgs, extractionArgs]) {
     assert.ok(args.includes('--safe-mode'));
     assert.ok(args.includes('--strict-mcp-config'));
     assert.equal(args[args.indexOf('--tools') + 1], '');

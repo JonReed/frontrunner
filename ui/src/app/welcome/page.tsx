@@ -15,6 +15,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { readSetup } from '@/lib/setup';
 import { SetupFlow } from '@/components/setup-flow';
 import { readProfileSnapshot } from '@/lib/profile-save';
+import { readHealth } from '@/lib/health';
 import { WORKSPACE } from '@/lib/root';
 
 export const dynamic = 'force-dynamic';
@@ -35,7 +36,7 @@ export default async function WelcomePage() {
   const { needed } = readSetup();
   if (!needed) redirect('/');
 
-  const snapshot = await readProfileSnapshot();
+  const [snapshot, health] = await Promise.all([readProfileSnapshot(), readHealth()]);
   const fields = snapshot.fields;
   const roles = Array.isArray(fields['target_roles.primary'])
     ? fields['target_roles.primary'].join('\n')
@@ -44,6 +45,7 @@ export default async function WelcomePage() {
 
   return (
     <SetupFlow
+      engine={{ installed: health.installed, signedIn: health.signedIn }}
       initial={{
         cv,
         fullName: text(fields, 'candidate.full_name'),

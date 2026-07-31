@@ -128,9 +128,14 @@ Frontrunner never fills a missing field with example-person data. The final
 screen separates required, recommended and optional gaps, and the profile page
 keeps those gaps visible after setup. Personal and generated files are stored
 beneath the ignored `workspace/` directory. Model-backed actions send the
-relevant bounded context to the provider used by your chosen agent; onboarding
-uses deterministic CV-header/title suggestions and does not spend AI allowance
-without an explicit future opt-in.
+relevant bounded context to the provider used by your chosen agent. The local
+UI introduces this boundary during onboarding: every allowance-spending action
+uses the same violet sparkle button. Its optional first AI action says plainly
+that the reviewed CV text will be sent to Claude through the user's connected
+Claude subscription and that usage comes from that subscription's allowance.
+Claude returns evidence-backed suggestions for the user to select; it cannot
+write the profile. Deterministic CV-header/title suggestions remain available
+without spending allowance.
 
 <details>
 <summary><strong>Prefer to install it manually?</strong></summary>

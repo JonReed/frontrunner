@@ -361,12 +361,20 @@ missing values rather than treating an existing YAML file as proof that every
 field was captured. Location-derived values are suggestions to confirm, never
 facts to invent.
 
-The current setup flow uses deterministic CV-header and title suggestions and
-does not send a CV to a model. Any future “extract details with my AI
-subscription” action must be a separate, explicit opt-in: show the provider,
-bound the input, use a tool-less versioned extraction contract, return evidence
-for every proposal, and require per-field user confirmation before the normal
-allowlisted profile writer can save anything.
+The setup flow keeps deterministic CV-header and title suggestions as its
+zero-allowance fallback. It also offers an explicit “Find details in my CV”
+AI action after the user has reviewed the imported text. Every AI-spending UI
+action uses the shared violet/sparkle button. Onboarding must say that this
+sends the reviewed CV text to Claude through the user's connected Claude
+subscription and consumes that subscription's allowance.
+
+`src/application/profile-extraction.mjs` owns the model boundary: bounded CV
+input, zero tools, no session persistence, a closed versioned schema and
+evidence for every proposal. Country, currency, timezone, compensation,
+working pattern and work authorisation cannot be inferred. The model never
+writes profile data. The UI requires per-field selection, keeps accepted
+suggestions in the unsaved onboarding draft, and only the normal allowlisted
+profile transaction may publish them when the user explicitly finishes setup.
 
 #### Step 3: Portals (recommended)
 If `workspace/search/portals.yml` is missing:

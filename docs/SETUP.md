@@ -41,8 +41,16 @@ authorisation, phone and public links are shown explicitly as recommended or
 optional rather than being hidden behind a generic “complete” state. A final
 review lists any missing values, and the profile page repeats that review later.
 CV header and title suggestions are deterministic and require confirmation;
-the setup flow does not send your CV to a model or spend your AI allowance
-without a separate, explicit opt-in.
+they do not spend AI allowance. After the user reviews the imported CV text,
+onboarding also offers the first optional AI-styled action. The screen explains
+the product-wide convention (violet plus sparkle always means AI), names Claude
+as the recipient, and says that the CV text is sent through the user's
+connected Claude subscription using that subscription's allowance. Claude
+runs without tools and returns bounded, evidence-backed suggestions. The user
+selects which suggestions enter the form, reviews them on the later screens,
+and explicitly finishes onboarding before anything is written to the profile.
+Frontrunner never receives the user's Claude password or subscription
+credentials.
 
 If you are using Codex, start the interactive session with `codex`. Slash commands are not guaranteed in Codex, so use the same mode names in a prompt if `/frontrunner` is unavailable:
 

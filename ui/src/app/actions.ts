@@ -20,7 +20,9 @@ import {
 import {
   addCvVersion as addCvVersionRequest,
   ensurePortals as ensurePortalsRequest,
+  extractProfile,
   saveProfile,
+  type ProfileExtraction,
   type ProfileSave,
 } from '@/lib/profile-save';
 import {
@@ -80,6 +82,36 @@ export async function ensureSearchSources(): Promise<{ ok: true } | { error: str
   } catch (error) {
     const detail = error instanceof Error ? error.message : '';
     return { error: detail || 'The job sources could not be set up. Nothing else was changed.' };
+  }
+}
+
+/**
+ * Ask the user's connected Claude subscription for review-only suggestions.
+ *
+ * The CV crosses the provider boundary only after the user presses the
+ * AI-styled button. Claude has zero tools and cannot write the profile.
+ */
+export async function extractCvProfile(
+  cv: string,
+): Promise<ProfileExtraction | { error: string }> {
+  const health = await readHealth();
+  if (!health.installed) {
+    return { error: 'Install Claude Code, then connect your Claude subscription before using AI suggestions.' };
+  }
+  if (!health.signedIn) {
+    return { error: 'Connect your Claude subscription before using AI suggestions.' };
+  }
+  try {
+    return await extractProfile(cv);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : '';
+    if (/not signed in|not logged in|auth|login/iu.test(detail)) {
+      return { error: 'Connect your Claude subscription before using AI suggestions.' };
+    }
+    if (/timeout|did not respond|cancel/iu.test(detail)) {
+      return { error: 'Claude took too long to return suggestions. Your CV and profile were not changed.' };
+    }
+    return { error: detail || 'Claude could not suggest profile details. Your CV and profile were not changed.' };
   }
 }
 

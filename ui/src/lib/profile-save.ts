@@ -18,6 +18,7 @@ import { ROOT } from './root';
 const PROFILE_CONTROL = join(ROOT, 'src', 'application', 'profile-control.mjs');
 const RESPONSE_LIMIT = 256 * 1024;
 const RESPONSE_TIMEOUT_MS = 15_000;
+const AI_RESPONSE_TIMEOUT_MS = 3 * 60 * 1000 + 5_000;
 
 export interface ProfileSave {
   fields?: Record<string, string | string[]>;
@@ -36,6 +37,20 @@ export interface ProfileSnapshot {
   versions: CvVersionSummary[];
 }
 
+export interface ProfileProposal {
+  path: string;
+  value: string;
+  evidence: string;
+  basis: 'explicit' | 'suggested';
+  confidence: 'high' | 'medium';
+}
+
+export interface ProfileExtraction {
+  version: '1';
+  proposals: ProfileProposal[];
+  warnings: string[];
+}
+
 function controllerError(stderr: string, fallback: string): string {
   try {
     const parsed = JSON.parse(stderr.trim()) as { error?: unknown };
@@ -46,7 +61,7 @@ function controllerError(stderr: string, fallback: string): string {
   return fallback;
 }
 
-function invokeProfileControl(payload: object): Promise<unknown> {
+function invokeProfileControl(payload: object, timeoutMs = RESPONSE_TIMEOUT_MS): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [PROFILE_CONTROL], {
       cwd: ROOT,
@@ -104,9 +119,35 @@ function invokeProfileControl(payload: object): Promise<unknown> {
     const timer = setTimeout(() => {
       child.kill('SIGTERM');
       fail('The secure backend did not respond in time.');
-    }, RESPONSE_TIMEOUT_MS);
+    }, timeoutMs);
     child.stdin.end(JSON.stringify(payload));
   });
+}
+
+export async function extractProfile(cv: string): Promise<ProfileExtraction> {
+  const value = await invokeProfileControl(
+    { version: '1', action: 'extract', cv },
+    AI_RESPONSE_TIMEOUT_MS,
+  );
+  const proposals = (value as { proposals?: unknown })?.proposals;
+  const warnings = (value as { warnings?: unknown })?.warnings;
+  const version = (value as { version?: unknown })?.version;
+  if (version !== '1' || !Array.isArray(proposals) || !Array.isArray(warnings)) {
+    throw new Error('The secure backend returned invalid profile suggestions.');
+  }
+  return {
+    version,
+    proposals: proposals.filter((item): item is ProfileProposal => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) return false;
+      const proposal = item as Record<string, unknown>;
+      return typeof proposal.path === 'string'
+        && typeof proposal.value === 'string'
+        && typeof proposal.evidence === 'string'
+        && ['explicit', 'suggested'].includes(String(proposal.basis))
+        && ['high', 'medium'].includes(String(proposal.confidence));
+    }),
+    warnings: warnings.filter((warning): warning is string => typeof warning === 'string'),
+  };
 }
 
 /** Fields currently on disk, for populating an edit form. */

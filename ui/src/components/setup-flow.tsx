@@ -21,20 +21,19 @@
  * details. In particular, never invent a phone number, salary floor or visa
  * position to make a checklist look complete.
  *
- * NOTHING IS SENT ANYWHERE. Said once, plainly, on the step where they add
- * their CV — the moment the worry actually occurs — and not repeated. Constant
- * reassurance reads as a product with something to hide.
- *
- * NO AI HERE. Onboarding does not spend the user's allowance. They have not
- * seen the product work yet, and asking them to pay for the privilege of
- * setting it up is the wrong first impression.
+ * AI IS ALWAYS AN EXPLICIT CHOICE. The CV import itself stays local. The first
+ * optional AI action teaches the product-wide violet/sparkle convention,
+ * names Claude as the recipient, explains that usage comes from the user's
+ * subscription, and returns suggestions for review rather than writing facts.
  */
 
 import { useMemo, useState, useTransition } from 'react';
 import { ensureSearchSources, saveDetails } from '@/app/actions';
+import { OnboardingAiProfile } from '@/components/onboarding-ai-profile';
 import { suggestCvContact } from '@/lib/cv-contact-suggestions.mjs';
 import { suggestJobTitles } from '@/lib/job-title-suggestions.mjs';
 import { locationDefaults } from '@/lib/location-defaults.mjs';
+import { applyProfileProposal } from '@/lib/onboarding-profile-proposals';
 import { onboardingCompleteness } from '@/lib/profile-completeness.mjs';
 
 const STEPS = ['Your CV', 'About you', 'What you want', 'Finish'] as const;
@@ -342,7 +341,13 @@ function FilePicker({
 
 let nextCvId = 0;
 
-export function SetupFlow({ initial }: { initial?: Partial<SetupDraft> } = {}) {
+export function SetupFlow({
+  initial,
+  engine = { installed: true, signedIn: true },
+}: {
+  initial?: Partial<SetupDraft>;
+  engine?: { installed: boolean; signedIn: boolean };
+} = {}) {
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<SetupDraft>(() => ({ ...EMPTY, ...initial, otherCvs: initial?.otherCvs ?? [] }));
   const [pasteOpen, setPasteOpen] = useState(false);
@@ -354,6 +359,10 @@ export function SetupFlow({ initial }: { initial?: Partial<SetupDraft> } = {}) {
   const suggestedRoles = useMemo(() => suggestJobTitles(draft.cv), [draft.cv]);
   const set = <K extends keyof SetupDraft>(k: K, v: SetupDraft[K]) =>
     setDraft((d) => ({ ...d, [k]: v }));
+
+  const updateCvText = (text: string) => {
+    set('cv', text);
+  };
 
   const addSuggestedRole = (title: string) =>
     setDraft((d) => {
@@ -523,7 +532,7 @@ export function SetupFlow({ initial }: { initial?: Partial<SetupDraft> } = {}) {
             <FilePicker
               primary
               onText={(text) => {
-                set('cv', text);
+                updateCvText(text);
                 setPasteOpen(false);
               }}
               onError={setFileError}
@@ -550,7 +559,7 @@ export function SetupFlow({ initial }: { initial?: Partial<SetupDraft> } = {}) {
                 >
                   <textarea
                     value={draft.cv}
-                    onChange={(e) => set('cv', e.target.value)}
+                    onChange={(e) => updateCvText(e.target.value)}
                     rows={12}
                     placeholder="Paste the whole thing here…"
                     className={`${FIELD} resize-y leading-relaxed`}
@@ -562,6 +571,17 @@ export function SetupFlow({ initial }: { initial?: Partial<SetupDraft> } = {}) {
               </div>
             )}
           </div>
+
+          {draft.cv.trim().length > 40 && (
+            <OnboardingAiProfile
+              cv={draft.cv}
+              draft={draft}
+              engine={engine}
+              onApply={(proposals) => setDraft(current => (
+                proposals.reduce(applyProfileProposal, current)
+              ))}
+            />
+          )}
 
           {/*
             Other versions: optional, and deliberately quiet.

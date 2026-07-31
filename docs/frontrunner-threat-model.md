@@ -23,6 +23,7 @@ merges cannot quietly reintroduce it.
 | Response/JD/output bounds | Fixed | streaming byte caps in `_http.mjs`; 24K-character JD cap; scoring string/cardinality limits |
 | OpenRouter transport and fallback state | Fixed | fixed brokered endpoints, bounded model/response contracts, Frontrunner attribution, and locked atomic blacklist merge |
 | Prompt-injection authority | Fixed | hostile-data framing plus zero-tool models; detection remains telemetry only |
+| Onboarding CV extraction | Fixed | an explicit AI-styled opt-in sends only bounded, user-reviewed CV text to the connected Claude subscription; the zero-tool worker returns a closed evidence-backed proposal schema, the UI requires field selection, and the model has no profile-write authority |
 | Report XSS/unsafe links | Fixed in new UI | escaped React rendering, HTTP(S) URL allowlist, CSP, no `dangerouslySetInnerHTML` |
 | UI exposure/action boundary | Fixed for intended local deployment | listener pinned to `127.0.0.1`; non-local Host/Origin rejected |
 | UI filesystem and process authority | Fixed | canonical launcher supplies the repository root and fixed shell-free Next.js process; artifact requests use tracker role IDs plus closed formats before canonical report/output containment |
