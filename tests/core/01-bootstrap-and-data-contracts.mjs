@@ -49,6 +49,7 @@ const scripts = [
   { name: 'src/cv/build-cv-html.mjs --test', expectExit: 0 },
   { name: 'src/analysis/jd-skill-gap.mjs --self-test', expectExit: 0 },
   { name: 'src/analysis/check-table-freshness.mjs --self-test', expectExit: 0 },
+  { name: 'src/analysis/weekly-interview-digest.mjs --self-test', expectExit: 0 },
   { name: 'src/cv/verify-cv-facts.mjs --self-test', expectExit: 0 },
   { name: 'tests/updater-migration-tests.mjs', expectExit: 0 },
   { name: 'tests/tracker-columns-tests.mjs', expectExit: 0 },

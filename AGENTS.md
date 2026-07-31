@@ -303,6 +303,7 @@ OpenAI-compatible endpoints, OpenRouter and local Ollama.
 | `src/analysis/assessment-log.mjs` | Skills-assessment logger — `add` safely appends platform/subject/threshold/score + staleness note to `workspace/applications/assessments.tsv` under the shared durable-state lock (JSON or `--summary`) |
 | `src/analysis/jd-skill-gap.mjs` | Zero-LLM JD skill classifier vs `workspace/profile/cv.md`: existing / supportedByResume / gap; never auto-adds claims to `workspace/profile/cv.md` (JSON or `--summary`) |
 | `src/analysis/check-table-freshness.mjs` | Read-only staleness check for jurisdiction tables in `templates/`; expired effective dates fail, overdue review warns (JSON or `--summary`) |
+| `src/analysis/weekly-interview-digest.mjs` | Read-only weekly rollup of structured interview sessions, recurring competency tags, and best-effort open question-bank gaps (JSON or `--summary`) |
 | `workspace/reports/evaluations/` | Evaluation reports `{###}-{company-slug}-{YYYY-MM-DD}.md` — Blocks A-G + Risk Summary + `## Machine Summary` YAML for downstream analysis |
 
 ### First Run — Onboarding (IMPORTANT)
