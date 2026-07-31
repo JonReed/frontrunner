@@ -351,6 +351,23 @@ If `workspace/profile/profile.yml` is missing, copy from `config/profile.example
 
 Fill in `workspace/profile/profile.yml` (including `spend_tier`, default `standard`). Archetypes and targeting narrative go to `workspace/profile/targeting.md` or `workspace/profile/profile.yml` — never `modes/_shared.md`.
 
+The local UI onboarding uses the same source-of-truth boundary but has a
+stricter completion check than file existence alone. It requires a CV, full
+name, email, location and at least one target title before the first search.
+Salary target/currency, working pattern, search area, country and timezone are
+recommended checks; phone, public links, minimum compensation and work
+authorisation are optional. The final review and `/profile` page must show
+missing values rather than treating an existing YAML file as proof that every
+field was captured. Location-derived values are suggestions to confirm, never
+facts to invent.
+
+The current setup flow uses deterministic CV-header and title suggestions and
+does not send a CV to a model. Any future “extract details with my AI
+subscription” action must be a separate, explicit opt-in: show the provider,
+bound the input, use a tool-less versioned extraction contract, return evidence
+for every proposal, and require per-field user confirmation before the normal
+allowlisted profile writer can save anything.
+
 #### Step 3: Portals (recommended)
 If `workspace/search/portals.yml` is missing:
 > "I'll set up the job scanner with 45+ pre-configured companies. Want me to customize the search keywords for your target roles?"

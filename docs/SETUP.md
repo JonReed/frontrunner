@@ -34,8 +34,15 @@ CLIs may work through the shared `AGENTS.md` contract as compatibility paths
 but are not supported configurations; see [Supported CLIs](SUPPORTED_CLIS.md).
 
 **On first launch, Frontrunner walks you through setup by chatting** — it asks
-for your CV, your details (name, target roles, salary), and sets up the job
-scanner. Nothing to edit by hand: just answer its questions.
+for your CV, the core details needed for a useful search (name, email,
+location, and target job titles), and the preferences that improve matching.
+Salary currency/target/floor, working pattern, search area, timezone, work
+authorisation, phone and public links are shown explicitly as recommended or
+optional rather than being hidden behind a generic “complete” state. A final
+review lists any missing values, and the profile page repeats that review later.
+CV header and title suggestions are deterministic and require confirmation;
+the setup flow does not send your CV to a model or spend your AI allowance
+without a separate, explicit opt-in.
 
 If you are using Codex, start the interactive session with `codex`. Slash commands are not guaranteed in Codex, so use the same mode names in a prompt if `/frontrunner` is unavailable:
 

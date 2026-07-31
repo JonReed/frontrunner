@@ -15,9 +15,11 @@
  * asking — which is the only thing that makes the CV step feel reasonable
  * rather than intrusive.
  *
- * NOTHING IS MANDATORY EXCEPT THE CV. Everything else has a sane default or
- * can be added later from My details. Blocking someone on their phone number
- * before they have seen a single job would be absurd.
+ * The CV and the five facts needed for a useful first search are mandatory:
+ * name, email, location and at least one target title. Everything else is
+ * clearly marked recommended or optional and can be added later from My
+ * details. In particular, never invent a phone number, salary floor or visa
+ * position to make a checklist look complete.
  *
  * NOTHING IS SENT ANYWHERE. Said once, plainly, on the step where they add
  * their CV — the moment the worry actually occurs — and not repeated. Constant
@@ -33,6 +35,7 @@ import { ensureSearchSources, saveDetails } from '@/app/actions';
 import { suggestCvContact } from '@/lib/cv-contact-suggestions.mjs';
 import { suggestJobTitles } from '@/lib/job-title-suggestions.mjs';
 import { locationDefaults } from '@/lib/location-defaults.mjs';
+import { onboardingCompleteness } from '@/lib/profile-completeness.mjs';
 
 const STEPS = ['Your CV', 'About you', 'What you want', 'Finish'] as const;
 
@@ -83,9 +86,19 @@ export interface SetupDraft {
   otherCvs: CvEntry[];
   fullName: string;
   email: string;
+  phone: string;
+  linkedin: string;
+  portfolioUrl: string;
+  github: string;
   location: string;
+  country: string;
+  city: string;
+  timezone: string;
+  visaStatus: string;
   targetRoles: string;
   salaryTarget: string;
+  minimumSalary: string;
+  salaryCurrency: string;
   remote: 'remote' | 'hybrid' | 'onsite' | '';
 }
 
@@ -94,9 +107,19 @@ const EMPTY: SetupDraft = {
   otherCvs: [],
   fullName: '',
   email: '',
+  phone: '',
+  linkedin: '',
+  portfolioUrl: '',
+  github: '',
   location: '',
+  country: '',
+  city: '',
+  timezone: '',
+  visaStatus: '',
   targetRoles: '',
   salaryTarget: '',
+  minimumSalary: '',
+  salaryCurrency: '',
   remote: '',
 };
 
@@ -319,9 +342,9 @@ function FilePicker({
 
 let nextCvId = 0;
 
-export function SetupFlow() {
+export function SetupFlow({ initial }: { initial?: Partial<SetupDraft> } = {}) {
   const [step, setStep] = useState(0);
-  const [draft, setDraft] = useState<SetupDraft>(EMPTY);
+  const [draft, setDraft] = useState<SetupDraft>(() => ({ ...EMPTY, ...initial, otherCvs: initial?.otherCvs ?? [] }));
   const [pasteOpen, setPasteOpen] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -356,6 +379,8 @@ export function SetupFlow() {
   const removeCv = (id: string) =>
     setDraft((d) => ({ ...d, otherCvs: d.otherCvs.filter((c) => c.id !== id) }));
 
+  const completeness = onboardingCompleteness(draft);
+
   const advance = () => {
     if (step === 0) {
       setDraft((d) => ({
@@ -364,6 +389,18 @@ export function SetupFlow() {
         email: d.email || suggestedContact.email || '',
         location: d.location || suggestedContact.location || '',
       }));
+    }
+    if (step === 1) {
+      setDraft((d) => {
+        const regional = locationDefaults(d.location);
+        return {
+          ...d,
+          city: d.city || regional.city,
+          country: d.country || regional.country,
+          timezone: d.timezone || regional.timezone,
+          salaryCurrency: d.salaryCurrency || regional.currency,
+        };
+      });
     }
     setStep((s) => s + 1);
   };
@@ -375,30 +412,38 @@ export function SetupFlow() {
    * reads these files on the server, and every screen behind this one was
    * rendered when they did not exist.
    *
-   * Optional answers are omitted. Location-derived fields are different: they
-   * are sent even when unknown, so an old example profile can never leak US
-   * currency, authorisation or timezone into a new user's search.
+   * Every field shown by onboarding is sent, including an explicit blank when
+   * the answer was not supplied. That matters on a half-created workspace:
+   * an old example value must not survive simply because the new screen hid
+   * the field.
    */
   const save = () => {
+    if (!completeness.ready) {
+      setError(`Complete these details before your first search: ${completeness.requiredMissing.map((item) => item.label).join(', ')}.`);
+      return;
+    }
     setSaving(true);
     setError(null);
     const fields: Record<string, string | string[]> = {};
-    const put = (key: string, value: string) => {
-      if (value.trim()) fields[key] = value.trim();
-    };
-    put('candidate.full_name', draft.fullName);
-    put('candidate.email', draft.email);
-    put('candidate.location', draft.location);
+    fields['candidate.full_name'] = draft.fullName.trim();
+    fields['candidate.email'] = draft.email.trim();
+    fields['candidate.phone'] = draft.phone.trim();
+    fields['candidate.linkedin'] = draft.linkedin.trim();
+    fields['candidate.portfolio_url'] = draft.portfolioUrl.trim();
+    fields['candidate.github'] = draft.github.trim();
+    fields['candidate.location'] = draft.location.trim();
     const regional = locationDefaults(draft.location);
-    fields['location.city'] = regional.city;
-    fields['location.country'] = regional.country;
-    fields['location.timezone'] = regional.timezone;
-    fields['compensation.currency'] = regional.currency;
-    put('compensation.target_range', draft.salaryTarget);
-    put('compensation.location_flexibility', REMOTE_LABEL[draft.remote] ?? '');
+    fields['location.city'] = draft.city.trim() || regional.city;
+    fields['location.country'] = draft.country.trim() || regional.country;
+    fields['location.timezone'] = draft.timezone.trim() || regional.timezone;
+    fields['location.visa_status'] = draft.visaStatus.trim();
+    fields['compensation.currency'] = draft.salaryCurrency.trim() || regional.currency;
+    fields['compensation.target_range'] = draft.salaryTarget.trim();
+    fields['compensation.minimum'] = draft.minimumSalary.trim();
+    fields['compensation.location_flexibility'] = REMOTE_LABEL[draft.remote] ?? '';
 
     const roles = draft.targetRoles.split('\n').map((r) => r.trim()).filter(Boolean);
-    if (roles.length > 0) fields['target_roles.primary'] = roles;
+    fields['target_roles.primary'] = roles;
 
     const versions = draft.otherCvs
       .filter((c) => c.text.trim())
@@ -423,9 +468,13 @@ export function SetupFlow() {
     });
   };
 
-  // The CV is the only hard gate. Everything else can be filled in later from
-  // My details, and blocking on it would be inventing work.
-  const canAdvance = step === 0 ? draft.cv.trim().length > 40 : true;
+  const canAdvance = step === 0
+    ? draft.cv.trim().length > 40
+    : step === 1
+      ? Boolean(draft.fullName.trim() && draft.email.trim() && draft.location.trim())
+      : step === 2
+        ? draft.targetRoles.split(/\r?\n/u).some((role) => role.trim())
+        : true;
 
   return (
     <div className="onboarding-shell mx-auto max-w-2xl">
@@ -627,10 +676,64 @@ export function SetupFlow() {
             <input
               className={FIELD}
               value={draft.location}
-              onChange={(e) => set('location', e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value;
+                setDraft((current) => {
+                  const previousRegional = locationDefaults(current.location);
+                  const nextRegional = locationDefaults(next);
+                  return {
+                    ...current,
+                    location: next,
+                    city: current.city === previousRegional.city ? nextRegional.city : current.city,
+                    country: current.country === previousRegional.country ? nextRegional.country : current.country,
+                    timezone: current.timezone === previousRegional.timezone ? nextRegional.timezone : current.timezone,
+                    salaryCurrency: current.salaryCurrency === previousRegional.currency
+                      ? nextRegional.currency
+                      : current.salaryCurrency,
+                  };
+                });
+              }}
               placeholder="Manchester, UK"
             />
           </Field>
+          <div className="grid gap-x-5 sm:grid-cols-2">
+            <Field label="Phone" hint="Optional — used only in application material.">
+              <input
+                className={FIELD}
+                value={draft.phone}
+                onChange={(e) => set('phone', e.target.value)}
+                placeholder="+44 20 1234 5678"
+                autoComplete="tel"
+              />
+            </Field>
+            <Field label="LinkedIn" hint="Optional.">
+              <input
+                className={FIELD}
+                value={draft.linkedin}
+                onChange={(e) => set('linkedin', e.target.value)}
+                placeholder="linkedin.com/in/you"
+                inputMode="url"
+              />
+            </Field>
+            <Field label="Portfolio" hint="Optional.">
+              <input
+                className={FIELD}
+                value={draft.portfolioUrl}
+                onChange={(e) => set('portfolioUrl', e.target.value)}
+                placeholder="https://your-site.example"
+                inputMode="url"
+              />
+            </Field>
+            <Field label="GitHub" hint="Optional.">
+              <input
+                className={FIELD}
+                value={draft.github}
+                onChange={(e) => set('github', e.target.value)}
+                placeholder="github.com/you"
+                inputMode="url"
+              />
+            </Field>
+          </div>
         </section>
       )}
 
@@ -700,6 +803,30 @@ export function SetupFlow() {
               inputMode="numeric"
             />
           </Field>
+          <div className="grid gap-x-5 sm:grid-cols-2">
+            <Field
+              label="Lowest figure you would consider"
+              hint="Optional and private — leave blank if you do not use a walk-away number."
+            >
+              <input
+                className={FIELD}
+                value={draft.minimumSalary}
+                onChange={(e) => set('minimumSalary', e.target.value)}
+                placeholder="£55,000"
+                inputMode="numeric"
+              />
+            </Field>
+            <Field label="Salary currency" hint="Check the suggested currency before saving.">
+              <input
+                className={`${FIELD} uppercase`}
+                value={draft.salaryCurrency}
+                onChange={(e) => set('salaryCurrency', e.target.value.toUpperCase())}
+                placeholder="GBP"
+                maxLength={8}
+                autoCapitalize="characters"
+              />
+            </Field>
+          </div>
           <fieldset className="mb-5">
             <legend className="mb-2 block text-sm font-semibold">How you want to work</legend>
             <div className="flex flex-wrap gap-2">
@@ -726,18 +853,95 @@ export function SetupFlow() {
               ))}
             </div>
           </fieldset>
+          <div className="grid gap-x-5 sm:grid-cols-2">
+            <Field label="Search area" hint="The city or region you would commute to, if different from where you live.">
+              <input
+                className={FIELD}
+                value={draft.city}
+                onChange={(e) => set('city', e.target.value)}
+                placeholder="Manchester"
+              />
+            </Field>
+            <Field label="Search country" hint="Check this inferred value; it is never guessed from a US default.">
+              <input
+                className={FIELD}
+                value={draft.country}
+                onChange={(e) => set('country', e.target.value)}
+                placeholder="United Kingdom"
+              />
+            </Field>
+            <Field label="Timezone" hint="Optional, but useful for remote roles.">
+              <input
+                className={FIELD}
+                value={draft.timezone}
+                onChange={(e) => set('timezone', e.target.value)}
+                placeholder="Europe/London"
+              />
+            </Field>
+            <Field label="Work authorisation" hint="Optional. Say what is true for you, or leave blank.">
+              <input
+                className={FIELD}
+                value={draft.visaStatus}
+                onChange={(e) => set('visaStatus', e.target.value)}
+                placeholder="No sponsorship required"
+              />
+            </Field>
+          </div>
         </section>
       )}
 
       {step === 3 && (
         <section>
           <h2 className="text-[22px] font-bold leading-tight tracking-tight">
-            That is everything needed
+            Review your profile before the first search
           </h2>
           <p className="mb-6 mt-1.5 text-[15px] text-[var(--color-ink-soft)]">
-            Everything below is written to files on this computer, and all of it is yours to edit
-            later from My details.
+            We will show you what was captured and what is still missing. Nothing is hidden behind
+            a completed-looking screen, and you can change every value later from My details.
           </p>
+
+          <div className="mb-6 space-y-3">
+            <div
+              className={`rounded-xl border p-4 ${
+                completeness.ready
+                  ? 'border-[var(--color-ready)]/35 bg-[var(--color-ready-wash)]'
+                  : 'border-[var(--color-attention)] bg-[var(--color-attention-wash)]'
+              }`}
+            >
+              <p className="font-semibold">
+                {completeness.ready ? 'Core profile ready' : 'A few core details still need you'}
+              </p>
+              {completeness.requiredMissing.length > 0 && (
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[var(--color-ink-soft)]">
+                  {completeness.requiredMissing.map((item) => <li key={item.id}>{item.label} — {item.reason}</li>)}
+                </ul>
+              )}
+              {completeness.ready && (
+                <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
+                  The first search can run. The recommended details below improve matching but do
+                  not block you.
+                </p>
+              )}
+            </div>
+
+            {completeness.recommendedMissing.length > 0 && (
+              <details className="rounded-xl border border-[var(--color-line)] bg-[var(--color-card)] px-4 py-3">
+                <summary className="cursor-pointer text-sm font-semibold">
+                  Recommended to confirm ({completeness.recommendedMissing.length})
+                </summary>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[var(--color-ink-soft)]">
+                  {completeness.recommendedMissing.map((item) => <li key={item.id}>{item.label} — {item.reason}</li>)}
+                </ul>
+              </details>
+            )}
+
+            {completeness.optionalMissing.length > 0 && (
+              <p className="text-sm text-[var(--color-ink-faint)]">
+                {completeness.optionalMissing.length} optional field{completeness.optionalMissing.length === 1 ? '' : 's'}
+                {' '}not provided. That is fine — add them later if they are useful to you.
+              </p>
+            )}
+          </div>
 
           <dl className="mb-6 overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-card)] px-5">
             {[
@@ -753,7 +957,11 @@ export function SetupFlow() {
               ],
               ['Name', draft.fullName || '—'],
               ['Email', draft.email || '—'],
+              ['Phone', draft.phone || 'Not provided'],
               ['Location', draft.location || '—'],
+              ['LinkedIn', draft.linkedin || 'Not provided'],
+              ['Portfolio', draft.portfolioUrl || 'Not provided'],
+              ['GitHub', draft.github || 'Not provided'],
               [
                 'Job titles',
                 draft.targetRoles.trim()
@@ -761,10 +969,16 @@ export function SetupFlow() {
                   : '—',
               ],
               ['Salary target', draft.salaryTarget || '—'],
+              ['Lowest figure', draft.minimumSalary || 'Not provided'],
+              ['Salary currency', draft.salaryCurrency || 'Not confirmed'],
               [
                 'Working pattern',
                 draft.remote ? draft.remote[0].toUpperCase() + draft.remote.slice(1) : '—',
               ],
+              ['Search area', draft.city || 'Not provided'],
+              ['Search country', draft.country || 'Not confirmed'],
+              ['Timezone', draft.timezone || 'Not confirmed'],
+              ['Work authorisation', draft.visaStatus || 'Not provided'],
             ].map(([k, v]) => (
               <div
                 key={k}
@@ -789,10 +1003,10 @@ export function SetupFlow() {
           <button
             type="button"
             onClick={save}
-            disabled={saving}
+            disabled={saving || !completeness.ready}
             className="w-full cursor-pointer rounded-lg bg-[var(--color-act)] px-5 py-3 text-[15px] font-semibold text-white transition hover:bg-[var(--color-act-hover)] disabled:cursor-not-allowed disabled:bg-[var(--color-line-strong)] sm:w-auto"
           >
-            {saving ? 'Saving…' : 'Finish and find roles'}
+            {saving ? 'Saving…' : completeness.ready ? 'Finish and find roles' : 'Complete required details first'}
           </button>
         </section>
       )}
@@ -813,7 +1027,13 @@ export function SetupFlow() {
             disabled={!canAdvance}
             className="cursor-pointer rounded-lg bg-[var(--color-act)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-act-hover)] disabled:cursor-not-allowed disabled:bg-[var(--color-line-strong)]"
           >
-            {step === 0 && !canAdvance ? 'Add your CV to continue' : 'Continue'}
+            {!canAdvance && step === 0
+              ? 'Add your CV to continue'
+              : !canAdvance && step === 1
+                ? 'Complete your details to continue'
+                : !canAdvance && step === 2
+                  ? 'Add a target title to continue'
+                  : 'Continue'}
           </button>
         )}
       </div>

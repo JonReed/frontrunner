@@ -9,6 +9,23 @@ test('finishing setup leads directly to the first-search experience', async () =
   const setup = await read('ui/src/components/setup-flow.tsx');
   assert.match(setup, /window\.location\.href = '\/found\?welcome=1'/u);
   assert.match(setup, /Finish and find roles/u);
+  assert.match(setup, /Complete required details first/u);
+  assert.match(setup, /Review your profile before the first search/u);
+});
+
+test('setup checks profile fields rather than trusting the profile file alone', async () => {
+  const setup = await read('ui/src/lib/setup.ts');
+  assert.match(setup, /profileCompleteness/u);
+  assert.match(setup, /profileMissing/u);
+  assert.match(setup, /items\.some\(\(i\) => i\.required && !i\.present\) \|\| profileMissing\.length > 0/u);
+});
+
+test('re-entering onboarding preserves existing answers for correction instead of clearing them', async () => {
+  const welcome = await read('ui/src/app/welcome/page.tsx');
+  assert.match(welcome, /readProfileSnapshot/u);
+  assert.match(welcome, /initial=\{\{/u);
+  assert.match(welcome, /salaryCurrency/u);
+  assert.match(welcome, /remoteValue/u);
 });
 
 test('first search makes costs and the free scan path explicit', async () => {

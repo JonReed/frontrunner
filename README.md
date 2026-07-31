@@ -119,10 +119,18 @@ First detect my operating system and check whether Git, Node.js 22.5 or later, a
 Then clone Frontrunner, install its main and local interface dependencies, and follow the repository's onboarding instructions. Do not overwrite an existing folder or change an existing installation without asking. When it is ready, start the local interface and tell me exactly where to open it. If a system dialog or restart is unavoidable, give me one clear step, wait for me to complete it, then continue.
 ```
 
-Frontrunner then opens locally and asks about your CV, target roles, location,
-salary and preferences. Personal and generated files are stored beneath the
-ignored `workspace/` directory. Model-backed actions send the relevant bounded
-context to the provider used by your chosen agent.
+Frontrunner then opens locally and walks through the profile it actually needs:
+your CV, name, email, location and at least one target job title. It also gives
+you the opportunity to confirm salary currency, target and minimum pay, working
+pattern, search area, timezone, work authorisation, phone and public links.
+Values inferred from an explicitly entered UK location are shown for review;
+Frontrunner never fills a missing field with example-person data. The final
+screen separates required, recommended and optional gaps, and the profile page
+keeps those gaps visible after setup. Personal and generated files are stored
+beneath the ignored `workspace/` directory. Model-backed actions send the
+relevant bounded context to the provider used by your chosen agent; onboarding
+uses deterministic CV-header/title suggestions and does not spend AI allowance
+without an explicit future opt-in.
 
 <details>
 <summary><strong>Prefer to install it manually?</strong></summary>

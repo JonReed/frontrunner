@@ -16,6 +16,8 @@ test('profile maintenance exposes the preferences used to judge a role', () => {
     'location.country',
     'location.timezone',
     'location.visa_status',
+    'candidate.portfolio_url',
+    'candidate.github',
   ]) {
     assert.equal(paths.has(path), true, `${path} should be editable`);
   }

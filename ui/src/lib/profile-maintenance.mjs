@@ -14,6 +14,8 @@ export const PROFILE_DETAIL_SECTIONS = [
       { path: 'candidate.phone', label: 'Phone', placeholder: 'Optional' },
       { path: 'candidate.location', label: 'Where you are', placeholder: 'Manchester, UK' },
       { path: 'candidate.linkedin', label: 'LinkedIn', placeholder: 'Optional' },
+      { path: 'candidate.portfolio_url', label: 'Portfolio', placeholder: 'Optional' },
+      { path: 'candidate.github', label: 'GitHub', placeholder: 'Optional' },
     ],
   },
   {

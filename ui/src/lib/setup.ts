@@ -12,9 +12,11 @@
  * product works until they do.
  */
 
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { ROOT } from './root';
+import { ROOT, WORKSPACE } from './root';
+import { list, scalar } from './profile-yaml.mjs';
+import { profileCompleteness } from './profile-completeness.mjs';
 
 export interface SetupItem {
   /** Path relative to the repo root, for the seam that eventually writes it. */
@@ -54,10 +56,26 @@ const ITEMS: Omit<SetupItem, 'present'>[] = [
   },
 ];
 
-export function readSetup(): { items: SetupItem[]; needed: boolean } {
+export function readSetup(): { items: SetupItem[]; needed: boolean; profileMissing: string[] } {
   const items = ITEMS.map((i) => ({ ...i, present: existsSync(join(ROOT, i.file)) }));
+  const profileText = existsSync(WORKSPACE.profileFile)
+    ? readFileSync(WORKSPACE.profileFile, 'utf8')
+    : '';
+  const profile = profileCompleteness({
+    hasCv: existsSync(WORKSPACE.cv) && readFileSync(WORKSPACE.cv, 'utf8').trim().length > 0,
+    fields: {
+      'candidate.full_name': scalar(profileText, ['candidate', 'full_name']) ?? '',
+      'candidate.email': scalar(profileText, ['candidate', 'email']) ?? '',
+      'candidate.location': scalar(profileText, ['candidate', 'location']) ?? '',
+      'target_roles.primary': list(profileText, 'primary'),
+    },
+  });
+  const profileMissing = profile.requiredMissing.map((field) => field.label);
   return {
     items,
-    needed: items.some((i) => i.required && !i.present),
+    // A profile file copied from an example is present but not usable. The
+    // field-level check prevents that old “finished” state from hiding gaps.
+    needed: items.some((i) => i.required && !i.present) || profileMissing.length > 0,
+    profileMissing,
   };
 }

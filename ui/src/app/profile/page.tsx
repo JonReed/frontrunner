@@ -20,6 +20,7 @@ import { ReplaceCv } from '@/components/replace-cv';
 import { AdditionalCvs } from '@/components/additional-cvs';
 import { readHealth } from '@/lib/health';
 import { ConnectionDetail } from '@/components/connection';
+import { profileCompleteness } from '@/lib/profile-completeness.mjs';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'My details' };
@@ -41,7 +42,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-const NOT_SET = <span className="text-[var(--color-ink-faint)]">Not set</span>;
+const NOT_SET = <span className="text-[var(--color-ink-faint)]">Not provided yet</span>;
 
 export default async function ProfilePage() {
   const [p, snapshot, health] = await Promise.all([
@@ -52,6 +53,7 @@ export default async function ProfilePage() {
   const editable = snapshot.fields;
   const text = (path: string) => typeof editable[path] === 'string' ? editable[path] as string : '';
   const searchArea = [text('location.city'), text('location.country')].filter(Boolean).join(', ');
+  const completeness = profileCompleteness({ fields: editable, hasCv: p.hasCv });
 
   return (
     <>
@@ -63,11 +65,46 @@ export default async function ProfilePage() {
         </p>
       </div>
 
+      {(completeness.requiredMissing.length > 0 || completeness.recommendedMissing.length > 0) && (
+        <section
+          className={`mb-8 rounded-2xl border p-5 ${
+            completeness.requiredMissing.length > 0
+              ? 'border-[var(--color-attention)] bg-[var(--color-attention-wash)]'
+              : 'border-[var(--color-line)] bg-[var(--color-card)]'
+          }`}
+        >
+          <p className="font-semibold">
+            {completeness.requiredMissing.length > 0
+              ? 'Your profile still needs a few core details'
+              : 'A few profile details are worth confirming'}
+          </p>
+          <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
+            An existing profile file does not mean every field is complete. Missing values are
+            shown honestly here rather than filled with example data.
+          </p>
+          <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[var(--color-ink-soft)]">
+            {[...completeness.requiredMissing, ...completeness.recommendedMissing].map((item) => (
+              <li key={item.id}><span className="font-medium">{item.label}</span> — {item.reason}</li>
+            ))}
+          </ul>
+          <a
+            href="#edit-details"
+            className="mt-3 inline-block text-sm font-semibold text-[var(--color-act)] underline underline-offset-2"
+          >
+            Review these details
+          </a>
+        </section>
+      )}
+
       <section className="paper-surface mb-9 rounded-2xl border px-5 py-2 sm:px-6">
         <dl>
           <Row label="Name" value={p.name ?? NOT_SET} />
           <Row label="Email" value={p.email ?? NOT_SET} />
           <Row label="Location" value={p.location ?? NOT_SET} />
+          <Row label="Phone" value={text('candidate.phone') || NOT_SET} />
+          <Row label="LinkedIn" value={text('candidate.linkedin') || NOT_SET} />
+          <Row label="Portfolio" value={text('candidate.portfolio_url') || NOT_SET} />
+          <Row label="GitHub" value={text('candidate.github') || NOT_SET} />
         </dl>
       </section>
 
@@ -99,7 +136,7 @@ export default async function ProfilePage() {
           <Row label="Working pattern" value={text('compensation.location_flexibility') || NOT_SET} />
           <Row label="Search area" value={searchArea || NOT_SET} />
           <Row label="Timezone" value={text('location.timezone') || NOT_SET} />
-          <Row label="Work authorisation" value={text('location.visa_status') || NOT_SET} />
+          <Row label="Work authorisation (optional)" value={text('location.visa_status') || NOT_SET} />
         </dl>
       </section>
 
@@ -133,7 +170,9 @@ export default async function ProfilePage() {
         through src/application/profile-write.mjs, which patches the document
         in place and leaves every comment and unknown key intact.
       */}
-      <EditDetails initial={editable} />
+      <div id="edit-details">
+        <EditDetails initial={editable} />
+      </div>
     </>
   );
 }

@@ -23,3 +23,13 @@ test('unknown locations retain the entered location without fabricated regional 
     city: 'Remote', country: '', timezone: '', currency: '',
   });
 });
+
+test('profile page makes missing fields visible instead of presenting a false completed state', async () => {
+  const page = await (await import('node:fs/promises')).readFile(
+    new URL('../../ui/src/app/profile/page.tsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(page, /profileCompleteness/u);
+  assert.match(page, /Your profile still needs a few core details/u);
+  assert.match(page, /Not provided yet/u);
+});
