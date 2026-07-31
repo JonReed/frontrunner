@@ -32,13 +32,14 @@
  * is given, to paths it recognises, or it fails.
  */
 
-import { existsSync, readFileSync, mkdirSync, readdirSync, lstatSync } from 'node:fs';
+import { existsSync, readFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { parseDocument } from 'yaml';
 
 import { ROOT } from '#paths';
 import { withFileLock } from '../lib/file-lock.mjs';
 import { mutateFileLocked, replaceFileAtomic } from '../lib/locked-file.mjs';
+import { readBoundedRegularFileWithStatSync } from '../lib/safe-file-read.mjs';
 
 /**
  * Where the user-layer files live.
@@ -329,13 +330,20 @@ export function listCvVersions() {
     .map(entry => {
       try {
         const file = join(dir, entry.name);
-        const bytes = lstatSync(file).size;
-        const words = bytes <= MAX_CV_BYTES
-          ? readFileSync(file, 'utf8').split(/\s+/u).filter(Boolean).length
-          : null;
-        return { name: entry.name, bytes, words };
+        // Validate and read one opened descriptor. A separate lstat/read pair
+        // lets an attacker replace the path with a symlink between the two.
+        const { content, stat } = readBoundedRegularFileWithStatSync(file, {
+          maxBytes: MAX_CV_BYTES,
+          label: `CV version ${entry.name}`,
+        });
+        return {
+          name: entry.name,
+          bytes: stat.size,
+          words: content.split(/\s+/u).filter(Boolean).length,
+        };
       } catch {
-        // A concurrent removal should not take down the profile screen.
+        // A concurrent removal/replacement or unsafe file should not take down
+        // the profile screen and must never be followed.
         return null;
       }
     })

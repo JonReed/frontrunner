@@ -7,7 +7,7 @@
  */
 
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -232,6 +232,24 @@ test('CV version labels cannot escape the directory', async () => {
     const files = readdirSync(cvVersionsDir()).sort();
     assert.deepEqual(files, ['01-etc-passwd.md', '02-the-ops-one.md', '03-version.md']);
     assert.equal(existsSync(join(dir, '..', 'passwd')), false);
+  } finally {
+    cleanup(dir);
+  }
+});
+
+test('CV version listing never follows a replacement symbolic link', async () => {
+  const dir = sandbox();
+  try {
+    await writeCvVersion('safe copy', '# Safe copy\n\nKnown wording.', 0);
+    const privateTarget = join(dir, 'private-target.md');
+    writeFileSync(privateTarget, '# Must not be read\n\nsecret-marker\n');
+    symlinkSync(privateTarget, join(cvVersionsDir(), '02-linked-copy.md'));
+
+    assert.deepEqual(listCvVersions(), [{
+      name: '01-safe-copy.md',
+      bytes: Buffer.byteLength('# Safe copy\n\nKnown wording.\n'),
+      words: 5,
+    }]);
   } finally {
     cleanup(dir);
   }
