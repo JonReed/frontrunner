@@ -61,6 +61,24 @@ test('runtime and update guidance do not revive the removed manifesto promotion'
   }
 });
 
+test('no tracked file offers a runnable path under the inherited project name', () => {
+  // Distinct from the identifier check below: this catches a *command* a reader
+  // could copy and run, e.g. `node career-ops/dedup-tracker.mjs`, which named a
+  // path that has not existed since the move to src/. Attribution prose
+  // ("a fork of career-ops") is untouched — the licence requires it.
+  const runnablePath = new RegExp(
+    `(?:\\b(?:node|npm run|npx|bash|sh|cd)\\s+|~/)${legacySlug}(?:/|\\b)`
+    + `|(?<![-\\w.])${legacySlug}/[\\w./-]+\\.(?:mjs|js|sh|md|yml|json)`,
+    'i',
+  );
+  const violations = trackedTextEntries()
+    .filter(({ relativePath }) => relativePath !== 'tests/frontrunner/product-identity.test.mjs')
+    .filter(({ content }) => runnablePath.test(content))
+    .map(({ relativePath }) => relativePath);
+
+  assert.deepEqual(violations, [], 'a runnable path under the inherited project name is stale by construction');
+});
+
 test('active files cannot restore the inherited command or identifiers', () => {
   const inheritedCommand = new RegExp(`(^|[^-A-Za-z0-9._~/\\\\])/${legacySlug}(?:-[A-Za-z0-9_-]+)?\\b`, 'm');
   const inheritedEnv = new RegExp(`\\b${legacyEnv}(?:_|\\b)`);

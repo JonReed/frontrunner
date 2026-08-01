@@ -275,6 +275,7 @@ const SYSTEM_PATHS = [
   'src/lib/safe-file-read.mjs',
   'src/lib/test-user-data-policy.mjs',
   'src/lib/skill-entrypoints.mjs',
+  'src/lib/upstream-guard.mjs',
   'src/security/',
   'src/application/',
   'src/workspace/',

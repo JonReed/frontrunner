@@ -88,6 +88,20 @@ Upstream writes against a flat layout, so even useful code commonly references
 candidate that cannot pass Frontrunner's complete gate is rejected rather than
 used as a reason to weaken the gate.
 
+Rule 4 is enforced by code, not trust. `src/lib/upstream-guard.mjs` blocks any
+write aimed at the parent, from two directions:
+
+- `.github/hooks/pre-push` (wired via `core.hooksPath`) aborts a push whose
+  resolved URL is the parent, under any remote name.
+- The `PreToolUse` Bash hook in `.claude/settings.json` refuses a mutating `gh`
+  command before it runs. A mutating `gh` subcommand must carry
+  `--repo Furls-Digital/frontrunner`; without it `gh` picks its own default,
+  which is how `gh pr create` once opened a PR in the parent's repo.
+
+Read-only review — `git fetch upstream`, `gh pr view`, `gh pr list` — is
+untouched. `tests/frontrunner/upstream-write-guard.test.mjs` fails if either
+hook is unwired, so the guard cannot be quietly removed.
+
 **5. Application updates and upstream reviews are different operations.**
 
 - Ordinary Frontrunner updates use `node update-system.mjs apply`. The updater
