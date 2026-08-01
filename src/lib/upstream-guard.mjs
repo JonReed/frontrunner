@@ -82,8 +82,29 @@ function mentionsUpstream(text) {
   return UPSTREAM_PATTERNS.some((pattern) => pattern.test(text));
 }
 
+const OWN_REPO_PATTERN = OWN_REPO.replace(/[/\-]/g, (character) => `\\${character}`);
+
+/**
+ * Whether a segment targets this fork unambiguously.
+ *
+ * Three accepted forms, because `gh` has three:
+ *   --repo <owner/name>   the long flag
+ *   -R <owner/name>       gh's documented alias for it
+ *   .../<owner/name>/...  a literal path, the only way `gh api` can say it
+ *
+ * `gh api` is the reason the third form exists: it takes no --repo flag, so
+ * requiring one would block every legitimate API write. What stays blocked is
+ * the placeholder form (`repos/{owner}/{repo}/...`), which resolves through the
+ * same default-repo mechanism that opened a PR in the parent's repo.
+ */
 function namesOwnRepo(text) {
-  return new RegExp(`--repo(?:=|\\s+)['"]?${OWN_REPO.replace('/', '\\/')}['"]?`, 'i').test(text);
+  // `(?![\w-])` rather than `\b`: a word boundary matches before a hyphen, so
+  // `\b` would accept the lookalike repo `Furls-Digital/frontrunner-evil`.
+  if (new RegExp(`(?:--repo|-R)(?:=|\\s+)['"]?${OWN_REPO_PATTERN}(?![\\w.-])`, 'i').test(text)) return true;
+  // Literal path form, accepted only for `gh api` — everywhere else a flag is
+  // available, so accepting a bare mention would let a PR title satisfy this.
+  if (!/^\s*gh\s+api\b/i.test(text)) return false;
+  return new RegExp(`(?:^|[\\s/'"])${OWN_REPO_PATTERN}(?:$|[\\s/'"?])`, 'i').test(text);
 }
 
 /**
@@ -188,6 +209,17 @@ function selfTest() {
     ['npm test && gh pr create --title x', true],
     [`gh pr create --repo ${OWN_REPO} --title x`, false],
     [`gh pr merge 19 --repo ${OWN_REPO} --squash`, false],
+    // gh's own alias for --repo, and the api path form (gh api has no --repo).
+    [`gh pr create -R ${OWN_REPO} --title x`, false],
+    [`gh api -X POST repos/${OWN_REPO}/issues`, false],
+    // The placeholder resolves through the same default-repo mechanism that
+    // caused the incident, so it is not a way of naming this fork.
+    ['gh api -X POST repos/{owner}/{repo}/issues', true],
+    // Lookalike repos must not satisfy the requirement.
+    [`gh pr create --repo ${OWN_REPO}-evil --title x`, true],
+    [`gh pr create --repo ${OWN_REPO}.evil --title x`, true],
+    // A bare mention in prose is not a target.
+    [`gh pr create --title "port to ${OWN_REPO}"`, true],
     ['gh pr view 2413 --repo santifer/career-ops --json state', false],
     ['gh pr list --repo santifer/career-ops', false],
     ['gh pr checks 19', false],

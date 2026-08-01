@@ -71,6 +71,29 @@ test('writes that name this fork explicitly are allowed', () => {
   }
 });
 
+test('the fork can be named the three ways gh actually accepts', () => {
+  // Fail-closed is right, but only if the closed door has a handle. gh takes
+  // --repo, its -R alias, and — for `gh api`, which has no repo flag at all —
+  // a literal path. Blocking any of these would make the guard unusable and
+  // the first person to hit it would reach for a way around it.
+  assert.equal(blockReason(`gh pr create -R ${OWN_REPO} --title x`), null);
+  assert.equal(blockReason(`gh pr create -R=${OWN_REPO} --title x`), null);
+  assert.equal(blockReason(`gh api -X POST repos/${OWN_REPO}/issues`), null);
+  assert.equal(blockReason(`gh api --method PATCH repos/${OWN_REPO}/pulls/19`), null);
+});
+
+test('naming the fork must be unambiguous — placeholders and lookalikes do not count', () => {
+  // gh resolves {owner}/{repo} through the same default-repo mechanism that
+  // opened a PR in the parent's repo, so it is not a way of naming this fork.
+  assert.ok(blockReason('gh api -X POST repos/{owner}/{repo}/issues'));
+  assert.ok(blockReason(`gh pr create --repo ${OWN_REPO}-evil --title x`), 'hyphen suffix must not satisfy the check');
+  assert.ok(blockReason(`gh pr create --repo ${OWN_REPO}.evil --title x`), 'dot suffix must not satisfy the check');
+  assert.ok(blockReason(`gh pr create --repo ${OWN_REPO}X --title x`));
+  assert.ok(blockReason(`gh api -X POST repos/${OWN_REPO}-evil/issues`));
+  // A mention in prose is not a target: the flag has to carry it.
+  assert.ok(blockReason(`gh pr create --title "port to ${OWN_REPO}"`));
+});
+
 test('read-only upstream review is untouched — it is why the remote exists', () => {
   for (const command of [
     'git fetch upstream',
