@@ -10,7 +10,7 @@
   },
   "tokens": {
     "input": {
-      "legacy": 285582,
+      "legacy": 285534,
       "frontrunner": 21441,
       "reductionPct": 92.5
     },
@@ -29,7 +29,7 @@
     "count": 0,
     "roles": []
   },
-  "wallTimeMs": 1.83,
+  "wallTimeMs": 1.777,
   "calibration": {
     "corpus": {
       "roles": 105,

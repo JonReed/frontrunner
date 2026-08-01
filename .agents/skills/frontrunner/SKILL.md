@@ -18,12 +18,12 @@ frontrunner is a multi-CLI job-search command center. The routing below is share
 
 ## Invocation Notes
 
-- CLIs with slash-command registration can expose this router as `/frontrunner`.
-- Interactive Codex sessions use `codex` in the repo root. Slash commands are not guaranteed in Codex, so ask Codex to run the same mode by name if `/frontrunner` is unavailable.
-- Headless Codex workers use `codex exec "prompt"`.
-- The routing semantics below stay the same regardless of whether the entrypoint is a slash command or a natural-language prompt.
+- Claude Code exposes this router as `/frontrunner`.
+- The routing semantics stay the same whether the entrypoint is a slash command
+  or a natural-language prompt, so a host without slash commands can ask for a
+  mode by name.
 
-Codex prompt examples that map to the same router semantics:
+Prompt equivalents, for any host without slash-command registration:
 
 ```text
 Evaluate this JD with frontrunner auto-pipeline: https://company.com/jobs/123
@@ -101,9 +101,9 @@ Inject this directive after loading the mode instructions and before producing a
 
 ## Discovery Mode (no arguments)
 
-If your CLI supports `/frontrunner`, show this menu. In Codex, surface the same options in plain text and map the requested mode the same way.
+If your CLI supports `/frontrunner`, show this menu. Otherwise surface the same options in plain text and map the requested mode the same way.
 
-Concrete equivalents for Codex prompt-driven sessions:
+Concrete equivalents for prompt-driven sessions:
 
 ```text
 /frontrunner {JD}           ↔ "Evaluate this JD with frontrunner auto-pipeline: {JD or URL}"

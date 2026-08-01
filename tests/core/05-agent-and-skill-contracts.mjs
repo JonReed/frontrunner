@@ -152,42 +152,22 @@ for (const link of symlinks) {
   }
 }
 
+// The router must work for a host without slash commands — that is the part
+// worth asserting. Naming a specific unsupported host is not.
 if (
-  /Codex/i.test(canonicalContent ?? '') &&
-  /`codex`/.test(canonicalContent ?? '') &&
-  /`codex exec/.test(canonicalContent ?? '') &&
   /prompt/i.test(canonicalContent ?? '') &&
   /\/frontrunner/.test(canonicalContent ?? '')
 ) {
-  pass('frontrunner skill router documents the Codex invocation model');
+  pass('frontrunner skill router documents both slash-command and prompt invocation');
 } else {
-  fail('frontrunner skill router is missing Codex invocation guidance');
+  fail('frontrunner skill router is missing prompt-based invocation guidance');
 }
 
-console.log('\n12c. Codex documentation guidance');
+// The README no longer teaches Codex usage, and no test should require it to.
+// Codex is not a supported host: the local UI has no Codex backend, so a
+// ChatGPT subscriber would have to work from a terminal — the audience this
+// product is not for. When that backend exists, the documentation follows it.
 
-const readmeDoc = readFile('README.md');
-if (
-  /CODEX\.md/.test(readmeDoc) &&
-  /codex exec/.test(readmeDoc) &&
-  /Codex/i.test(readmeDoc) &&
-  /(slash commands?.*not guaranteed|plain language|prompt)/i.test(readmeDoc)
-) {
-  pass('README documents CODEX.md and Codex interactive/headless usage');
-} else {
-  fail('README is missing required Codex usage guidance');
-}
-
-const setupDoc = readFile('docs/SETUP.md');
-if (
-  /codex exec/.test(setupDoc) &&
-  /Codex/i.test(setupDoc) &&
-  /(slash commands?.*not guaranteed|plain language|prompt)/i.test(setupDoc)
-) {
-  pass('docs/SETUP.md explains the Codex invocation model');
-} else {
-  fail('docs/SETUP.md is missing Codex invocation guidance');
-}
 
 const agentsDoc = readFile('AGENTS.md');
 if (

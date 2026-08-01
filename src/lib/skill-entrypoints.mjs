@@ -29,9 +29,6 @@ export const RETIRED_SKILL_ENTRYPOINTS = [
   `.agents/skills/${inheritedSkillName}/SKILL.md`,
   `.claude/skills/${inheritedSkillName}/SKILL.md`,
   `.antigravitycli/skills/${inheritedSkillName}/SKILL.md`,
-  // Frontrunner supports Claude. These stay listed so an existing install has
-  // its stale copies cleaned up on update, not because the host is coming back.
-  '.antigravitycli/skills/frontrunner/SKILL.md',
 ];
 
 function repoPath(root, path) {

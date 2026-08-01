@@ -21,7 +21,7 @@
   <a href="https://github.com/Furls-Digital/frontrunner/issues">Issues</a>
 </p>
 
-Frontrunner works through Claude Code or Codex, using the AI subscription you
+Frontrunner works through Claude Code, using the Claude subscription you
 already have to manage the whole search. It finds roles, clears away obvious
 mismatches, evaluates the strongest possibilities against your real experience,
 and keeps your applications and documents together on your computer.
@@ -83,7 +83,7 @@ The checked-in 8-role, 3-board fixture currently produces:
 | What was measured | inherited flow | Frontrunner | Result |
 |---|---:|---:|---:|
 | Separate job-listing lookups | 8 | 3 | 62.5% fewer |
-| Approximate AI input needed | 285,582 | 21,441 | 92.5% less |
+| Approximate AI input needed | 285,534 | 21,441 | 92.5% less |
 | Approximate AI output needed | 17,125 | 3,123 | 81.8% less |
 | Roles kept for AI review | 8 | 8 | All 8 kept |
 | Promising roles filtered out | — | 0 | None |
@@ -102,8 +102,7 @@ against the scored corpus.
 
 ## Get started
 
-The easiest route is to open Claude Code or Codex and paste the instruction
-below. It is the same on macOS, Linux and Windows: the agent detects the
+The easiest route is to open Claude Code and paste the instruction below. It is the same on macOS, Linux and Windows: the agent detects the
 operating system, checks the prerequisites, explains any permission request,
 and completes the supported setup.
 
@@ -129,7 +128,7 @@ Frontrunner never fills a missing field with example-person data. The final
 screen separates required, recommended and optional gaps, and the profile page
 keeps those gaps visible after setup. Personal and generated files are stored
 beneath the ignored `workspace/` directory. Model-backed actions send the
-relevant bounded context to the provider used by your chosen agent. The local
+relevant bounded context to Claude through your own subscription. The local
 UI introduces this boundary during onboarding: every allowance-spending action
 uses the same violet sparkle button. Its optional first AI action says plainly
 that the reviewed CV text will be sent to Claude through the user's connected
@@ -173,11 +172,6 @@ Scan for roles that fit my profile.
 Evaluate this role for me: https://example.com/job
 ```
 
-With Codex, use those plain-language prompts in an interactive `codex` session;
-slash commands are not guaranteed. For a headless one-shot run, use
-`codex exec "Scan for roles that fit my profile."`. See
-[`CODEX.md`](CODEX.md) for the complete Codex workflow.
-
 Run the complete backend workflow directly with `npm run pipeline`, or run all
 zero-token stages without evaluation using `npm run pipeline:prepare`.
 
@@ -207,7 +201,7 @@ boundaries.
 | If you want to… | Read |
 |---|---|
 | Install and complete first-run setup | [Setup guide](docs/SETUP.md) |
-| Change roles, filters, providers, or output | [Customization](docs/CUSTOMIZATION.md) |
+| Change roles, filters, or output | [Customization](docs/CUSTOMIZATION.md) |
 | Understand how the system fits together | [Architecture](docs/ARCHITECTURE.md) |
 | Review local UI operation boundaries | [Application service](docs/APPLICATION_SERVICE.md) |
 | Automate recurring scans | [Automation](docs/AUTOMATION.md) |

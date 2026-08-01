@@ -515,19 +515,13 @@ Options:
   const engine = args.includes('--prepare-only') ? 'none' : argValue(args, '--engine', 'claude');
   /*
     Frontrunner ships Claude support only. `none` stays because it is the
-    zero-token path, not a provider. `batch` stays accepted-and-warned rather
-    than rejected: it appears in older saved commands and scheduled jobs, and
-    failing those outright would break a running search to make a naming point.
-    The removed providers (openrouter/openai/gemini) fail loudly instead — a
-    silent downgrade to a different model is worse than a clear error.
+    zero-token path, not a provider. Anything else fails loudly: a silent
+    downgrade to a different model is worse than a clear error.
   */
-  if (!['claude', 'batch', 'none'].includes(engine)) {
+  if (!['claude', 'none'].includes(engine)) {
     throw new Error(
       `unsupported engine: ${engine}. Frontrunner evaluates with Claude; use --engine claude or --prepare-only.`,
     );
-  }
-  if (engine === 'batch') {
-    console.warn('Warning: --engine batch is deprecated; using the tool-less Claude evaluator.');
   }
   const startedAt = now();
   const runId = resolvePipelineRunId({ applicationRunId, runIdFactory });
