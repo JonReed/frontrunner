@@ -1,8 +1,8 @@
 {
   "name": "frontrunner",
   "metadata": {
-    "description": "AI job search command center — evaluate offers, tailor CVs, scan portals, track applications",
-    "version": "1.23.0"
+    "description": "AI job search command center \u2014 evaluate offers, tailor CVs, scan portals, track applications",
+    "version": "0.1.0"
   },
   "owner": {
     "name": "JonReed",
@@ -12,9 +12,9 @@
     {
       "name": "frontrunner",
       "source": "./",
-      "description": "AI job search pipeline — evaluate offers, tailor CVs, scan portals, track applications",
+      "description": "AI job search pipeline \u2014 evaluate offers, tailor CVs, scan portals, track applications",
       "category": "productivity",
-      "version": "1.23.0"
+      "version": "0.1.0"
     }
   ]
 }

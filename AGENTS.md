@@ -264,6 +264,24 @@ Auto-memory at `~/.claude/projects/.../memory/` is for **behavioural steering on
 
 Rules belong in files the harness reads automatically — `CLAUDE.md`, `CODEX.md`, `AGENTS.md`, `modes/*.md`, `MEMORY.md`. Do not create sidecar documentation that requires manual loading. Reinforcement-without-enforcement decays.
 
+## Versioning
+
+Frontrunner's version is its own. It is **not** derived from the parent
+project, whose numbering this fork inherited and has now left behind.
+
+- `VERSION` is the single source of truth. `package.json`, `ui/package.json`,
+  `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json` and
+  `.github/plugin/plugin.json` must all match it.
+- The current series is **0.x — pre-1.0, with no releases published**. The fork
+  arrived carrying `1.23.0`, which claimed 23 minor releases that never
+  happened here, alongside 29 tags named after the parent. Both are gone.
+- Reserve `1.0.0` for the first version a non-technical user can install and
+  complete a search with, unattended. Until then the minor digit moves on
+  user-visible change and the patch digit on fixes.
+- No release automation runs in this repository. If releases are introduced
+  later, `VERSION` stays authoritative — `update-system.mjs` reads it first and
+  consults GitHub Releases only as a secondary source.
+
 ## Update Check
 
 On the first message of each session, run silently:

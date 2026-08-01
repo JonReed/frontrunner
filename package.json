@@ -1,6 +1,6 @@
 {
   "name": "frontrunner",
-  "version": "1.23.0",
+  "version": "0.1.0",
   "description": "AI job search that filters deterministically first and spends the model only where judgement is needed. Fork of career-ops.",
   "imports": {
     "#paths": "./src/paths.mjs"
