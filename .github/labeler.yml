@@ -45,8 +45,6 @@
           - package-lock.json
           - ui/package.json
           - ui/package-lock.json
-          - web/package.json
-          - web/package-lock.json
 
 "⚙️ ci":
   - changed-files:

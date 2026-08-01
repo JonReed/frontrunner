@@ -126,7 +126,9 @@ test('security checks cannot be silently downgraded and installs stay reproducib
 test('CodeQL scans all reachable product code and excludes only non-product trees', () => {
   const configPath = join(ROOT, '.github', 'codeql', 'codeql-config.yml');
   const config = yaml.load(readFileSync(configPath, 'utf8'), { schema: yaml.JSON_SCHEMA });
-  assert.deepEqual(config?.['paths-ignore'], ['tests/**', 'web/**']);
+  // Only tests are excluded now: they construct hostile input deliberately.
+  // The archived web tree that shared this list has been deleted.
+  assert.deepEqual(config?.['paths-ignore'], ['tests/**']);
 
   const { document } = loadWorkflow('codeql.yml');
   const init = document.jobs?.analyze?.steps?.find(step =>
@@ -137,7 +139,7 @@ test('CodeQL scans all reachable product code and excludes only non-product tree
 
 test('CI package lockfiles exist and are explicitly versionable', () => {
   const gitignore = readFileSync(join(ROOT, '.gitignore'), 'utf8');
-  for (const relativePath of ['package-lock.json', 'ui/package-lock.json', 'web/package-lock.json']) {
+  for (const relativePath of ['package-lock.json', 'ui/package-lock.json']) {
     assert.equal(existsSync(join(ROOT, relativePath)), true, `${relativePath} must exist`);
     assert.match(
       gitignore,

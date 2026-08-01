@@ -359,7 +359,6 @@ const SYSTEM_PATHS = [
   'package.json',
   'package-lock.json',
   'ui/',
-  'web/',
   'src/cv/build-cv-latex.mjs',
   'src/cv/build-cv-html.mjs',
   'src/cv/cv-sections-core.mjs',

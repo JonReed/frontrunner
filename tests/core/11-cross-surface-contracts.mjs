@@ -46,19 +46,21 @@ try {
     fail(`modes/oferta.md lost report block(s): ${missingBlocks.join(', ')} — BREAKING for the web report view`);
   }
 
-  // 55.5 cross-check: the web parser still speaks the same column names
-  const webParserPath = join(ROOT, 'web', 'src', 'lib', 'frontrunner.ts');
-  if (existsSync(webParserPath)) {
-    const webSrc = readFileSync(webParserPath, 'utf-8');
+  // 55.5 cross-check: the interface still speaks the same column names.
+  // Retargeted from the deleted web/ tree to ui/, which is the interface that
+  // actually reads the tracker — the old check guarded a parser with no runtime.
+  const uiParserPath = join(ROOT, 'ui', 'src', 'lib', 'roles.ts');
+  if (existsSync(uiParserPath)) {
+    const uiSrc = readFileSync(uiParserPath, 'utf-8');
     const ESSENTIAL_COLS = ['Company', 'Role', 'Score', 'Status'];
-    const missingCols = ESSENTIAL_COLS.filter((c) => !webSrc.toLowerCase().includes(c.toLowerCase()));
+    const missingCols = ESSENTIAL_COLS.filter((c) => !uiSrc.toLowerCase().includes(c.toLowerCase()));
     if (missingCols.length === 0) {
-      pass('web/src/lib/frontrunner.ts still references the essential tracker columns');
+      pass('ui/src/lib/roles.ts still references the essential tracker columns');
     } else {
-      fail(`web parser no longer references column(s): ${missingCols.join(', ')} — core and web drifted`);
+      fail(`ui parser no longer references column(s): ${missingCols.join(', ')} — core and ui drifted`);
     }
   } else {
-    warn('web/src/lib/frontrunner.ts not found — web layer moved? update contract freeze section');
+    fail('ui/src/lib/roles.ts not found — the interface tracker reader moved');
   }
 } catch (e) {
   fail(`core↔web contract freeze section crashed: ${e.message}`);
