@@ -39,7 +39,6 @@ test('the shipped command and skill identity is Frontrunner', () => {
   assert.match(skill, /\/frontrunner pipeline\b/);
   assert.ok(trackedFiles.includes(skillPath));
   assert.ok(trackedFiles.includes('.claude/skills/frontrunner/SKILL.md'));
-  assert.ok(trackedFiles.includes('.antigravitycli/skills/frontrunner/SKILL.md'));
 });
 
 test('the rename preserves truthful parent-project attribution', () => {
@@ -83,7 +82,7 @@ test('active files cannot restore the inherited command or identifiers', () => {
   const inheritedCommand = new RegExp(`(^|[^-A-Za-z0-9._~/\\\\])/${legacySlug}(?:-[A-Za-z0-9_-]+)?\\b`, 'm');
   const inheritedEnv = new RegExp(`\\b${legacyEnv}(?:_|\\b)`);
   const inheritedHelper = new RegExp(`\\b${legacySlug.replace('-', '')}`, 'i');
-  const inheritedSkillPath = new RegExp(`(?:\\.agents|\\.claude|\\.antigravitycli)/skills/${legacySlug}\\b`);
+  const inheritedSkillPath = new RegExp(`(?:\\.agents|\\.claude)/skills/${legacySlug}\\b`);
   const inheritedManifestName = new RegExp(`(?:^name:\\s*|["']name["']\\s*:\\s*["'])${legacySlug}(?:$|["'])`, 'm');
   const inheritedPackageScope = new RegExp(`@${legacySlug}/`);
 

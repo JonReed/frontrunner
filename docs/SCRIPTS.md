@@ -38,9 +38,7 @@ contains only a few compatibility entry points. Common commands are exposed via
 | `npm run find` | `find.mjs` | Resolve a report#/tracker#/company query to its full pipeline identity |
 | `npm run invite-match` | `src/tracker/invite-match.mjs` | Fuzzy-match a pasted interview-invite email against `workspace/applications/tracker.md` |
 | `npm run paste-reply` | `src/tracker/paste-reply.mjs` | Manual/no-Gmail input into the `src/tracker/reply-watch.mjs` classification pipeline |
-| `npm run openai:tailor` | `src/evaluate/openai-tailor.mjs` | Tailor via any OpenAI-compatible endpoint; the model returns bounded versioned JSON, then code injects trusted identity, renders, fact-checks and atomically publishes HTML |
 | `npm run application:artifacts -- --report N --company NAME --role ROLE [--version N] [--init]` | `src/cv/application-artifacts.mjs` | Resolve or initialize one contained, versioned application-document bundle under `workspace/documents/applications/`; no output-root override |
-| `npm run or` | `src/evaluate/openrouter-runner.mjs` | OpenRouter evaluate/apply helper using fixed brokered endpoints, bounded responses, canonical scanning and a crash-safe concurrent model blacklist |
 | `npm run reconcile` | `src/tracker/reconcile-pipeline.mjs` | Remove batch-evaluated offers under the shared pipeline lock with an atomic backup/replacement |
 | `npm run cover-letter` | `src/cv/generate-cover-letter.mjs` | Render a cover-letter JSON payload to PDF |
 | `npm run verify:portals` | `src/scan/verify-portals.mjs` | Probe ATS endpoints to confirm workspace/search/portals.yml slugs resolve (network) |
@@ -49,9 +47,6 @@ contains only a few compatibility entry points. Common commands are exposed via
 | `npm run freshness` | `src/analysis/check-table-freshness.mjs` | Check dated jurisdiction tables for expired changes and overdue review |
 | `npm run digest` | `src/analysis/weekly-interview-digest.mjs` | Summarize interview sessions for the current ISO week or an explicit date range |
 | `npm run reposts` | `src/analysis/detect-reposts.mjs` | Flag re-listed (ghost) postings from scan history |
-| `npm run gemini:eval` | `src/evaluate/gemini-eval.mjs` | Evaluate a JD with Google Gemini (free-tier alternative) |
-| `npm run ollama:eval` | `src/evaluate/ollama-eval.mjs` | Evaluate a JD with a local Ollama model |
-| `npm run openai:eval` | `src/evaluate/openai-eval.mjs` | Evaluate a JD via any OpenAI-compatible endpoint |
 | `npm run claude:eval` | `src/evaluate/claude-eval.mjs` | Evaluate a cached JD through Claude with zero tools and schema-only output |
 | `npm run star` | `src/evaluate/match-star.mjs` | Match a behavioural question to your best STAR story (zero-LLM) |
 | `npm run archive` | `src/scan/archive-posting.mjs` | Save a live job posting through the bounded atomic PDF publisher before it disappears |
@@ -624,20 +619,6 @@ anything; sample employer messages are never inserted into user state.
 
 ---
 
-## or (OpenRouter runner)
-
-Runs the pipeline on OpenRouter free models with automatic fallback — no
-Claude Code CLI required.
-
-```bash
-npm run or:scan                 # scan configured companies for new listings
-npm run or:eval -- <url>        # evaluate a job by URL (no URL: paste interactively)
-npm run or:pipeline             # canonical pipeline with OpenRouter evaluation
-npm run or:apply                # application assistance
-```
-
----
-
 ## reconcile
 
 Syncs the `workspace/search/pipeline.md` "Pendientes" section with `workspace/.state/batch-state.tsv`.
@@ -728,26 +709,6 @@ within a 90-day window — a strong ghost-job / re-listing signal.
 ```bash
 npm run reposts                 # JSON
 node src/analysis/detect-reposts.mjs --summary
-```
-
----
-
-## gemini:eval / ollama:eval / openai:eval
-
-Standalone evaluators — run the same evaluation logic
-(`modes/oferta.md` + `modes/_shared.md` + `workspace/profile/cv.md`) without an interactive AI
-CLI:
-
-- `gemini:eval` — Google Gemini free tier (`GEMINI_API_KEY` in `.env`)
-- `ollama:eval` — fully local and private via Ollama
-- `openai:eval` — any OpenAI-compatible endpoint (OpenAI, OpenRouter, Groq,
-  DeepSeek, LM Studio, llama.cpp, vLLM, ...)
-
-```bash
-npm run gemini:eval -- "We are looking for a Senior AI Engineer..."
-node src/evaluate/gemini-eval.mjs --file ./workspace/jobs/descriptions/my-job.txt
-npm run ollama:eval -- "JD text"
-npm run openai:eval -- "JD text"
 ```
 
 ---

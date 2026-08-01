@@ -20,14 +20,13 @@ test('API prompt budgeting counts a JD without duplicating it into the cacheable
   assert.ok(!contextBody.includes(marker));
 });
 
-test('OpenAI and Gemini evaluators keep the per-role JD out of their system prompt', () => {
-  for (const file of ['src/evaluate/openai-eval.mjs', 'src/evaluate/gemini-eval.mjs']) {
-    const source = readFileSync(join(ROOT, file), 'utf8');
-    const promptBuild = source.match(/const systemPrompt = buildScoringPrompt\(\{([\s\S]*?)\n\}\);/)?.[1] ?? '';
-    assert.ok(promptBuild, `${file}: scoring prompt construction not found`);
-    assert.doesNotMatch(promptBuild, /\bjdText\b/, `${file}: JD leaked into cacheable system prompt`);
-    assert.match(source, /content: jobDocument\.prompt|text: jobDocument\.prompt/, `${file}: framed JD is not a separate user turn`);
-  }
+test('the Claude evaluator keeps the per-role JD out of its cacheable system prompt', () => {
+  // A JD inside the system prompt defeats prompt caching and re-bills the
+  // static context on every role.
+  const source = readFileSync(join(ROOT, 'src/evaluate/claude-eval.mjs'), 'utf8');
+  const promptBuild = source.match(/buildScoringPrompt\(\{([\s\S]*?)\n\s*\}\)/)?.[1] ?? '';
+  assert.ok(promptBuild, 'scoring prompt construction not found');
+  assert.doesNotMatch(promptBuild, /\bjdText\b/, 'JD leaked into the cacheable system prompt');
 });
 
 test('batch does not duplicate personalization into a temporary worker prompt', () => {

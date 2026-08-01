@@ -172,12 +172,9 @@ test('malformed, injected, skipped and absent child results fail closed per role
 });
 
 test('every pipeline evaluator emits the structured accounting contract', () => {
-  for (const file of [
-    'claude-eval.mjs',
-    'openai-eval.mjs',
-    'gemini-eval.mjs',
-    'openrouter-runner.mjs',
-  ]) {
+  // Claude is the only shipped evaluator (see AGENTS.md). The loop stays a
+  // loop so adding a second host later restores the coverage by one line.
+  for (const file of ['claude-eval.mjs']) {
     const source = readFileSync(join(ROOT, 'src', 'evaluate', file), 'utf8');
     assert.match(source, /emitEvaluationExecutionResult/u, file);
     assert.match(source, /evaluationExecutionResult/u, file);

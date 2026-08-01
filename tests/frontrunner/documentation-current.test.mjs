@@ -77,25 +77,6 @@ test('maintainer documentation cannot revive upstream governance, support, or ar
   assert.match(read('docs/CONTRIBUTORS.md'), /historical credit/iu);
 });
 
-test('supported-host documentation distinguishes tested CLIs from compatibility paths', () => {
-  for (const file of [
-    'AGENTS.md',
-    'README.md',
-    'SUPPORT.md',
-    'docs/ARCHITECTURE.md',
-    'docs/FAQ.md',
-    'docs/SETUP.md',
-    'docs/SUPPORTED_CLIS.md',
-  ]) {
-    const source = read(file);
-    assert.match(source, /Claude Code/iu, file);
-    assert.match(source, /Codex/iu, file);
-    assert.match(source, /Antigravity CLI/iu, file);
-    assert.match(source, /tested/iu, file);
-    assert.match(source, /compatibility/iu, file);
-  }
-});
-
 test('threat model labels skipped-permission and raw-HTML findings as historical, not current gaps', () => {
   const threatModel = read('docs/frontrunner-threat-model.md');
   const historicalEntry = threatModel.indexOf(

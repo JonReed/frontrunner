@@ -38,9 +38,9 @@ Surface the reason in `language.output`, inspect the cached JD directly, and do
 not proceed until its explicit requirements have been identified. An empty JD
 must be repaired at the ingestion boundary instead of being tailored around.
 
-For an OpenAI-compatible provider use `src/evaluate/openai-tailor.mjs`; it uses
-the same bounded tailoring contract and deterministic renderer. The schema and
-template material below document that code-owned boundary for maintainers.
+Tailoring runs through `src/cv/claude-tailor.mjs` against the bounded tailoring
+contract and the deterministic renderer. The schema and template material below
+document that code-owned boundary for maintainers.
 They are not instructions for an interactive agent to reproduce it.
 
 ## ATS Rules (clean parsing)

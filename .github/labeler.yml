@@ -12,7 +12,6 @@
           - modes/*.md
           - modes/**/*.md
           - .claude/skills/**
-          - .antigravitycli/skills/**
 
 "🔧 scripts":
   - changed-files:

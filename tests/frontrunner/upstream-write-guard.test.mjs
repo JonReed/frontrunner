@@ -145,8 +145,7 @@ test('the Claude Code PreToolUse hook is wired for Bash', () => {
 test('every host entrypoint states the rule, not just AGENTS.md', () => {
   // The failure this prevents is an agent acting before it has read AGENTS.md,
   // so a bare `@AGENTS.md` import is not enough — the rule has to be at the
-  // entry point itself. GEMINI.md is excluded on purpose: it is a deliberate
-  // no-op that exists to stop Antigravity loading the instructions twice.
+  // entry point itself. CODEX.md is kept because ChatGPT is the next host.
   for (const entrypoint of ['CLAUDE.md', 'CODEX.md']) {
     const content = readFileSync(join(ROOT, entrypoint), 'utf-8');
     assert.match(content, /NOTHING GOES UPSTREAM/, `${entrypoint} must carry the rule heading`);

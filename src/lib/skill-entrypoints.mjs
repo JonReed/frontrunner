@@ -22,10 +22,6 @@ export const SKILL_ENTRYPOINTS = [
     path: '.claude/skills/frontrunner/SKILL.md',
     pointer: '../../../.agents/skills/frontrunner/SKILL.md',
   },
-  {
-    path: '.antigravitycli/skills/frontrunner/SKILL.md',
-    pointer: '../../../.agents/skills/frontrunner/SKILL.md',
-  },
 ];
 
 const inheritedSkillName = ['career', 'ops'].join('-');

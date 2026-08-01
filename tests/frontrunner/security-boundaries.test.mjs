@@ -204,15 +204,11 @@ test('core providers cannot bypass the central HTTP broker or spawn commands', (
 
 test('CV tailoring excludes identity and local paths from model output', () => {
   const claude = readFileSync(join(ROOT, 'src', 'cv', 'claude-tailor.mjs'), 'utf8');
-  const openai = readFileSync(join(ROOT, 'src', 'evaluate', 'openai-tailor.mjs'), 'utf8');
   const contract = readFileSync(join(ROOT, 'src', 'cv', 'tailoring-contract.mjs'), 'utf8');
   assert.match(claude, /payload\.candidate\s*=\s*trustedCandidate\(profile\)/);
-  assert.match(openai, /payload\.candidate\s*=\s*trustedCandidate\(profile\)/);
   assert.doesNotMatch(contract, /required:\s*\[[^\]]*['"]candidate['"]/);
-  assert.doesNotMatch(`${claude}\n${openai}`, /payload\.experience\?\.\[0\]\?\.company/);
-  assert.doesNotMatch(openai, /Output ONLY raw HTML|tailoredHtml/);
+  assert.doesNotMatch(claude, /payload\.experience\?\.\[0\]\?\.company/);
   assert.match(claude, /replaceFileAtomic\(html,\s*readBoundedRegularFileSync\(renderedHtml/);
-  assert.match(openai, /replaceFileAtomic\(outputPath,\s*readBoundedRegularFileSync\(renderedFile/);
 });
 
 test('canonical modes keep hostile job content away from tool-capable agents', () => {

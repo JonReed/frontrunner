@@ -571,7 +571,9 @@ try {
   }
   rmSync(unsafeRangeTmp, { recursive: true, force: true });
 
-  const evaluatorSources = ['src\/evaluate\/ollama-eval.mjs', 'src\/evaluate\/openai-eval.mjs', 'src\/evaluate\/gemini-eval.mjs', 'src\/evaluate\/openrouter-runner.mjs']
+  // Claude is the only shipped evaluator (AGENTS.md). The check stays a list so
+  // a second host, when one is added, is covered by adding one entry.
+  const evaluatorSources = ['src\/evaluate\/claude-eval.mjs']
     .map(name => [name, readFile(name)]);
   const unmigratedEvaluators = evaluatorSources
     .filter(([, source]) => !/saveEvaluation\s*\(/.test(source)

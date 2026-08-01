@@ -1,9 +1,10 @@
 # Frontrunner
 
 A fork of [career-ops](https://github.com/santifer/career-ops). Same scoring
-rubric, same file formats, same providers. What differs: job descriptions are
-fetched in bulk by scripts rather than by the model, and roles that cannot fit
-are rejected before any model call.
+rubric, same file formats. What differs: job descriptions are fetched in bulk
+by scripts rather than by the model, roles that cannot fit are rejected before
+any model call, and the product targets someone who will never open a terminal
+— so it supports one AI host properly rather than several badly.
 
 ## Repository layout
 
@@ -210,7 +211,7 @@ Two layers — full list in `DATA_CONTRACT.md`:
 - **Private workspace (NEVER auto-updated):** all personal content, generated
   artifacts and mutable state live below `workspace/`; no exceptions and no
   tracked placeholders.
-- **System Layer (auto-updatable; DON'T put user data here):** `modes/_shared.md` and all other modes, `AGENTS.md`, `CLAUDE.md`, `CODEX.md`, `GEMINI.md`, `*.mjs` scripts, `templates/*`, `batch/*`
+- **System Layer (auto-updatable; DON'T put user data here):** `modes/_shared.md` and all other modes, `AGENTS.md`, `CLAUDE.md`, `CODEX.md`, `*.mjs` scripts, `templates/*`, `batch/*`
 - **Application trees:** `web/*` and `ui/*` are versioned interface code,
   contain no user data, and are updated from the official Frontrunner
   repository with the rest of the system layer. `ui/` is the only supported
@@ -258,12 +259,20 @@ If yes → `node update-system.mjs apply`. If no → `node update-system.mjs dis
 ## What is frontrunner
 
 AI-powered job search automation: pipeline tracking, offer evaluation, CV
-generation, portal scanning and batch processing. Claude Code, Codex and
-Antigravity CLI are the tested agent hosts. Other CLIs following the
-[open agent skill standard](https://agentskills.io) may work through the same
-mode files, but they are compatibility paths rather than supported
-configurations. Standalone API evaluators remain available for Gemini,
-OpenAI-compatible endpoints, OpenRouter and local Ollama.
+generation, portal scanning and batch processing.
+
+**Claude is the supported host.** The local UI spawns the `claude` CLI, and
+`--engine claude` is the only evaluator the pipeline ships. The OpenRouter,
+OpenAI, Gemini and Ollama evaluators were removed: four half-tested providers
+served nobody well, and an untested path fails in front of a user who cannot
+debug it. Supporting one host properly is the trade, and it is a deliberate MVP
+scope rather than a permanent ceiling — ChatGPT/Codex support is the intended
+next host, and it needs a UI backend to count, since a target user who has to
+open a terminal has not been served.
+
+Other CLIs following the [open agent skill standard](https://agentskills.io)
+may still work through the same mode files. That is a compatibility accident,
+not a promise.
 
 ### Codex invocation
 
@@ -301,9 +310,7 @@ OpenAI-compatible endpoints, OpenRouter and local Ollama.
 | `src/pipeline/run.mjs` | Canonical scan → cache → liveness → prefilter → evaluation orchestrator |
 | `src/evaluate/evaluation-gate.mjs` | Mandatory deterministic boundary before model calls |
 | `src/evaluate/scoring-contract.mjs` | Versioned model JSON contract + deterministic A–G report renderer |
-| `src/cv/tailoring-contract.mjs` | Shared versioned JSON contract for Claude/OpenAI CV tailoring; excludes identity and markup |
-| `src/evaluate/openrouter-client.mjs` | Fixed, brokered and bounded OpenRouter model transport |
-| `src/evaluate/model-blacklist.mjs` | Locked atomic failed-model blacklist shared across processes |
+| `src/cv/tailoring-contract.mjs` | Versioned JSON contract for Claude CV tailoring; excludes identity and markup |
 | `src/tracker/set-status.mjs` | Canonical tracker-row update: `node src/tracker/set-status.mjs <report#\|company> <State> [--note] [--force]` — strict states.yml validation, report-link mismatch guard, shared lock, atomic write |
 | `src/tracker/invite-match.mjs` | Fuzzy-match a pasted interview invite (company, date, req ID) against the tracker, ranking candidates when a company has multiple entries (JSON or `--summary`) |
 | `src/tracker/paste-reply.mjs` | Manual/no-Gmail input into reply-watch classification — bounds and normalizes a pasted/file email, then appends it to `workspace/applications/reply-candidates.json` with locked atomic replacement; never classifies or touches the tracker |
@@ -333,12 +340,18 @@ Output: `{"onboardingNeeded": <bool>, "missing": [...], "warnings": [...], "auto
 
 **If `onboardingNeeded` is true, enter onboarding mode.** Do NOT proceed with evaluations, scans, or any other mode until the basics are in place. Guide the user step by step:
 
-#### Step 0: Free Tier Check
+#### Step 0: Cost expectations
 
-Only if the user mentions cost, pricing, budget, or free alternatives:
-> "frontrunner works fully on Antigravity CLI's free tier — no API key or paid subscription needed. See [FREE_TIER.md](docs/FREE_TIER.md) for setup, daily limits, and batch tips."
+Only if the user mentions cost, pricing or budget:
+> "Frontrunner runs on your existing Claude subscription — there's no separate
+> API key or extra bill. Most of what it does (searching boards, checking a job
+> is still live, filtering roles that can't fit) costs nothing at all; only the
+> assessment of a role uses your Claude allowance. You can also run just the
+> free parts to see what a search turned up before spending anything."
 
-If the user is already on a paid plan (Claude Max, Google AI, etc.) or does not mention cost, skip this step silently.
+Do not offer a free tier. There isn't one: this product assumes a Claude
+subscription (ChatGPT next). Say that plainly rather than sending someone to
+install a second tool.
 
 #### Step 1: CV (required)
 If `workspace/profile/cv.md` is missing, ask:
@@ -592,19 +605,12 @@ and each of them is easy to erode one convenience at a time.
 
 ## Headless / Batch Mode
 
-Headless invocation examples follow. Claude Code, Codex and Antigravity CLI are
-the tested hosts; the remaining commands are best-effort compatibility
-examples, not support commitments.
+Headless invocation for the supported host. Other agent CLIs read the same mode
+files and will probably work, but that is compatibility, not support.
 
 | CLI | Command |
 |-----|---------|
 | Claude Code | `claude -p "prompt"` |
-| **OpenCode** | `opencode run "prompt"` |
-| Copilot CLI | `copilot -p "prompt"` |
-| Codex | `codex exec "prompt"` |
-| Qwen | `qwen -p "prompt"` |
-| Antigravity CLI | `agy -p "prompt"` |
-| Grok Build CLI | `grok -p "prompt"` |
 
 **Parallel fan-outs — reserve report numbers first.** Before spawning N parallel evaluators, reserve the range: `node src/tracker/reserve-report-num.mjs --count N` (prints e.g. `042-049`); hand each worker its own number. The allocator treats report files, sentinels, tracker row IDs, and tracker report links as occupied; each slot claim is individually atomic (on collision, claimed slots are released and the reservation restarts past it — permanent, harmless gaps). Release with `node src/tracker/reserve-report-num.mjs --release 042-049` when done; stale sentinels are GC'd after 4h, so reserve right before spawning. Never let parallel workers compute `max+1` themselves — that is the #749 race.
 

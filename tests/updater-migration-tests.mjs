@@ -82,9 +82,7 @@ const requiredSystemPaths = [
   'docs/examples/',
   'src/application/',
   'config/profile.example.yml',
-  '.env.example',
   '.claude-plugin/',
-  '.antigravitycli/skills/',
   'tests/tracker-columns-tests.mjs',
   'tests/updater-migration-tests.mjs',
   'SECURITY.md',
@@ -93,7 +91,6 @@ const requiredSystemPaths = [
 
 const requiredBootstrapPaths = [
   '.agents/',
-  '.antigravitycli/skills/',
   'providers/',
   'src/scan/liveness-browser.mjs',
   'src/tracker/role-matcher.mjs',

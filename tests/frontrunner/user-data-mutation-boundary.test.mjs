@@ -20,8 +20,6 @@ const APPROVED_RAW_MUTATORS = new Set([
   'src/cv/claude-cover.mjs', // private mkdtemp scratch directory
   'src/cv/claude-tailor.mjs', // private mkdtemp scratch directory
   'src/cv/generate-latex.mjs', // private mkdtemp compiler directory cleanup
-  'src/evaluate/eval-golden.mjs', // private golden-test fixture directory
-  'src/evaluate/openai-tailor.mjs', // private mkdtemp scratch directory
   'src/lib/file-lock.mjs', // canonical lock-directory implementation
   'src/lib/locked-file.mjs', // canonical protected mutation implementation
   'src/lib/root-paths.mjs', // explicit maintainer source-rewrite command

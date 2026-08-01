@@ -3,23 +3,8 @@
  */
 
 export const RATES = {
-  // OpenAI models
-  'gpt-4o-mini': { input: 0.150 / 1000000, output: 0.600 / 1000000 },
-  'gpt-4o': { input: 2.50 / 1000000, output: 10.00 / 1000000 },
-
-  // Gemini models (Developer API paid tier, USD per token; free tier is $0)
-  'gemini-3.6-flash': { input: 1.50 / 1000000, output: 7.50 / 1000000, cachedInput: 0.15 / 1000000 },
-  'gemini-3.5-flash': { input: 1.50 / 1000000, output: 9.00 / 1000000, cachedInput: 0.15 / 1000000 },
-  'gemini-2.5-flash': { input: 0.075 / 1000000, output: 0.300 / 1000000, cachedInput: 0.0375 / 1000000 },
-  'gemini-2.5-pro': { input: 1.25 / 1000000, output: 5.00 / 1000000, cachedInput: 0.625 / 1000000 },
-
-  // OpenRouter / DeepSeek models
-  'deepseek/deepseek-chat': { input: 0.14 / 1000000, output: 0.28 / 1000000 },
-  'deepseek-chat': { input: 0.14 / 1000000, output: 0.28 / 1000000 },
-  'deepseek/deepseek-reasoner': { input: 0.55 / 1000000, output: 2.19 / 1000000 },
-  'deepseek-reasoner': { input: 0.55 / 1000000, output: 2.19 / 1000000 },
-
-  // Anthropic / Claude models
+  // Claude models. Frontrunner evaluates with Claude; the OpenAI, Gemini,
+  // DeepSeek and OpenRouter rows went with their evaluators.
   'claude-3-5-sonnet': { input: 3.0 / 1000000, output: 15.0 / 1000000 },
   'claude-3-5-haiku': { input: 0.80 / 1000000, output: 4.00 / 1000000 },
   'claude-3-opus': { input: 15.00 / 1000000, output: 75.00 / 1000000 },
@@ -46,12 +31,6 @@ export function normalizeOpenAIUsage(usage) {
 }
 
 export function estimateCost(model, usage, provider) {
-  if (provider === 'ollama') return 0;
-  if (provider === 'openrouter' && !process.env.FRONTRUNNER_MODEL) {
-    // OpenRouter free rotation models are free
-    return 0;
-  }
-
   let rate = null;
   if (model) {
     rate = RATES[model];
@@ -65,13 +44,11 @@ export function estimateCost(model, usage, provider) {
   }
 
   if (!rate) {
-    if (provider === 'openai') {
-      rate = RATES['gpt-4o-mini'];
-    } else if (provider === 'gemini') {
-      rate = RATES['gemini-3.6-flash'];
-    } else if (provider === 'claude' || provider === 'anthropic') {
+    if (provider === 'claude' || provider === 'anthropic') {
       rate = RATES['claude-3-5-sonnet'];
     } else {
+      // An unknown provider gets no invented price. null means "unknown",
+      // which a caller can report honestly; a guessed number cannot be.
       return null;
     }
   }

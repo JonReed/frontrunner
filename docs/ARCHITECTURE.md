@@ -16,10 +16,9 @@ Frontrunner is built on three commitments that every design decision serves:
 - **Local-first.** Orchestration and persistent files live on your machine; the
   core tool has no Frontrunner account or hosted application server.
   Model-backed actions send bounded task context to the provider you configure.
-- **Model-agnostic backend.** Scoring and tailoring use versioned contracts
-  across supported model transports. Claude Code, Codex and Antigravity CLI are
-  the tested agent hosts; other CLIs may consume the same mode files but are
-  compatibility paths rather than supported configurations.
+- **Contract-bounded model calls.** Scoring and tailoring use versioned
+  contracts, so the model returns a closed schema and code owns every path,
+  write and render. Claude is the supported host; ChatGPT is the next one.
 - **Human-in-the-loop.** The tool prepares and evaluates; the human reviews and clicks. It never submits applications on your behalf.
 
 ## Deterministic code and model boundary
@@ -94,7 +93,7 @@ intentionally unsupported. Results land in `workspace/search/pipeline.md`.
 ### Evaluation — `modes/oferta.md` + `modes/_shared.md`
 The heart of the tool. `oferta.md` defines the A–G evaluation blocks; `_shared.md` defines the 1–5 scoring system, archetype detection, posting-legitimacy signals, and global rules. The AI reads these plus your `workspace/profile/cv.md` and produces a structured report.
 
-**Standalone evaluators** let you run the same scoring without an interactive CLI, against cheaper/local models: `src/evaluate/gemini-eval.mjs` (Google free tier), `src/evaluate/ollama-eval.mjs` (fully local), and `src/evaluate/openai-eval.mjs` (any OpenAI-compatible endpoint).
+**Evaluation** runs through `src/evaluate/claude-eval.mjs`, a tool-less worker that returns the versioned scoring contract.
 
 OpenRouter uses `src/evaluate/openrouter-client.mjs`: fixed service endpoints,
 the shared DNS-pinned/size-bounded HTTP broker, and a closed response shape.
@@ -316,7 +315,7 @@ up, fetches, re-execs the target updater, then checks out only `SYSTEM_PATHS`.
 `BOOTSTRAP_PATHS` covers very old installs.
 
 ### Multi-CLI entry files
-Each CLI reads its own entry file, all of which point at the canonical `AGENTS.md`: `CLAUDE.md` (full), thin `@AGENTS.md` redirect wrappers `CODEX.md` and `GEMINI.md`, plus the `.agents/skills/` skill entrypoints — canonical, with copies materialized for Claude Code and Antigravity by `src/lib/skill-entrypoints.mjs`. This is the [open agent skill standard](https://agentskills.io).
+Each host reads its own entry file, both pointing at the canonical `AGENTS.md`: `CLAUDE.md` and the thin `@AGENTS.md` wrapper `CODEX.md`, plus the `.agents/skills/` skill entrypoints — canonical, with a copy materialized for Claude Code by `src/lib/skill-entrypoints.mjs`. This is the [open agent skill standard](https://agentskills.io).
 
 ### User interfaces
 
@@ -452,7 +451,7 @@ batch-input.tsv → mandatory prefilter → batch-input.filtered.tsv
 
 The canonical default is the tool-less Claude evaluator. Other supported
 evaluators are selected through
-`src/pipeline/run.mjs --engine openrouter|openai|gemini`.
+`src/pipeline/run.mjs --engine claude` (or `--prepare-only` for the zero-token stages).
 The legacy shell state runner calls the same tool-less evaluator and fails
 closed if either the mandatory prefilter or a cached JD is absent. Code produces:
 - Report .md

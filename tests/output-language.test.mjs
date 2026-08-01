@@ -34,31 +34,10 @@ check(directive.includes('Write all human-facing output in fr'), 'directive name
 check(directive.includes('regardless of the language of these instructions or the job description'), 'directive overrides instruction and JD language');
 check(directive.includes('explain them in fr when needed'), 'directive preserves and explains market terms');
 
-const engines = [
-  'src/evaluate/ollama-eval.mjs',
-  'src/evaluate/openai-eval.mjs',
-  'src/evaluate/gemini-eval.mjs',
-  'src/evaluate/openrouter-runner.mjs',
-];
-for (const engine of engines) {
-  const source = readFileSync(join(ROOT, engine), 'utf-8');
-  check(
-    source.includes('parseOutputLanguage')
-      && source.includes('outputLanguageInstruction')
-      && source.includes('outputLanguageInstruction(parseOutputLanguage(')
-      && source.includes('languageInstruction'),
-    `${engine} injects the shared output-language instruction`,
-  );
-}
-
-const { buildSystemPrompt } = await import('../src/evaluate/openrouter-runner.mjs');
-const openrouterPrompt = buildSystemPrompt('MODE', {
-  shared: 'SHARED',
-  profileMode: 'PROFILE MODE',
-  profile: 'language:\n  output: ja\n',
-  cv: 'CV',
-});
-check(openrouterPrompt.includes(outputLanguageInstruction('ja')), 'OpenRouter system prompt contains the resolved language instruction');
-
-const gemini = readFileSync(join(ROOT, 'src/evaluate/gemini-eval.mjs'), 'utf-8');
-check(!gemini.includes('in English, unless the JD is in another language'), 'Gemini no longer lets JD language override profile output');
+// Frontrunner evaluates with Claude only, so the shared output-language
+// instruction has one consumer to verify rather than four.
+const claudeEval = readFileSync(join(ROOT, 'src/evaluate/claude-eval.mjs'), 'utf-8');
+check(
+  claudeEval.includes('parseOutputLanguage') && claudeEval.includes('outputLanguageInstruction'),
+  'src/evaluate/claude-eval.mjs injects the shared output-language instruction',
+);

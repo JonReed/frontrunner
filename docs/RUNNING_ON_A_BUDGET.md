@@ -1,22 +1,45 @@
 # Running Frontrunner on a Budget
 
-Token usage costs and rate limits are the most common bottlenecks when setting up a high-volume job search pipeline. Since Frontrunner processes full job descriptions, evaluates them against your CV across five weighted dimensions, and tailors resumes/cover letters, the context size can grow quickly.
+Frontrunner evaluates with Claude. It used to ship OpenRouter, OpenAI, Gemini
+and Ollama evaluators as cheaper routes; those were removed because four
+half-tested paths served nobody well, and an untested path fails in front of
+someone who cannot debug it. Supporting one host properly is the trade.
 
-Fortunately, **Frontrunner is completely AI-agnostic.** The pipeline relies on the AI coding CLI (or standalone scripts) to process prompt files under `modes/`. This means you can point your CLI to cheaper API providers or local models with **zero code changes** in Frontrunner.
-
----
-
-## 1. The Core Concept: Model Agnosticism
-
-Frontrunner is composed of local templates, Markdown prompts, and Node/Playwright scripts. The AI logic is driven entirely by whichever AI coding CLI you run it in (e.g., Claude Code, OpenCode, Qwen CLI, Codex, Antigravity CLI, or Grok Build CLI).
-
-By choosing a CLI that supports custom model configurations and routing it to a cheaper API provider or local LLM, you can drastically reduce your pipeline running costs without losing any functionality.
+That does not make it expensive. Most of what Frontrunner does costs nothing,
+by design.
 
 ---
 
-## 2. Pick Your Spend Tier
+## 1. The pipeline is mostly free
 
-Before diving into CLI configuration, know that frontrunner has a built-in knob for controlling evaluation cost: the `spend_tier` setting in [`workspace/profile/profile.yml`](../config/profile.example.yml). It controls which model tier your CLI uses to evaluate offers — no provider setup required.
+Only evaluation spends model tokens. Everything before and after it is ordinary
+code:
+
+| Stage | Cost |
+|---|---|
+| Scanning job boards | zero — provider APIs |
+| Caching job descriptions | zero |
+| Liveness checking | zero — provider APIs, browser only as a fallback |
+| Prefiltering | zero — deterministic rules |
+| **Evaluation** | **the only model spend** |
+| Tracker, reports, analysis, PDF rendering | zero |
+
+Run the free stages alone whenever you want to see what a search turned up
+before deciding what to spend on:
+
+```bash
+npm run pipeline:prepare
+```
+
+That is `--engine none`: scan, cache, liveness and prefilter, without a single
+model call.
+
+---
+
+## 2. Pick your spend tier
+
+`spend_tier` in [`workspace/profile/profile.yml`](../config/profile.example.yml)
+controls which model evaluates offers.
 
 | Tier | Behaviour |
 |------|-----------|
@@ -24,335 +47,44 @@ Before diving into CLI configuration, know that frontrunner has a built-in knob 
 | **standard** | Balanced model, no extended thinking. Default if the key is absent. |
 | **premium** | Most capable model, adaptive extended thinking. Best for high-stakes offers. |
 
-The **economy** tier is the high-volume scanning choice — it processes the most offers per dollar. On **standard** and **premium**, a pre-screen gate automatically trims batch spend by skipping obvious mismatches before the full evaluation runs.
-
-Set it once in your profile:
-
-```yaml
-# workspace/profile/profile.yml
-spend_tier: standard
-```
-
-The actual model behind each tier depends on your CLI. See the mapping table in [`modes/_shared.md`](../modes/_shared.md) for the full breakdown.
+The tier buys better **judgement** — is this offer worth applying to, how should
+this CV be reframed. It does not apply to extraction: reading contact details
+out of a CV runs on the cheapest model with thinking off whatever your tier
+says, because there is no judgement in finding an email address. Measured on a
+real CV, that was 5.5x cheaper and faster than the default with no loss of
+accuracy.
 
 ---
 
-## 3. Configuring Alternative CLI Setups
+## 3. Spend less per evaluation
 
-Different CLIs offer different levels of flexibility for model routing. The two most common options for budget setups are **OpenCode** and **Qwen CLI**.
+**Prefilter aggressively.** Every role rejected before evaluation is a model
+call you never make. `workspace/.state/prefilter-rejects.tsv` logs every
+rejection, so you can see what was dropped and loosen a rule if it was wrong.
 
-### OpenCode CLI
-OpenCode is an open-source coding agent that easily routes to custom API providers (like DeepSeek, OpenRouter, Together AI) or local endpoints (Ollama).
+**Keep descriptions cached.** `fetch-jds` stores clean job text once, so
+re-evaluating a role does not re-download or re-clean it.
 
-To configure OpenCode with a custom provider:
-1. Initialize/open OpenCode in the project directory:
-   ```bash
-   opencode
-   ```
-2. Open its configuration settings (usually located in `.opencode/config.json` or configured via CLI prompts/settings).
-3. Set the `provider` to your chosen endpoint (e.g., OpenRouter or a custom OpenAI-compatible endpoint).
-4. Configure the environment variables for custom endpoints if needed:
-   ```bash
-   # For Git Bash / Linux / macOS:
-   export OPENAI_API_BASE="https://openrouter.ai/api/v1"
-   export OPENAI_API_KEY="your_openrouter_api_key_here"
-
-   # For Windows CMD:
-   set OPENAI_API_BASE=https://openrouter.ai/api/v1
-   set OPENAI_API_KEY=your_openrouter_api_key_here
-
-   # For Windows PowerShell:
-   $env:OPENAI_API_BASE="https://openrouter.ai/api/v1"
-   $env:OPENAI_API_KEY="your_openrouter_api_key_here"
-   ```
-### Kimi K2.5 via OpenCode (Verified)
-
-> **Kimi the model, not Kimi the CLI.** This recipe runs the Kimi K2.5 *model* through the **OpenCode** CLI. That is a different thing from using the standalone **Kimi CLI** as your host (see [Supported CLIs](SUPPORTED_CLIS.md)). The names collide; the setups don't. Follow the steps below inside OpenCode.
-
-The following configuration was verified with Frontrunner using OpenCode and Moonshot AI's OpenAI-compatible API.
-
-#### opencode.json
-
-```json
-{
-  "$schema": "https://opencode.ai/config.json",
-  "provider": {
-    "moonshot": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "Moonshot Kimi",
-      "options": {
-        "baseURL": "https://api.moonshot.ai/v1",
-        "apiKey": "{env:MOONSHOT_API_KEY}"
-      },
-      "models": {
-        "kimi-k2.5": {
-          "name": "Kimi K2.5"
-        }
-      }
-    }
-  },
-  "model": "moonshot/kimi-k2.5"
-}
-```
-
-#### Environment variable
-
-Linux/macOS
-
-```bash
-export MOONSHOT_API_KEY="your_api_key"
-```
-
-Windows PowerShell
-
-```powershell
-$env:MOONSHOT_API_KEY="your_api_key"
-```
-
-Windows CMD
-
-```cmd
-set MOONSHOT_API_KEY=your_api_key
-```
-
-#### Verification
-
-This configuration was verified locally by running a complete Frontrunner evaluation.
-
-Observed during verification:
-
-- Evaluation completed successfully.
-- Markdown evaluation report was generated successfully.
-- Applications tracker was updated successfully.
-- No malformed structured output was observed during this verification run.
-- PDF generation was skipped because Playwright MCP was not configured in the local environment.
-
-#### Notes
-
-- The measured runtime reflects the complete Frontrunner pipeline (job retrieval, prompt loading, report generation, and tracker updates), not raw model inference latency.
-- Kimi K2.5 worked correctly with the Moonshot OpenAI-compatible endpoint during verification.
-
-#### Comparison
-
-| Option | Cost | Notes |
-|---------|------|------|
-| OpenRouter `:free` | Free tier | Easy setup. Subject to model availability and rate limits. |
-| Kimi K2.5 | Moonshot API | Verified working with OpenCode using the Moonshot OpenAI-compatible endpoint. |
-| Ollama | Local | No API cost, but requires suitable local hardware and larger recommended models for reliable evaluations. |
-
-### Qwen CLI
-Qwen CLI natively supports Qwen models but can be configured to point to any custom OpenAI-compatible API base URL:
-```bash
-# For Git Bash / Linux / macOS:
-export QWEN_API_BASE="https://api.deepseek.com/v1"
-export QWEN_API_KEY="your_deepseek_api_key_here"
-
-# For Windows CMD:
-set QWEN_API_BASE=https://api.deepseek.com/v1
-set QWEN_API_KEY=your_deepseek_api_key_here
-
-# For Windows PowerShell:
-$env:QWEN_API_BASE="https://api.deepseek.com/v1"
-$env:QWEN_API_KEY="your_deepseek_api_key_here"
-```
+**Batch a shortlist in one run.** The static context — your CV, profile and the
+scoring rules — is reused across roles in a run instead of being re-sent for
+each one.
 
 ---
 
-## 4. Recommended Cost-Efficient Models
+## 4. What a run actually costs
 
-When choosing a budget-friendly model, you need strong reasoning capabilities to handle the multi-dimensional scoring and resume tailoring. Here are the recommended models that hold up well under evaluation:
+The checked-in benchmark fixture (8 roles, 3 boards) lives in
+[`src/benchmark/corpora/pipeline-benchmark.json`](../src/benchmark/corpora/pipeline-benchmark.json)
+and is summarised in the README. Regenerate it with `npm run benchmark`.
 
-| Model | Provider / Endpoint | Price per 1M Input / Output Tokens | Why use it |
-|-------|---------------------|------------------------------------|------------|
-| **DeepSeek V3** | DeepSeek API / OpenRouter | ~$0.14 / ~$0.28 | **Top Recommendation.** Unmatched reasoning-to-price ratio; performs close to frontier models at a fraction of the cost. |
-| **DeepSeek-Coder-V2** | DeepSeek API / OpenRouter | ~$0.14 / ~$0.28 | Excellent instruction-following for structured Markdown and resume tailoring. |
-| **Qwen-2.5-Coder (32B / 72B)** | OpenRouter / DeepInfra | ~$0.07 - ~$0.30 | Strong coding and structured reasoning, highly cost-effective. |
-| **GLM-4-Air / GLM-4** | Zhipu AI / OpenRouter | Very Cheap | Reliable multi-turn reasoning and JSON/Markdown generation. |
-| **Gemini 2.5 Flash** | Google AI Studio | Free Tier (15 RPM) | Available via the standalone script `node src/evaluate/gemini-eval.mjs`. Excellent for zero-cost low-volume runs, but subject to rate limits. |
-| **Kimi K2.5** | Moonshot AI | API pricing applies | Verified with OpenCode using the Moonshot OpenAI-compatible endpoint. Produces structured Markdown suitable for Frontrunner evaluations. See the verified OpenCode recipe below. |
-
-
-> **Standalone evaluator (no CLI config needed):** every OpenAI-compatible provider above (DeepSeek, Qwen, GLM, Together, Groq, OpenRouter, …) works directly through `node src/evaluate/openai-eval.mjs` — just set a base URL, model, and key:
-> ```bash
-> OPENAI_BASE_URL=https://openrouter.ai/api/v1 \
-> OPENAI_MODEL=deepseek/deepseek-chat \
-> OPENAI_API_KEY=your_key \
-> node src/evaluate/openai-eval.mjs --file ./workspace/jobs/descriptions/job.txt
-> ```
-> Run `node src/evaluate/openai-eval.mjs --help` for per-provider examples. For 100% local/private use, point `--url` at a local server (LM Studio / llama.cpp / vLLM) or use `node src/evaluate/ollama-eval.mjs`.
-
-> NVIDIA NIM also works (hosted `https://integrate.api.nvidia.com/v1` or a self-hosted container's `/v1`), e.g. `--model meta/llama-3.3-70b-instruct`. The hosted free tier can queue for minutes, so raise `OPENAI_TIMEOUT_MS` above the 300s default.
-
-## 5. Local LLM Tradeoffs (Ollama / Llama.cpp)
-
-Running a model 100% locally via Ollama is completely free, but it comes with significant tradeoffs:
-
-### The Size vs. Quality Tradeoff
-- **Avoid Small Models (e.g., 8B parameters)**: Models like Llama 3 8B or Qwen-2.5-Coder 7B are generally **too weak** for Frontrunner. They frequently fail to follow the complex evaluation schemas (A-G blocks), fail to output valid Markdown/JSON structures, or generate low-quality, generic resume customizations.
-- **Minimum Recommended Size**: Use at least a **32B+ or 70B+ model** (such as Qwen 2.5 Coder 32B/72B or Llama 3.1 70B) for reliable scoring and high-quality resume tailoring.
-
-### Hardware & VRAM Requirements
-Running 32B or 70B models locally requires substantial system resources:
-- A **32B model** requires a GPU with at least **16GB - 24GB VRAM** (e.g., RTX 3090/4090, Mac Studio, or Apple Silicon Mac with 32GB+ unified memory).
-- A **70B model** requires at least **48GB VRAM** to run at decent speeds.
-
-> 💡 **Budget Tip**: For most users, running **DeepSeek V3** or **Qwen 2.5 Coder 72B** via a cheap hosted API (like DeepSeek directly or OpenRouter) is far more efficient and cost-effective than investing in local hardware, costing only a few cents for dozens of evaluations.
+It is a deterministic regression fixture, not a promise about live job boards.
+Real cost depends on how many roles survive prefiltering and how long their
+descriptions are.
 
 ---
 
-## 6. Token-Saving Best Practices
+## 5. What this assumes
 
-To prevent unnecessary API costs or hitting rate limits, implement the following practices:
-
-1. **Use the Batch Limit Flag**:
-   Instead of manually splitting `workspace/.state/batch-input.tsv`, use the `--limit <N>` flag to process only a small capped number of offers (e.g. 5-10) in a single run. This lets you inspect the output quality before committing to a larger run:
-   ```bash
-   ./batch/batch-runner.sh --limit 5
-   ```
-2. **Use the Dry Run Flag**:
-   Always run a dry run first to verify which offers will be processed:
-   ```bash
-   ./batch/batch-runner.sh --dry-run
-   ```
-3. **Resume Interrupted Runs**:
-   If a batch run is interrupted by a rate limit or network error, do not restart from scratch. Use the `--resume-paused` flag to continue from where it left off, skipping completed jobs and preventing wasted tokens:
-   ```bash
-   ./batch/batch-runner.sh --resume-paused
-   ```
-4. **Use `--verify` on Scans**:
-   When running job board scans, use the liveness verifier to filter out expired postings before they enter your pipeline. This prevents wasting LLM tokens evaluating closed jobs:
-   ```bash
-   npm run scan -- --verify
-   ```
-
----
-
-## 7. Worked Example: Running the Pipeline Cheaply
-
-Here is a concrete, end-to-end walkthrough of scanning for jobs and evaluating a single posting using **DeepSeek V3 via OpenRouter** and the standalone `src/evaluate/openai-eval.mjs` evaluator. This bypasses the need for an expensive CLI agent for the heavy evaluation block.
-
-### Step 1: Scan for Job Offers (0 Tokens)
-The portal scanner queries ATS APIs directly using Playwright and standard HTTPS requests. It doesn't use the LLM to read job boards.
-```bash
-node src/scan/scan.mjs
-```
-**Cost:** 0 tokens, $0.00.
-*(This generates a list of new job URLs and populates `workspace/search/pipeline.md`.)*
-
-### Step 2: Fetch the Job Description (0 Tokens)
-Open one of the URLs found by the scanner, copy the text of the job description, and save it locally (e.g., `workspace/jobs/descriptions/my-target-role.txt`).
-
-### Step 3: Evaluate the Offer (~4,500 Tokens)
-We'll run the evaluation against OpenRouter's DeepSeek V3 endpoint. The script reads your `workspace/profile/cv.md` and the job description, then generates the full A-G evaluation report and tracker entry.
-
-```bash
-OPENAI_API_KEY="sk-or-your_openrouter_key" \
-node src/evaluate/openai-eval.mjs \
-  --url https://openrouter.ai/api/v1 \
-  --model deepseek/deepseek-chat \
-  --file ./workspace/jobs/descriptions/my-target-role.txt
-```
-
-**Approximate Token Usage:**
-- **Input:** ~3,500 tokens (System prompt + your `workspace/profile/cv.md` + JD)
-- **Output:** ~1,000 tokens (The A-G evaluation report)
-- **Cost:** ~4,500 tokens total. At DeepSeek V3 prices (~$0.14/1M input, ~$0.28/1M output), this costs **less than $0.001** per evaluation.
-
-### Step 4: Tailor the CV HTML (~3,000 Tokens)
-
-Now, use the headless tailor to inject JD keywords, reorder experience, and build the customized HTML for the role.
-
-```bash
-OPENAI_API_KEY="sk-or-your_openrouter_key" \
-node src/evaluate/openai-tailor.mjs \
-  --url https://openrouter.ai/api/v1 \
-  --model deepseek/deepseek-chat \
-  --jd ./workspace/jobs/descriptions/my-target-role.txt \
-  --report workspace/reports/evaluations/001-companyname-2026-07-07.md
-```
-
-**Cost:** ~3,000 tokens (less than $0.001). This outputs a customized HTML file in the `workspace/documents/` directory.
-
-### Step 5: Generate ATS-Optimized PDF (0 Tokens)
-
-Once you have the tailored HTML file, the PDF generator uses Playwright to compile it into a tailored CV PDF.
-
-```bash
-node src/cv/generate-pdf.mjs workspace/documents/cv-candidate-companyname.html workspace/documents/cv-candidate-companyname-2026-07-07.pdf --format=letter --report=001
-```
-
-**Cost:** 0 tokens, $0.00.
-
-By routing the heaviest step (Evaluation) to a cheap OpenAI-compatible endpoint, a complete end-to-end job application cycle drops from ~$0.05 - $0.15 on frontier models to a fraction of a cent, allowing you to run bulk batch processing affordably.
-
----
-
-## 8. Zero-Cost Paths (No Claude / Paid CLI Required)
-
-Frontrunner ships a full pipeline that can run on free/local model paths — no
-Claude Code, Anthropic API key or paid CLI subscription is inherently required.
-Provider availability and free-tier limits can change, so verify the selected
-provider's current terms before relying on it.
-
-### Path A: OpenRouter Free Models (`or:*` scripts)
-
-No Claude Code CLI required — uses OpenRouter free models with automatic fallback.
-
-**npm shortcuts** (cover the whole pipeline):
-
-```bash
-npm run or:scan        # Scan portals for new listings (Greenhouse API, 0 tokens)
-npm run or:pipeline    # Process all pending URLs from workspace/search/pipeline.md
-npm run or:eval        # Evaluate a single offer (paste URL or text)
-npm run or:apply       # Generate draft application answers for a report
-```
-
-**Usage**
-
-```bash
-node src/evaluate/openrouter-runner.mjs scan              # Scan Greenhouse API companies for new listings
-node src/evaluate/openrouter-runner.mjs evaluate <url>    # Evaluate a job by URL
-node src/evaluate/openrouter-runner.mjs evaluate          # Paste job text interactively
-node src/pipeline/run.mjs --engine openrouter             # Canonical pipeline
-node src/evaluate/openrouter-runner.mjs apply <report_no> # Generate draft application form answers
-node src/evaluate/openrouter-runner.mjs models            # List available free models
-node src/evaluate/openrouter-runner.mjs help              # Show this help
-```
-
-**Setup:**
-
-```bash
-1. copy .env.example .env
-2. Add OPENROUTER_API_KEY=sk-or-v1-... to .env
-3. Free API key: https://openrouter.ai
-```
-
-### Path B: Fully Local with Ollama (`ollama:eval`)
-
-If you want **zero network calls** and complete privacy, run evaluations against a local Ollama instance:
-
-```bash
-npm run ollama:eval
-```
-
-This calls `src/evaluate/ollama-eval.mjs` which hits your local Ollama server. No API key, no internet, no cost. See [Section 5](#5-local-llm-tradeoffs-ollama--llamacpp) for model size recommendations (32B+ minimum for reliable scoring).
-
-### Path C: Any OpenAI-Compatible Endpoint (`openai:eval`)
-
-Point at **any** endpoint that speaks the OpenAI chat-completions API — NVIDIA NIM (free tier), Zhipu GLM, Together, Groq, LM Studio, llama.cpp, vLLM, or even Ollama's `/v1` route:
-
-```bash
-npm run openai:eval
-```
-
-Configure via `.env`:
-
-```dotenv
-OPENAI_BASE_URL=https://integrate.api.nvidia.com/v1   # or any compatible base URL
-OPENAI_MODEL=meta/llama-3.1-70b-instruct              # model name at that endpoint
-OPENAI_API_KEY=your_provider_key_here                  # some free endpoints need a key
-```
-
-Run `node src/evaluate/openai-eval.mjs --help` for per-provider examples with exact URLs and model names.
-
-**Which to pick:** Start with **Path A** (one env var, full pipeline). Use B for air-gapped/local-only, C if you already run your own inference endpoint.
+Frontrunner runs on a Claude subscription. There is no separate API bill and no
+free tier to configure — if you have Claude, you have Frontrunner. ChatGPT
+support is the next host on the roadmap.

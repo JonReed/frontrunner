@@ -734,7 +734,6 @@ const systemFiles = [
   'modes/heuristics/recruiter-side.md',
   'templates/states.yml', 'templates/cv-template.html',
   '.claude/skills/frontrunner/SKILL.md',
-  '.antigravitycli/skills/frontrunner/SKILL.md',
 ];
 
 for (const f of systemFiles) {
