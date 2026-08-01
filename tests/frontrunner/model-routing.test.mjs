@@ -53,17 +53,18 @@ test('only the claude CLI is spawned by this repo', () => {
   assert.throws(() => smallModelArgs('antigravity'), /only spawns the claude CLI/);
 });
 
-test('the mode routing table names the economy model for each supported CLI', () => {
+test('the mode routing table covers the shipped host only', () => {
   const shared = readFileSync(join(ROOT, 'modes', '_shared.md'), 'utf-8');
-  const claudeRow = shared.split('\n').find((line) => line.startsWith('| Claude Code |'));
-  const codexRow = shared.split('\n').find((line) => line.startsWith('| Codex |'));
-  assert.ok(claudeRow && codexRow, 'both supported CLIs need a routing row');
-  assert.match(claudeRow, /Haiku/i);
-  assert.match(codexRow, new RegExp(SMALL_MODEL.codex, 'i'));
+  const economyRow = shared.split('\n').find((line) => line.startsWith('| economy |'));
+  assert.ok(economyRow, 'the tier table needs an economy row');
+  assert.match(economyRow, /Haiku/i);
+  assert.match(economyRow, /off/i, 'economy must not pay for extended thinking');
 
-  // A named model is a preference. If the CLI does not know the name the run
-  // must continue on its default — a routing hint is never worth a dead end.
-  assert.match(shared, /if that name is not available|fall back to its cheapest available model/i);
+  // Removed providers must not creep back into the routing prose. Each one was
+  // a path nobody tested, which is how it fails in front of a user.
+  for (const gone of ['OpenRouter', 'Ollama', 'Gemini CLI', 'Antigravity']) {
+    assert.ok(!shared.includes(gone), `${gone} routing should be gone with its evaluator`);
+  }
   assert.match(shared, /Extraction is not judgement/);
 });
 

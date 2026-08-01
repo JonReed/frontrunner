@@ -142,15 +142,6 @@ test('production network capabilities cannot grow outside the canonical boundari
   ]);
 });
 
-test('Gemini uses the bounded model broker without the vendor SDK', () => {
-  const source = readFileSync(join(ROOT, 'src/evaluate/gemini-eval.mjs'), 'utf8');
-  const packageJson = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
-  assert.match(source, /requestModelJson/u);
-  assert.match(source, /generativelanguage\.googleapis\.com/u);
-  assert.match(source, /['"]x-goog-api-key['"]/u);
-  assert.doesNotMatch(source, /@google\/generative-ai/u);
-  assert.equal(packageJson.dependencies?.['@google/generative-ai'], undefined);
-});
 
 test('the self-loading updater has one fixed and bounded network exception', () => {
   const source = readFileSync(join(ROOT, 'update-system.mjs'), 'utf8');

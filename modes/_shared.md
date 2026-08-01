@@ -38,23 +38,33 @@ The files below are the **ONLY** sources for user-facing content (CV, cover lett
 
 **Resolution:** Read `spend_tier` from `workspace/profile/profile.yml`. If the key is absent, default to `standard` (back-compat for existing profiles). Any value other than the three below is treated as invalid -- fall back to `standard` and note the issue to the user once.
 
-**Tier -> model mapping (the only place model/provider names appear in this logic, one row per CLI -- see the Headless / Batch Mode table in `AGENTS.md` for the canonical CLI list):**
+**Tier -> model mapping:**
 
-| CLI | economy | standard | premium | Extended thinking |
-|-----|---------|----------|---------|--------------------|
-| Claude Code | Haiku 4.5 | Sonnet 5 | Opus 5 | off / off / adaptive |
-| Codex | Luna (or your CLI's cheapest/fastest model if that name is not available) | balanced model | most capable model | off / off / adaptive |
-| Antigravity CLI | your CLI's cheapest/fastest available model | balanced model | most capable model | off / off / adaptive |
+| Tier | Claude model | Extended thinking |
+|------|--------------|-------------------|
+| economy | Haiku 4.5 | off |
+| standard | Sonnet 5 | off |
+| premium | Opus 5 | adaptive |
 
-The Claude Code row uses concrete model names because that lineup is well-established. Codex's economy cell names Luna on the maintainer's authority; the Antigravity row still avoids specific names, because nobody on this project can verify that lineup with confidence and a wrong guess routes users to a model that doesn't exist. Every named model is a *preference*, never a requirement: if the CLI does not recognise the name, fall back to its cheapest available model and carry on. A routing preference is never worth a dead end in front of the user.
+**Frontrunner supports Claude.** The local UI spawns the `claude` CLI and
+`--engine claude` is the only evaluator shipped. One host supported properly
+beats several supported badly: every untested path is one that fails in front
+of a user who cannot debug it. This is MVP scope, not a ceiling — ChatGPT/Codex
+is the intended next host, and supporting it means a UI backend, because a
+target user who has to open a terminal has not been served.
 
-**Extraction is not judgement.** Reading facts out of a document the user then reviews field by field -- CV details, contact information -- runs on the economy model with thinking off regardless of `spend_tier`, because the tier exists to buy better *judgement* (is this offer worth applying to, how should this CV be reframed) and there is no judgement in finding an email address. Measured on the real onboarding path, that choice was 5.5x cheaper and faster than the CLI default with no loss of accuracy. `src/lib/model-routing.mjs` is the code-side equivalent for the operations this repo spawns itself.
+**Extraction is not judgement.** Reading facts out of a document the user then
+reviews field by field -- CV details, contact information -- runs on the economy
+model with thinking off regardless of `spend_tier`, because the tier exists to
+buy better *judgement* (is this offer worth applying to, how should this CV be
+reframed) and there is no judgement in finding an email address. Measured on the
+real onboarding path, that was 5.5x cheaper and faster than the CLI default with
+no loss of accuracy. `src/lib/model-routing.mjs` is the code-side equivalent for
+the operations this repo spawns itself.
 
-**Frontrunner supports Claude Code and Codex.** Antigravity CLI keeps its row because it is the free-tier path (see `docs/FREE_TIER.md`): the people this tool is for are frequently out of work, and requiring a paid subscription would exclude exactly them.
-
-Rows for OpenCode, Gemini CLI, Copilot CLI, Qwen and Kimi were removed. They were never tested here, and a table claiming support that nobody verifies is worse than a shorter one that is true. The underlying modes are still CLI-agnostic, so an untested CLI will very likely work -- it is simply not a promise this project makes.
-
-Every other reference to tier elsewhere in the modes (batch.md, pipeline.md, etc.) MUST refer to it only as "the economy/standard/premium tier" or "the tier's model" -- never repeat a hardcoded model/provider name outside this table. This keeps the routing logic model-agnostic: if any CLI's mapping changes, only that row in this table needs to change.
+Refer to tiers elsewhere in the modes only as "the economy/standard/premium
+tier" or "the tier's model" -- never repeat a model name outside this table, so
+a lineup change touches one row.
 
 **Output parity:** The model used for evaluation never changes the A-G report
 structure, headers, or sections. Script evaluators return the versioned

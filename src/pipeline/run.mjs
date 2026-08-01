@@ -201,26 +201,14 @@ export async function runPipelineEvaluations({ engine, kept, jdsDir, run = defau
           env: { [PREFILTER_OVERRIDE_URL_ENV]: role.url },
         } : {}),
       };
-      if (engine === 'claude' || engine === 'batch') {
-        processResult = await run(
-          process.execPath,
-          [join(ROOT, 'src/evaluate/claude-eval.mjs'), '--file', file, '--url', role.url],
-          evaluatorOptions,
-        );
-      } else if (engine === 'openrouter') {
-        processResult = await run(
-          process.execPath,
-          [join(ROOT, 'src/evaluate/openrouter-runner.mjs'), 'evaluate', '--file', file],
-          evaluatorOptions,
-        );
-      } else {
-        const evaluator = engine === 'gemini' ? 'gemini-eval.mjs' : 'openai-eval.mjs';
-        processResult = await run(
-          process.execPath,
-          [join(ROOT, 'src/evaluate', evaluator), '--file', file],
-          evaluatorOptions,
-        );
-      }
+      // One evaluator. Frontrunner ships Claude support only (see AGENTS.md):
+      // supporting one host properly beats four half-tested ones, and every
+      // untested path is one that fails in front of a non-technical user.
+      processResult = await run(
+        process.execPath,
+        [join(ROOT, 'src/evaluate/claude-eval.mjs'), '--file', file, '--url', role.url],
+        evaluatorOptions,
+      );
       const execution = parseEvaluationExecutionResult(
         processResult?.output?.[3] ?? processResult?.evaluationResult,
       );
@@ -513,11 +501,11 @@ export async function main({
 
 Usage:
   npm run pipeline
-  node src/pipeline/run.mjs [--engine claude|openrouter|openai|gemini|none]
+  node src/pipeline/run.mjs [--engine claude|none]
 
 Options:
   --input <file>       Input pipeline/TSV (default workspace/search/pipeline.md)
-  --engine <name>      Tool-less evaluation provider (default claude)
+  --engine <name>      claude (default) or none for the zero-token stages only
   --skip-scan          Use the existing input without running scan first
   --prepare-only       Alias for --engine none
   --json               Print the machine-readable run summary
@@ -525,8 +513,18 @@ Options:
     return;
   }
   const engine = args.includes('--prepare-only') ? 'none' : argValue(args, '--engine', 'claude');
-  if (!['claude', 'batch', 'openrouter', 'openai', 'gemini', 'none'].includes(engine)) {
-    throw new Error(`unsupported engine: ${engine}`);
+  /*
+    Frontrunner ships Claude support only. `none` stays because it is the
+    zero-token path, not a provider. `batch` stays accepted-and-warned rather
+    than rejected: it appears in older saved commands and scheduled jobs, and
+    failing those outright would break a running search to make a naming point.
+    The removed providers (openrouter/openai/gemini) fail loudly instead — a
+    silent downgrade to a different model is worse than a clear error.
+  */
+  if (!['claude', 'batch', 'none'].includes(engine)) {
+    throw new Error(
+      `unsupported engine: ${engine}. Frontrunner evaluates with Claude; use --engine claude or --prepare-only.`,
+    );
   }
   if (engine === 'batch') {
     console.warn('Warning: --engine batch is deprecated; using the tool-less Claude evaluator.');

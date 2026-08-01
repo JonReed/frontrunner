@@ -1,9 +1,10 @@
 # Frontrunner
 
 A fork of [career-ops](https://github.com/santifer/career-ops). Same scoring
-rubric, same file formats, same providers. What differs: job descriptions are
-fetched in bulk by scripts rather than by the model, and roles that cannot fit
-are rejected before any model call.
+rubric, same file formats. What differs: job descriptions are fetched in bulk
+by scripts rather than by the model, roles that cannot fit are rejected before
+any model call, and the product targets someone who will never open a terminal
+— so it supports one AI host properly rather than several badly.
 
 ## Repository layout
 
@@ -258,12 +259,20 @@ If yes → `node update-system.mjs apply`. If no → `node update-system.mjs dis
 ## What is frontrunner
 
 AI-powered job search automation: pipeline tracking, offer evaluation, CV
-generation, portal scanning and batch processing. Claude Code, Codex and
-Antigravity CLI are the tested agent hosts. Other CLIs following the
-[open agent skill standard](https://agentskills.io) may work through the same
-mode files, but they are compatibility paths rather than supported
-configurations. Standalone API evaluators remain available for Gemini,
-OpenAI-compatible endpoints, OpenRouter and local Ollama.
+generation, portal scanning and batch processing.
+
+**Claude is the supported host.** The local UI spawns the `claude` CLI, and
+`--engine claude` is the only evaluator the pipeline ships. The OpenRouter,
+OpenAI, Gemini and Ollama evaluators were removed: four half-tested providers
+served nobody well, and an untested path fails in front of a user who cannot
+debug it. Supporting one host properly is the trade, and it is a deliberate MVP
+scope rather than a permanent ceiling — ChatGPT/Codex support is the intended
+next host, and it needs a UI backend to count, since a target user who has to
+open a terminal has not been served.
+
+Other CLIs following the [open agent skill standard](https://agentskills.io)
+may still work through the same mode files. That is a compatibility accident,
+not a promise.
 
 ### Codex invocation
 
@@ -301,9 +310,7 @@ OpenAI-compatible endpoints, OpenRouter and local Ollama.
 | `src/pipeline/run.mjs` | Canonical scan → cache → liveness → prefilter → evaluation orchestrator |
 | `src/evaluate/evaluation-gate.mjs` | Mandatory deterministic boundary before model calls |
 | `src/evaluate/scoring-contract.mjs` | Versioned model JSON contract + deterministic A–G report renderer |
-| `src/cv/tailoring-contract.mjs` | Shared versioned JSON contract for Claude/OpenAI CV tailoring; excludes identity and markup |
-| `src/evaluate/openrouter-client.mjs` | Fixed, brokered and bounded OpenRouter model transport |
-| `src/evaluate/model-blacklist.mjs` | Locked atomic failed-model blacklist shared across processes |
+| `src/cv/tailoring-contract.mjs` | Versioned JSON contract for Claude CV tailoring; excludes identity and markup |
 | `src/tracker/set-status.mjs` | Canonical tracker-row update: `node src/tracker/set-status.mjs <report#\|company> <State> [--note] [--force]` — strict states.yml validation, report-link mismatch guard, shared lock, atomic write |
 | `src/tracker/invite-match.mjs` | Fuzzy-match a pasted interview invite (company, date, req ID) against the tracker, ranking candidates when a company has multiple entries (JSON or `--summary`) |
 | `src/tracker/paste-reply.mjs` | Manual/no-Gmail input into reply-watch classification — bounds and normalizes a pasted/file email, then appends it to `workspace/applications/reply-candidates.json` with locked atomic replacement; never classifies or touches the tracker |
