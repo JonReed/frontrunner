@@ -49,8 +49,9 @@ test('profile extraction runs on the small model with thinking off', () => {
 test('only the claude CLI is spawned by this repo', () => {
   // modes/_shared.md carries the routing for hosts that run modes themselves.
   // Pretending this repo can spawn them would be a lie with a plausible shape.
+  // Codex stays in SMALL_MODEL for the day the UI gains a backend; until then
+  // asking for its args must fail rather than silently spawn the wrong CLI.
   assert.throws(() => smallModelArgs('codex'), /only spawns the claude CLI/);
-  assert.throws(() => smallModelArgs('antigravity'), /only spawns the claude CLI/);
 });
 
 test('the mode routing table covers the shipped host only', () => {

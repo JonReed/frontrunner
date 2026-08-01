@@ -22,7 +22,6 @@ const REMOVED_PATHS = [
 ];
 
 const PRODUCT_DOCS = [
-  '.env.example',
   '.github/SECURITY.md',
   'AGENTS.md',
   'CONTRIBUTING.md',

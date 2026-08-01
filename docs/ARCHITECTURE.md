@@ -315,7 +315,7 @@ up, fetches, re-execs the target updater, then checks out only `SYSTEM_PATHS`.
 `BOOTSTRAP_PATHS` covers very old installs.
 
 ### Multi-CLI entry files
-Each CLI reads its own entry file, all of which point at the canonical `AGENTS.md`: `CLAUDE.md` (full), thin `@AGENTS.md` redirect wrappers `CODEX.md` and `GEMINI.md`, plus the `.agents/skills/` skill entrypoints — canonical, with copies materialized for Claude Code and Antigravity by `src/lib/skill-entrypoints.mjs`. This is the [open agent skill standard](https://agentskills.io).
+Each host reads its own entry file, both pointing at the canonical `AGENTS.md`: `CLAUDE.md` and the thin `@AGENTS.md` wrapper `CODEX.md`, plus the `.agents/skills/` skill entrypoints — canonical, with a copy materialized for Claude Code by `src/lib/skill-entrypoints.mjs`. This is the [open agent skill standard](https://agentskills.io).
 
 ### User interfaces
 
@@ -451,7 +451,7 @@ batch-input.tsv → mandatory prefilter → batch-input.filtered.tsv
 
 The canonical default is the tool-less Claude evaluator. Other supported
 evaluators are selected through
-`src/pipeline/run.mjs --engine openrouter|openai|gemini`.
+`src/pipeline/run.mjs --engine claude` (or `--prepare-only` for the zero-token stages).
 The legacy shell state runner calls the same tool-less evaluator and fails
 closed if either the mandatory prefilter or a cached JD is absent. Code produces:
 - Report .md

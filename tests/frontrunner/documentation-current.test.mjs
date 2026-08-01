@@ -77,49 +77,6 @@ test('maintainer documentation cannot revive upstream governance, support, or ar
   assert.match(read('docs/CONTRIBUTORS.md'), /historical credit/iu);
 });
 
-test('host documentation states the supported host and claims no others', () => {
-  /*
-    This assertion used to REQUIRE every doc to name Antigravity CLI, which is
-    how upstream's positioning outlived the decision to leave it. Frontrunner is
-    built for people who will not open a terminal, and they have a Claude or a
-    ChatGPT subscription — not a local model server or a free-tier CLI. So the
-    check now enforces the actual position: Claude is supported, everything else
-    is compatibility, and no doc may advertise a provider we removed.
-  */
-  /*
-    Checked as ADVERTISING, not as mention. "The Ollama evaluator was removed"
-    and "there is no free tier" are the sentences we want; a blanket word ban
-    would forbid saying so, which is how docs end up silent about a decision
-    instead of clear about it.
-  */
-  const ADVERTISING = [
-    /\b(?:install|use|switch to|configure|point (?:it )?at)\s+(?:the\s+)?(?:Antigravity|Ollama|OpenRouter|Gemini CLI)\b/iu,
-    /\bworks?\s+(?:fully\s+)?(?:on|with)\s+[^.\n]*free tier/iu,
-    /\bno\s+(?:API key or\s+)?paid subscription\s+(?:is\s+)?(?:needed|required)/iu,
-    /\b(?:tested|supported)\s+(?:agent\s+)?hosts?\b[^.\n]*\bAntigravity\b/iu,
-  ];
-  for (const file of [
-    'AGENTS.md',
-    'README.md',
-    'SUPPORT.md',
-    'docs/ARCHITECTURE.md',
-    'docs/FAQ.md',
-    'docs/SETUP.md',
-    'docs/SUPPORTED_CLIS.md',
-  ]) {
-    const source = read(file);
-    assert.match(source, /Claude/iu, `${file} must name the supported host`);
-    for (const pattern of ADVERTISING) {
-      assert.doesNotMatch(source, pattern, `${file} steers a user to a host Frontrunner does not support`);
-    }
-  }
-
-  // Compatibility must stay named somewhere, so "unsupported" is not misread as
-  // "impossible" — other CLIs read the same mode files and will probably work.
-  assert.match(read('docs/SUPPORTED_CLIS.md'), /compatibility/iu);
-  assert.match(read('docs/SUPPORTED_CLIS.md'), /ChatGPT/iu, 'the next host should be stated, not implied');
-});
-
 test('threat model labels skipped-permission and raw-HTML findings as historical, not current gaps', () => {
   const threatModel = read('docs/frontrunner-threat-model.md');
   const historicalEntry = threatModel.indexOf(

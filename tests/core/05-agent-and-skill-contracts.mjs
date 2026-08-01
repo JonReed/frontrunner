@@ -42,16 +42,9 @@ for (const f of cliWrappers) {
     fail(`${f} does NOT reference AGENTS.md`);
   }
 }
-if (!fileExists('GEMINI.md')) {
-  fail('Missing legacy Gemini context guard: GEMINI.md');
-} else {
-  const geminiContext = readFile('GEMINI.md');
-  if (/^@(?:\.\/)?AGENTS\.md/m.test(geminiContext)) {
-    fail('GEMINI.md imports AGENTS.md and duplicates Antigravity context');
-  } else {
-    pass('GEMINI.md is a no-op context guard for Antigravity');
-  }
-}
+// GEMINI.md existed only to stop Antigravity CLI loading the project
+// instructions twice. Frontrunner supports Claude, so the file and its guard
+// went together.
 
 const codexWrapper = fileExists('CODEX.md') ? readFile('CODEX.md') : '';
 if (/^@(?:\.\/)?AGENTS\.md/m.test(codexWrapper)) {
@@ -121,7 +114,6 @@ console.log('\n12. Skill symlink integrity');
 const canonicalSkill = '.agents/skills/frontrunner/SKILL.md';
 const symlinks = [
   '.claude/skills/frontrunner/SKILL.md',
-  '.antigravitycli/skills/frontrunner/SKILL.md',
 ];
 
 let canonicalReal = null;
@@ -216,21 +208,17 @@ console.log('\n12a. Skill entrypoint materialization');
   try {
     const canonicalDir = join(fixtureRoot, '.agents', 'skills', 'frontrunner');
     const claudeDir = join(fixtureRoot, '.claude', 'skills', 'frontrunner');
-    const antigravityDir = join(fixtureRoot, '.antigravitycli', 'skills', 'frontrunner');
     mkdirSync(canonicalDir, { recursive: true });
     mkdirSync(claudeDir, { recursive: true });
-    mkdirSync(antigravityDir, { recursive: true });
 
     const fixtureSkill = '---\nname: frontrunner\n---\n\n# canonical skill\n';
     const pointer = '../../../.agents/skills/frontrunner/SKILL.md';
     writeFileSync(join(canonicalDir, 'SKILL.md'), fixtureSkill);
     writeFileSync(join(claudeDir, 'SKILL.md'), pointer);
-    writeFileSync(join(antigravityDir, 'SKILL.md'), pointer);
 
     const skills = await import(pathToFileURL(join(ROOT, 'src/lib/skill-entrypoints.mjs')).href);
     const materialized = skills.materializeSkillEntrypoints(fixtureRoot).sort();
     const expected = [
-      '.antigravitycli/skills/frontrunner/SKILL.md',
       '.claude/skills/frontrunner/SKILL.md',
     ];
 
@@ -241,8 +229,7 @@ console.log('\n12a. Skill entrypoint materialization');
     }
 
     const claudeSkill = readFileSync(join(claudeDir, 'SKILL.md'), 'utf-8');
-    const antigravitySkill = readFileSync(join(antigravityDir, 'SKILL.md'), 'utf-8');
-    if (claudeSkill === fixtureSkill && antigravitySkill === fixtureSkill) {
+    if (claudeSkill === fixtureSkill) {
       pass('materialized skill entrypoints match canonical content');
     } else {
       fail('materialized skill entrypoints do not match canonical content');
@@ -324,9 +311,8 @@ console.log('\n12b. Skill entrypoint bootstrap (npx / old releases)');
       fail(`unexpected bootstrapped skill entrypoints: ${JSON.stringify(touched)}`);
     }
 
-    const agSkill = readFileSync(join(fixtureRoot, '.antigravitycli', 'skills', 'frontrunner', 'SKILL.md'), 'utf-8');
     const claudeSkill = readFileSync(join(claudeDir, 'SKILL.md'), 'utf-8');
-    if (agSkill === fixtureSkill && claudeSkill === fixtureSkill) {
+    if (claudeSkill === fixtureSkill) {
       pass('ensureSkillEntrypoints materializes canonical skill content');
     } else {
       fail('bootstrapped skill entrypoints do not match canonical content');
@@ -438,22 +424,20 @@ console.log('\n12b. Skill entrypoint bootstrap (npx / old releases)');
   try {
     const canonicalDir = join(fixtureRoot, '.agents', 'skills', 'frontrunner');
     const claudeDir = join(fixtureRoot, '.claude', 'skills', 'frontrunner');
-    const antigravityDir = join(fixtureRoot, '.antigravitycli', 'skills', 'frontrunner');
     mkdirSync(canonicalDir, { recursive: true });
     mkdirSync(claudeDir, { recursive: true });
-    mkdirSync(antigravityDir, { recursive: true });
 
     const fixtureSkill = '---\nname: frontrunner\n---\n\n# canonical skill\n';
     const pointer = '../../../.agents/skills/frontrunner/SKILL.md';
     writeFileSync(join(canonicalDir, 'SKILL.md'), fixtureSkill);
     mkdirSync(join(claudeDir, 'SKILL.md'));
-    writeFileSync(join(antigravityDir, 'SKILL.md'), pointer);
 
+    // A directory where a pointer file belongs must be skipped, not thrown on:
+    // an update that dies here leaves the install half-migrated.
     const skills = await import(pathToFileURL(join(ROOT, 'src/lib/skill-entrypoints.mjs')).href);
     const materialized = skills.materializeSkillEntrypoints(fixtureRoot);
-    const antigravitySkill = readFileSync(join(antigravityDir, 'SKILL.md'), 'utf-8');
-    if (JSON.stringify(materialized) === JSON.stringify(['.antigravitycli/skills/frontrunner/SKILL.md']) && antigravitySkill === fixtureSkill) {
-      pass('update-system skips non-file skill entrypoints while materializing valid pointers');
+    if (JSON.stringify(materialized) === JSON.stringify([])) {
+      pass('update-system skips a non-file skill entrypoint instead of failing the update');
     } else {
       fail(`non-file skill entrypoint handling was unexpected: ${JSON.stringify(materialized)}`);
     }
@@ -483,10 +467,8 @@ console.log('\n12c. Materialized skill index mode');
   try {
     const canonicalDir = join(fixtureRoot, '.agents', 'skills', 'frontrunner');
     const claudeDir = join(fixtureRoot, '.claude', 'skills', 'frontrunner');
-    const antigravityDir = join(fixtureRoot, '.antigravitycli', 'skills', 'frontrunner');
     mkdirSync(canonicalDir, { recursive: true });
     mkdirSync(claudeDir, { recursive: true });
-    mkdirSync(antigravityDir, { recursive: true });
 
     const fixtureSkill = '---\nname: frontrunner\n---\n\n# canonical skill\n';
     const pointer = '../../../.agents/skills/frontrunner/SKILL.md';
@@ -498,30 +480,26 @@ console.log('\n12c. Materialized skill index mode');
 
     writeFileSync(join(canonicalDir, 'SKILL.md'), fixtureSkill);
     writeFileSync(join(claudeDir, 'SKILL.md'), pointer);
-    writeFileSync(join(antigravityDir, 'SKILL.md'), pointer);
     gitRun(['add', '--', '.agents/skills/frontrunner/SKILL.md']);
 
     const pointerBlob = gitRun(['hash-object', '-w', '--stdin'], { input: pointer });
     gitRun(['update-index', '--add', '--cacheinfo', `120000,${pointerBlob},.claude/skills/frontrunner/SKILL.md`]);
-    gitRun(['update-index', '--add', '--cacheinfo', `120000,${pointerBlob},.antigravitycli/skills/frontrunner/SKILL.md`]);
 
     const updater = await import(pathToFileURL(join(ROOT, 'update-system.mjs')).href);
     const skills = await import(pathToFileURL(join(ROOT, 'src/lib/skill-entrypoints.mjs')).href);
     const materialized = skills.materializeSkillEntrypoints(fixtureRoot);
     updater.prepareMaterializedSkillEntrypointsForStage(materialized, fixtureRoot);
-    gitRun(['add', '--', '.claude/skills/', '.antigravitycli/skills/']);
+    gitRun(['add', '--', '.claude/skills/']);
 
     const claudeIndex = gitRun(['ls-files', '-s', '--', '.claude/skills/frontrunner/SKILL.md']);
-    const antigravityIndex = gitRun(['ls-files', '-s', '--', '.antigravitycli/skills/frontrunner/SKILL.md']);
-    if (claudeIndex.startsWith('100644 ') && antigravityIndex.startsWith('100644 ')) {
+    if (claudeIndex.startsWith('100644 ')) {
       pass('materialized skill entrypoints stage as regular files, not symlink blobs');
     } else {
-      fail(`materialized skill entrypoints staged with wrong modes: ${JSON.stringify([claudeIndex, antigravityIndex])}`);
+      fail(`materialized skill entrypoints staged with wrong modes: ${JSON.stringify([claudeIndex])}`);
     }
 
     const claudeBlob = gitRaw(['show', ':.claude/skills/frontrunner/SKILL.md']);
-    const antigravityBlob = gitRaw(['show', ':.antigravitycli/skills/frontrunner/SKILL.md']);
-    if (claudeBlob === fixtureSkill && antigravityBlob === fixtureSkill) {
+    if (claudeBlob === fixtureSkill) {
       pass('materialized skill blobs contain canonical skill content');
     } else {
       fail('materialized skill blobs do not contain canonical skill content');

@@ -308,7 +308,7 @@ test('application and pipeline adapters expose useful counts without hostile con
     runId: 'pipeline-1',
     startedAt: 1_000,
     finishedAt: 1_250,
-    engine: 'openrouter',
+    engine: 'claude',
   });
   assert.equal(pipeline.status, 'failed');
   assert.equal(pipeline.counts.evaluationsCompleted, 2);

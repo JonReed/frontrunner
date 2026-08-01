@@ -8,10 +8,6 @@ import {
   installBrowserEgressGuard,
   navigateGuardedPage,
 } from '../../src/security/browser-egress.mjs';
-import {
-  isLoopbackModelUrl,
-  requestModelJson,
-} from '../../src/security/model-http.mjs';
 
 function routeFor(url, counters) {
   return {
@@ -69,33 +65,13 @@ test('destructive browser boundary rejects a private final URL', async () => {
   );
 });
 
-test('model transport treats loopback as an explicit bounded no-redirect capability', async () => {
-  let request;
-  const result = await requestModelJson('http://127.0.0.1:11434/api/tags', {
-    timeoutMs: 100,
-    maxResponseBytes: 1_024,
-    fetchImpl: async (_url, options) => {
-      request = options;
-      return new Response('{"models":[]}');
-    },
-  });
-  assert.deepEqual(result, { models: [] });
-  assert.equal(request.redirect, 'error');
-  assert.equal(isLoopbackModelUrl('http://localhost:11434/api/tags'), true);
-  assert.equal(isLoopbackModelUrl('http://[::1]:11434/api/tags'), true);
-  assert.equal(isLoopbackModelUrl('http://localhost.example/api/tags'), false);
-  assert.equal(isLoopbackModelUrl('http://user:pass@localhost/api/tags'), false);
-
-  await assert.rejects(
-    requestModelJson('http://127.0.0.1:11434/api/tags', {
-      timeoutMs: 100,
-      maxResponseBytes: 8,
-      fetchImpl: async () => new Response('{"models":["oversized"]}'),
-    }),
-    /exceeds 8 byte limit/u,
-  );
-});
-
+/*
+  The loopback model-transport test went with src/security/model-http.mjs. That
+  module existed so a local Ollama or OpenAI-compatible server could be reached
+  without opening a public-web hole; Frontrunner calls Claude through its CLI
+  and has no local model endpoint to protect. The browser-egress and
+  network-capability boundaries below are unaffected.
+*/
 function filesUnder(directory) {
   return readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
     const path = join(directory, entry.name);

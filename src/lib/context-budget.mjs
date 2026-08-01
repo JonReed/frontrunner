@@ -226,7 +226,7 @@ export function compressSharedContext(sharedContent, targetReduction) {
  * budget, lower-priority sections of _shared.md are compressed.
  *
  * The returned `contextBody` is inserted between the evaluator's header
- * and operating rules — each evaluator (Gemini, OpenAI) keeps its own
+ * and operating rules — the evaluator keeps its own
  * framing text.
  *
  * @param {object} opts

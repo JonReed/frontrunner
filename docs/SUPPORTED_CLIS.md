@@ -37,6 +37,5 @@ tests them, and a support question about one may not get a useful answer. If you
 want to build on one, nothing stops you — it is simply not where this project's
 attention goes.
 
-`GEMINI.md` remains in the repository root as a deliberate no-op that stops an
-agent host loading the full project instructions twice. The `OPENCODE.md` and
-`KIMI.md` shims have been removed.
+The `GEMINI.md`, `OPENCODE.md` and `KIMI.md` shims have been removed along with
+the hosts they existed for.

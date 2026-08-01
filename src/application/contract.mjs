@@ -29,7 +29,8 @@ export const APPLICATION_RESULT_STATUSES = Object.freeze([
 ]);
 
 const OPERATIONS = new Set(APPLICATION_OPERATIONS);
-const ENGINES = new Set(['claude', 'openrouter', 'openai', 'gemini', 'none']);
+// Claude is the shipped evaluator; 'none' is the zero-token path, not a provider.
+const ENGINES = new Set(['claude', 'none']);
 const REQUEST_KEYS = new Set(['version', 'operation', 'input', 'idempotencyKey']);
 const INPUT_KEYS = Object.freeze({
   'cv.build': new Set(['roleNum', 'jobUrl', 'reportPath', 'model']),

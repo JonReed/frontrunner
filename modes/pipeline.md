@@ -21,8 +21,7 @@ Do not manually reconstruct the stages or launch one evaluation agent per URL.
 5. Send only surviving roles to the selected evaluator.
 
 Use `npm run pipeline:prepare` only when the user explicitly wants the
-zero-token stages without evaluation. Provider alternatives are
-`node src/pipeline/run.mjs --engine openrouter|openai|gemini`.
+zero-token stages without evaluation.
 
 Expired roles and deterministic rejects never receive report numbers and never
 reach a model. Uncertain liveness results are kept rather than silently

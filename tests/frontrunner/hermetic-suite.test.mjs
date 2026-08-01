@@ -23,7 +23,6 @@ test('full-suite process is rooted in a scrubbed disposable environment', {
   for (const name of [
     'ANTHROPIC_API_KEY',
     'OPENAI_API_KEY',
-    'OPENROUTER_API_KEY',
     'AWS_ACCESS_KEY_ID',
     'GITHUB_TOKEN',
     'HTTP_PROXY',
