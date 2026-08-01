@@ -83,7 +83,7 @@ The checked-in 8-role, 3-board fixture currently produces:
 | What was measured | inherited flow | Frontrunner | Result |
 |---|---:|---:|---:|
 | Separate job-listing lookups | 8 | 3 | 62.5% fewer |
-| Approximate AI input needed | 286,398 | 21,441 | 92.5% less |
+| Approximate AI input needed | 288,198 | 21,441 | 92.6% less |
 | Approximate AI output needed | 17,125 | 3,123 | 81.8% less |
 | Roles kept for AI review | 8 | 8 | All 8 kept |
 | Promising roles filtered out | — | 0 | None |

@@ -43,10 +43,12 @@ The files below are the **ONLY** sources for user-facing content (CV, cover lett
 | CLI | economy | standard | premium | Extended thinking |
 |-----|---------|----------|---------|--------------------|
 | Claude Code | Haiku 4.5 | Sonnet 5 | Opus 5 | off / off / adaptive |
-| Codex | your CLI's cheapest/fastest available model | balanced model | most capable model | off / off / adaptive |
+| Codex | Luna (or your CLI's cheapest/fastest model if that name is not available) | balanced model | most capable model | off / off / adaptive |
 | Antigravity CLI | your CLI's cheapest/fastest available model | balanced model | most capable model | off / off / adaptive |
 
-The Claude Code row uses concrete model names because that lineup is well-established. The other two intentionally avoid naming specific models -- nobody on this project can verify their current lineups with confidence, and a wrong specific guess routes users to a model that doesn't exist.
+The Claude Code row uses concrete model names because that lineup is well-established. Codex's economy cell names Luna on the maintainer's authority; the Antigravity row still avoids specific names, because nobody on this project can verify that lineup with confidence and a wrong guess routes users to a model that doesn't exist. Every named model is a *preference*, never a requirement: if the CLI does not recognise the name, fall back to its cheapest available model and carry on. A routing preference is never worth a dead end in front of the user.
+
+**Extraction is not judgement.** Reading facts out of a document the user then reviews field by field -- CV details, contact information -- runs on the economy model with thinking off regardless of `spend_tier`, because the tier exists to buy better *judgement* (is this offer worth applying to, how should this CV be reframed) and there is no judgement in finding an email address. Measured on the real onboarding path, that choice was 5.5x cheaper and faster than the CLI default with no loss of accuracy. `src/lib/model-routing.mjs` is the code-side equivalent for the operations this repo spawns itself.
 
 **Frontrunner supports Claude Code and Codex.** Antigravity CLI keeps its row because it is the free-tier path (see `docs/FREE_TIER.md`): the people this tool is for are frequently out of work, and requiring a paid subscription would exclude exactly them.
 

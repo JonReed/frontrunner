@@ -9,6 +9,7 @@
  */
 
 import { ROOT } from '#paths';
+import { smallModelArgs } from '../lib/model-routing.mjs';
 import { runBoundedSubprocess } from '../security/subprocess.mjs';
 
 const MAX_CV_BYTES = 512 * 1024;
@@ -81,7 +82,11 @@ Rules:
 - For target_roles.primary only, you may suggest one conservative role title from recent or repeated
   held titles. Mark it "suggested" and confidence "medium". Do not claim it is the candidate's stated
   target.
-- Everything else must use basis "explicit". Use confidence "high" only for unambiguous text.
+- basis "explicit" means the value is written in the CV. If you worked a value out from something
+  else in the CV rather than reading it, mark it "suggested" and say what you derived it from in the
+  evidence. The user sees that evidence and decides, so an honest label costs nothing and a wrong
+  one hides the guess.
+- Use confidence "high" only for unambiguous text.
 - Omit uncertain fields. Do not return empty values, commentary, markdown or fields outside the schema.
 - One proposal per path. Keep values concise and preserve the candidate's wording.`;
 
@@ -136,6 +141,11 @@ export function claudeFailureDetail(child) {
 
 export function buildProfileExtractionClaudeArgs() {
   return [
+    // Extraction is find-and-quote, not judgement: it runs on the small model
+    // with thinking off. Without this the CLI default spread one extraction
+    // across two models and spent 70s thinking about where an email address
+    // was. See src/lib/model-routing.mjs for the measurements.
+    ...smallModelArgs(),
     '-p',
     '--safe-mode',
     '--strict-mcp-config',
