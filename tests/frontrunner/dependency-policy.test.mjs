@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import test from 'node:test';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 
 import { ROOT } from '#paths';
 

@@ -6,7 +6,7 @@
  * deterministic HTML renderer runs.
  */
 
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 
 export const TAILORING_CONTRACT_VERSION = '1.0';
 export const MAX_TAILORING_RESPONSE_BYTES = 512 * 1024;

@@ -51,7 +51,7 @@ If deeper company research is useful, recommend running `/frontrunner deep` sepa
 
 ## Step 0 — Archetype Detection
 
-Classify the job into one of the 6 archetypes (see `_shared.md`). If it is a hybrid, indicate the 2 closest ones. This determines:
+Classify the job into one of the user's archetypes (derive them as `_shared.md` describes — from their targeting file, or from their confirmed target roles and CV). If it is a hybrid, indicate the 2 closest ones. If it fits none of them, say so rather than forcing one. This determines:
 - Which proof points to prioritize in block B
 - How to rewrite the summary in block E
 - Which STAR stories to prepare in block F

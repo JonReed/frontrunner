@@ -12,7 +12,7 @@ import { readFileSync, writeFileSync, rmSync, mkdirSync, statSync, existsSync, r
 import { join, dirname, basename, resolve, relative, isAbsolute, sep } from 'path';
 import { createHash, randomUUID } from 'crypto';
 import { tmpdir } from 'os';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 
 import { replaceFileAtomic } from '../lib/locked-file.mjs';
 

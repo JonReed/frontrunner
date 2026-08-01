@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import test from 'node:test';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 
 import { ROOT } from '#paths';
 import { computeFixes, splitCompanyBlocks } from '../../src/scan/fix-slugs.mjs';

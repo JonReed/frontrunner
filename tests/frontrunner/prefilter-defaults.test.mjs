@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 
 test('shipped prefilter does not assume the candidate target level', () => {
   const config = yaml.load(readFileSync(

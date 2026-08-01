@@ -28,7 +28,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 
 import { fetchJson as defaultFetchJson, makeHttpCtx } from '../../providers/_http.mjs';
 import { fetchProviderJobs } from '../../providers/_contract.mjs';
