@@ -17,16 +17,16 @@ The files below are the **ONLY** sources for user-facing content (CV, cover lett
 | workspace/profile/cv.md | `workspace/profile/cv.md` (project root) | ALWAYS |
 | workspace/profile/article-digest.md | `workspace/profile/article-digest.md` (if exists) | ALWAYS (detailed proof points) |
 | profile.yml | `workspace/profile/profile.yml` | ALWAYS (candidate identity and targets) |
-| _profile.md | `workspace/profile/targeting.md` | ALWAYS (user archetypes, narrative, negotiation) |
-| workspace/profile/writing-samples/ | `workspace/profile/writing-samples/` | When generating candidate-facing text — check `_profile.md` for cached `## Writing Style` first; only scan files if absent |
+| workspace/profile/targeting.md | `workspace/profile/targeting.md` | ALWAYS (user archetypes, narrative, negotiation) |
+| workspace/profile/writing-samples/ | `workspace/profile/writing-samples/` | When generating candidate-facing text — check `workspace/profile/targeting.md` for cached `## Writing Style` first; only scan files if absent |
 | workspace/profile/voice-dna.md | `workspace/profile/voice-dna.md` (project root, if exists) | When generating candidate-facing text. Anti-AI-slop guardrail + voice. See Voice DNA precedence below. |
 | interview-prep | `workspace/interviews/story-bank.md`, `workspace/interviews/{company}-{role}.md` | When generating ATS form answers / interview content — the user's own STAR stories + prep notes (same trust as workspace/profile/cv.md). Consumed by `apply`/`match-star` + interview modes |
-| _custom.md | `workspace/profile/preferences.md` (if exists) | ALWAYS (user house rules: formatting/content preferences, custom workflows, "always/never do X" automations). Procedural rules only — never a content source for claims |
+| workspace/profile/preferences.md | `workspace/profile/preferences.md` (if exists) | ALWAYS (user house rules: formatting/content preferences, custom workflows, "always/never do X" automations). Procedural rules only — never a content source for claims |
 
 **RULE: NEVER hardcode metrics from proof points.** Read them from workspace/profile/cv.md + workspace/profile/article-digest.md at evaluation time.
 **RULE: For article/project metrics, workspace/profile/article-digest.md takes precedence over workspace/profile/cv.md.**
-**RULE: Read _profile.md AFTER this file. User customizations in _profile.md override defaults here.**
-**RULE: Read _custom.md (if it exists) AFTER _profile.md and honor its house rules in every mode.** It is where the user's persistent instructions live ("use this date format", "never reorder section X", "always include Y in summaries") — an instruction recorded there is NOT optional and does not expire between sessions or between items in a batch. It can override workflow/style/procedural defaults, but it never introduces factual claims about the candidate. When the user states a lasting preference in conversation, write it to `workspace/profile/preferences.md` so it survives the session.
+**RULE: Read workspace/profile/targeting.md AFTER this file. User customizations in workspace/profile/targeting.md override defaults here.**
+**RULE: Read workspace/profile/preferences.md (if it exists) AFTER workspace/profile/targeting.md and honor its house rules in every mode.** It is where the user's persistent instructions live ("use this date format", "never reorder section X", "always include Y in summaries") — an instruction recorded there is NOT optional and does not expire between sessions or between items in a batch. It can override workflow/style/procedural defaults, but it never introduces factual claims about the candidate. When the user states a lasting preference in conversation, write it to `workspace/profile/preferences.md` so it survives the session.
 **RULE: NEVER claim the user authored a project, repo, library, tool, framework, or open-source artefact unless explicitly attributed to them in workspace/profile/cv.md or workspace/profile/article-digest.md.** Tool-of-trade conflation (user uses X → user built X) is the most common fabrication pattern and is forbidden.
 **RULE: Keywords get reformulated, never fabricated.** Reorder, reframe, emphasise — but never invent. If a claim isn't backed by an in-scope file, ask the user. If no answer, omit. Silence on a topic beats manufactured detail.
 
@@ -77,8 +77,8 @@ Block G covers posting legitimacy separately. The global score is 1-5:
 
 | Dimension | What it measures |
 |-----------|-----------------|
-| Match con CV | Skills, experience, proof points alignment |
-| North Star alignment | How well the role fits the user's target archetypes (from _profile.md) |
+| CV match | Skills, experience, proof points alignment |
+| North Star alignment | How well the role fits the user's target archetypes (from workspace/profile/targeting.md) |
 | Comp | Salary vs market (5=top quartile, 1=well below) |
 | Cultural signals | Company culture, growth, stability, remote policy |
 | Red flags | Blockers, warnings (negative adjustments) |
@@ -191,9 +191,9 @@ After detecting archetype, read `workspace/profile/targeting.md` for the user's 
 ### ALWAYS
 
 0. **Cover letter:** If the form allows it, ALWAYS include one. Same visual design as CV. JD quotes mapped to proof points. 1 page max.
-1. Read workspace/profile/cv.md, _profile.md, and workspace/profile/article-digest.md (if exists) before evaluating
+1. Read workspace/profile/cv.md, workspace/profile/targeting.md, and workspace/profile/article-digest.md (if exists) before evaluating
 1b. **First evaluation of each session:** Run `node src/cv/cv-sync-check.mjs`. If warnings, notify user.
-2. Detect the role archetype and adapt framing per _profile.md
+2. Detect the role archetype and adapt framing per workspace/profile/targeting.md
 3. Cite exact lines from CV when matching
 4. Use bounded web research only for current company/compensation context, never
    for job-document ingestion or liveness
@@ -228,16 +228,20 @@ deterministic backend operations. One tool-less model call may perform the
 bounded judgement or writing step defined by a versioned contract. Never invoke
 recursive research harnesses or nested agents.
 
-### Time-to-offer priority
-- Working demo + metrics > perfection
-- Apply sooner > learn more
-- 80/20 approach, timebox everything
+### Bias to action, within the quality bar
+- A working demo with real numbers beats a polished plan
+- Timebox research: more reading rarely changes a decision the evidence already
+  supports
+- This never overrides the quality bar in AGENTS.md. Fewer, better-targeted
+  applications beat volume, and below 4.0/5 the recommendation is not to apply.
+  Speed applies to *preparing* an application, never to lowering the bar for
+  sending one.
 
 ---
 
 ## Voice DNA (writing guardrail)
 
-If `workspace/profile/voice-dna.md` exists in the project root, it is a writing guardrail for generated prose. It is user-layer and optional — never assume it exists, and skip this block silently if it doesn't. It layers **under** the user's personal style: it catches AI-slop and fills gaps, but it always defers to the user's own voice rules in `_profile.md` (see Precedence below).
+If `workspace/profile/voice-dna.md` exists in the project root, it is a writing guardrail for generated prose. It is user-layer and optional — never assume it exists, and skip this block silently if it doesn't. It layers **under** the user's personal style: it catches AI-slop and fills gaps, but it always defers to the user's own voice rules in `workspace/profile/targeting.md` (see Precedence below).
 
 **Two-tier scope (this is what keeps CVs accurate):**
 
@@ -246,17 +250,17 @@ If `workspace/profile/voice-dna.md` exists in the project root, it is a writing 
 
 **Accuracy always wins over style.** Facts from `workspace/profile/cv.md` and `workspace/profile/article-digest.md` are never overridden by voice-dna. Never drop, soften, or hedge a real metric to improve rhythm. Never invent detail to sound more human. Voice-dna shapes wording; it never changes content.
 
-**Precedence with personal style (`_profile.md` always wins):** The user's `## Writing Style` in `_profile.md` is the authority on voice and tone. Where `workspace/profile/voice-dna.md` and `_profile.md` conflict, `_profile.md` wins — voice-dna never overrides a rule the user set for themselves. Example: if the user's `_profile.md` style uses em-dashes, keep them, even though voice-dna discourages them. voice-dna's anti-AI-slop rules apply only where `_profile.md` is silent. (`workspace/profile/voice-dna.md` is itself a user file, so a user who wants the strict guardrail to win can simply leave that preference out of `_profile.md`.)
+**Precedence with personal style (`workspace/profile/targeting.md` always wins):** The user's `## Writing Style` in `workspace/profile/targeting.md` is the authority on voice and tone. Where `workspace/profile/voice-dna.md` and `workspace/profile/targeting.md` conflict, `workspace/profile/targeting.md` wins — voice-dna never overrides a rule the user set for themselves. Example: if the user's `workspace/profile/targeting.md` style uses em-dashes, keep them, even though voice-dna discourages them. voice-dna's anti-AI-slop rules apply only where `workspace/profile/targeting.md` is silent. (`workspace/profile/voice-dna.md` is itself a user file, so a user who wants the strict guardrail to win can simply leave that preference out of `workspace/profile/targeting.md`.)
 
 ---
 
 ## Writing Style Calibration
 
-**Check `_profile.md` first.** If a `## Writing Style` section exists there, use it directly — do not re-scan the writing-samples files. Re-scanning is only needed when new samples are added or the user explicitly asks to recalibrate.
+**Check `workspace/profile/targeting.md` first.** If a `## Writing Style` section exists there, use it directly — do not re-scan the writing-samples files. Re-scanning is only needed when new samples are added or the user explicitly asks to recalibrate.
 
 **When to apply:** Before generating any text the user will send or publish — cover letters, LinkedIn outreach, application form answers, follow-up emails, executive summaries, profile blurbs. Does NOT apply to internal evaluation reports (A–F blocks, scores, analysis).
 
-**If no cached style in `_profile.md`:** Read all files in `workspace/profile/writing-samples/`, **skipping any file named `README.md`**. If no user-provided samples are found, skip style calibration and gently note — once, without pressure — that adding a writing sample (e.g. a past cover letter, a LinkedIn About section, any professional writing) would help tailor outputs to their voice. If samples exist, extract the markers below and write the result to `_profile.md` under `## Writing Style` so future sessions skip this step.
+**If no cached style in `workspace/profile/targeting.md`:** Read all files in `workspace/profile/writing-samples/`, **skipping any file named `README.md`**. If no user-provided samples are found, skip style calibration and gently note — once, without pressure — that adding a writing sample (e.g. a past cover letter, a LinkedIn About section, any professional writing) would help tailor outputs to their voice. If samples exist, extract the markers below and write the result to `workspace/profile/targeting.md` under `## Writing Style` so future sessions skip this step.
 
 ### What to extract
 

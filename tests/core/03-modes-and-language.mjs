@@ -25,12 +25,15 @@ for (const mode of expectedModes) {
   }
 }
 
-// Check _shared.md references _profile.md
+// _shared.md must route the agent to the user's targeting file. Asserted by
+// real path: it previously required the string "_profile.md", a name that has
+// not existed since the workspace consolidation, so the check passed while the
+// instruction it guarded pointed at nothing.
 const shared = readFile('modes/_shared.md');
-if (shared.includes('_profile.md')) {
-  pass('_shared.md references _profile.md');
+if (shared.includes('workspace/profile/targeting.md')) {
+  pass('_shared.md routes to workspace/profile/targeting.md');
 } else {
-  fail('_shared.md does NOT reference _profile.md');
+  fail('_shared.md does NOT reference workspace/profile/targeting.md');
 }
 
 // --- _custom.md must be READ, not just written (#1388): Sources of Truth row +
@@ -46,10 +49,10 @@ const markersAppearInOrder = (text, markers) => {
   return true;
 };
 if (
-  shared.includes('| _custom.md | `workspace/profile/preferences.md` (if exists) |') &&
+  shared.includes('`workspace/profile/preferences.md` (if exists)') &&
   markersAppearInOrder(shared, [
-    'Read _profile.md AFTER this file',
-    'Read _custom.md (if it exists) AFTER _profile.md',
+    'Read workspace/profile/targeting.md AFTER this file',
+    'Read workspace/profile/preferences.md (if it exists) AFTER workspace/profile/targeting.md',
     'honor its house rules in every mode',
   ]) &&
   shared.includes('does not expire between sessions or between items in a batch') &&

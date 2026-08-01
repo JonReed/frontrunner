@@ -59,6 +59,20 @@ New files cannot conflict with later source reviews; edits to inherited files
 can. When behaviour must change, add a module and call it rather than rewriting
 theirs.
 
+Check before you edit — 645 of 989 tracked files came from the parent:
+
+```bash
+node src/lib/inherited-files.mjs <path>     # INHERITED or OURS
+node src/lib/inherited-files.mjs --stats    # counts by area
+```
+
+Inherited files carry another product's assumptions, and those assumptions read
+as ours to anyone who does not check. A free-tier argument aimed at users who
+cannot afford a subscription, six AI archetypes from one person's job search,
+and evaluators for four hosts this product does not support all survived here
+because they looked like the product. Read an inherited file for whose problem
+it solves before treating its content as settled.
+
 **4. Upstream maintenance is permanently selective.**
 
 ```bash
@@ -196,13 +210,20 @@ remote and browser fixtures; never weaken or bypass those barriers.
 
 ---
 
-# Frontrunner -- AI Job Search Pipeline
+## Origin, and what it means for the defaults
 
-## Origin
+The parent project was built by [santifer](https://santifer.io) to run his own
+search — 740+ offers evaluated, landing a Head of Applied AI role. The scoring
+rubric and negotiation material come from that search and are genuinely good.
 
-Built and used by [santifer](https://santifer.io) to evaluate 740+ offers, generate 100+ tailored CVs, and land a Head of Applied AI role. The archetypes, scoring, and negotiation scripts reflect that search; his portfolio is also open source: [cv-santiago](https://github.com/santifer/cv-santiago).
+So do the defaults, and that is the part to watch. The shipped archetypes are
+the ones that fit *his* career, not the user's. Treat every inherited default as
+a starting point belonging to someone else: read it before applying it, and when
+a user's targeting contradicts it, the user wins.
 
-**It works out of the box, but it's designed to be made yours.** You (AI Agent) can edit the user's files: they say "change the archetypes to data engineering roles" and you do it. That's the whole point.
+**It works out of the box, and it is meant to be made theirs.** When a user says
+"change the archetypes to data engineering roles", do it — write it to
+`workspace/profile/targeting.md`, never to a system file.
 
 ## Data Contract (CRITICAL)
 
@@ -273,12 +294,6 @@ open a terminal has not been served.
 Other CLIs following the [open agent skill standard](https://agentskills.io)
 may still work through the same mode files. That is a compatibility accident,
 not a promise.
-
-### Codex invocation
-
-- **Interactive:** run `codex` in the repo root; if `/frontrunner` is unavailable, ask Codex to run the mode directly.
-- **Headless:** `codex exec "prompt"` for one-shot workers.
-- **Examples:** `Run frontrunner scan mode`, `Run frontrunner pipeline mode for workspace/search/pipeline.md`, `Run frontrunner pdf mode`, `Run frontrunner tracker mode`, `Evaluate this JD with frontrunner auto-pipeline: https://company.com/jobs/123`
 
 ### Main Files
 

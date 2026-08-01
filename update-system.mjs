@@ -273,6 +273,7 @@ const SYSTEM_PATHS = [
   'src/lib/skill-entrypoints.mjs',
   'src/lib/upstream-guard.mjs',
   'src/lib/model-routing.mjs',
+  'src/lib/inherited-files.mjs',
   'src/security/',
   'src/application/',
   'src/workspace/',

@@ -161,6 +161,7 @@ test('production subprocess capabilities cannot grow outside reviewed boundaries
     'src/application/start.mjs', // fixed local UI startup and platform browser opener
     'src/application/status-control.mjs', // fixed tracker-decision protocol
     'src/application/ui-launch.mjs', // fixed local UI launcher and root injection
+    'src/lib/inherited-files.mjs', // maintainer-only read-only git history query
     'src/lib/root-paths.mjs', // maintainer-only repository migration utility
     'src/security/subprocess.mjs', // canonical general backend boundary
   ]);
