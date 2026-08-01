@@ -162,14 +162,58 @@ test('an expired sign-in offers the fix where it broke, not a page to visit', as
     Every control that spends allowance has to route an auth failure here.
     Left to prose, each one drifts into its own wording and its own dead end —
     which is exactly what this replaced.
+
+    The list is DERIVED, not written down. A hardcoded four-file list is what
+    let onboarding's AI extraction ship without a reconnect button: it was
+    added after the list, and a fixed list cannot notice a new member. So the
+    allowance-spending actions mark themselves with @spends-allowance in
+    ui/src/app/actions.ts, and every component importing one must route.
   */
-  for (const file of [
-    'ui/src/components/build-cv.tsx',
-    'ui/src/components/build-cover.tsx',
-    'ui/src/components/pipeline-control.tsx',
-    'ui/src/components/suggest-companies.tsx',
-  ]) {
-    const source = await readFile(join(ROOT, file), 'utf8');
-    assert.match(source, /isSignInFailure/u, `${file} must route sign-in failures to the notice`);
+  const actionsSource = await readFile(join(ROOT, 'ui/src/app/actions.ts'), 'utf8');
+  const spending = [...actionsSource.matchAll(
+    /@spends-allowance[\s\S]{0,200}?export async function (\w+)/gu,
+  )].map((match) => match[1]);
+  assert.ok(spending.length >= 6, `expected the allowance-spending actions to be annotated, found ${spending.length}`);
+
+  const { readdir } = await import('node:fs/promises');
+  const componentsDir = join(ROOT, 'ui/src/components');
+  const components = (await readdir(componentsDir)).filter((name) => name.endsWith('.tsx'));
+  const consumers = [];
+  for (const name of components) {
+    const source = await readFile(join(componentsDir, name), 'utf8');
+    // Only count a real import from the actions module, so a component that
+    // merely mentions the name in prose is not dragged in.
+    const importsAction = /from '@\/app\/actions'/u.test(source)
+      && spending.some((action) => new RegExp(`\\b${action}\\b`, 'u').test(source));
+    if (importsAction) consumers.push({ name, source });
   }
+  assert.ok(consumers.length >= 5, `expected the spending components to be found, got ${consumers.length}`);
+  for (const { name, source } of consumers) {
+    assert.match(source, /isSignInFailure/u, `ui/src/components/${name} spends allowance and must route sign-in failures to the notice`);
+  }
+});
+
+test('a first-time sign-in is not described as an expired session', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { ROOT } = await import('#paths');
+
+  /*
+    "Your sign-in has expired" describes something that never happened to a
+    first-run user, and sends them looking for a session to restore. The
+    never-connected case needs its own sentence — in the notice heading and in
+    the backend message that reaches it.
+  */
+  const notice = await readFile(join(ROOT, 'ui/src/components/reconnect-notice.tsx'), 'utf8');
+  assert.match(notice, /signInFailureKind/u, 'the notice must distinguish the two cases');
+  assert.match(notice, /'not-connected'/u);
+  assert.match(notice, /Connect your Claude subscription/u, 'the never-connected heading must exist');
+
+  const jobManager = await readFile(join(ROOT, 'src/application/job-manager.mjs'), 'utf8');
+  const expiredLine = jobManager.split('\n').findIndex((line) => /sign-in has expired\./u.test(line));
+  const connectLine = jobManager.split('\n').findIndex((line) => /Connect your Claude subscription on My details/u.test(line));
+  assert.ok(expiredLine >= 0 && connectLine > expiredLine, 'never-connected needs its own branch, checked after expiry');
+  // The CLI's expiry line also says "failed to authenticate", so the expiry
+  // branch must own that wording or every expiry reads as never-connected.
+  const neverConnectedBranch = jobManager.split('\n')[connectLine - 1] ?? '';
+  assert.doesNotMatch(neverConnectedBranch, /failed to authenticate|oauth/u);
 });

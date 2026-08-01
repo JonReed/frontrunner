@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { extractCvProfile } from '@/app/actions';
 import { AiButton } from '@/components/ai-button';
 import { ConnectButton } from '@/components/connect-button';
+import { ReconnectNotice, isSignInFailure } from '@/components/reconnect-notice';
 import {
   currentProposalValue,
   type AiProfileDraft,
@@ -132,9 +133,14 @@ export function OnboardingAiProfile({
       </div>
 
       {error && (
-        <p className="mt-4 rounded-lg border border-[var(--color-attention)] bg-[var(--color-attention-wash)] px-3.5 py-3 text-sm text-[var(--color-ink-soft)]">
-          {error}
-        </p>
+        <div className="mt-4 rounded-lg border border-[var(--color-attention)] bg-[var(--color-attention-wash)] px-3.5 py-3 text-sm text-[var(--color-ink-soft)]">
+          {/*
+            A sign-in failure carries its own remedy. Onboarding is the one
+            place where prose pointing at "My details" is worst: that page does
+            not exist yet for someone who has not finished setup.
+          */}
+          {isSignInFailure(error) ? <ReconnectNotice message={error} /> : error}
+        </div>
       )}
 
       {extraction && (

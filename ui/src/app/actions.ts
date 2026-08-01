@@ -224,6 +224,7 @@ export async function createSearchSettings(
  *
  * The CV crosses the provider boundary only after the user presses the
  * AI-styled button. Claude has zero tools and cannot write the profile.
+ * @spends-allowance — a sign-in failure here must route to ReconnectNotice.
  */
 export async function extractCvProfile(
   cv: string,
@@ -244,7 +245,10 @@ export async function extractCvProfile(
       // that is already set up, and saying "connect your subscription" to
       // someone who did that last week reads as the product forgetting them.
       invalidateHealth();
-      return { error: 'Your Claude sign-in has expired. Reconnect it on My details, then try again.' };
+      // No "go to My details" here: this runs during setup, where that page
+      // does not exist yet, and the notice this message is rendered in carries
+      // the reconnect button itself.
+      return { error: 'Your Claude sign-in has expired.' };
     }
     if (/not signed in|not logged in|auth|login/iu.test(detail)) {
       invalidateHealth();
@@ -306,6 +310,7 @@ export async function followCompanies(names: string[]): Promise<Job | { error: s
  * Produces a shortlist only. Nothing is followed, and no company reaches the
  * search settings, until the user picks from it — the model proposes, the
  * person chooses, and the zero-token resolver does the writing.
+ * @spends-allowance — a sign-in failure here must route to ReconnectNotice.
  */
 export async function suggestCompanies(): Promise<Job | { error: string }> {
   try {
@@ -365,6 +370,11 @@ export async function overridePrefilterRejection(
   }
 }
 
+/**
+ * Build a tailored CV for one role.
+ *
+ * @spends-allowance — a sign-in failure here must route to ReconnectNotice.
+ */
 export async function buildCv(roleNum: number): Promise<Job | { error: string }> {
   const role = (await readTracker()).find((r) => r.num === roleNum);
   if (!role) return { error: 'That role is no longer in your tracker.' };
@@ -390,6 +400,7 @@ export async function buildCv(roleNum: number): Promise<Job | { error: string }>
  * Deliberately a separate operation from buildCv rather than a flag on it: the
  * two dedupe independently, so someone who already has a tailored CV can add a
  * letter without the request being folded into the finished build.
+ * @spends-allowance — a sign-in failure here must route to ReconnectNotice.
  */
 export async function buildCover(roleNum: number): Promise<Job | { error: string }> {
   const role = (await readTracker()).find((r) => r.num === roleNum);
@@ -445,12 +456,20 @@ export async function scanForRoles(): PipelineActionResult {
   return startPipelineAction(startScanRun);
 }
 
-/** Assess the roles already waiting in workspace/search/pipeline.md. */
+/**
+ * Assess the roles already waiting in workspace/search/pipeline.md.
+ *
+ * @spends-allowance — a sign-in failure here must route to ReconnectNotice.
+ */
 export async function assessWaitingRoles(): PipelineActionResult {
   return startPipelineAction(() => startPipelineRun(false));
 }
 
-/** Run the complete canonical search and assessment pipeline. */
+/**
+ * Run the complete canonical search and assessment pipeline.
+ *
+ * @spends-allowance — a sign-in failure here must route to ReconnectNotice.
+ */
 export async function findAndAssessRoles(): PipelineActionResult {
   return startPipelineAction(() => startPipelineRun(true));
 }
