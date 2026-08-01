@@ -5,7 +5,7 @@
  * score-dependent verbosity, tracker fields, and the machine-readable footer.
  */
 
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 
 export const SCORING_CONTRACT_VERSION = '1.2';
 const MAX_FIELD_CHARS = 2_000;

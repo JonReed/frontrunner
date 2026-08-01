@@ -34,7 +34,7 @@
 import { readFileSync, existsSync, mkdirSync } from 'fs';
 import { pathToFileURL, fileURLToPath } from 'url';
 import path from 'path';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 
 import { makeHttpCtx } from '../../providers/_http.mjs';
 import { fetchProviderJobs } from '../../providers/_contract.mjs';

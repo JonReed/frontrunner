@@ -30,7 +30,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { pathToFileURL } from 'url';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 
 import { PORTALS_FILE, PROVIDERS_DIR } from '#paths';
 import { mutateFileLocked } from '../lib/locked-file.mjs';

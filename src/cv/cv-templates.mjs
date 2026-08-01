@@ -7,7 +7,7 @@
 import { readdirSync, readFileSync, existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 
 import { ROOT as __dirname } from '#paths';
 const DEFAULT_TEMPLATES_DIR = resolve(__dirname, 'templates');

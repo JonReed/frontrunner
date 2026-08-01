@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 import { RE2JS } from 're2js';
 
 import { ROOT } from '#paths';

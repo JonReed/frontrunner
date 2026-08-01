@@ -28,7 +28,7 @@ import { readFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 
 import { ROOT } from '#paths';
 import { APPLICATION_API_VERSION } from './contract.mjs';

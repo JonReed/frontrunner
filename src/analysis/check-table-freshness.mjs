@@ -51,7 +51,7 @@
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join } from 'path';
 import { pathToFileURL } from 'url';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 import { PROFILE_FILE, TEMPLATES_DIR } from '#paths';
 
 const DEFAULT_MAX_AGE_MONTHS = 12;

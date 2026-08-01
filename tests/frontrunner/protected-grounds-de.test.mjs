@@ -20,7 +20,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import test from 'node:test';
 
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 import { TEMPLATES_DIR } from '#paths';
 
 const raw = readFileSync(join(TEMPLATES_DIR, 'protected-grounds.yml'), 'utf-8');

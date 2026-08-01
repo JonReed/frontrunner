@@ -38,7 +38,7 @@
 import { readFileSync, existsSync, readdirSync, mkdtempSync, writeFileSync, rmSync } from 'fs';
 import { join } from 'path';
 import { pathToFileURL } from 'url';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 import { INTERVIEW_SESSIONS_DIR, INTERVIEW_QUESTION_BANK_FILE } from '#paths';
 
 const DEFAULT_SESSIONS_DIR = INTERVIEW_SESSIONS_DIR;

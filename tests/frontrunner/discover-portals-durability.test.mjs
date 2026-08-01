@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
 import { test } from 'node:test';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 
 import { ROOT } from '#paths';
 import { appendDiscoveredPortals } from '../../src/scan/discover-ats.mjs';

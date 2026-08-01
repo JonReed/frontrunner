@@ -16,7 +16,7 @@
 // would require changing the Provider.fetch(entry, ctx) contract itself.
 
 import { existsSync, readFileSync } from 'fs';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 
 // Matches the FRONTRUNNER_PROFILE override already honored by src/scan/scan.mjs,
 // src/cv/cv-templates.mjs, src/tracker/followup-cadence.mjs, and
