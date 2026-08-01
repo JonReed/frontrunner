@@ -161,9 +161,32 @@ When a JD publishes a salary figure, distinguish advertised range, likely guaran
 
 ## Archetype Detection
 
-Classify every offer into one of these types (or hybrid of 2):
+An archetype is the role family an offer belongs to. It drives which proof
+points to lead with and how to frame the CV, so it has to describe the roles
+*this* user is pursuing.
 
-| Archetype | Key signals in JD |
+**Derive it from the user, in this order:**
+
+1. If `workspace/profile/targeting.md` names archetypes or role families, use
+   those. They are the user's own and they win.
+2. Otherwise derive 2-4 families from their confirmed target roles in
+   `workspace/profile/profile.yml` and the shape of their experience in
+   `workspace/profile/cv.md`. State the families you derived, once, so the user
+   can correct them.
+
+Classify each offer into one family, or name the two closest when it genuinely
+straddles. **Never force an offer into a family that does not fit** — say the
+role sits outside the user's targeting and let the score reflect it. A
+misapplied archetype produces a confidently wrong framing, which is worse than
+no framing.
+
+The set below is an **example, from the AI-focused search this project was
+originally built for**. Use it when the user's targeting is AI-shaped and they
+have not written their own; do not apply it to a search it does not describe. A
+delivery leader, a data engineer or a designer needs their own families, not
+these.
+
+| Example archetype | Key signals in JD |
 |-----------|-------------------|
 | AI Platform / LLMOps | "observability", "evals", "pipelines", "monitoring", "reliability" |
 | Agentic / Automation | "agent", "HITL", "orchestration", "workflow", "multi-agent" |
@@ -172,7 +195,8 @@ Classify every offer into one of these types (or hybrid of 2):
 | AI Forward Deployed | "client-facing", "deploy", "prototype", "fast delivery", "field" |
 | AI Transformation | "change management", "adoption", "enablement", "transformation" |
 
-After detecting archetype, read `workspace/profile/targeting.md` for the user's specific framing and proof points for that archetype.
+After detecting the archetype, read `workspace/profile/targeting.md` for the
+user's specific framing and proof points for it.
 
 ## Global Rules
 
