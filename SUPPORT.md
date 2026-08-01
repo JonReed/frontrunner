@@ -21,8 +21,8 @@ author for support — they did not build this and cannot help with it.
 
 1. Search existing issues — someone may have reported it already
 2. Run `npm run doctor` — it catches most setup problems
-3. Include your OS, Node.js version, and host CLI. Claude Code, Codex and
-   Antigravity CLI are the tested hosts; other agent CLIs are compatibility
+3. Include your OS, Node.js version, and host CLI. Claude Code is the
+   supported host; other agent CLIs are compatibility
    paths rather than supported configurations. See
    [docs/SUPPORTED_CLIS.md](docs/SUPPORTED_CLIS.md).
 

@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- An AI coding CLI — [Claude Code](https://claude.ai/code) or Codex, or Antigravity CLI if you want the free tier (see [Supported CLIs](SUPPORTED_CLIS.md))
+- A Claude subscription and [Claude Code](https://claude.ai/code) (see [Supported CLIs](SUPPORTED_CLIS.md))
 - [Node.js](https://nodejs.org) 22.5+ and Git. Node 22.5 is the minimum
   because the tracker index uses the built-in `node:sqlite` module.
 
@@ -29,7 +29,7 @@ of starting the UI:
 claude   # or codex / agy
 ```
 
-Claude Code, Codex and Antigravity CLI are the tested agent hosts. Other agent
+Claude Code is the supported agent host; ChatGPT/Codex is next. Other agent
 CLIs may work through the shared `AGENTS.md` contract as compatibility paths
 but are not supported configurations; see [Supported CLIs](SUPPORTED_CLIS.md).
 

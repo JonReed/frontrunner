@@ -22,12 +22,10 @@ Pass `--limit <N>` to `batch-runner.sh` to cap the number of offers processed in
 
 ## 4. Can I run frontrunner on a cheaper or local model?
 
-The backend contracts are model-agnostic, but host support is deliberately
-narrower: Claude Code, Codex and Antigravity CLI are tested. Other agent CLIs
-may work but are compatibility paths, not supported configurations. Standalone
-OpenAI-compatible, OpenRouter, Gemini and Ollama evaluators do not require an
-agent CLI. See [RUNNING_ON_A_BUDGET.md](RUNNING_ON_A_BUDGET.md) for those
-options and [SUPPORTED_CLIS.md](SUPPORTED_CLIS.md) for the support boundary.
+Frontrunner runs on a Claude subscription. ChatGPT is the next supported
+host. Other agent CLIs may consume the same mode files, but that is
+compatibility rather than support — see
+[SUPPORTED_CLIS.md](SUPPORTED_CLIS.md).
 
 ## 5. What does the "possible cross-listing" warning mean during a scan?
 

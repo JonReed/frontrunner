@@ -83,13 +83,8 @@ descriptions are.
 
 ---
 
-## 5. Free access
+## 5. What this assumes
 
-Claude Code requires a paid subscription. If that is a barrier, see
-[FREE_TIER.md](FREE_TIER.md).
-
-Being straight about the current state: the alternative providers that used to
-serve as the free and local path have been removed, so a genuinely free route is
-an open question for this project rather than a solved one. It matters — people
-using this tool are often between jobs — and it is recorded here as a known gap
-rather than quietly dropped.
+Frontrunner runs on a Claude subscription. There is no separate API bill and no
+free tier to configure — if you have Claude, you have Frontrunner. ChatGPT
+support is the next host on the roadmap.

@@ -28,8 +28,8 @@ and keeps your applications and documents together on your computer.
 
 > **Current status:** the workflow-first interface covers setup, discovery,
 > assessment, tailored CV preparation, application tracking, and follow-ups.
-> The local interface includes guided first-run setup; Claude Code, Codex and
-> Antigravity remain available for conversational workflows.
+> The local interface includes guided first-run setup; Claude Code is also
+> available for conversational workflows.
 
 ## One clear flow
 
@@ -107,9 +107,9 @@ below. It is the same on macOS, Linux and Windows: the agent detects the
 operating system, checks the prerequisites, explains any permission request,
 and completes the supported setup.
 
-Claude Code, Codex and Antigravity CLI are the tested agent hosts. Other
-assistants that consume `AGENTS.md` remain compatibility paths rather than
-supported configurations.
+Frontrunner is built for a Claude subscription. ChatGPT support is the next
+host on the roadmap. Other assistants that consume `AGENTS.md` may work, but
+that is compatibility rather than support.
 
 ```text
 Set up and install Frontrunner from https://github.com/Furls-Digital/frontrunner in a new folder called frontrunner.
@@ -211,7 +211,7 @@ boundaries.
 | Understand how the system fits together | [Architecture](docs/ARCHITECTURE.md) |
 | Review local UI operation boundaries | [Application service](docs/APPLICATION_SERVICE.md) |
 | Automate recurring scans | [Automation](docs/AUTOMATION.md) |
-| Run on free or lower-cost models | [Free tier](docs/FREE_TIER.md) and [budget guide](docs/RUNNING_ON_A_BUDGET.md) |
+| Understand what a search costs | [Budget guide](docs/RUNNING_ON_A_BUDGET.md) |
 | Find backend commands | [Scripts reference](docs/SCRIPTS.md) |
 | Contribute or review changes | [Contributing](CONTRIBUTING.md) and [reviewing](docs/REVIEWING.md) |
 

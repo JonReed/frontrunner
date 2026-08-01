@@ -340,12 +340,18 @@ Output: `{"onboardingNeeded": <bool>, "missing": [...], "warnings": [...], "auto
 
 **If `onboardingNeeded` is true, enter onboarding mode.** Do NOT proceed with evaluations, scans, or any other mode until the basics are in place. Guide the user step by step:
 
-#### Step 0: Free Tier Check
+#### Step 0: Cost expectations
 
-Only if the user mentions cost, pricing, budget, or free alternatives:
-> "frontrunner works fully on Antigravity CLI's free tier — no API key or paid subscription needed. See [FREE_TIER.md](docs/FREE_TIER.md) for setup, daily limits, and batch tips."
+Only if the user mentions cost, pricing or budget:
+> "Frontrunner runs on your existing Claude subscription — there's no separate
+> API key or extra bill. Most of what it does (searching boards, checking a job
+> is still live, filtering roles that can't fit) costs nothing at all; only the
+> assessment of a role uses your Claude allowance. You can also run just the
+> free parts to see what a search turned up before spending anything."
 
-If the user is already on a paid plan (Claude Max, Google AI, etc.) or does not mention cost, skip this step silently.
+Do not offer a free tier. There isn't one: this product assumes a Claude
+subscription (ChatGPT next). Say that plainly rather than sending someone to
+install a second tool.
 
 #### Step 1: CV (required)
 If `workspace/profile/cv.md` is missing, ask:
@@ -599,19 +605,12 @@ and each of them is easy to erode one convenience at a time.
 
 ## Headless / Batch Mode
 
-Headless invocation examples follow. Claude Code, Codex and Antigravity CLI are
-the tested hosts; the remaining commands are best-effort compatibility
-examples, not support commitments.
+Headless invocation for the supported host. Other agent CLIs read the same mode
+files and will probably work, but that is compatibility, not support.
 
 | CLI | Command |
 |-----|---------|
 | Claude Code | `claude -p "prompt"` |
-| **OpenCode** | `opencode run "prompt"` |
-| Copilot CLI | `copilot -p "prompt"` |
-| Codex | `codex exec "prompt"` |
-| Qwen | `qwen -p "prompt"` |
-| Antigravity CLI | `agy -p "prompt"` |
-| Grok Build CLI | `grok -p "prompt"` |
 
 **Parallel fan-outs — reserve report numbers first.** Before spawning N parallel evaluators, reserve the range: `node src/tracker/reserve-report-num.mjs --count N` (prints e.g. `042-049`); hand each worker its own number. The allocator treats report files, sentinels, tracker row IDs, and tracker report links as occupied; each slot claim is individually atomic (on collision, claimed slots are released and the reservation restarts past it — permanent, harmless gaps). Release with `node src/tracker/reserve-report-num.mjs --release 042-049` when done; stale sentinels are GC'd after 4h, so reserve right before spawning. Never let parallel workers compute `max+1` themselves — that is the #749 race.
 

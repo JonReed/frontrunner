@@ -1,37 +1,42 @@
 # Supported CLIs
 
-Frontrunner supports **Claude Code** and **Codex**, plus **Antigravity CLI** for
-the free tier.
+**Frontrunner runs on a Claude subscription.** That is the whole supported list
+today. ChatGPT is the next host on the roadmap.
 
-That is a deliberately short list. The upstream project advertised nine CLIs,
-none of which had test coverage, and support you do not test is a claim rather
-than a promise. Narrowing it also removes a genuinely bad first question to ask
-a non-technical user: *which command-line agent tool do you use?*
+This is not a limitation to apologise for. Frontrunner is built for people who
+are not developers and will not open a terminal, and those people have a Claude
+or a ChatGPT subscription — not a local model server. Supporting two hosts
+properly is worth more to them than supporting nine badly, because a path nobody
+tests is a path that breaks in front of someone who cannot debug it. Narrowing
+it also removes a genuinely bad first question to ask a non-technical user:
+*which command-line agent tool do you use?*
 
 | CLI | Entry File | How to invoke |
 | --- | --- | --- |
 | Claude Code | `CLAUDE.md` | Interactive: `claude` (then `/frontrunner`). Headless: `claude -p "prompt"` |
-| Codex | `CODEX.md` (see [`docs/CODEX.md`](CODEX.md)) | Interactive: `codex`, then plain text. Headless: `codex exec "prompt"` |
-| Antigravity CLI | `AGENTS.md` | Interactive: `agy` (then `/frontrunner`). Headless: `agy -p "prompt"` |
 
-**Claude Code is the one the application itself uses.** The desktop UI spawns it
-directly — `src/application/contract.mjs` defaults to the `claude` engine — so
-it is the path that gets exercised on every run and the one to choose if you
-have no reason to prefer another.
+**The application uses Claude Code directly.** The local UI spawns it — every
+model-backed button in the interface is a `claude` subprocess — so it is the
+path exercised on every run.
 
-**Antigravity CLI is kept for one reason: it is free.** No API key, no
-subscription — see [FREE_TIER.md](FREE_TIER.md). People using this tool are
-frequently out of work, and making a paid subscription mandatory would exclude
-exactly the people it exists for.
+## Codex / ChatGPT
+
+`CODEX.md` and [`docs/CODEX.md`](CODEX.md) are still in the repository, and
+driving Frontrunner from `codex` will very likely work through the same mode
+files. It is not supported yet, and for a specific reason: the local UI has no
+Codex backend, so a ChatGPT subscriber would have to work from a terminal —
+exactly the audience this product is not for. Supporting ChatGPT means building
+that backend, not adding a row to a table.
 
 ## Everything else
 
-The modes underneath are CLI-agnostic and read `AGENTS.md`, so OpenCode, Qwen,
-Copilot CLI, Kimi, Grok Build CLI, Cursor and others will very likely work. They
-are compatibility paths rather than supported configurations: they are not
-tested here, and a support question about one of them may not get a useful
-answer.
+The modes underneath read `AGENTS.md` and are CLI-agnostic, so OpenCode, Qwen,
+Copilot CLI, Kimi, Grok Build CLI, Cursor and others will very likely work.
+Those are **compatibility paths, not supported configurations**: nobody here
+tests them, and a support question about one may not get a useful answer. If you
+want to build on one, nothing stops you — it is simply not where this project's
+attention goes.
 
-`GEMINI.md` remains in the repository root. It is a deliberate no-op that stops
-Antigravity CLI loading the full project instructions twice. The `OPENCODE.md`
-and `KIMI.md` shims have been removed.
+`GEMINI.md` remains in the repository root as a deliberate no-op that stops an
+agent host loading the full project instructions twice. The `OPENCODE.md` and
+`KIMI.md` shims have been removed.
