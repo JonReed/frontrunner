@@ -72,16 +72,29 @@ if (
   fail('docs/CODEX.md is missing required content');
 }
 
-const claudeWrapperLines = readFile('CLAUDE.md').trim().split(/\r?\n/);
+// The thin-wrapper rule (#1088) has exactly one exception: the mandated
+// "NOTHING GOES UPSTREAM" block. It is duplicated from AGENTS.md on purpose —
+// the failure it prevents is an agent acting before it has read AGENTS.md, so
+// the rule has to sit at the entry point. The block must be last in the file,
+// which keeps the exception bounded: everything before it still has to be the
+// bare import plus at most one comment, so this cannot become a dumping ground.
+const UPSTREAM_BLOCK = '## NOTHING GOES UPSTREAM';
+const claudeRaw = readFile('CLAUDE.md').trim();
+const upstreamIndex = claudeRaw.indexOf(UPSTREAM_BLOCK);
+const claudeWrapperLines = (upstreamIndex >= 0 ? claudeRaw.slice(0, upstreamIndex) : claudeRaw)
+  .trim().split(/\r?\n/);
 const claudeWrapperBody = claudeWrapperLines.slice(1).filter(line => line.trim());
 if (
   claudeWrapperLines[0] === '@AGENTS.md' &&
   claudeWrapperBody.length <= 1 &&
-  claudeWrapperBody.every(line => { const t = line.trim(); return t.startsWith('<!--') && t.endsWith('-->'); })
+  claudeWrapperBody.every(line => { const t = line.trim(); return t.startsWith('<!--') && t.endsWith('-->'); }) &&
+  upstreamIndex >= 0
 ) {
-  pass('CLAUDE.md is a thin AGENTS.md wrapper (#1088)');
+  pass('CLAUDE.md is a thin AGENTS.md wrapper plus the mandated upstream-write rule (#1088)');
+} else if (upstreamIndex < 0) {
+  fail('CLAUDE.md must carry the "## NOTHING GOES UPSTREAM" rule at the entry point');
 } else {
-  fail('CLAUDE.md must contain only @AGENTS.md plus an optional Claude-only placeholder comment (#1088)');
+  fail('CLAUDE.md must contain only @AGENTS.md, an optional Claude-only placeholder comment, and the upstream-write rule (#1088)');
 }
 
 const criticalRoutingContracts = [
