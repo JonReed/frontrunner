@@ -45,6 +45,7 @@ contains only a few compatibility entry points. Common commands are exposed via
 | `npm run cover-letter` | `src/cv/generate-cover-letter.mjs` | Render a cover-letter JSON payload to PDF |
 | `npm run verify:portals` | `src/scan/verify-portals.mjs` | Probe ATS endpoints to confirm workspace/search/portals.yml slugs resolve (network) |
 | `npm run fix:slugs` | `src/scan/fix-slugs.mjs` | Preview verified ATS slug migrations; add `-- --fix` to update the canonical portals file under lock |
+| `npm run company:funded` | `src/scan/company-funded.mjs` | Review-first discovery of recently funded companies from public feeds; suggestion list only, never writes to portals.yml |
 | `npm run freshness` | `src/analysis/check-table-freshness.mjs` | Check dated jurisdiction tables for expired changes and overdue review |
 | `npm run digest` | `src/analysis/weekly-interview-digest.mjs` | Summarize interview sessions for the current ISO week or an explicit date range |
 | `npm run reposts` | `src/analysis/detect-reposts.mjs` | Flag re-listed (ghost) postings from scan history |
@@ -676,6 +677,45 @@ actually resolves.
 ```bash
 npm run verify:portals
 ```
+
+---
+
+## company:funded
+
+Review-first discovery of companies that recently announced funding. Reads a
+fixed set of public feeds (TechCrunch, PR Newswire, The Guardian, the Hacker
+News search API) through `providers/_http.mjs`, extracts company names from
+funding headlines, and prints a candidate list. Zero tokens, no model call.
+
+It only suggests: it never touches `workspace/search/portals.yml`, never probes
+a company website, and never adds anything to the search. A funding headline is
+not evidence that the company is hiring — adding a candidate is a separate,
+deliberate step (`node src/scan/discover-ats.mjs --write`, or the
+follow-employers control in the local UI).
+
+```bash
+npm run company:funded                                    # JSON
+node src/scan/company-funded.mjs --summary
+node src/scan/company-funded.mjs --months 6 --limit 30 --sort score
+node src/scan/company-funded.mjs --sources techcrunch,hn
+node src/scan/company-funded.mjs --summary --write        # also save a report
+```
+
+Defaults: 3-month window, `--sort date`, sources
+`techcrunch,prnewswire,guardian,hn`. `--sort score` ranks by source rank and
+funding-detail confidence instead of recency. `--write` saves JSON + Markdown
+under `workspace/reports/analysis/`; without it nothing is written.
+
+Every source carries a diagnostic row (fetched items, funding-like items,
+candidates, errors). A CDN challenge page is reported as `blocked` rather than
+as a quiet zero, so a silenced source is distinguishable from a slow news week.
+
+An evidence link is kept only when its host is on the allowlist for the source
+it came from, so a feed cannot smuggle a link to an unrelated host into the
+report.
+
+**Exit codes:** `0` discovery completed (including "no candidates"), `1`
+invalid arguments or a fatal runtime error.
 
 ---
 

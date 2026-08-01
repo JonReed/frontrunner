@@ -291,6 +291,7 @@ const SYSTEM_PATHS = [
   'src/analysis/detect-reposts.mjs',
   'src/scan/discover-ats.mjs',
   'src/scan/discover-ats.test.mjs',
+  'src/scan/company-funded.mjs',
   'src/lib/fingerprint-core.mjs',
   'src/analysis/process-quality.mjs',
   'src/analysis/process-quality.test.mjs',

@@ -56,6 +56,7 @@
     "validate:portals": "node src/scan/validate-portals.mjs",
     "verify:portals": "node src/scan/verify-portals.mjs",
     "fix:slugs": "node src/scan/fix-slugs.mjs",
+    "company:funded": "node src/scan/company-funded.mjs",
     "freshness": "node src/analysis/check-table-freshness.mjs",
     "digest": "node src/analysis/weekly-interview-digest.mjs",
     "tracker": "node src/tracker/tracker.mjs",
