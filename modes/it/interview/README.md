@@ -18,7 +18,7 @@ Un set di competenze riutilizzabili per la preparazione ai colloqui di lavoro.
 
 ## Convenzioni sui File
 
-Queste competenze presuppongono l'esistenza dei seguenti file (valori predefiniti di career-ops):
+Queste competenze presuppongono l'esistenza dei seguenti file (valori predefiniti di Frontrunner):
 
 | File | Scopo |
 |---|---|

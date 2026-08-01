@@ -42,6 +42,8 @@ const scripts = [
   { name: 'src/scan/discover-ats.mjs --self-test', expectExit: 0 },
   { name: 'src/analysis/process-quality.mjs --self-test', expectExit: 0 },
   { name: 'src/scan/company-history.mjs --self-test', expectExit: 0 },
+  { name: 'src/scan/company-funded.mjs --self-test', expectExit: 0 },
+  { name: 'src/lib/upstream-guard.mjs --self-test', expectExit: 0 },
   { name: 'src/analysis/salary-gap.mjs --self-test', expectExit: 0 },
   { name: 'src/analysis/funnel-velocity.mjs --self-test', expectExit: 0 },
   { name: 'src/cv/img-to-pdf.mjs --self-test', expectExit: 0 },

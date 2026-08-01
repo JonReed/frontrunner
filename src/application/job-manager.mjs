@@ -233,8 +233,17 @@ function publicFailure(job, result) {
     until something forces a refresh, so the pre-flight cannot catch this —
     the run itself is the first honest signal, and it has to say so plainly.
   */
-  if (/not logged in|\/login|failed to authenticate|oauth|session expired|could not be refreshed/iu.test(tail)) {
+  if (/failed to authenticate|oauth|session expired|could not be refreshed/iu.test(tail)) {
     return 'Your Claude sign-in has expired. Reconnect it on My details, then try again — nothing was charged.';
+  }
+  /*
+    Never connected is a different sentence. Telling a first-run user that
+    their sign-in "expired" describes something that never happened to them
+    and sends them hunting for a session to restore. Checked after the expiry
+    branch above, because the CLI's expiry line also mentions authentication.
+  */
+  if (/not logged in|not signed in|\/login|invalid api key/iu.test(tail)) {
+    return 'Connect your Claude subscription on My details, then try again — nothing was charged.';
   }
   if (/ENOENT/iu.test(String(result.error ?? ''))) {
     if (operation === 'cv.build') {

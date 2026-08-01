@@ -72,7 +72,13 @@ try {
 
   const claudeDoc = readFile('CLAUDE.md');
   const agentsDoc = readFile('AGENTS.md');
-  const claudeWrapperLines = claudeDoc.trim().split(/\r?\n/).filter(Boolean);
+  // The mandated "NOTHING GOES UPSTREAM" block is the one allowed exception to
+  // the thin-wrapper rule (see tests/core/05-agent-and-skill-contracts.mjs).
+  // What this assertion still owns is that no ONBOARDING guidance drifts back
+  // into CLAUDE.md — that has to stay in AGENTS.md, delegated to doctor --json.
+  const claudeUpstreamIndex = claudeDoc.indexOf('## NOTHING GOES UPSTREAM');
+  const claudeWrapperLines = (claudeUpstreamIndex >= 0 ? claudeDoc.slice(0, claudeUpstreamIndex) : claudeDoc)
+    .trim().split(/\r?\n/).filter(Boolean);
   if (
     /node\s+doctor\.mjs\s+--json/.test(agentsDoc) &&
     /"warnings"\s*:\s*\[\.\.\.\]/.test(agentsDoc) &&

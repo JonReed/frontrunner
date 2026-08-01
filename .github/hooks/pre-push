@@ -1,4 +1,10 @@
 #!/bin/sh
 set -eu
 
+# Nothing from this fork goes to the parent repository (AGENTS.md rule 4). Git
+# hands this hook the remote name as $1 and its resolved URL as $2, so it
+# catches a push to santifer/career-ops under any remote name — including in a
+# fresh clone, where no local push-URL block has been applied.
+node "$(git rev-parse --show-toplevel)/src/lib/upstream-guard.mjs" --git-push "${1:-}" "${2:-}"
+
 exec npm run qa:full

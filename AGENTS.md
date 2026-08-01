@@ -88,6 +88,20 @@ Upstream writes against a flat layout, so even useful code commonly references
 candidate that cannot pass Frontrunner's complete gate is rejected rather than
 used as a reason to weaken the gate.
 
+Rule 4 is enforced by code, not trust. `src/lib/upstream-guard.mjs` blocks any
+write aimed at the parent, from two directions:
+
+- `.github/hooks/pre-push` (wired via `core.hooksPath`) aborts a push whose
+  resolved URL is the parent, under any remote name.
+- The `PreToolUse` Bash hook in `.claude/settings.json` refuses a mutating `gh`
+  command before it runs. A mutating `gh` subcommand must carry
+  `--repo Furls-Digital/frontrunner`; without it `gh` picks its own default,
+  which is how `gh pr create` once opened a PR in the parent's repo.
+
+Read-only review — `git fetch upstream`, `gh pr view`, `gh pr list` — is
+untouched. `tests/frontrunner/upstream-write-guard.test.mjs` fails if either
+hook is unwired, so the guard cannot be quietly removed.
+
 **5. Application updates and upstream reviews are different operations.**
 
 - Ordinary Frontrunner updates use `node update-system.mjs apply`. The updater
@@ -279,6 +293,7 @@ OpenAI-compatible endpoints, OpenRouter and local Ollama.
 | `src/cv/generate-latex.mjs` | LaTeX CV validator + pdflatex compiler |
 | `src/scan/scan.mjs` | Zero-token portal scanner (Greenhouse/Ashby/Lever APIs, zero LLM cost) |
 | `src/scan/discover-ats.mjs` | Zero-token company-to-ATS resolver; preview-only unless `--write`, then validates and appends unique boards to `workspace/search/portals.yml` under the shared durable-state lock |
+| `src/scan/company-funded.mjs` | Zero-token, review-first discovery of recently funded companies from fixed public feeds (all reads via `providers/_http.mjs`); prints candidates and, with `--write`, saves a report under `workspace/reports/analysis/`. Never edits `workspace/search/portals.yml`, never probes a company site, never calls a model |
 | `src/scan/fix-slugs.mjs` | Preview and apply ATS slug migrations suggested by portal verification; writes only the canonical portals file under the shared durable-state lock |
 | `src/scan/scan-ats-full.mjs` | Reverse-ATS keyword-first scanner over full public ATS datasets (Greenhouse/Lever/Ashby/Workday/iCIMS), filtered by workspace/search/portals.yml `title_filter`/`location_filter` — no company list needed; checkpoints every 500 companies, `--resume` continues an interrupted sweep |
 | `src/scan/check-liveness.mjs` / `src/scan/liveness-core.mjs` | Job posting liveness checker + shared logic (expired signals win over generic Apply text) |

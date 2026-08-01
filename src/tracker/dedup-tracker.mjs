@@ -7,7 +7,7 @@
  * score. If discarded entry had more advanced status, preserves that status.
  * Merges notes.
  *
- * Run: node career-ops/dedup-tracker.mjs [--dry-run]
+ * Run: node src/tracker/dedup-tracker.mjs [--dry-run]
  */
 
 import { readFileSync, existsSync, mkdirSync } from 'fs';
@@ -19,11 +19,11 @@ import {
 } from './tracker-utils.mjs';
 import { resolveColumns, parseTrackerRow } from './tracker-parse.mjs';
 
-import { ROOT as CAREER_OPS } from '#paths';
+import { ROOT } from '#paths';
 // Support both layouts: workspace/applications/tracker.md (boilerplate) and applications.md
-// (original). CAREER_OPS_TRACKER lets tests point the script at an isolated
+// (original). FRONTRUNNER_TRACKER lets tests point the script at an isolated
 // fixture so the real user tracker is never touched.
-const APPS_FILE = resolveTrackerPath(CAREER_OPS);
+const APPS_FILE = resolveTrackerPath(ROOT);
 const DRY_RUN = process.argv.includes('--dry-run');
 
 // Ensure the target tracker directory exists in both normal and fixture mode.
