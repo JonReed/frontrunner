@@ -667,10 +667,14 @@ async function fetchHnDiscovery({ months, diagnostics, http, now }) {
         // A submitted story usually links off-site, and off-site is by
         // definition not on the allowlist, so fall back to the HN item page.
         url: trustedEvidenceUrl(hit.url || '', 'hacker_news') || trustedEvidenceUrl(fallbackUrl, 'hacker_news'),
-        published_at: hit.created_at ? new Date(hit.created_at).toISOString() : '',
-        observedDate: hit.created_at && !Number.isNaN(new Date(hit.created_at).getTime())
-          ? { value: String(hit.created_at).slice(0, 10), precision: 'day', date: new Date(hit.created_at) }
-          : null,
+        // Both date fields go through the one validating parser. Constructing
+        // a Date straight from remote text and calling .toISOString() on it
+        // throws RangeError for anything unparseable, which would take the
+        // whole run down over one malformed record — the opposite of the
+        // per-source diagnostics this module is built around. An unusable
+        // date is not fatal: bestObservedDate() falls back to the item text.
+        published_at: parsePublishedDate(hit.created_at)?.date?.toISOString() || '',
+        observedDate: parsePublishedDate(hit.created_at),
         text: xmlText(hit.story_text || ''),
         categories: [],
         source_company: '',

@@ -302,6 +302,32 @@ test('a source that fails is named in the diagnostics rather than silently empty
   assert.ok(diag.errors.join(' ').includes('429'), 'the underlying failure must survive into the report');
 });
 
+test('a malformed remote date degrades the item, it does not kill the run', async () => {
+  // `new Date(<hostile text>).toISOString()` throws RangeError, so one bad
+  // created_at from the HN API used to take down the entire discovery run —
+  // the opposite of the per-source diagnostics this module is built around.
+  const hits = [
+    { title: 'Acme raises $25M Series A', created_at: 'not-a-date', objectID: '1' },
+    { title: 'Beta raises $5M seed', created_at: null, objectID: '2' },
+    { title: 'Gamma raises $1M seed', created_at: {}, objectID: '3' },
+    { title: 'Delta raises $2M seed', created_at: '2026-07-10T00:00:00Z', objectID: '4' },
+  ];
+  const result = await discoverFundedCompanies({
+    sources: ['hn'],
+    now: NOW,
+    http: { fetchText: () => '', fetchJson: () => ({ hits }) },
+  });
+  assert.deepEqual(
+    result.companies.map((candidate) => candidate.company).sort(),
+    ['Acme', 'Beta', 'Delta', 'Gamma'],
+    'an unparseable date must fall back to the item text, not drop or crash the item',
+  );
+  for (const candidate of result.companies) {
+    const [evidence] = candidate.funding.sources;
+    assert.match(evidence.observed_date, /^\d{4}(-\d{2}-\d{2})?$/, 'every candidate needs a usable date');
+  }
+});
+
 test('a blocked feed is distinguishable from an empty one', async () => {
   const result = await discoverFundedCompanies({
     sources: ['techcrunch'],
