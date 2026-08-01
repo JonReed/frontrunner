@@ -1,9 +1,7 @@
 name: Frontrunner production code
 
 # Tests deliberately construct hostile regexes, shell arguments and malformed
-# paths. The inherited web tree is archived and runtime-disabled. Scan every
-# reachable backend and UI source while keeping those two non-product trees
-# from masking new production findings.
+# paths. Scan every reachable backend and UI source while keeping that one
+# non-product tree from masking new production findings.
 paths-ignore:
   - tests/**
-  - web/**

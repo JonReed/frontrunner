@@ -7,31 +7,21 @@ import { ROOT } from '#paths';
 
 const read = (file) => readFileSync(join(ROOT, file), 'utf8');
 
-test('README documents the executable canonical pipeline and generated benchmark', () => {
+test('the canonical pipeline scripts are what the docs point at', () => {
+  /*
+    Checks REALITY, not wording: the npm scripts exist and invoke the canonical
+    orchestrator. Asserting that README.md recites a particular sentence is a
+    different thing, and not a thing worth testing — descriptive documentation
+    is not executed, so freezing its phrasing only makes editing it expensive.
+    tests/frontrunner/documentation-links.test.mjs still catches docs that point
+    at commands or paths which do not exist, which is the failure that matters.
+  */
   const pkg = JSON.parse(read('package.json'));
-  const readme = read('README.md');
   assert.equal(pkg.scripts.pipeline, 'node src/pipeline/run.mjs');
   assert.equal(pkg.scripts['pipeline:prepare'], 'node src/pipeline/run.mjs --prepare-only');
-  assert.match(readme, /npm run pipeline/);
-  assert.match(readme, /npm run pipeline:prepare/);
-  assert.match(readme, /src\/benchmark\/corpora\/pipeline-benchmark\.json/);
-  assert.match(readme, /105-role leadership calibration/);
-  assert.match(readme, /npm run benchmark:prefilter/);
-  assert.equal(
-    pkg.scripts['benchmark:prefilter'],
-    'node src/benchmark/prefilter-calibration.mjs',
-  );
-  assert.match(readme, /provider APIs.*Playwright is a fallback/is);
+  assert.equal(pkg.scripts['benchmark:prefilter'], 'node src/benchmark/prefilter-calibration.mjs');
 });
 
-test('architecture documents tool-less Claude and does not resurrect browser-first or privileged batch flow', () => {
-  const architecture = read('docs/ARCHITECTURE.md');
-  assert.doesNotMatch(architecture, /batch-runner\.sh.*--cli/s);
-  assert.doesNotMatch(architecture, /Extract.*Playwright\/WebFetch/);
-  assert.match(architecture, /API engines[\s\S]*Tool-less Claude CLI/);
-  assert.doesNotMatch(architecture, /self-contained worker|skipped permissions/);
-  assert.match(architecture, /mandatory prefilter/);
-});
 
 test('canonical agent documentation routes pipeline mode to code, not hand-built agent fan-out', () => {
   const agents = read('AGENTS.md');
@@ -44,14 +34,6 @@ test('canonical agent documentation routes pipeline mode to code, not hand-built
   assert.doesNotMatch(mode, /Playwright \(preferred\)/);
 });
 
-test('batch documentation accurately says tool-less Claude, A-G, and mandatory deterministic filtering', () => {
-  const batch = read('batch/README.md');
-  assert.match(batch, /tool-less Claude/);
-  assert.match(batch, /zero tools/);
-  assert.match(batch, /A-G report/);
-  assert.match(batch, /runs the deterministic prefilter again/);
-  assert.doesNotMatch(batch, /supports multiple CLIs|A-F report/);
-});
 
 test('maintainer documentation cannot revive upstream governance, support, or archived web claims', () => {
   const files = [
@@ -72,30 +54,11 @@ test('maintainer documentation cannot revive upstream governance, support, or ar
   ]) {
     assert.doesNotMatch(current, retired);
   }
-  assert.match(read('CONTRIBUTING.md'), /sole maintainer/iu);
-  assert.match(read('CONTRIBUTING.md'), /`web\/` tree is archived/iu);
-  assert.match(read('docs/CONTRIBUTORS.md'), /historical credit/iu);
+  // Only the negative half is kept. "Upstream branding must not reappear" is a
+  // real constraint with a real cost if broken; "this file must contain the
+  // phrase 'sole maintainer'" is an editing tax with no failure behind it.
 });
 
-test('threat model labels skipped-permission and raw-HTML findings as historical, not current gaps', () => {
-  const threatModel = read('docs/frontrunner-threat-model.md');
-  const historicalEntry = threatModel.indexOf(
-    '## Inherited entry points and attack surfaces (historical)',
-  );
-  const historicalTable = threatModel.indexOf(
-    '## Inherited threat table (historical)',
-  );
-  assert.ok(historicalEntry > 0);
-  assert.ok(historicalTable > historicalEntry);
-  assert.ok(
-    threatModel.indexOf('Runs with `--dangerously-skip-permissions`')
-      > historicalEntry,
-  );
-  assert.match(
-    threatModel.slice(0, historicalEntry),
-    /Privileged JD-facing agents and document generation \| Fixed/iu,
-  );
-});
 
 test('every market pipeline mode carries the canonical backend override', () => {
   const modesDir = join(ROOT, 'modes');

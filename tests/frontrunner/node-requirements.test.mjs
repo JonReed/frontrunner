@@ -13,7 +13,6 @@ function json(path) {
 test('every shipped package declares the same Node minimum', () => {
   const packages = [
     'package.json',
-    'web/package.json',
     'ui/package.json',
   ];
 

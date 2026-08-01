@@ -170,16 +170,9 @@ if (
 
 
 const agentsDoc = readFile('AGENTS.md');
-if (
-  /CODEX\.md/.test(agentsDoc) &&
-  /codex exec/.test(agentsDoc) &&
-  /Codex/i.test(agentsDoc) &&
-  /(slash commands?.*not guaranteed|prompt|\/frontrunner.*unavailable)/i.test(agentsDoc)
-) {
-  pass('AGENTS.md includes CODEX.md and Codex-specific command guidance');
-} else {
-  fail('AGENTS.md is missing CODEX.md or Codex command guidance');
-}
+// AGENTS.md no longer carries a Codex invocation guide: Codex is not a
+// supported host, and instructions for driving one do not belong in the file
+// the supported host reads every session.
 
 console.log('\n12a. Skill entrypoint materialization');
 

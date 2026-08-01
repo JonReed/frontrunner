@@ -156,11 +156,23 @@ function main() {
   const corpus = JSON.parse(readFileSync(corpusPath, 'utf8'));
   const fixtureCv = '# CV\nDirector of Engineering. Led platform teams.';
   const fixtureProfile = 'target_roles:\n  - Engineering leadership\n';
-  const legacyStaticChars =
-    readFileSync(join(ROOT, 'modes', '_shared.md'), 'utf8').length
-    + readFileSync(join(ROOT, 'modes', 'oferta.md'), 'utf8').length
-    + fixtureCv.length
-    + fixtureProfile.length;
+  /*
+    PINNED, not measured live.
+
+    This is the inherited agent-first flow's static prompt: the whole of
+    _shared.md plus an evaluation mode, re-sent for every role. It used to be
+    computed by reading those two files at run time, which made the comparison
+    move whenever anyone edited documentation — writing prose inflated our
+    advantage, deleting prose shrank it, and neither had anything to do with
+    the product getting better. Worse, an edit failed `benchmark:check` and
+    blocked the commit until the artifact was regenerated.
+
+    The number below is the size of that flow as it stood on 2026-08-01
+    (_shared.md 24,530 chars + oferta.md 47,070). Update it only when the
+    comparison itself is wrong — never to absorb a routine documentation edit.
+  */
+  const LEGACY_STATIC_PROMPT_CHARS = 71_600;
+  const legacyStaticChars = LEGACY_STATIC_PROMPT_CHARS + fixtureCv.length + fixtureProfile.length;
   const compactStaticChars = buildScoringPrompt({
     cv: fixtureCv,
     profile: fixtureProfile,

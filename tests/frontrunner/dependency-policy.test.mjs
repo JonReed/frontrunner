@@ -75,7 +75,6 @@ test('scheduled audits cover every committed npm lockfile', () => {
   assert.deepEqual(auditedLockfiles, [
     'package-lock.json',
     'ui/package-lock.json',
-    'web/package-lock.json',
   ]);
   assert.match(
     workflow.jobs.audit.steps.at(-1).run,

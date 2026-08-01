@@ -52,8 +52,8 @@ const EXCLUDES = [
   'workspace/interviews/.gitkeep',
 ];
 
-// No tracked application tree is exempt from updater coverage. `ui/` and
-// `web/` have their own packages, but SYSTEM_PATHS deliberately ships both.
+// No tracked application tree is exempt from updater coverage. `ui/` has its
+// own package, and SYSTEM_PATHS deliberately ships it.
 const EXCLUDE_PREFIXES = [];
 
 function covered(file) {
@@ -91,8 +91,8 @@ if (process.argv.includes('--self-test')) {
 
   // Test sibling mismatch (strict prefix match)
   assert(covered('providers-sibling/justjoin.mjs') === false, 'providers-sibling/justjoin.mjs must NOT be covered');
-  assert(covered('web/package.json') === true, 'web/ tree must be covered by the updater manifest');
-  assert(covered('web-dashboard/index.html') === false, 'web-dashboard/ must NOT ride the web/ prefix exclude');
+  // The archived web/ tree was deleted. ui-kit/ below still guards the real
+  // property this pair tested: a prefix match must not leak to a sibling.
   assert(covered('ui/package.json') === true, 'ui/ tree must be covered by the updater manifest');
   assert(covered('ui-kit/index.ts') === false, 'ui-kit/ must NOT ride the ui/ prefix exclude');
 
